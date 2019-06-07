@@ -1,0 +1,995 @@
+diff --git a/astro/gnuastro/dragonfly/patch-lib_txt.c b/astro/gnuastro/dragonfly/patch-lib_txt.c
+new file mode 100644
+index 00000000000..3e70adc940b
+--- /dev/null
++++ b/astro/gnuastro/dragonfly/patch-lib_txt.c
+@@ -0,0 +1,10 @@
++--- lib/txt.c.orig	2019-01-02 16:23:47 UTC
+++++ lib/txt.c
++@@ -22,6 +22,7 @@ along with Gnuastro. If not, see <http:/
++ **********************************************************************/
++ #include <config.h>
++ 
+++#include <sys/select.h>
++ #include <math.h>
++ #include <ctype.h>
++ #include <stdio.h>
+diff --git a/astro/saoimage/dragonfly/patch-btnlib_event.c b/astro/saoimage/dragonfly/patch-btnlib_event.c
+new file mode 100644
+index 00000000000..042f1c8928f
+--- /dev/null
++++ b/astro/saoimage/dragonfly/patch-btnlib_event.c
+@@ -0,0 +1,10 @@
++--- btnlib/event.c.intermdiate	2019-06-07 18:31:04.000000000 +0000
+++++ btnlib/event.c
++@@ -27,6 +27,7 @@ static char SccsId[] = "%W%  %G%";
++ 
++ #include <stdio.h>	/* define stderr, NULL */
++ #include <sys/types.h>	/* define stderr, NULL */
+++#include <sys/select.h>
++ #include <X11/Xlib.h>
++ #include "buttons.h"
++ 
+diff --git a/audio/cpige/dragonfly/patch-mynet.h b/audio/cpige/dragonfly/patch-mynet.h
+new file mode 100644
+index 00000000000..91ed49b6b95
+--- /dev/null
++++ b/audio/cpige/dragonfly/patch-mynet.h
+@@ -0,0 +1,10 @@
++--- mynet.h.orig	2006-08-20 14:51:17 UTC
+++++ mynet.h
++@@ -10,6 +10,7 @@
++ #else
++  #include <netdb.h>
++  #include <netinet/in.h>
+++ #include <sys/select.h>
++  #include <sys/socket.h>
++  #include <arpa/inet.h>
++ #endif
+diff --git a/audio/musepack/dragonfly/patch-mpcenc_keyboard.c b/audio/musepack/dragonfly/patch-mpcenc_keyboard.c
+new file mode 100644
+index 00000000000..9e8899421f5
+--- /dev/null
++++ b/audio/musepack/dragonfly/patch-mpcenc_keyboard.c
+@@ -0,0 +1,11 @@
++--- mpcenc/keyboard.c.orig	2006-12-19 19:39:02 UTC
+++++ mpcenc/keyboard.c
++@@ -52,6 +52,8 @@ CheckKey ( void )
++ 
++ #else
++ 
+++#include <sys/select.h>
+++
++ # ifdef USE_TERMIOS
++ #  include <termios.h>
++ 
+diff --git a/biology/bwa/dragonfly/patch-kopen.c b/biology/bwa/dragonfly/patch-kopen.c
+new file mode 100644
+index 00000000000..699f4fff6bd
+--- /dev/null
++++ b/biology/bwa/dragonfly/patch-kopen.c
+@@ -0,0 +1,10 @@
++--- kopen.c.orig	2017-10-23 17:10:17 UTC
+++++ kopen.c
++@@ -11,6 +11,7 @@
++ #ifndef _WIN32
++ #include <netdb.h>
++ #include <arpa/inet.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #endif
++ 
+diff --git a/biology/freebayes/dragonfly/patch-SeqLib_bwa_kopen.c b/biology/freebayes/dragonfly/patch-SeqLib_bwa_kopen.c
+new file mode 100644
+index 00000000000..a991ded0b89
+--- /dev/null
++++ b/biology/freebayes/dragonfly/patch-SeqLib_bwa_kopen.c
+@@ -0,0 +1,10 @@
++--- SeqLib/bwa/kopen.c.orig	2016-10-13 18:10:17 UTC
+++++ SeqLib/bwa/kopen.c
++@@ -11,6 +11,7 @@
++ #ifndef _WIN32
++ #include <netdb.h>
++ #include <arpa/inet.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #endif
++ 
+diff --git a/biology/freebayes/dragonfly/patch-vcflib_tabixpp_htslib_knetfile.c b/biology/freebayes/dragonfly/patch-vcflib_tabixpp_htslib_knetfile.c
+new file mode 100644
+index 00000000000..ef40905d343
+--- /dev/null
++++ b/biology/freebayes/dragonfly/patch-vcflib_tabixpp_htslib_knetfile.c
+@@ -0,0 +1,10 @@
++--- vcflib/tabixpp/htslib/knetfile.c.orig	2016-04-22 08:45:12 UTC
+++++ vcflib/tabixpp/htslib/knetfile.c
++@@ -42,6 +42,7 @@
++ #ifndef _WIN32
++ #include <netdb.h>
++ #include <arpa/inet.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #endif
++ 
+diff --git a/biology/star/dragonfly/patch-htslib_knetfile.c b/biology/star/dragonfly/patch-htslib_knetfile.c
+new file mode 100644
+index 00000000000..14c2d49f35e
+--- /dev/null
++++ b/biology/star/dragonfly/patch-htslib_knetfile.c
+@@ -0,0 +1,10 @@
++--- htslib/knetfile.c.orig	2019-03-28 20:48:16 UTC
+++++ htslib/knetfile.c
++@@ -40,6 +40,7 @@
++ #ifndef _WIN32
++ #include <netdb.h>
++ #include <arpa/inet.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #endif
++ 
+diff --git a/biology/vcftools/dragonfly/patch-src_cpp_knetfile.c b/biology/vcftools/dragonfly/patch-src_cpp_knetfile.c
+new file mode 100644
+index 00000000000..35d98fd8a94
+--- /dev/null
++++ b/biology/vcftools/dragonfly/patch-src_cpp_knetfile.c
+@@ -0,0 +1,10 @@
++--- src/cpp/knetfile.c.orig	2018-08-02 17:34:47 UTC
+++++ src/cpp/knetfile.c
++@@ -40,6 +40,7 @@
++ #ifndef _WIN32
++ #include <netdb.h>
++ #include <arpa/inet.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #endif
++ 
+diff --git a/comms/amtterm/dragonfly/patch-amtterm.c b/comms/amtterm/dragonfly/patch-amtterm.c
+new file mode 100644
+index 00000000000..eb77cde1c1b
+--- /dev/null
++++ b/comms/amtterm/dragonfly/patch-amtterm.c
+@@ -0,0 +1,10 @@
++--- amtterm.c.orig	2017-02-27 10:24:26 UTC
+++++ amtterm.c
++@@ -26,6 +26,7 @@
++ #include <fcntl.h>
++ #include <termios.h>
++ #include <signal.h>
+++#include <sys/select.h>
++ #include <sys/ioctl.h>
++ 
++ #include "redir.h"
+diff --git a/comms/tlf/dragonfly/patch-src_sockserv.c b/comms/tlf/dragonfly/patch-src_sockserv.c
+new file mode 100644
+index 00000000000..bdf5905530a
+--- /dev/null
++++ b/comms/tlf/dragonfly/patch-src_sockserv.c
+@@ -0,0 +1,10 @@
++--- src/sockserv.c.orig	2018-11-10 10:36:40 UTC
+++++ src/sockserv.c
++@@ -23,6 +23,7 @@
++ /* Written by N2RJT - Dave Brown */
++ 
++ 
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <netinet/in.h>
++ #include <errno.h>
+diff --git a/databases/pgpool-II-40/dragonfly/patch-src_tools_pgproto_read.c b/databases/pgpool-II-40/dragonfly/patch-src_tools_pgproto_read.c
+new file mode 100644
+index 00000000000..21ac19fc9f0
+--- /dev/null
++++ b/databases/pgpool-II-40/dragonfly/patch-src_tools_pgproto_read.c
+@@ -0,0 +1,10 @@
++--- src/tools/pgproto/read.c.orig	2019-05-15 07:08:04 UTC
+++++ src/tools/pgproto/read.c
++@@ -23,6 +23,7 @@
++ #include <string.h>
++ #include <errno.h>
++ #include <arpa/inet.h>
+++#include <sys/select.h>
++ #include "pgproto/fe_memutils.h"
++ #include <libpq-fe.h>
++ #include "pgproto/read.h"
+diff --git a/devel/csoap/dragonfly/patch-nanohttp_nanohttp-socket.c b/devel/csoap/dragonfly/patch-nanohttp_nanohttp-socket.c
+new file mode 100644
+index 00000000000..36fd1f6869a
+--- /dev/null
++++ b/devel/csoap/dragonfly/patch-nanohttp_nanohttp-socket.c
+@@ -0,0 +1,13 @@
++--- nanohttp/nanohttp-socket.c.orig	2006-07-09 16:24:19 UTC
+++++ nanohttp/nanohttp-socket.c
++@@ -29,6 +29,10 @@
++ #include <sys/types.h>
++ #endif
++ 
+++#ifdef HAVE_SYS_SELECT_H
+++#include <sys/select.h>
+++#endif
+++
++ #ifdef HAVE_SYS_SOCKET_H
++ #include <sys/socket.h>
++ #endif
+diff --git a/dns/mdnsd/dragonfly/patch-mquery.c b/dns/mdnsd/dragonfly/patch-mquery.c
+new file mode 100644
+index 00000000000..cf74613af60
+--- /dev/null
++++ b/dns/mdnsd/dragonfly/patch-mquery.c
+@@ -0,0 +1,10 @@
++--- mquery.c.intermediate	2019-06-07 19:23:14.000000000 +0000
+++++ mquery.c
++@@ -19,6 +19,7 @@
++ # define CLOSESOCKET(S) closesocket((SOCKET)S)
++ # define ssize_t int
++ #else
+++# include <sys/select.h>
++ # include <unistd.h> // read, write, close
++ # define CLOSESOCKET(S) close(S)
++ #endif
+diff --git a/dns/udns/dragonfly/patch-rblcheck.c b/dns/udns/dragonfly/patch-rblcheck.c
+new file mode 100644
+index 00000000000..5d218862ddf
+--- /dev/null
++++ b/dns/udns/dragonfly/patch-rblcheck.c
+@@ -0,0 +1,10 @@
++--- rblcheck.c.orig	2014-01-23 10:41:54 UTC
+++++ rblcheck.c
++@@ -32,6 +32,7 @@
++ #else
++ # include <unistd.h>
++ # include <sys/types.h>
+++# include <sys/select.h>
++ # include <sys/socket.h>
++ # include <netinet/in.h>
++ #endif
+diff --git a/editors/fte/dragonfly/patch-src_g__unix__pipe.cpp b/editors/fte/dragonfly/patch-src_g__unix__pipe.cpp
+new file mode 100644
+index 00000000000..af2c5bf60d5
+--- /dev/null
++++ b/editors/fte/dragonfly/patch-src_g__unix__pipe.cpp
+@@ -0,0 +1,10 @@
++--- src/g_unix_pipe.cpp.orig	2011-07-07 17:16:12 UTC
+++++ src/g_unix_pipe.cpp
++@@ -6,6 +6,7 @@
++ #include <assert.h>
++ #include <fcntl.h>
++ #include <signal.h>
+++#include <sys/select.h>
++ #include <sys/wait.h>
++ #include <stdio.h>
++ 
+diff --git a/emulators/frodo/Makefile.DragonFly b/emulators/frodo/Makefile.DragonFly
+index 3fb7af66dbd..9a03b4c0653 100644
+--- a/emulators/frodo/Makefile.DragonFly
++++ b/emulators/frodo/Makefile.DragonFly
+@@ -1 +1,2 @@
++USES+=	alias
+ CFLAGS+=	-Wno-narrowing
+diff --git a/emulators/fs-uae/dragonfly/patch-manymouse_x11__xinput2.c b/emulators/fs-uae/dragonfly/patch-manymouse_x11__xinput2.c
+new file mode 100644
+index 00000000000..d03e18ba27c
+--- /dev/null
++++ b/emulators/fs-uae/dragonfly/patch-manymouse_x11__xinput2.c
+@@ -0,0 +1,10 @@
++--- manymouse/x11_xinput2.c.orig	2017-01-24 16:58:55 UTC
+++++ manymouse/x11_xinput2.c
++@@ -25,6 +25,7 @@
++ #include <stdlib.h>
++ #include <string.h>
++ #include <dlfcn.h>
+++#include <sys/select.h>
++ #include <X11/extensions/XInput2.h>
++ 
++ /* 32 is good enough for now. */
+diff --git a/ftp/smbftpd/dragonfly/patch-cmd_cmd__passive.c b/ftp/smbftpd/dragonfly/patch-cmd_cmd__passive.c
+new file mode 100644
+index 00000000000..0e1e4f29884
+--- /dev/null
++++ b/ftp/smbftpd/dragonfly/patch-cmd_cmd__passive.c
+@@ -0,0 +1,10 @@
++--- cmd/cmd_passive.c.orig	2008-05-20 13:19:21 UTC
+++++ cmd/cmd_passive.c
++@@ -3,6 +3,7 @@
++ #include <stdlib.h>
++ #include <arpa/inet.h>
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <unistd.h>
++ #include <fcntl.h>
+diff --git a/games/biloba/dragonfly/patch-src_netops.c b/games/biloba/dragonfly/patch-src_netops.c
+new file mode 100644
+index 00000000000..2a632e3d0c2
+--- /dev/null
++++ b/games/biloba/dragonfly/patch-src_netops.c
+@@ -0,0 +1,10 @@
++--- src/netops.c.orig	2011-02-24 20:13:25 UTC
+++++ src/netops.c
++@@ -31,6 +31,7 @@
++ #include <sys/types.h>
++ #include <errno.h>
++ #ifndef __MINGW32__
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <netinet/in.h>
++ #include <netdb.h>
+diff --git a/games/darkplaces/dragonfly/patch-lhnet.c b/games/darkplaces/dragonfly/patch-lhnet.c
+new file mode 100644
+index 00000000000..4b7e43156ef
+--- /dev/null
++++ b/games/darkplaces/dragonfly/patch-lhnet.c
+@@ -0,0 +1,10 @@
++--- lhnet.c.orig	2013-05-25 14:08:53 UTC
+++++ lhnet.c
++@@ -27,6 +27,7 @@
++ #ifndef WIN32
++ #include <unistd.h>
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <sys/ioctl.h>
++ #include <errno.h>
+diff --git a/games/darkplaces/dragonfly/patch-sys__linux.c b/games/darkplaces/dragonfly/patch-sys__linux.c
+new file mode 100644
+index 00000000000..c0390a65f3a
+--- /dev/null
++++ b/games/darkplaces/dragonfly/patch-sys__linux.c
+@@ -0,0 +1,10 @@
++--- sys_linux.c.orig	2011-03-31 18:14:20 UTC
+++++ sys_linux.c
++@@ -8,6 +8,7 @@
++ #include <unistd.h>
++ #include <fcntl.h>
++ #include <time.h>
+++#include <sys/select.h>
++ #endif
++ 
++ #include <signal.h>
+diff --git a/games/eif/dragonfly/patch-src_empcon.c b/games/eif/dragonfly/patch-src_empcon.c
+new file mode 100644
+index 00000000000..944e05409ab
+--- /dev/null
++++ b/games/eif/dragonfly/patch-src_empcon.c
+@@ -0,0 +1,10 @@
++--- src/empcon.c.orig	2004-02-06 16:15:19 UTC
+++++ src/empcon.c
++@@ -22,6 +22,7 @@
++ #include	<strings.h>
++ #endif				/* HAVE_STRINGS_H */
++ #include	<sys/types.h>
+++#include	<sys/select.h>
++ #ifdef	HAVE_UNISTD_H
++ #include	<unistd.h>
++ #endif				/* HAVE_UNISTD_H */
+diff --git a/games/netrek-client-cow/dragonfly/patch-parsemeta.c b/games/netrek-client-cow/dragonfly/patch-parsemeta.c
+new file mode 100644
+index 00000000000..60b4158d94f
+--- /dev/null
++++ b/games/netrek-client-cow/dragonfly/patch-parsemeta.c
+@@ -0,0 +1,10 @@
++--- parsemeta.c.intermediate	2019-06-07 19:58:58.000000000 +0000
+++++ parsemeta.c
++@@ -15,6 +15,7 @@
++ #include <stdlib.h>
++ #include INC_SYS_SELECT
++ #include INC_STRINGS
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include INC_NETINET_IN
++ #include <arpa/inet.h>
+diff --git a/games/xonotic/dragonfly/patch-source_darkplaces_sys__linux.c b/games/xonotic/dragonfly/patch-source_darkplaces_sys__linux.c
+new file mode 100644
+index 00000000000..dd07c6779d1
+--- /dev/null
++++ b/games/xonotic/dragonfly/patch-source_darkplaces_sys__linux.c
+@@ -0,0 +1,10 @@
++--- source/darkplaces/sys_linux.c.orig	2017-04-01 11:26:58 UTC
+++++ source/darkplaces/sys_linux.c
++@@ -8,6 +8,7 @@
++ #include <unistd.h>
++ #include <fcntl.h>
++ #include <time.h>
+++#include <sys/select.h>
++ #endif
++ 
++ #include <signal.h>
+diff --git a/games/xworm/dragonfly/patch-xworm.c b/games/xworm/dragonfly/patch-xworm.c
+new file mode 100644
+index 00000000000..d9dcda3c9ac
+--- /dev/null
++++ b/games/xworm/dragonfly/patch-xworm.c
+@@ -0,0 +1,11 @@
++--- xworm.c.intermediate	2019-06-07 20:11:52.000000000 +0000
+++++ xworm.c
++@@ -3,7 +3,7 @@
++  
++ #include <X11/Xlib.h>
++ #include <X11/Xutil.h>
++-#ifdef __FreeBSD__
+++#if defined(__FreeBSD__) || defined(__DragonFly__)
++ #include <sys/time.h>
++ #endif
++ #include <time.h>
+diff --git a/games/zdoom/dragonfly/patch-src_sound_music__midi__timidity.cpp b/games/zdoom/dragonfly/patch-src_sound_music__midi__timidity.cpp
+new file mode 100644
+index 00000000000..eeee0a38d7f
+--- /dev/null
++++ b/games/zdoom/dragonfly/patch-src_sound_music__midi__timidity.cpp
+@@ -0,0 +1,12 @@
++Add missing <sys/select.h> for select() visibility.
++
++--- src/sound/music_midi_timidity.cpp.orig	2016-02-22 02:11:13 UTC
+++++ src/sound/music_midi_timidity.cpp
++@@ -8,6 +8,7 @@
++ #include <unistd.h>
++ 
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <sys/wait.h>
++ #include <wordexp.h>
++ #include <signal.h>
+diff --git a/graphics/bmeps/dragonfly/patch-dk4sock.h b/graphics/bmeps/dragonfly/patch-dk4sock.h
+new file mode 100644
+index 00000000000..27c21988c60
+--- /dev/null
++++ b/graphics/bmeps/dragonfly/patch-dk4sock.h
+@@ -0,0 +1,13 @@
++--- dk4sock.h.orig	2019-04-17 18:39:21 UTC
+++++ dk4sock.h
++@@ -62,6 +62,10 @@ functions are used to hide this differen
++ #endif
++ #endif
++ 
+++#ifdef __DragonFly__
+++#include <sys/time.h>
+++#endif
+++
++ #if DK4_HAVE_SYS_SOCKET_H
++ #ifndef	SYS_SOCKET_H_INCLUDED
++ #include <sys/socket.h>
+diff --git a/graphics/sane-backends/dragonfly/patch-backend_epsonds.c b/graphics/sane-backends/dragonfly/patch-backend_epsonds.c
+new file mode 100644
+index 00000000000..9ae72efe785
+--- /dev/null
++++ b/graphics/sane-backends/dragonfly/patch-backend_epsonds.c
+@@ -0,0 +1,10 @@
++--- backend/epsonds.c.intermediate	2019-06-07 20:23:06.000000000 +0000
+++++ backend/epsonds.c
++@@ -41,6 +41,7 @@
++ #include "sane/config.h"
++ 
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <ctype.h>
++ #include <unistd.h>
+diff --git a/graphics/xli/dragonfly/patch-window.c b/graphics/xli/dragonfly/patch-window.c
+new file mode 100644
+index 00000000000..ce797e6cd2d
+--- /dev/null
++++ b/graphics/xli/dragonfly/patch-window.c
+@@ -0,0 +1,11 @@
++--- window.c.orig	2006-11-11 05:52:14 UTC
+++++ window.c
++@@ -23,7 +23,7 @@
++ #include <stropts.h>
++ #include <poll.h>
++ #endif
++-#ifdef _AIX
+++#if defined(_AIX) || defined(__DragonFly__)
++ #include <sys/select.h>
++ #endif
++ 
+diff --git a/irc/simpleirc/dragonfly/patch-sic.c b/irc/simpleirc/dragonfly/patch-sic.c
+new file mode 100644
+index 00000000000..5e1a53613a5
+--- /dev/null
++++ b/irc/simpleirc/dragonfly/patch-sic.c
+@@ -0,0 +1,10 @@
++--- sic.c.orig	2013-06-16 06:03:32 UTC
+++++ sic.c
++@@ -6,6 +6,7 @@
++ #include <stdlib.h>
++ #include <string.h>
++ #include <time.h>
+++#include <sys/select.h>
++ #include <unistd.h>
++ 
++ static char *host = "irc.oftc.net";
+diff --git a/japanese/skkserv/dragonfly/patch-skkserv_skkserv.c b/japanese/skkserv/dragonfly/patch-skkserv_skkserv.c
+index d26670a96ef..96e0cb22f7e 100644
+--- a/japanese/skkserv/dragonfly/patch-skkserv_skkserv.c
++++ b/japanese/skkserv/dragonfly/patch-skkserv_skkserv.c
+@@ -1,6 +1,14 @@
+ --- skkserv/skkserv.c.intermediate	2013-05-08 12:29:36.488567000 +0000
+ +++ skkserv/skkserv.c
+-@@ -239,7 +239,7 @@ char *argv[];
++@@ -89,6 +89,7 @@
++  */
++ 
++ #include	"skkserv.h"
+++#include <sys/select.h>
++ 
++ #define CLIENT_END	'0'
++ #define CLIENT_REQUEST	'1'
++@@ -239,7 +240,7 @@ char *argv[];
+  	exit(0);
+      }
+      /* child process */
+diff --git a/mail/nullmailer/dragonfly/patch-lib_selfpipe.cc b/mail/nullmailer/dragonfly/patch-lib_selfpipe.cc
+new file mode 100644
+index 00000000000..500d0bd0026
+--- /dev/null
++++ b/mail/nullmailer/dragonfly/patch-lib_selfpipe.cc
+@@ -0,0 +1,10 @@
++--- lib/selfpipe.cc.orig	2012-03-03 04:04:28 UTC
+++++ lib/selfpipe.cc
++@@ -20,6 +20,7 @@
++ // <nullmailer-subscribe@lists.untroubled.org>.
++ 
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <errno.h>
++ #include <fcntl.h>
++ #include <signal.h>
+diff --git a/mail/sendmail-devel/dragonfly/patch-libsm_notify.c b/mail/sendmail-devel/dragonfly/patch-libsm_notify.c
+new file mode 100644
+index 00000000000..b8674b3eefa
+--- /dev/null
++++ b/mail/sendmail-devel/dragonfly/patch-libsm_notify.c
+@@ -0,0 +1,10 @@
++--- libsm/notify.c.orig	2019-02-15 10:30:19 UTC
+++++ libsm/notify.c
++@@ -16,6 +16,7 @@
++ #include <sm/notify.h>
++ 
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <signal.h>
++ #include <stdio.h>
++ #include <stdlib.h>
+diff --git a/misc/liblxi/dragonfly/patch-src_tcp.c b/misc/liblxi/dragonfly/patch-src_tcp.c
+new file mode 100644
+index 00000000000..5e6467079a6
+--- /dev/null
++++ b/misc/liblxi/dragonfly/patch-src_tcp.c
+@@ -0,0 +1,10 @@
++--- src/tcp.c.orig	2018-05-05 14:00:05 UTC
+++++ src/tcp.c
++@@ -32,6 +32,7 @@
++ #include <stdlib.h>
++ #include <string.h>
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <netinet/in.h>
++ #include <arpa/inet.h>
+diff --git a/multimedia/gmerlin-avdecoder/dragonfly/patch-lib_in__http.c b/multimedia/gmerlin-avdecoder/dragonfly/patch-lib_in__http.c
+new file mode 100644
+index 00000000000..0a14c7ce407
+--- /dev/null
++++ b/multimedia/gmerlin-avdecoder/dragonfly/patch-lib_in__http.c
+@@ -0,0 +1,10 @@
++--- lib/in_http.c.orig	2012-06-08 11:51:34 UTC
+++++ lib/in_http.c
++@@ -22,6 +22,7 @@
++ #include <stdlib.h>
++ #include <string.h>
++ #include <stdio.h>
+++#include <sys/select.h>
++ #include <unistd.h>
++ #include <avdec_private.h>
++ #include <http.h>
+diff --git a/multimedia/gmerlin-avdecoder/dragonfly/patch-lib_tcp.c b/multimedia/gmerlin-avdecoder/dragonfly/patch-lib_tcp.c
+new file mode 100644
+index 00000000000..292100d24d4
+--- /dev/null
++++ b/multimedia/gmerlin-avdecoder/dragonfly/patch-lib_tcp.c
+@@ -0,0 +1,10 @@
++--- lib/tcp.c.orig	2012-06-08 11:51:34 UTC
+++++ lib/tcp.c
++@@ -36,6 +36,7 @@
++ #include <ws2spi.h>
++ #include <ws2tcpip.h>
++ #else
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <netinet/in.h>
++ #include <arpa/inet.h>
+diff --git a/multimedia/libva-vdpau-driver/dragonfly/patch-src_utils.c b/multimedia/libva-vdpau-driver/dragonfly/patch-src_utils.c
+new file mode 100644
+index 00000000000..b92b46b2329
+--- /dev/null
++++ b/multimedia/libva-vdpau-driver/dragonfly/patch-src_utils.c
+@@ -0,0 +1,10 @@
++--- src/utils.c.orig	2012-10-05 15:02:58 UTC
+++++ src/utils.c
++@@ -20,6 +20,7 @@
++ 
++ #include "sysdeps.h"
++ #include "utils.h"
+++#include <sys/select.h>
++ #include <time.h>
++ #include <errno.h>
++ 
+diff --git a/multimedia/recmpeg/dragonfly/patch-recmpeg.c b/multimedia/recmpeg/dragonfly/patch-recmpeg.c
+new file mode 100644
+index 00000000000..f05c24c8e9b
+--- /dev/null
++++ b/multimedia/recmpeg/dragonfly/patch-recmpeg.c
+@@ -0,0 +1,10 @@
++--- recmpeg.c.orig	2002-04-28 20:58:17 UTC
+++++ recmpeg.c
++@@ -41,6 +41,7 @@
++ 
++ #include <netinet/in.h>
++ #include <netdb.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <arpa/inet.h>
++ 
+diff --git a/multimedia/xawtv/dragonfly/patch-console_ftp.c b/multimedia/xawtv/dragonfly/patch-console_ftp.c
+new file mode 100644
+index 00000000000..cdb9b1369d4
+--- /dev/null
++++ b/multimedia/xawtv/dragonfly/patch-console_ftp.c
+@@ -0,0 +1,10 @@
++--- console/ftp.c.orig	2019-02-21 11:11:36 UTC
+++++ console/ftp.c
++@@ -15,6 +15,7 @@
++ #include <fcntl.h>
++ #include <stdarg.h>
++ #include <signal.h>
+++#include <sys/select.h>
++ 
++ #include "ftp.h"
++ 
+diff --git a/net-mgmt/aircrack-ng/dragonfly/patch-src_airserv-ng.c b/net-mgmt/aircrack-ng/dragonfly/patch-src_airserv-ng.c
+new file mode 100644
+index 00000000000..3a7be86e578
+--- /dev/null
++++ b/net-mgmt/aircrack-ng/dragonfly/patch-src_airserv-ng.c
+@@ -0,0 +1,11 @@
++--- src/airserv-ng.c.orig	2018-12-09 22:53:44 UTC
+++++ src/airserv-ng.c
++@@ -34,7 +34,7 @@
++ #include <stdarg.h>
++ #include <signal.h>
++ 
++-#ifdef __NetBSD__
+++#if defined(__NetBSD__) || defined(__DragonFly__)
++ #include <sys/select.h>
++ #endif
++ 
+diff --git a/net/6tunnel/dragonfly/patch-6tunnel.c b/net/6tunnel/dragonfly/patch-6tunnel.c
+new file mode 100644
+index 00000000000..070734801bd
+--- /dev/null
++++ b/net/6tunnel/dragonfly/patch-6tunnel.c
+@@ -0,0 +1,10 @@
++--- 6tunnel.c.orig	2013-05-25 18:16:49 UTC
+++++ 6tunnel.c
++@@ -28,6 +28,7 @@
++ #include <string.h>
++ #include <sys/types.h>
++ #include <netinet/in.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <arpa/inet.h>
++ #include <sys/wait.h>
+diff --git a/net/jwhois/dragonfly/patch-src_utils.c b/net/jwhois/dragonfly/patch-src_utils.c
+new file mode 100644
+index 00000000000..ab3017daa44
+--- /dev/null
++++ b/net/jwhois/dragonfly/patch-src_utils.c
+@@ -0,0 +1,10 @@
++--- src/utils.c.orig	2007-06-26 07:00:20 UTC
+++++ src/utils.c
++@@ -28,6 +28,7 @@
++ #ifdef HAVE_SYS_TYPES_H
++ # include <sys/types.h>
++ #endif
+++#include <sys/select.h>
++ #ifdef HAVE_SYS_SOCKET_H
++ # include <sys/socket.h>
++ #endif
+diff --git a/net/libmdf/dragonfly/patch-src_common.c b/net/libmdf/dragonfly/patch-src_common.c
+new file mode 100644
+index 00000000000..0c96a787cd9
+--- /dev/null
++++ b/net/libmdf/dragonfly/patch-src_common.c
+@@ -0,0 +1,10 @@
++--- src/common.c.orig	2017-09-05 09:33:51 UTC
+++++ src/common.c
++@@ -16,6 +16,7 @@
++ 
++ */
++ 
+++#include <sys/select.h>
++ #include "common.h"
++ #include "encode.h"
++ #include "crypt.h"
+diff --git a/net/recvnet/dragonfly/patch-recvnet.c b/net/recvnet/dragonfly/patch-recvnet.c
+new file mode 100644
+index 00000000000..1323c41af1e
+--- /dev/null
++++ b/net/recvnet/dragonfly/patch-recvnet.c
+@@ -0,0 +1,10 @@
++--- recvnet.c.orig	2004-01-31 12:40:51 UTC
+++++ recvnet.c
++@@ -6,6 +6,7 @@
++ #include <stdlib.h>
++ #include <unistd.h>
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <netinet/in.h>
++ #include <arpa/inet.h>
+diff --git a/net/sslh/dragonfly/patch-common.h b/net/sslh/dragonfly/patch-common.h
+new file mode 100644
+index 00000000000..68571995385
+--- /dev/null
++++ b/net/sslh/dragonfly/patch-common.h
+@@ -0,0 +1,10 @@
++--- common.h.orig	2018-02-11 17:42:21 UTC
+++++ common.h
++@@ -17,6 +17,7 @@
++ #include <stdlib.h>
++ #include <stdio.h>
++ #include <signal.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <sys/wait.h>
++ #include <netinet/in.h>
+diff --git a/net/tcpsg/dragonfly/patch-tcpsg.c b/net/tcpsg/dragonfly/patch-tcpsg.c
+new file mode 100644
+index 00000000000..ab1ceba518c
+--- /dev/null
++++ b/net/tcpsg/dragonfly/patch-tcpsg.c
+@@ -0,0 +1,10 @@
++--- tcpsg.c.intermediate	2019-06-07 21:45:47.000000000 +0000
+++++ tcpsg.c
++@@ -38,6 +38,7 @@
++ #include <sys/ipc.h>
++ 
++ /* Network Headers */
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <netinet/in.h>
++ #include <arpa/inet.h>
+diff --git a/net/whois/dragonfly/patch-whois.c b/net/whois/dragonfly/patch-whois.c
+new file mode 100644
+index 00000000000..0de532b571d
+--- /dev/null
++++ b/net/whois/dragonfly/patch-whois.c
+@@ -0,0 +1,10 @@
++--- whois.c.orig	2017-07-27 15:09:05 UTC
+++++ whois.c
++@@ -19,6 +19,7 @@
++ #include <string.h>
++ #include <ctype.h>
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <netinet/in.h>
++ #include <netdb.h>
+diff --git a/net/wireshark/dragonfly/patch-cmakeconfig.h.in b/net/wireshark/dragonfly/patch-cmakeconfig.h.in
+new file mode 100644
+index 00000000000..09a0ab16975
+--- /dev/null
++++ b/net/wireshark/dragonfly/patch-cmakeconfig.h.in
+@@ -0,0 +1,14 @@
++Add missing cmake define from ConfigureChecks.cmake
++
++--- cmakeconfig.h.in.orig	2019-05-22 17:29:46 UTC
+++++ cmakeconfig.h.in
++@@ -299,6 +299,9 @@
++ /* Define to 1 if you have the <sys/ioctl.h> header file. */
++ #cmakedefine HAVE_SYS_IOCTL_H 1
++ 
+++/* Define to 1 if you have the <sys/select.h> header file. */
+++#cmakedefine HAVE_SYS_SELECT_H 1
+++
++ /* Define to 1 if you have the <sys/socket.h> header file. */
++ #cmakedefine HAVE_SYS_SOCKET_H 1
++ 
+diff --git a/net/yaz/dragonfly/patch-src_spipe.c b/net/yaz/dragonfly/patch-src_spipe.c
+new file mode 100644
+index 00000000000..2b82e8f81ce
+--- /dev/null
++++ b/net/yaz/dragonfly/patch-src_spipe.c
+@@ -0,0 +1,12 @@
++--- src/spipe.c.orig	2018-04-16 15:46:16 UTC
+++++ src/spipe.c
++@@ -45,6 +45,9 @@
++ #if HAVE_NETINET_TCP_H
++ #include <netinet/tcp.h>
++ #endif
+++#if HAVE_SYS_SELECT_H
+++#include <sys/select.h>
+++#endif
++ #if HAVE_SYS_SOCKET_H
++ #include <sys/socket.h>
++ #endif
+diff --git a/polish/libgadu/dragonfly/patch-examples_conn-async.c b/polish/libgadu/dragonfly/patch-examples_conn-async.c
+new file mode 100644
+index 00000000000..75c2df0b1ab
+--- /dev/null
++++ b/polish/libgadu/dragonfly/patch-examples_conn-async.c
+@@ -0,0 +1,10 @@
++--- examples/conn-async.c.orig	2017-01-21 17:57:03 UTC
+++++ examples/conn-async.c
++@@ -27,6 +27,7 @@
++ #include <errno.h>
++ #include <string.h>
++ #include <time.h>
+++#include <sys/select.h>
++ #include "libgadu.h"
++ #include "network.h"
++ 
+diff --git a/print/fontforge/dragonfly/patch-gdraw_gdraw.c b/print/fontforge/dragonfly/patch-gdraw_gdraw.c
+new file mode 100644
+index 00000000000..c2996218827
+--- /dev/null
++++ b/print/fontforge/dragonfly/patch-gdraw_gdraw.c
+@@ -0,0 +1,11 @@
++--- gdraw/gdraw.c.orig	2017-07-30 21:49:01 UTC
+++++ gdraw/gdraw.c
++@@ -29,7 +29,7 @@
++ #include <ustring.h>
++ #include <gio.h>
++ #include "gdraw.h"
++-#if __Mac
+++#if __Mac || __DragonFly__
++ #  include <sys/select.h>
++ #endif
++ 
+diff --git a/sysutils/conman/dragonfly/patch-client-tty.c b/sysutils/conman/dragonfly/patch-client-tty.c
+new file mode 100644
+index 00000000000..ed6086687b0
+--- /dev/null
++++ b/sysutils/conman/dragonfly/patch-client-tty.c
+@@ -0,0 +1,10 @@
++--- client-tty.c.orig	2018-09-15 15:51:34 UTC
+++++ client-tty.c
++@@ -32,6 +32,7 @@
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <termios.h>
++ #include <unistd.h>
+diff --git a/sysutils/dsbsu/dragonfly/patch-lib_libdsbsu.c b/sysutils/dsbsu/dragonfly/patch-lib_libdsbsu.c
+new file mode 100644
+index 00000000000..00ce8d329ec
+--- /dev/null
++++ b/sysutils/dsbsu/dragonfly/patch-lib_libdsbsu.c
+@@ -0,0 +1,10 @@
++--- lib/libdsbsu.c.orig	2019-03-09 21:56:05 UTC
+++++ lib/libdsbsu.c
++@@ -37,6 +37,7 @@
++ #include <paths.h>
++ #include <unistd.h>
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <sys/socket.h>
++ #include <sys/sysctl.h>
++ #include <sys/un.h>
+diff --git a/sysutils/xvidcap/dragonfly/patch-ffmpeg_libavformat_rtpproto.c b/sysutils/xvidcap/dragonfly/patch-ffmpeg_libavformat_rtpproto.c
+new file mode 100644
+index 00000000000..38e96fd5981
+--- /dev/null
++++ b/sysutils/xvidcap/dragonfly/patch-ffmpeg_libavformat_rtpproto.c
+@@ -0,0 +1,10 @@
++--- ffmpeg/libavformat/rtpproto.c.orig	2008-05-02 15:22:46 UTC
+++++ ffmpeg/libavformat/rtpproto.c
++@@ -29,6 +29,7 @@
++ 
++ #include <unistd.h>
++ #include <stdarg.h>
+++#include <sys/select.h>
++ #include "network.h"
++ #include "os_support.h"
++ #include <fcntl.h>
+diff --git a/www/mozplugger/dragonfly/patch-child.c b/www/mozplugger/dragonfly/patch-child.c
+new file mode 100644
+index 00000000000..abe2eb018d5
+--- /dev/null
++++ b/www/mozplugger/dragonfly/patch-child.c
+@@ -0,0 +1,10 @@
++--- child.c.orig	2014-04-18 07:08:58 UTC
+++++ child.c
++@@ -22,6 +22,7 @@
++ #endif
++ 
++ #include <unistd.h>
+++#include <sys/select.h>
++ #include <signal.h>
++ #include <errno.h>
++ #include <fcntl.h>
+diff --git a/www/webkit2-gtk3/dragonfly/patch-Source_WebCore_crypto_algorithms_CryptoAlgorithmAES__GCM.cpp b/www/webkit2-gtk3/dragonfly/patch-Source_WebCore_crypto_algorithms_CryptoAlgorithmAES__GCM.cpp
+new file mode 100644
+index 00000000000..da2f69103f0
+--- /dev/null
++++ b/www/webkit2-gtk3/dragonfly/patch-Source_WebCore_crypto_algorithms_CryptoAlgorithmAES__GCM.cpp
+@@ -0,0 +1,15 @@
++--- Source/WebCore/crypto/algorithms/CryptoAlgorithmAES_GCM.cpp.orig	2019-02-12 11:21:18 UTC
+++++ Source/WebCore/crypto/algorithms/CryptoAlgorithmAES_GCM.cpp
++@@ -33,6 +33,12 @@
++ #include "CryptoKeyAES.h"
++ #include <wtf/CrossThreadCopier.h>
++ 
+++#ifndef __WORDSIZE
+++#ifdef __DragonFly__
+++#define __WORDSIZE 64
+++#endif
+++#endif
+++
++ namespace WebCore {
++ 
++ namespace CryptoAlgorithmAES_GCMInternal {
+diff --git a/x11-wm/e16/dragonfly/patch-eesh_main.c b/x11-wm/e16/dragonfly/patch-eesh_main.c
+new file mode 100644
+index 00000000000..59ce2af0db5
+--- /dev/null
++++ b/x11-wm/e16/dragonfly/patch-eesh_main.c
+@@ -0,0 +1,10 @@
++--- eesh/main.c.orig	2017-02-12 16:59:05 UTC
+++++ eesh/main.c
++@@ -22,6 +22,7 @@
++  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++  */
++ #include "E.h"
+++#include <sys/select.h>
++ 
++ /* Global vars */
++ Display            *disp;
+diff --git a/x11-wm/windowlab/dragonfly/patch-events.c b/x11-wm/windowlab/dragonfly/patch-events.c
+new file mode 100644
+index 00000000000..81aa46e92c8
+--- /dev/null
++++ b/x11-wm/windowlab/dragonfly/patch-events.c
+@@ -0,0 +1,10 @@
++--- events.c.orig	2010-04-04 18:30:14 UTC
+++++ events.c
++@@ -19,6 +19,7 @@
++  */
++ 
++ #include <X11/Xatom.h>
+++#include <sys/select.h>
++ #include "windowlab.h"
++ 
++ static void handle_key_press(XKeyEvent *);
+diff --git a/x11/wmdrawer/dragonfly/patch-wmdrawer.c b/x11/wmdrawer/dragonfly/patch-wmdrawer.c
+new file mode 100644
+index 00000000000..77381825b7c
+--- /dev/null
++++ b/x11/wmdrawer/dragonfly/patch-wmdrawer.c
+@@ -0,0 +1,10 @@
++--- wmdrawer.c.orig	2005-11-17 13:55:00 UTC
+++++ wmdrawer.c
++@@ -20,6 +20,7 @@
++ 
++ #include <unistd.h>
++ #include <sys/types.h>
+++#include <sys/select.h>
++ #include <sys/wait.h>
++ #include <time.h>
++ #include <signal.h>
+diff --git a/x11/wmsystemtray/dragonfly/patch-wmsystemtray.c b/x11/wmsystemtray/dragonfly/patch-wmsystemtray.c
+new file mode 100644
+index 00000000000..8bddbf2501e
+--- /dev/null
++++ b/x11/wmsystemtray/dragonfly/patch-wmsystemtray.c
+@@ -0,0 +1,10 @@
++--- wmsystemtray.c.orig	2014-02-23 02:08:37 UTC
+++++ wmsystemtray.c
++@@ -23,6 +23,7 @@
++ #include <string.h>
++ #include <signal.h>
++ #include <stdarg.h>
+++#include <sys/select.h>
++ 
++ #include <X11/Xlib.h>
++ #include <X11/Xatom.h>
