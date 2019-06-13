@@ -15,7 +15,6 @@ in external code-bases. The release-5.6 is still in RC1 stage.
 
 While there, add __WANT_NO_INLINED___ERROR guard for few python parsers
 in DPorts that are unable to parse inlined __error() code yet.
-Tools are only good as language itself.
 ---
  lib/libc/gen/Makefile.inc       |  5 +++--
  lib/libc/gen/Symbol.map         |  1 +
