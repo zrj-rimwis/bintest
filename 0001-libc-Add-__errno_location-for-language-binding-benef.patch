@@ -1,0 +1,128 @@
+From d5fd2a41499ef9fcbaa1a819d8128644fb0aed52 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 13 Jun 2019 07:11:14 +0300
+Subject: libc: Add __errno_location() for language binding benefits.
+
+Some languages have restrictions when it comes to C style TLS handling
+(thread local might be feature-gated) or simply it is inconvenient to
+add various OS specific binding wrappers just to access C errno values.
+
+All the __errno_location() symbol is doing is to provide external version
+of __error() inline version.
+
+Add this symbol as DF506.0 to squash this issue for smoother transition
+in external code-bases. The release-5.6 is still in RC1 stage.
+
+While there, add __WANT_NO_INLINED___ERROR guard for few python parsers
+in DPorts that are unable to parse inlined __error() code yet.
+Tools are only good as language itself.
+---
+ lib/libc/gen/Makefile.inc       |  5 +++--
+ lib/libc/gen/Symbol.map         |  1 +
+ lib/libc/gen/__errno_location.c | 36 +++++++++++++++++++++++++++++++++
+ sys/sys/errno.h                 | 10 ++++++++-
+ 4 files changed, 49 insertions(+), 3 deletions(-)
+ create mode 100644 lib/libc/gen/__errno_location.c
+
+diff --git a/lib/libc/gen/Makefile.inc b/lib/libc/gen/Makefile.inc
+index 08bdf7cf2a..579aa41e7b 100644
+--- a/lib/libc/gen/Makefile.inc
++++ b/lib/libc/gen/Makefile.inc
+@@ -8,8 +8,9 @@ CFLAGS+=-I${.CURDIR}/../libc/sysvipc
+ 
+ CMAPS+=	${.CURDIR}/gen/Symbol.map
+ 
+-SRCS+=  _once_stub.c _pthread_stubs.c _rand48.c _spinlock_stub.c \
+-	_thread_init.c alarm.c arc4random.c assert.c basename.c \
++SRCS+=  __errno_location.c _once_stub.c _pthread_stubs.c _rand48.c \
++	_spinlock_stub.c _thread_init.c \
++	alarm.c arc4random.c assert.c basename.c \
+ 	clock.c clock_getcpuclockid.c closedir.c confstr.c creat.c \
+ 	ctermid.c daemon.c devname.c dirfd.c dirname.c disklabel.c disktab.c \
+ 	dlfcn.c drand48.c dup3.c elf_utils.c erand48.c err.c errlst.c exec.c \
+diff --git a/lib/libc/gen/Symbol.map b/lib/libc/gen/Symbol.map
+index fdeec56f2c..b234c5327e 100644
+--- a/lib/libc/gen/Symbol.map
++++ b/lib/libc/gen/Symbol.map
+@@ -493,6 +493,7 @@ DF504.0 {
+ };
+ 
+ DF506.0 {
++    __errno_location;
+     dup3;
+ };
+ 
+diff --git a/lib/libc/gen/__errno_location.c b/lib/libc/gen/__errno_location.c
+new file mode 100644
+index 0000000000..163f26fdad
+--- /dev/null
++++ b/lib/libc/gen/__errno_location.c
+@@ -0,0 +1,36 @@
++/*
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#include <sys/errno.h>
++
++/*
++ * This function to fetch errno is provided for language binding only.
++ */
++int *
++__errno_location(void)
++{
++  return (__error());
++}
+diff --git a/sys/sys/errno.h b/sys/sys/errno.h
+index 657e5ec267..2bfa6a9b5c 100644
+--- a/sys/sys/errno.h
++++ b/sys/sys/errno.h
+@@ -43,15 +43,23 @@
+ #if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
+ __BEGIN_DECLS
+ extern __thread int	errno;
++
++int * __errno_location(void);		/* For language bindings only */
+ __END_DECLS
+ 
++/*
++ * Some python parsers unable to parse such __error() inline.
++ */
++#ifdef __WANT_NO_INLINED___ERROR
++#define	errno		(* __errno_location())
++#else
+ static __inline int *__error(void)
+ {
+ 	return (&errno);
+ }
+-
+ #define	errno		(* __error())
+ #endif
++#endif
+ 
+ #define	EPERM		1		/* Operation not permitted */
+ #define	ENOENT		2		/* No such file or directory */
+-- 
+2.21.0
+
