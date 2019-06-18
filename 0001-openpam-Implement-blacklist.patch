@@ -1,0 +1,41 @@
+From 057e4f591615d91fd54beb7c19e29879e1eeb773 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 18 Jun 2019 20:48:20 +0300
+Subject: openpam: Implement blacklist.
+
+Mainly to avoid issues for users who do not read what `make upgrade`
+warns about. Currently only includes previously active OPIE modules.
+Do not include pam_cleartext_pass_ok.so it should not be relevent for
+any DragonFly installations by now.
+---
+ contrib/openpam/lib/libpam/openpam_configure.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/contrib/openpam/lib/libpam/openpam_configure.c b/contrib/openpam/lib/libpam/openpam_configure.c
+index 12f1a51633..634e7e9599 100644
+--- a/contrib/openpam/lib/libpam/openpam_configure.c
++++ b/contrib/openpam/lib/libpam/openpam_configure.c
+@@ -254,6 +254,20 @@ openpam_parse_chain(pam_handle_t *pamh,
+ 			goto fail;
+ 		}
+ 
++		/*
++		 * Check if blacklisted.  Legacy support for removed previously
++		 * enabled modules only.
++		 */
++		if ((strcmp(modulename, "pam_opie.so") == 0) ||
++		    (strcmp(modulename, "pam_opieaccess.so") == 0)) {
++			openpam_log(PAM_LOG_ERROR,
++			    "ignoring blacklisted %s module,"
++			    " update your /etc/pam.d/ configs",
++			    modulename);
++			FREEV(wordc, wordv);
++			continue;
++		}
++
+ 		/* allocate new entry */
+ 		if ((this = calloc(1, sizeof *this)) == NULL)
+ 			goto syserr;
+-- 
+2.21.0
+
