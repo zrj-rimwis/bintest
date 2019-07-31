@@ -1,0 +1,26 @@
+From 783ebd7b5bbddcd446fca6819c69dc7619706c00 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 31 Jul 2019 14:06:26 +0300
+Subject: [PATCH 07/10] hook gdb back to buildworld
+
+kgdb will be hooked later once updated
+---
+ gnu/usr.bin/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gnu/usr.bin/Makefile b/gnu/usr.bin/Makefile
+index 53408a54bf..5d518a0a08 100644
+--- a/gnu/usr.bin/Makefile
++++ b/gnu/usr.bin/Makefile
+@@ -9,7 +9,7 @@ SUBDIR+=cvs
+ .endif
+ 
+ .if !defined(NO_GDB)
+-#SUBDIR+=gdb
++SUBDIR+=gdb
+ .endif
+ 
+ SUBDIR+= ${BU_PRIMARY}
+-- 
+2.22.0
+

@@ -1,0 +1,3061 @@
+From b6f874b69c655c7fe919dc291e9d0a5b10c7e742 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 31 Jul 2019 14:06:52 +0300
+Subject: [PATCH 08/10] initial kgdb bits
+
+XXX needs reintroduce tid conversion from int to CORE_ADDR
+---
+ contrib/gdb-7/gdb/regcache.c                 |  14 +
+ contrib/gdb-7/gdb/regcache.h                 |   2 +
+ gnu/usr.bin/gdb/kgdb/Makefile                |   9 +-
+ gnu/usr.bin/gdb/kgdb/{kgdb.c => kgdb-main.c} | 211 ++-----
+ gnu/usr.bin/gdb/kgdb/kgdb.h                  |  49 +-
+ gnu/usr.bin/gdb/kgdb/kld.c                   | 302 +++++----
+ gnu/usr.bin/gdb/kgdb/kthr.c                  | 450 ++++++++------
+ gnu/usr.bin/gdb/kgdb/kvm.c                   | 619 +++++++++++++++++++
+ gnu/usr.bin/gdb/kgdb/trgt.c                  | 372 -----------
+ gnu/usr.bin/gdb/kgdb/trgt_x86_64.c           | 467 ++++++++------
+ 10 files changed, 1422 insertions(+), 1073 deletions(-)
+ rename gnu/usr.bin/gdb/kgdb/{kgdb.c => kgdb-main.c} (71%)
+ create mode 100644 gnu/usr.bin/gdb/kgdb/kvm.c
+ delete mode 100644 gnu/usr.bin/gdb/kgdb/trgt.c
+
+diff --git a/contrib/gdb-7/gdb/regcache.c b/contrib/gdb-7/gdb/regcache.c
+index 945d9849cc..e366df6cc8 100644
+--- a/contrib/gdb-7/gdb/regcache.c
++++ b/contrib/gdb-7/gdb/regcache.c
+@@ -1083,6 +1083,20 @@ regcache_raw_supply (struct regcache *regcache, int regnum, const void *buf)
+     }
+ }
+ 
++void
++regcache_raw_supply_unsigned (struct regcache *regcache, int regnum,
++			      ULONGEST val)
++{
++  gdb_byte *buf;
++
++  gdb_assert (regcache != NULL);
++  gdb_assert (regnum >=0 && regnum < regcache->descr->nr_raw_registers);
++  buf = (gdb_byte *)alloca (regcache->descr->sizeof_register[regnum]);
++  store_unsigned_integer (buf, regcache->descr->sizeof_register[regnum],
++			  gdbarch_byte_order (regcache->descr->gdbarch), val);
++  regcache_raw_supply (regcache, regnum, buf);
++}
++
+ /* Collect register REGNUM from REGCACHE and store its contents in BUF.  */
+ 
+ void
+diff --git a/contrib/gdb-7/gdb/regcache.h b/contrib/gdb-7/gdb/regcache.h
+index 0755fb5e55..bed2144d2f 100644
+--- a/contrib/gdb-7/gdb/regcache.h
++++ b/contrib/gdb-7/gdb/regcache.h
+@@ -135,6 +135,8 @@ extern void regcache_write_pc (struct regcache *regcache, CORE_ADDR pc);
+ 
+ extern void regcache_raw_supply (struct regcache *regcache,
+ 				 int regnum, const void *buf);
++extern void regcache_raw_supply_unsigned (struct regcache *regcache,
++					  int regnum, ULONGEST val);
+ extern void regcache_raw_collect (const struct regcache *regcache,
+ 				  int regnum, void *buf);
+ 
+diff --git a/gnu/usr.bin/gdb/kgdb/Makefile b/gnu/usr.bin/gdb/kgdb/Makefile
+index f7447114a3..a724f25683 100644
+--- a/gnu/usr.bin/gdb/kgdb/Makefile
++++ b/gnu/usr.bin/gdb/kgdb/Makefile
+@@ -1,10 +1,12 @@
+ PROG=	kgdb
+-SRCS=	kgdb.c kthr.c kld.c trgt.c trgt_${MACHINE_ARCH}.c
++SRCS=	kgdb-main.c kthr.c kld.c kvm.c trgt_${MACHINE_ARCH}.c
++SRCS+=	init.c
+ 
+ CFLAGS+= -I${.OBJDIR}/../libgdb -I${.CURDIR}/../libgdb -I${.CURDIR}/..
+ CFLAGS+= -I${BASEDIR}/include
+ CFLAGS+= -I${BASEDIR}/bfd -I${BASEDIR}/gdb -I${.CURDIR}/../libbfd
+ CFLAGS+= -I${.OBJDIR}/../libbfd -I${BASEDIR}/gdb/common
++CFLAGS+= -I${BASEDIR}/gdb/gnulib/import
+ CFLAGS+= -D_KERNEL_STRUCTURES
+ 
+ DPADD=  ${GDBLIBS}
+@@ -23,6 +25,11 @@ LDFLAGS+=	${PRIVATELIB_LDFLAGS}
+ 
+ WARNS?=	2
+ 
++KGDB_INIT_ORDER+=	kld_target kgdb_target amd64_kgdb_tdep
++.include "../libgdb/Makefile.common"
++
++CLEANFILES+=	init.c
++
+ .include <bsd.prog.mk>
+ 
+ .PATH:	${BASEDIR}/gdb
+diff --git a/gnu/usr.bin/gdb/kgdb/kgdb.c b/gnu/usr.bin/gdb/kgdb/kgdb-main.c
+similarity index 71%
+rename from gnu/usr.bin/gdb/kgdb/kgdb.c
+rename to gnu/usr.bin/gdb/kgdb/kgdb-main.c
+index e99c027aa0..1b4c896301 100644
+--- a/gnu/usr.bin/gdb/kgdb/kgdb.c
++++ b/gnu/usr.bin/gdb/kgdb/kgdb-main.c
+@@ -38,14 +38,9 @@
+ #include <sys/wait.h>
+ #include <errno.h>
+ #include <err.h>
+-#include <inttypes.h>
+ #include <kvm.h>
+ #include <limits.h>
+ #include <paths.h>
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <string.h>
+-#include <unistd.h>
+ 
+ /* libgdb stuff. */
+ #include <defs.h>
+@@ -55,35 +50,35 @@
+ #include <interps.h>
+ #include <cli-out.h>
+ #include <main.h>
+-#include <gdbcmd.h>
+ #include <objfiles.h>
++#include "observer.h"
+ #include <target.h>
+ #include <top.h>
+ #include <ui-file.h>
+ #include <bfd.h>
+ #include <gdbcore.h>
+-#include <exceptions.h>
+-#include <observer.h>
+-#include <arch-utils.h>
++
++#include <unistd.h>
+ 
+ #include "kgdb.h"
+ 
+ static int dumpnr;
+-static int quiet;
+ static int verbose;
+ 
+ static char crashdir[PATH_MAX - 24]; /* allow for appending filenames */
+ static char *kernel;
+ static char *remote;
+ static char *vmcore;
++#if 0
+ static struct ui_file *parse_gdberr;
++#endif
+ 
+ static void
+ usage(void)
+ {
+ 
+ 	fprintf(stderr,
+-	    "usage: %s [-afqtvw] [-d crashdir] [-c core | -n dumpnr | -r device]\n"
++	    "usage: %s [-afqvw] [-b rate] [-d crashdir] [-c core | -n dumpnr | -r device]\n"
+ 	    "\t[kernel [core]]\n", getprogname());
+ 	exit(1);
+ }
+@@ -153,144 +148,6 @@ kernel_from_dumpnr(int nr)
+ 	fclose(info);
+ }
+ 
+-static void
+-kgdb_new_objfile(struct objfile *objfile)
+-{
+-	static int once = 1;
+-
+-	if (once && objfile != NULL && objfile == symfile_objfile) {
+-		char *buf;
+-
+-		/*
+-		 * The initial kernel has just been loaded.  Start the
+-		 * remote target if we have one or attach to the core.
+-		 */
+-		once = 0;
+-
+-		if (remote != NULL)
+-			asprintf(&buf, "target remote %s", remote);
+-		else if (vmcore != NULL)
+-			asprintf(&buf, "target kernel %s", vmcore);
+-
+-		if (buf != NULL) {
+-			execute_command(buf, 0);
+-			free(buf);
+-		}
+-	}
+-}
+-
+-int
+-gdb_parse_exp_1 (const char **stringptr, struct block *block, int comma,
+-		 struct expression **expression)
+-{
+-  volatile struct gdb_exception except;
+-  CORE_ADDR pc = 0;
+-
+-  TRY_CATCH (except, RETURN_MASK_ERROR)
+-    {
+-      *expression = parse_exp_1 (stringptr, pc ,block, comma);
+-    }
+-
+-  if (except.reason < 0)
+-    return 0;
+-  return 1;
+-}
+-
+-int
+-gdb_evaluate_expression (struct expression *exp, struct value **value)
+-{
+-  volatile struct gdb_exception except;
+-
+-  TRY_CATCH (except, RETURN_MASK_ERROR)
+-    {
+-      *value = evaluate_expression(exp);
+-    }
+-
+-  if (except.reason < 0)
+-    return 0;
+-  return 1;
+-}
+-
+-/*
+- * Parse an expression and return its value.  If 'quiet' is true, then
+- * any error messages from the parser are masked.
+- */
+-CORE_ADDR
+-kgdb_parse_1(const char *exp, int quiet)
+-{
+-	struct ui_file *old_stderr;
+-	struct cleanup *old_chain;
+-	struct expression *expr;
+-	struct value *val;
+-	const char *s;
+-	CORE_ADDR n;
+-
+-	old_stderr = gdb_stderr;
+-	if (quiet)
+-		gdb_stderr = parse_gdberr;
+-	n = 0;
+-	s = xstrdup(exp);
+-	old_chain = make_cleanup(xfree, (char*)s);
+-	if (gdb_parse_exp_1(&s, NULL, 0, &expr) && *s == '\0') {
+-		make_cleanup(free_current_contents, &expr);
+-		if (gdb_evaluate_expression(expr, &val))
+-		    n = value_as_address(val);
+-	}
+-	do_cleanups(old_chain);
+-	gdb_stderr = old_stderr;
+-	return (n);
+-}
+-
+-#define	MSGBUF_SEQ_TO_POS(size, seq)	((seq) % (size))
+-
+-void
+-kgdb_dmesg(void)
+-{
+-	CORE_ADDR bufp;
+-	int size, rseq, wseq;
+-	char c;
+-
+-	/*
+-	 * Display the unread portion of the message buffer. This gives the
+-	 * user a some initial data to work from.
+-	 */
+-	if (quiet)
+-		return;
+-	bufp = kgdb_parse("msgbufp->msg_ptr");
+-	size = (int)kgdb_parse("msgbufp->msg_size");
+-	if (bufp == 0 || size == 0)
+-		return;
+-	rseq = (int)kgdb_parse("msgbufp->msg_bufr");
+-	wseq = (int)kgdb_parse("msgbufp->msg_bufx");
+-	rseq = MSGBUF_SEQ_TO_POS(size, rseq);
+-	wseq = MSGBUF_SEQ_TO_POS(size, wseq);
+-	if (rseq == wseq)
+-		return;
+-
+-	printf("\nUnread portion of the kernel message buffer:\n");
+-	while (rseq < wseq) {
+-		read_memory(bufp + rseq, &c, 1);
+-		putchar(c);
+-		rseq++;
+-		if (rseq == size)
+-			rseq = 0;
+-	}
+-	if (c != '\n')
+-		putchar('\n');
+-	putchar('\n');
+-}
+-
+-static void
+-kgdb_init(char *argv0 __unused)
+-{
+-
+-	parse_gdberr = mem_fileopen();
+-	set_prompt("(kgdb) ");
+-	initialize_kgdb_target();
+-	initialize_kld_target();
+-	observer_attach_new_objfile(kgdb_new_objfile);
+-}
+-
+ /*
+  * Remote targets can support any number of syntaxes and we want to
+  * support them all with one addition: we support specifying a device
+@@ -358,24 +215,32 @@ main(int argc, char *argv[])
+ 				argv[a] = "-q";
+ 			else if (strcmp(s, "fullname") == 0)
+ 				argv[a] = "-f";
+-			else if (strcmp(s, "tui-mode") == 0)
+-				argv[a] = "-t";
+ 		}
+ 	}
+ 
+-	quiet = 0;
++	kgdb_quiet = 0;
+ 	memset (&args, 0, sizeof args);
+-	args.use_windows = 0;
+ 	args.interpreter_p = INTERP_CONSOLE;
+ 	args.argv = malloc(sizeof(char *));
+ 	args.argv[0] = argv[0];
+-	add_arg(&args, "--kernel");
+ 
+-	while ((ch = getopt(argc, argv, "ac:d:fn:qr:tvw")) != -1) {
++	while ((ch = getopt(argc, argv, "ab:c:d:fn:qr:vw")) != -1) {
+ 		switch (ch) {
+ 		case 'a':
+ 			annotation_level++;
+ 			break;
++		case 'b': {
++			int i;
++			char *p;
++
++			i = strtol(optarg, &p, 0);
++			if (*p != '\0' || p == optarg)
++				warnx("warning: could not set baud rate to `%s'.\n",
++				    optarg);
++			else
++				baud_rate = i;
++			break;
++		}
+ 		case 'c':	/* use given core file. */
+ 			if (vmcore != NULL) {
+ 				warnx("option %c: can only be specified once",
+@@ -401,7 +266,7 @@ main(int argc, char *argv[])
+ 			}
+ 			break;
+ 		case 'q':
+-			quiet = 1;
++			kgdb_quiet = 1;
+ 			add_arg(&args, "-q");
+ 			break;
+ 		case 'r':	/* use given device for remote session. */
+@@ -413,12 +278,6 @@ main(int argc, char *argv[])
+ 			}
+ 			remote = strdup(optarg);
+ 			break;
+-		case 't':
+-			args.interpreter_p = INTERP_TUI;
+-			add_arg(&args, "-tui");
+-			quiet = 1;
+-			add_arg(&args, "-q");
+-			break;
+ 		case 'v':	/* increase verbosity. */
+ 			verbose++;
+ 			break;
+@@ -494,12 +353,28 @@ main(int argc, char *argv[])
+ 		if (verbose)
+ 			warnx("kernel image: %s", kernel);
+ 	}
+-	add_arg(&args, kernel);
+ 
+-	/*
+-	if (vmcore != NULL)
+-		add_arg(&args, vmcore);
+-		*/
++	/* Set an alternate prompt. */
++	add_arg(&args, "-iex");
++	add_arg(&args, "set prompt (kgdb) ");
++
++	/* Open the vmcore if requested. */
++	if (vmcore != NULL) {
++		add_arg(&args, "-ex");
++		if (asprintf(&s, "target vmcore %s", vmcore) < 0)
++			err(1, "couldn't build command line");
++		add_arg(&args, s);
++	}
++
++	/* Open the remote target if requested. */
++	if (remote != NULL) {
++		add_arg(&args, "-ex");
++		if (asprintf(&s, "target remote %s", remote) < 0)
++			err(1, "couldn't build command line");
++		add_arg(&args, s);
++	}
++
++	add_arg(&args, kernel);
+ 
+ 	/* The libgdb code uses optind too. Reset it... */
+ 	optind = 0;
+@@ -507,7 +382,5 @@ main(int argc, char *argv[])
+ 	/* Terminate argv list. */
+ 	add_arg(&args, NULL);
+ 
+-	deprecated_init_ui_hook = kgdb_init;
+-
+ 	return (gdb_main(&args));
+ }
+diff --git a/gnu/usr.bin/gdb/kgdb/kgdb.h b/gnu/usr.bin/gdb/kgdb/kgdb.h
+index 945fe65b1d..20fa34ed1e 100644
+--- a/gnu/usr.bin/gdb/kgdb/kgdb.h
++++ b/gnu/usr.bin/gdb/kgdb/kgdb.h
+@@ -23,54 +23,45 @@
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+- * $FreeBSD: src/gnu/usr.bin/gdb/kgdb/kgdb.h,v 1.13 2008/04/29 20:32:45 jhb Exp $
++ * $FreeBSD: head/devel/gdb/files/kgdb/kgdb.h 398712 2015-10-06 18:52:58Z jhb $
+  */
+ 
+ #ifndef _KGDB_H_
+ #define	_KGDB_H_
+ 
+-struct thread_info;
+-
+-extern kvm_t *kvm;
+-
+ struct kthr {
+ 	struct kthr	*next;
+-	uintptr_t	paddr;
+-	uintptr_t	kaddr;
+-	uintptr_t	kstack;
+-	uintptr_t	pcb;
+-	uintptr_t	gd;
+-	CORE_ADDR	tid;
++	CORE_ADDR	paddr;
++	CORE_ADDR	kaddr;
++	CORE_ADDR	pcb;
++	int		tid;
+ 	int		pid;
+-	long		lwpid;
++	int		cpu;
+ };
+ 
+ extern struct kthr *curkthr;
++extern struct target_so_ops kld_so_ops;
++extern struct target_ops kgdb_trgt_ops;
++extern int kgdb_quiet;
+ 
+-void initialize_kld_target(void);
+-void initialize_kgdb_target(void);
+-void kgdb_dmesg(void);
+-void kgdb_trgt_fetch_registers(struct target_ops *, struct regcache *, int);
+-void kld_init(struct gdbarch *);
+-void kld_new_objfile(struct objfile *);
+-
+-extern const struct frame_unwind kgdb_trgt_trapframe_unwind;
++CORE_ADDR kgdb_trgt_stop_pcb(u_int);
+ 
+ struct kthr *kgdb_thr_first(void);
+-struct kthr *kgdb_thr_init(void);
+-struct kthr *kgdb_thr_lookup_tid(CORE_ADDR);
++struct kthr *kgdb_thr_init(CORE_ADDR (*cpu_pcb_addr) (u_int));
++struct kthr *kgdb_thr_lookup_tid(int);
+ struct kthr *kgdb_thr_lookup_pid(int);
+ struct kthr *kgdb_thr_lookup_paddr(uintptr_t);
+ struct kthr *kgdb_thr_lookup_taddr(uintptr_t);
+ struct kthr *kgdb_thr_next(struct kthr *);
+-struct kthr *kgdb_thr_select(struct kthr *);
+-char        *kgdb_thr_extra_thread_info(CORE_ADDR);
+-char        *kgdb_thr_pid_to_str(ptid_t);
++char        *kgdb_thr_extra_thread_info(int);
+ 
+-CORE_ADDR kgdb_lookup(const char *sym);
+-CORE_ADDR kgdb_parse_1(const char *, int);
++enum gdb_osabi dfly_kernel_osabi_sniffer(bfd *abfd);
++void dfly_vmcore_set_supply_pcb (struct gdbarch *gdbarch,
++				 void (*supply_pcb) (struct regcache *,
++						     CORE_ADDR));
++void dfly_vmcore_set_cpu_pcb_addr (struct gdbarch *gdbarch,
++				   CORE_ADDR (*cpu_pcb_addr) (u_int));
+ 
+-#define	kgdb_parse(exp)		kgdb_parse_1((exp), 0)
+-#define	kgdb_parse_quiet(exp)	kgdb_parse_1((exp), 1)
++CORE_ADDR kgdb_lookup(const char *sym);
+ 
+ #endif /* _KGDB_H_ */
+diff --git a/gnu/usr.bin/gdb/kgdb/kld.c b/gnu/usr.bin/gdb/kgdb/kld.c
+index 6c162da589..dacc347a61 100644
+--- a/gnu/usr.bin/gdb/kgdb/kld.c
++++ b/gnu/usr.bin/gdb/kgdb/kld.c
+@@ -23,13 +23,12 @@
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+- * $FreeBSD: src/gnu/usr.bin/gdb/kgdb/kld.c, svn 210424 2010/07/23 avg $
++ * $FreeBSD: head/devel/gdb/files/kgdb/fbsd-kld.c 440447 2017-05-08 19:02:25Z jhb $
+  */
+ 
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+-#include <kvm.h>
+ #include <libgen.h>
+ 
+ #include <defs.h>
+@@ -42,11 +41,8 @@
+ #include <objfiles.h>
+ #include <gdbcore.h>
+ #include <language.h>
++#include "solib.h"
+ #include <solist.h>
+-#include <arch-utils.h>
+-#include <solib.h>
+-#include <exceptions.h>
+-#include <observer.h>
+ 
+ #include "kgdb.h"
+ 
+@@ -54,15 +50,46 @@ struct lm_info {
+ 	CORE_ADDR base_address;
+ };
+ 
+-/* Offsets of fields in linker_file structure. */
+-static CORE_ADDR off_address, off_filename, off_pathname, off_next;
++struct kld_info {
++	/* Offsets of fields in linker_file structure. */
++	CORE_ADDR off_address, off_filename, off_pathname, off_next;
+ 
+-/* KVA of 'linker_path' which corresponds to the kern.module_path sysctl .*/
+-static CORE_ADDR module_path_addr;
+-static CORE_ADDR linker_files_addr;
+-static CORE_ADDR kernel_file_addr;
++	/* KVA of 'linker_path' which corresponds to the kern.module_path sysctl .*/
++	CORE_ADDR module_path_addr;
++	CORE_ADDR linker_files_addr;
++	CORE_ADDR kernel_file_addr;
++};
++
++struct target_so_ops kld_so_ops;
++
++/* Per-program-space data key.  */
++static const struct program_space_data *kld_pspace_data;
++
++static void
++kld_pspace_data_cleanup (struct program_space *pspace, void *arg)
++{
++  struct kld_info *info = (struct kld_info *)arg;
++
++  xfree (info);
++}
+ 
+-static struct target_so_ops kld_so_ops;
++/* Get the current kld data.  If none is found yet, add it now.  This
++   function always returns a valid object.  */
++
++static struct kld_info *
++get_kld_info (void)
++{
++  struct kld_info *info;
++
++  info = (struct kld_info *)
++    program_space_data (current_program_space, kld_pspace_data);
++  if (info != NULL)
++    return info;
++
++  info = XCNEW (struct kld_info);
++  set_program_space_data (current_program_space, kld_pspace_data, info);
++  return info;
++}
+ 
+ static int
+ kld_ok (char *path)
+@@ -81,6 +108,7 @@ kld_ok (char *path)
+  */
+ static const char *kld_suffixes[] = {
+ 	".debug",
++	".symbols",
+ 	"",
+ 	NULL
+ };
+@@ -113,31 +141,41 @@ check_kld_path (char *path, size_t path_size)
+ static int
+ find_kld_path (char *filename, char *path, size_t path_size)
+ {
++	struct kld_info *info;
++	struct cleanup *cleanup;
+ 	char *module_path;
+ 	char *kernel_dir, *module_dir, *cp;
+ 	int error;
+ 
++	info = get_kld_info();
+ 	if (exec_bfd) {
+-		kernel_dir = dirname(bfd_get_filename(exec_bfd));
++		kernel_dir = ldirname(bfd_get_filename(exec_bfd));
+ 		if (kernel_dir != NULL) {
++			cleanup = make_cleanup(xfree, kernel_dir);
+ 			snprintf(path, path_size, "%s/%s", kernel_dir,
+ 			    filename);
+-			if (check_kld_path(path, path_size))
++			if (check_kld_path(path, path_size)) {
++				do_cleanups(cleanup);
+ 				return (1);
++			}
++			do_cleanups(cleanup);
+ 		}
+ 	}
+-	if (module_path_addr != 0) {
+-		target_read_string(module_path_addr, &module_path, PATH_MAX,
+-		    &error);
++	if (info->module_path_addr != 0) {
++		target_read_string(info->module_path_addr, &module_path,
++		    PATH_MAX, &error);
+ 		if (error == 0) {
+-			make_cleanup(xfree, module_path);
++			cleanup = make_cleanup(xfree, module_path);
+ 			cp = module_path;
+ 			while ((module_dir = strsep(&cp, ";")) != NULL) {
+ 				snprintf(path, path_size, "%s/%s", module_dir,
+ 				    filename);
+-				if (check_kld_path(path, path_size))
++				if (check_kld_path(path, path_size)) {
++					do_cleanups(cleanup);
+ 					return (1);
++				}
+ 			}
++			do_cleanups(cleanup);
+ 		}
+ 	}
+ 	return (0);
+@@ -149,16 +187,17 @@ find_kld_path (char *filename, char *path, size_t path_size)
+ static CORE_ADDR
+ read_pointer (CORE_ADDR address)
+ {
+-	struct gdbarch *arch = get_current_arch();
+-	enum bfd_endian byte_order = gdbarch_byte_order(arch);
+-	gdb_byte buf[sizeof(ULONGEST)];
+-	int ptrsz;
++	struct type *ptr_type;
++	gdb_byte ptr_buf[8];
++	int arch_size;
+ 
+-	ptrsz = gdbarch_ptr_bit(arch) / 8;
+-
+-	if (target_read_memory(address, buf, ptrsz) != 0)
++	arch_size = bfd_get_arch_size (exec_bfd);
++	if (arch_size == -1)
++		return (0);
++	ptr_type = builtin_type (target_gdbarch ())->builtin_data_ptr;
++	if (target_read_memory(address, ptr_buf, arch_size / 8) != 0)
+ 		return (0);
+-	return (extract_unsigned_integer(buf, ptrsz, byte_order));
++	return (extract_typed_address (ptr_buf, ptr_type));
+ }
+ 
+ /*
+@@ -167,20 +206,22 @@ read_pointer (CORE_ADDR address)
+ static int
+ find_kld_address (char *arg, CORE_ADDR *address)
+ {
++	struct kld_info *info;
+ 	CORE_ADDR kld;
+ 	char *kld_filename;
+-	char *filename;
++	const char *filename;
+ 	int error;
+ 
+-	if (linker_files_addr == 0 || off_address == 0 || off_filename == 0 ||
+-	    off_next == 0)
++	info = get_kld_info();
++	if (info->linker_files_addr == 0 || info->off_address == 0 ||
++	    info->off_filename == 0 || info->off_next == 0)
+ 		return (0);
+ 
+-	filename = basename(arg);
+-	for (kld = read_pointer(linker_files_addr); kld != 0;
+-	     kld = read_pointer(kld + off_next)) {
++	filename = lbasename(arg);
++	for (kld = read_pointer(info->linker_files_addr); kld != 0;
++	     kld = read_pointer(kld + info->off_next)) {
+ 		/* Try to read this linker file's filename. */
+-		target_read_string(read_pointer(kld + off_filename),
++		target_read_string(read_pointer(kld + info->off_filename),
+ 		    &kld_filename, PATH_MAX, &error);
+ 		if (error)
+ 			continue;
+@@ -196,7 +237,7 @@ find_kld_address (char *arg, CORE_ADDR *address)
+ 		 * We found a match, use its address as the base
+ 		 * address if we can read it.
+ 		 */
+-		*address = read_pointer(kld + off_address);
++		*address = read_pointer(kld + info->off_address);
+ 		if (*address == 0)
+ 			return (0);
+ 		return (1);
+@@ -208,7 +249,7 @@ static void
+ adjust_section_address (struct target_section *sec, CORE_ADDR *curr_base)
+ {
+ 	struct bfd_section *asect = sec->the_bfd_section;
+-	bfd *abfd = sec->bfd;
++	bfd *abfd = asect->owner;
+ 
+ 	if ((abfd->flags & (EXEC_P | DYNAMIC)) != 0) {
+ 		sec->addr += *curr_base;
+@@ -231,7 +272,7 @@ load_kld (char *path, CORE_ADDR base_addr, int from_tty)
+ 	struct cleanup *cleanup;
+ 	bfd *bfd;
+ 	CORE_ADDR curr_addr;
+-	int i;
++	int add_flags, i;
+ 
+ 	/* Open the kld. */
+ 	bfd = bfd_openr(path, gnutarget);
+@@ -250,7 +291,7 @@ load_kld (char *path, CORE_ADDR base_addr, int from_tty)
+ 	/* Build a section table from the bfd and relocate the sections. */
+ 	if (build_section_table (bfd, &sections, &sections_end))
+ 		error("\"%s\": can't find file sections", path);
+-	cleanup = make_cleanup(xfree, sections);
++	make_cleanup(xfree, sections);
+ 	curr_addr = base_addr;
+ 	for (s = sections; s < sections_end; s++)
+ 		adjust_section_address(s, &curr_addr);
+@@ -258,18 +299,20 @@ load_kld (char *path, CORE_ADDR base_addr, int from_tty)
+ 	/* Build a section addr info to pass to symbol_file_add(). */
+ 	sap = build_section_addr_info_from_section_table (sections,
+ 	    sections_end);
+-	cleanup = make_cleanup((make_cleanup_ftype *)free_section_addr_info,
+-	    sap);
++	make_cleanup((make_cleanup_ftype *)free_section_addr_info, sap);
+ 
+ 	printf_unfiltered("add symbol table from file \"%s\" at\n", path);
+ 	for (i = 0; i < sap->num_sections; i++)
+ 		printf_unfiltered("\t%s_addr = %s\n", sap->other[i].name,
+-		    hex_string(sap->other[i].addr));
++		    paddress(target_gdbarch(), sap->other[i].addr));		
+ 
+ 	if (from_tty && (!query("%s", "")))
+ 		error("Not confirmed.");
+ 
+-	symbol_file_add(path, from_tty ? SYMFILE_VERBOSE : 0, sap, OBJF_USERLOADED);
++	add_flags = 0;
++	if (from_tty)
++		add_flags |= SYMFILE_VERBOSE;
++	symbol_file_add(path, add_flags, sap, OBJF_USERLOADED);
+ 
+ 	do_cleanups(cleanup);
+ }
+@@ -325,14 +368,69 @@ kld_free_so (struct so_list *so)
+ 	xfree(so->lm_info);
+ }
+ 
++static void
++kld_clear_so (struct so_list *so)
++{
++	if (so->lm_info != NULL)
++		so->lm_info->base_address = 0;
++}
++
+ static void
+ kld_clear_solib (void)
+ {
++	struct kld_info *info;
++
++	info = get_kld_info();
++
++	memset(info, 0, sizeof(*info));
+ }
+ 
+ static void
+ kld_solib_create_inferior_hook (int from_tty)
+ {
++	struct kld_info *info;
++
++	info = get_kld_info();
++	
++	/*
++	 * Compute offsets of relevant members in struct linker_file
++	 * and the addresses of global variables.  Newer kernels
++	 * include constants we can use without requiring debug
++	 * symbols.  If those aren't present, fall back to using
++	 * home-grown offsetof() equivalents.
++	 */
++	TRY {
++		info->off_address = parse_and_eval_long("kld_off_address");
++		info->off_filename = parse_and_eval_long("kld_off_filename");
++		info->off_pathname = parse_and_eval_long("kld_off_pathname");
++		info->off_next = parse_and_eval_long("kld_off_next");
++	} CATCH(e, RETURN_MASK_ERROR) {
++		TRY {
++			info->off_address = parse_and_eval_address(
++			    "&((struct linker_file *)0)->address");
++			info->off_filename = parse_and_eval_address(
++			    "&((struct linker_file *)0)->filename");
++			info->off_pathname = parse_and_eval_address(
++			    "&((struct linker_file *)0)->pathname");
++			info->off_next = parse_and_eval_address(
++			    "&((struct linker_file *)0)->link.tqe_next");
++		} CATCH(e, RETURN_MASK_ERROR) {
++			return;
++		}
++		END_CATCH
++	}
++	END_CATCH
++
++	TRY {
++		info->module_path_addr = parse_and_eval_address("linker_path");
++		info->linker_files_addr = kgdb_lookup("linker_files");
++		info->kernel_file_addr = kgdb_lookup("linker_kernel_file");
++	} CATCH(e, RETURN_MASK_ERROR) {
++		return;
++	}
++	END_CATCH
++
++	solib_add(NULL, 1, &current_target, auto_solib_add);
+ }
+ 
+ static void
+@@ -343,13 +441,16 @@ kld_special_symbol_handling (void)
+ static struct so_list *
+ kld_current_sos (void)
+ {
+-	struct so_list *head, **prev, *new;
++	struct so_list *head, **prev, *newobj;
++	struct kld_info *info;
+ 	CORE_ADDR kld, kernel;
+ 	char *path;
+ 	int error;
+ 
+-	if (linker_files_addr == 0 || kernel_file_addr == 0 ||
+-	    off_address == 0 || off_filename == 0 || off_next == 0)
++	info = get_kld_info();
++	if (info->linker_files_addr == 0 || info->kernel_file_addr == 0 ||
++	    info->off_address == 0 || info->off_filename == 0 ||
++	    info->off_next == 0)
+ 		return (NULL);
+ 
+ 	head = NULL;
+@@ -359,68 +460,72 @@ kld_current_sos (void)
+ 	 * Walk the list of linker files creating so_list entries for
+ 	 * each non-kernel file.
+ 	 */
+-	kernel = read_pointer(kernel_file_addr);
+-	for (kld = read_pointer(linker_files_addr); kld != 0;
+-	     kld = read_pointer(kld + off_next)) {
++	kernel = read_pointer(info->kernel_file_addr);
++	for (kld = read_pointer(info->linker_files_addr); kld != 0;
++	     kld = read_pointer(kld + info->off_next)) {
+ 		/* Skip the main kernel file. */
+ 		if (kld == kernel)
+ 			continue;
+ 
+-		new = xmalloc(sizeof(*new));
+-		memset(new, 0, sizeof(*new));
++		newobj = XCNEW (struct so_list);
+ 
+-		new->lm_info = xmalloc(sizeof(*new->lm_info));
+-		new->lm_info->base_address = 0;
++		newobj->lm_info = XNEW (struct lm_info);
++		newobj->lm_info->base_address = 0;
+ 
+ 		/* Read the base filename and store it in so_original_name. */
+-		target_read_string(read_pointer(kld + off_filename),
+-		    &path, sizeof(new->so_original_name), &error);
++		target_read_string(read_pointer(kld + info->off_filename),
++		    &path, sizeof(newobj->so_original_name), &error);
+ 		if (error != 0) {
+ 			warning("kld_current_sos: Can't read filename: %s\n",
+ 			    safe_strerror(error));
+-			free_so(new);
++			free_so(newobj);
+ 			continue;
+ 		}
+-		strlcpy(new->so_original_name, path,
+-		    sizeof(new->so_original_name));
++		strlcpy(newobj->so_original_name, path,
++		    sizeof(newobj->so_original_name));
+ 		xfree(path);
+ 
+ 		/*
+ 		 * Try to read the pathname (if it exists) and store
+ 		 * it in so_name.
+ 		 */
+-		if (off_pathname != 0) {
+-			target_read_string(read_pointer(kld + off_pathname),
+-			    &path, sizeof(new->so_name), &error);
++		if (find_kld_path(newobj->so_original_name, newobj->so_name,
++		    sizeof(newobj->so_name))) {
++			/* we found the kld */;
++		} else if (info->off_pathname != 0) {
++			target_read_string(read_pointer(kld +
++			    info->off_pathname),
++			    &path, sizeof(newobj->so_name), &error);
+ 			if (error != 0) {
+ 				warning(
+ 		    "kld_current_sos: Can't read pathname for \"%s\": %s\n",
+-				    new->so_original_name,
++				    newobj->so_original_name,
+ 				    safe_strerror(error));
+-				strlcpy(new->so_name, new->so_original_name,
+-				    sizeof(new->so_name));
++				strlcpy(newobj->so_name, newobj->so_original_name,
++				    sizeof(newobj->so_name));
+ 			} else {
+-				strlcpy(new->so_name, path,
+-				    sizeof(new->so_name));
++				strlcpy(newobj->so_name, path,
++				    sizeof(newobj->so_name));
+ 				xfree(path);
+ 			}
+ 		} else
+-			strlcpy(new->so_name, new->so_original_name,
+-			    sizeof(new->so_name));
++			strlcpy(newobj->so_name, newobj->so_original_name,
++			    sizeof(newobj->so_name));
+ 
+ 		/* Read this kld's base address. */
+-		new->lm_info->base_address = read_pointer(kld + off_address);
+-		if (new->lm_info->base_address == 0) {
++		newobj->lm_info->base_address = read_pointer(kld +
++		    info->off_address);
++		if (newobj->lm_info->base_address == 0) {
+ 			warning(
+ 			    "kld_current_sos: Invalid address for kld \"%s\"",
+-			    new->so_original_name);
+-			free_so(new);
++			    newobj->so_original_name);
++			free_so(newobj);
+ 			continue;
+ 		}
+ 
+ 		/* Append to the list. */
+-		*prev = new;
+-		prev = &new->next;
++		*prev = newobj;
++		prev = &newobj->next;
+ 	}
+ 
+ 	return (head);
+@@ -457,65 +562,30 @@ kld_find_and_open_solib (char *solib, unsigned o_flags, char **temp_pathname)
+ 	return (fd);
+ }
+ 
+-void
+-kld_new_objfile (struct objfile *objfile)
+-{
+-
+-	if (!have_partial_symbols())
+-		return;
+-
+-	/*
+-	 * Compute offsets of relevant members in struct linker_file
+-	 * and the addresses of global variables.  Don't warn about
+-	 * kernels that don't have 'pathname' in the linker_file
+-	 * struct since 6.x kernels don't have it.
+-	 */
+-	off_address = kgdb_parse("&((struct linker_file *)0)->address");
+-	off_filename = kgdb_parse("&((struct linker_file *)0)->filename");
+-	off_pathname = kgdb_parse_quiet("&((struct linker_file *)0)->pathname");
+-	off_next = kgdb_parse("&((struct linker_file *)0)->link.tqe_next");
+-	module_path_addr = kgdb_parse("linker_path");
+-	linker_files_addr = kgdb_parse("&linker_files.tqh_first");
+-	kernel_file_addr = kgdb_parse("&linker_kernel_file");
+-}
+-
+-static int
+-load_klds_stub (void *arg)
+-{
+-
+-	solib_add(NULL, 1, &current_target, auto_solib_add);
+-	return (0);
+-}
+-
+-void
+-kld_init (struct gdbarch *kgdbarch)
+-{
+-	/* XXX hack, needs to go into an abi init function */
+-	set_solib_ops(kgdbarch, &kld_so_ops);
+-
+-	kld_new_objfile(NULL);
+-	catch_errors(load_klds_stub, NULL, NULL, RETURN_MASK_ALL);
+-	observer_attach_new_objfile(kld_new_objfile);
+-}
++void _initialize_kld_target(void);
+ 
+ void
+-initialize_kld_target(void)
++_initialize_kld_target(void)
+ {
+ 	struct cmd_list_element *c;
+ 
+ 	kld_so_ops.relocate_section_addresses = kld_relocate_section_addresses;
+ 	kld_so_ops.free_so = kld_free_so;
++	kld_so_ops.clear_so = kld_clear_so;
+ 	kld_so_ops.clear_solib = kld_clear_solib;
+ 	kld_so_ops.solib_create_inferior_hook = kld_solib_create_inferior_hook;
+ 	kld_so_ops.special_symbol_handling = kld_special_symbol_handling;
+ 	kld_so_ops.current_sos = kld_current_sos;
+ 	kld_so_ops.open_symbol_file_object = kld_open_symbol_file_object;
+ 	kld_so_ops.in_dynsym_resolve_code = kld_in_dynsym_resolve_code;
+-	kld_so_ops.find_and_open_solib = kld_find_and_open_solib;
+ 	kld_so_ops.bfd_open = solib_bfd_open;
++	kld_so_ops.find_and_open_solib = kld_find_and_open_solib;
+ 
+ 	c = add_com("add-kld", class_files, kgdb_add_kld_cmd,
+ 	   "Usage: add-kld FILE\n\
+ Load the symbols from the kernel loadable module FILE.");
+ 	set_cmd_completer(c, filename_completer);
++
++	kld_pspace_data = register_program_space_data_with_cleanup (NULL,
++	    kld_pspace_data_cleanup);
+ }
+diff --git a/gnu/usr.bin/gdb/kgdb/kthr.c b/gnu/usr.bin/gdb/kgdb/kthr.c
+index a8820ddd4b..b1480eacc0 100644
+--- a/gnu/usr.bin/gdb/kgdb/kthr.c
++++ b/gnu/usr.bin/gdb/kgdb/kthr.c
+@@ -23,7 +23,7 @@
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+- * $FreeBSD: src/gnu/usr.bin/gdb/kgdb/kthr.c,v 1.12 2008/05/01 20:36:48 jhb Exp $
++ * $FreeBSD: head/devel/gdb/files/kgdb/fbsd-kthr.c 428876 2016-12-18 16:08:14Z tijl $
+  */
+ 
+ #include <sys/cdefs.h>
+@@ -31,160 +31,294 @@
+ #include <sys/param.h>
+ #include <machine/globaldata.h>
+ #include <sys/user.h>
+-#include <sys/types.h>
+-#include <sys/signal.h>
+-#include <err.h>
+-#include <inttypes.h>
+-#include <kvm.h>
+-#include <stdio.h>
+-#include <stdlib.h>
+-#include <string.h>
++#include <stdbool.h>
+ 
+ #include <defs.h>
+-#include <frame-unwind.h>
+-#include <inferior.h>
++#include "gdbcore.h"
++#include "objfiles.h"
++#include "value.h"
+ 
+ #include "kgdb.h"
+ 
+ static CORE_ADDR dumppcb;
+-static CORE_ADDR dumptid;
++static LONGEST dumptid;
++
++static CORE_ADDR stopped_cpus;
++static LONGEST mp_maxid;
+ 
+ static struct kthr *first;
+ struct kthr *curkthr;
+ 
+-#define LIVESYS_DUMPTID	10
++#ifdef __DragonFly__
++static int proc_off_p_pid, proc_off_p_comm, proc_off_p_list, thread_off_td_pcb;
++#else
++static int proc_off_p_pid, proc_off_p_comm, proc_off_p_list, proc_off_p_threads;
++static int thread_off_td_tid, thread_off_td_oncpu, thread_off_td_pcb;
++static int thread_off_td_name, thread_off_td_plist;
++static int thread_oncpu_size;
++#endif
+ 
+ CORE_ADDR
+ kgdb_lookup(const char *sym)
+ {
+-	struct nlist nl[2];
++	struct bound_minimal_symbol msym;
+ 
+-	nl[0].n_name = (char *)(CORE_ADDR)sym;
+-	nl[1].n_name = NULL;
+-	if (kvm_nlist(kvm, nl) != 0)
++	msym = lookup_minimal_symbol(sym, NULL, NULL);
++	if (msym.minsym == NULL)
+ 		return (0);
+-	return (nl[0].n_value);
++	return (BMSYMBOL_VALUE_ADDRESS(msym));
+ }
+ 
++#ifndef __DragonFly__
++/*
++ * Perform the equivalent of CPU_ISSET() to see if 'cpu' is set in the
++ * kernel's stopped_cpus set.  The set contains an array of longs.
++ * This function determines the specific long to read and tests the
++ * necessary bit in the long.
++ */
++static bool
++cpu_stopped(int cpu)
++{
++	struct gdbarch *gdbarch = target_gdbarch ();
++	CORE_ADDR addr;
++	ULONGEST mask;
++	int bit, long_bytes, word;
++
++	if (cpu < 0 || cpu > mp_maxid || stopped_cpus == 0)
++		return (false);
++	bit = cpu % gdbarch_long_bit (gdbarch);
++	word = cpu / gdbarch_long_bit (gdbarch);
++	long_bytes = gdbarch_long_bit (gdbarch) / 8;
++	addr = stopped_cpus + word * long_bytes;
++	mask = read_memory_unsigned_integer (addr, long_bytes,
++	    gdbarch_byte_order (gdbarch));
++	return (mask & ((ULONGEST)1 << bit)) != 0;
++}
++#endif
++
+ struct kthr *
+ kgdb_thr_first(void)
+ {
+ 	return (first);
+ }
+ 
+-struct kthr *
+-kgdb_thr_init(void)
++static void
++kgdb_thr_add_procs(CORE_ADDR paddr, CORE_ADDR (*cpu_pcb_addr) (u_int))
+ {
+-	struct proc p;
+-	struct thread td;
+-	struct lwp lwp;
+-	struct mdglobaldata gd;
++	struct gdbarch *gdbarch = target_gdbarch ();
++	struct type *ptr_type = builtin_type (gdbarch)->builtin_data_ptr;
++	enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+ 	struct kthr *kt;
+-	CORE_ADDR addr, paddr, prvspace, gdptr;
+-	int cpu, ncpus;
++#ifndef __DragonFly__
++	CORE_ADDR pcb, pnext, tdnext;
++	LONGEST pid;
++#else
++	CORE_ADDR pcb, pnext, tdaddr, tdnext;
++	LONGEST pid;
++#endif
+ 
++	while (paddr != 0) {
++		TRY {
++#ifndef __DragonFly__
++			tdaddr = read_memory_typed_address (paddr +
++			    proc_off_p_threads, ptr_type);
++#endif
++			pid = read_memory_integer (paddr + proc_off_p_pid, 4,
++			    byte_order);
++			pnext = read_memory_typed_address (paddr +
++			    proc_off_p_list, ptr_type);
++		} CATCH(e, RETURN_MASK_ERROR) {
++			break;
++		} END_CATCH
++		while (tdaddr != 0) {
++			TRY {
++#ifndef __DragonFly__
++				tid = read_memory_integer (tdaddr +
++				    thread_off_td_tid, 4, byte_order);
++				oncpu = read_memory_unsigned_integer (tdaddr +
++				    thread_off_td_oncpu, thread_oncpu_size,
++				    byte_order);
++#endif
++				pcb = read_memory_typed_address (tdaddr +
++				    thread_off_td_pcb, ptr_type);
++#ifndef __DragonFly__
++				tdnext = read_memory_typed_address (tdaddr +
++				    thread_off_td_plist, ptr_type);
++#endif
++			} CATCH(e, RETURN_MASK_ERROR) {
++				break;
++			} END_CATCH
++			kt = XNEW (struct kthr);
++			kt->next = first;
++			kt->kaddr = tdaddr;
++#ifndef __DragonFly__
++			if (tid == dumptid)
++				kt->pcb = dumppcb;
++			else if (cpu_stopped(oncpu))
++				kt->pcb = cpu_pcb_addr(oncpu);
++			else
++#endif
++				kt->pcb = pcb;
++#ifndef __DragonFly__
++			kt->tid = tid;
++#endif
++			kt->pid = pid;
++			kt->paddr = paddr;
++#ifndef __DragonFly__
++			kt->cpu = oncpu;
++#endif
++			first = kt;
++			tdaddr = tdnext;
++		}
++		paddr = pnext;
++	}
++}
++
++struct kthr *
++kgdb_thr_init(CORE_ADDR (*cpu_pcb_addr) (u_int))
++{
++	struct gdbarch *gdbarch = target_gdbarch ();
++	struct type *ptr_type = builtin_type (gdbarch)->builtin_data_ptr;
++#if 0
++	enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
++#endif
++	struct kthr *kt;
++	CORE_ADDR addr, paddr;
++	
+ 	while (first != NULL) {
+ 		kt = first;
+ 		first = kt->next;
+ 		free(kt);
+ 	}
+ 
+-	addr = kgdb_lookup("_ncpus");
++#ifdef __DragonFly__
++	addr = kgdb_lookup("ncpus");
++#else
++	addr = kgdb_lookup("allproc");
++#endif
+ 	if (addr == 0)
+ 		return (NULL);
+-	kvm_read(kvm, addr, &ncpus, sizeof(ncpus));
+-
+-	dumppcb = kgdb_lookup("_dumppcb");
+-	if (dumppcb == 0)
++	TRY {
++		paddr = read_memory_typed_address (addr, ptr_type);
++	} CATCH(e, RETURN_MASK_ERROR) {
+ 		return (NULL);
++	} END_CATCH
+ 
+-	prvspace = kgdb_lookup("_CPU_prvspace");
+-	if (prvspace == 0)
++#ifdef __DragonFly__
++	dumppcb = kgdb_lookup("dumppcb");
++#else
++	dumppcb = kgdb_lookup("dumppcb");
++#endif
++	if (dumppcb == 0)
+ 		return (NULL);
+ 
+-	addr = kgdb_lookup("_dumpthread");
++#if 0
++	TRY {
++#ifdef __DragonFly__
++/* XXX */
++		dumptid = parse_and_eval_long("dumpthread");
++#else
++		dumptid = parse_and_eval_long("dumptid");
++#endif
++	} CATCH(e, RETURN_MASK_ERROR) {
++		dumptid = -1;
++	} END_CATCH
++#else
++	addr = kgdb_lookup("dumpthread");
+ 	if (addr != 0) {
+-		kvm_read(kvm, addr, &dumptid, sizeof(dumptid));
+-	} else {
+-		/*
+-		 * XXX Well then.  We don't know who dumped us.
+-		 * We could do some fancy stack matching, but
+-		 * I doubt this will work.  For now just use
+-		 * cpu0's curthread.
+-		 *
+-		 * Actually we don't even know if we were dumped
+-		 * or if we are live.  Find out by querying "dumping".
+-		 */
+-		int dumping = 0;
+-
+-		addr = kgdb_lookup("_dumping");
+-		kvm_read(kvm, addr, &dumping, sizeof(dumping));
+-		if (dumping) {
+-			kvm_read(kvm, prvspace + 0, &gdptr, sizeof(gdptr));
+-			kvm_read(kvm, gdptr +
+-				 offsetof(struct privatespace, mdglobaldata),
+-				 &gd, sizeof(struct mdglobaldata));
+-			dumptid = (CORE_ADDR)gd.mi.gd_curthread;
+-		} else {
+-			/* We must be a live system */
+-			dumptid = LIVESYS_DUMPTID;
+-		}
+-	}
++		TRY {
++			dumptid = read_memory_typed_address (addr, ptr_type);
++		} CATCH(e, RETURN_MASK_ERROR) {
++			dumptid = 0;
++		} END_CATCH
++	} else
++		dumptid = -1;
++#endif
+ 
+-	for (cpu = 0; cpu < ncpus; cpu++) {
+-		kvm_read(kvm, prvspace + cpu * sizeof(void *),
+-			 &gdptr, sizeof(gdptr));
+-		kvm_read(kvm, gdptr +
+-			 offsetof(struct privatespace, mdglobaldata),
+-			 &gd, sizeof(struct mdglobaldata));
+-
+-		addr = (uintptr_t)TAILQ_FIRST(&gd.mi.gd_tdallq);
+-		while (addr != 0) {
+-			if (kvm_read(kvm, addr, &td, sizeof(td)) != sizeof(td)) {
+-				warnx("kvm_read: %s, while accessing thread",
+-				      kvm_geterr(kvm));
+-				break;
+-			}
+-			kt = malloc(sizeof(*kt));
+-			kt->next = first;
+-			kt->kaddr = addr;
+-			kt->tid = addr;
+-			kt->pcb = (kt->tid == dumptid) ? dumppcb :
+-			    (uintptr_t)td.td_pcb;
+-			kt->kstack = (uintptr_t)td.td_kstack;
+-			if (td.td_proc != NULL) {
+-				paddr = (uintptr_t)td.td_proc;
+-				if (kvm_read(kvm, paddr, &p, sizeof(p)) != sizeof(p))
+-					warnx("kvm_read: %s", kvm_geterr(kvm));
+-				kt->pid = p.p_pid;
+-				kt->paddr = paddr;
+-				addr = (uintptr_t)td.td_lwp;
+-				if (kvm_read(kvm, addr, &lwp, sizeof(lwp)) != sizeof(lwp))
+-					warnx("kvm_read: %s", kvm_geterr(kvm));
+-				kt->lwpid = lwp.lwp_tid;
+-			} else {
+-				/*
+-				 * XXX for some stupid reason, gdb uses pid == -1
+-				 * as a marker for "dead" threads, so we have to
+-				 * hook all kernel threads on a different pid :/
+-				 */
+-				kt->pid = -2;
+-				kt->paddr = 0;
+-				/*
+-				 * We are a kernel thread, so our td_pcb is
+-				 * not used anyways.  An exception is the
+-				 * dumping thread.
+-				 * kt->pcb == 0 is a marker for
+-				 * "non-dumping kernel thread".
+-				 */
+-				if (kt->tid != dumptid)
+-					kt->pcb = 0;
+-			}
+-			first = kt;
+-			addr = (uintptr_t)TAILQ_NEXT(&td, td_allq);
+-		}
+-	}
++/* XXX */
++	TRY {
++		mp_maxid = parse_and_eval_long("mp_maxid");
++	} CATCH(e, RETURN_MASK_ERROR) {
++		mp_maxid = 0;
++	} END_CATCH
++	stopped_cpus = kgdb_lookup("stopped_cpus");
++
++	/*
++	 * Newer kernels export a set of global variables with the offsets
++	 * of certain members in struct proc and struct thread.  For older
++	 * kernels, try to extract these offsets using debug symbols.  If
++	 * that fails, use native values.
++	 */
++#ifndef __DragonFly__
++	TRY {
++		proc_off_p_pid = parse_and_eval_long("proc_off_p_pid");
++		proc_off_p_comm = parse_and_eval_long("proc_off_p_comm");
++		proc_off_p_list = parse_and_eval_long("proc_off_p_list");
++		proc_off_p_threads = parse_and_eval_long("proc_off_p_threads");
++		thread_off_td_tid = parse_and_eval_long("thread_off_td_tid");
++		thread_off_td_name = parse_and_eval_long("thread_off_td_name");
++		thread_off_td_oncpu = parse_and_eval_long("thread_off_td_oncpu");
++		thread_off_td_pcb = parse_and_eval_long("thread_off_td_pcb");
++		thread_off_td_plist = parse_and_eval_long("thread_off_td_plist");
++		thread_oncpu_size = 4;
++	} CATCH(e, RETURN_MASK_ERROR) {
++#endif
++		TRY {
++			proc_off_p_pid = parse_and_eval_address(
++			    "&((struct proc *)0)->p_pid");
++			proc_off_p_comm = parse_and_eval_address(
++			    "&((struct proc *)0)->p_comm");
++			proc_off_p_list = parse_and_eval_address(
++			    "&((struct proc *)0)->p_list");
++#ifndef __DragonFly__
++			proc_off_p_threads = parse_and_eval_address(
++			    "&((struct proc *)0)->p_threads");
++			thread_off_td_tid = parse_and_eval_address(
++			    "&((struct thread *)0)->td_tid");
++			thread_off_td_name = parse_and_eval_address(
++			    "&((struct thread *)0)->td_name");
++			thread_off_td_oncpu = parse_and_eval_address(
++			    "&((struct thread *)0)->td_oncpu");
++#endif
++			thread_off_td_pcb = parse_and_eval_address(
++			    "&((struct thread *)0)->td_pcb");
++#ifndef __DragonFly__
++			thread_off_td_plist = parse_and_eval_address(
++			    "&((struct thread *)0)->td_plist");
++			thread_oncpu_size = parse_and_eval_long(
++			    "sizeof(((struct thread *)0)->td_oncpu)");
++#endif
++		} CATCH(e, RETURN_MASK_ERROR) {
++			proc_off_p_pid = offsetof(struct proc, p_pid);
++			proc_off_p_comm = offsetof(struct proc, p_comm);
++			proc_off_p_list = offsetof(struct proc, p_list);
++#ifndef __DragonFly__
++			proc_off_p_threads = offsetof(struct proc, p_threads);
++			thread_off_td_tid = offsetof(struct thread, td_tid);
++			thread_off_td_name = offsetof(struct thread, td_name);
++			thread_off_td_oncpu = offsetof(struct thread, td_oncpu);
++#endif
++			thread_off_td_pcb = offsetof(struct thread, td_pcb);
++#ifndef __DragonFly__
++			thread_off_td_plist = offsetof(struct thread, td_plist);
++			thread_oncpu_size =
++			    sizeof(((struct thread *)0)->td_oncpu);
++#endif
++		} END_CATCH
++#ifndef __DragonFly__
++	} END_CATCH
++#endif
+ 
++	kgdb_thr_add_procs(paddr, cpu_pcb_addr);
++/* XXX */
++	addr = kgdb_lookup("zombproc");
++	if (addr != 0) {
++		TRY {
++			paddr = read_memory_typed_address (addr, ptr_type);
++			kgdb_thr_add_procs(paddr, cpu_pcb_addr);
++		} CATCH(e, RETURN_MASK_ERROR) {
++		} END_CATCH
++	}
+ 	curkthr = kgdb_thr_lookup_tid(dumptid);
+ 	if (curkthr == NULL)
+ 		curkthr = first;
+@@ -192,7 +326,7 @@ kgdb_thr_init(void)
+ }
+ 
+ struct kthr *
+-kgdb_thr_lookup_tid(CORE_ADDR tid)
++kgdb_thr_lookup_tid(int tid)
+ {
+ 	struct kthr *kt;
+ 
+@@ -241,88 +375,34 @@ kgdb_thr_next(struct kthr *kt)
+ 	return (kt->next);
+ }
+ 
+-struct kthr *
+-kgdb_thr_select(struct kthr *kt)
+-{
+-	struct kthr *pcur;
+-
+-	pcur = curkthr;
+-	curkthr = kt;
+-	return (pcur);
+-}
+-
+ char *
+-kgdb_thr_extra_thread_info(CORE_ADDR tid)
++kgdb_thr_extra_thread_info(int tid)
+ {
+-#if 0 /* Information already provided */
++	char comm[MAXCOMLEN + 1];
++#ifndef __DragonFly__
++	char td_name[MAXCOMLEN + 1];
++#endif
+ 	struct kthr *kt;
+ 	static char buf[64];
+-	struct proc *p;
+-	char comm[MAXCOMLEN + 1];
+ 
+ 	kt = kgdb_thr_lookup_tid(tid);
+ 	if (kt == NULL)
+ 		return (NULL);
+-
+ 	snprintf(buf, sizeof(buf), "PID=%d", kt->pid);
+-	p = (struct proc *)kt->paddr;
+-	if (kvm_read(kvm, (uintptr_t)&p->p_comm[0], &comm, sizeof(comm)) ==
+-		sizeof(comm)) {
++	TRY {
++		read_memory_string (kt->paddr + proc_off_p_comm, comm,
++		    sizeof(comm));
+ 		strlcat(buf, ": ", sizeof(buf));
+ 		strlcat(buf, comm, sizeof(buf));
+-	}
+-	return (buf);
+-#endif
+-	return (NULL);
+-}
+-
+-char *
+-kgdb_thr_pid_to_str(ptid_t ptid)
+-{
+-	char comm[MAXCOMLEN + 1];
+-	struct kthr *kt;
+-	struct proc *p;
+-	struct thread *t;
+-	static char buf[64];
+-	CORE_ADDR tid;
+-
+-	tid = ptid_get_tid(ptid);
+-	if (tid == 0)
+-		kt = kgdb_thr_lookup_pid(ptid_get_pid(ptid));
+-	else
+-		kt = kgdb_thr_lookup_tid(tid);
+-
+-	if (kt == NULL)
+-		return (NULL);
+-
+-	buf[0] = 0;
+-
+-	if (kt->pid != -2) {
+-		snprintf(buf, sizeof(buf), "pid %d", kt->pid);
+-
+-		if (tid != 0)
+-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+-				 "/%ld", kt->lwpid);
+-
+-		p = (struct proc *)kt->paddr;
+-		if (kvm_read(kvm, (uintptr_t)&p->p_comm[0], &comm, sizeof(comm)) !=
+-		    sizeof(comm))
+-			return (buf);
+-
+-		strlcat(buf, ", ", sizeof(buf));
+-		strlcat(buf, comm, sizeof(buf));
+-	} else {
+-		strcpy(buf, "kernel");
+-
+-		if (tid != 0) {
+-			t = (struct thread *)kt->kaddr;
+-			if (kvm_read(kvm, (uintptr_t)&t->td_comm[0], &comm,
+-			    sizeof(comm)) == sizeof(comm)) {
+-				strlcat(buf, " ", sizeof(buf));
+-				strlcat(buf, comm, sizeof(buf));
+-			}
++#ifndef __DragonFly__
++		read_memory_string (kt->kaddr + thread_off_td_name, td_name,
++		    sizeof(td_name));
++		if (strcmp(comm, td_name) != 0) {
++			strlcat(buf, "/", sizeof(buf));
++			strlcat(buf, td_name, sizeof(buf));
+ 		}
+-	}
+-
++#endif
++	} CATCH(e, RETURN_MASK_ERROR) {
++	} END_CATCH
+ 	return (buf);
+ }
+diff --git a/gnu/usr.bin/gdb/kgdb/kvm.c b/gnu/usr.bin/gdb/kgdb/kvm.c
+new file mode 100644
+index 0000000000..f4a67f6263
+--- /dev/null
++++ b/gnu/usr.bin/gdb/kgdb/kvm.c
+@@ -0,0 +1,619 @@
++/*
++ * Copyright (c) 2004 Marcel Moolenaar
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
++ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
++ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
++ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * $FreeBSD: head/devel/gdb/files/kgdb/fbsd-kvm.c 428876 2016-12-18 16:08:14Z tijl $
++ */
++
++#include <sys/param.h>
++#ifdef __DragonFly__
++#include <sys/user.h>
++#else
++#include <sys/proc.h>
++#endif
++#include <sys/sysctl.h>
++#include <sys/user.h>
++#include <err.h>
++#include <fcntl.h>
++#include <kvm.h>
++
++#include <defs.h>
++#include <readline/readline.h>
++#include <readline/tilde.h>
++#include <command.h>
++#include "elf-bfd.h"
++#include <exec.h>
++#include "filenames.h"
++#include <frame-unwind.h>
++#include <gdb.h>
++#include <gdbcore.h>
++#include <gdbthread.h>
++#include "gdb_obstack.h"
++#include <inferior.h>
++#include <language.h>
++#include "objfiles.h"
++#include <regcache.h>
++#include <solib.h>
++#include <target.h>
++#include <ui-out.h>
++
++#include "kgdb.h"
++
++static CORE_ADDR stoppcbs;
++static LONGEST pcb_size;
++
++static void	kgdb_core_cleanup(void *);
++
++static char *vmcore;
++struct target_ops kgdb_trgt_ops;
++
++/* Per-architecture data key.  */
++static struct gdbarch_data *dfly_vmcore_data;
++
++struct dfly_vmcore_ops
++{
++  /* Supply registers for a pcb to a register cache.  */
++  void (*supply_pcb)(struct regcache *, CORE_ADDR);
++
++  /* Return address of pcb for thread running on a CPU. */
++  CORE_ADDR (*cpu_pcb_addr)(u_int);
++};
++
++static void *
++dfly_vmcore_init (struct obstack *obstack)
++{
++  struct dfly_vmcore_ops *ops;
++
++  ops = OBSTACK_ZALLOC (obstack, struct dfly_vmcore_ops);
++  return ops;
++}
++
++/* Set the function that supplies registers from a pcb
++   for architecture GDBARCH to SUPPLY_PCB.  */
++
++void
++dfly_vmcore_set_supply_pcb (struct gdbarch *gdbarch,
++			    void (*supply_pcb) (struct regcache *,
++						CORE_ADDR))
++{
++  struct dfly_vmcore_ops *ops = (struct dfly_vmcore_ops *)
++    gdbarch_data (gdbarch, dfly_vmcore_data);
++  ops->supply_pcb = supply_pcb;
++}
++
++/* Set the function that returns the address of the pcb for a thread
++   running on a CPU for
++   architecture GDBARCH to CPU_PCB_ADDR.  */
++
++void
++dfly_vmcore_set_cpu_pcb_addr (struct gdbarch *gdbarch,
++			      CORE_ADDR (*cpu_pcb_addr) (u_int))
++{
++  struct dfly_vmcore_ops *ops = (struct dfly_vmcore_ops *)
++    gdbarch_data (gdbarch, dfly_vmcore_data);
++  ops->cpu_pcb_addr = cpu_pcb_addr;
++}
++
++static CORE_ADDR kernstart;
++static kvm_t *kvm;
++static char kvm_err[_POSIX2_LINE_MAX];
++int kgdb_quiet;
++
++static ptid_t
++dfly_vmcore_ptid(int tid)
++{
++	if (kvm == NULL)
++		/*
++		 * The remote target stores the 'tid' in the lwp
++		 * field.
++		 */
++		return ptid_build(ptid_get_pid(inferior_ptid), tid, 0);
++
++	/*
++	 * This follows the model described in bsd-kvm.c except that
++	 * in kernel tids are used as the tid of the ptid instead of a
++	 * process ID.
++	 */
++	return ptid_build(1, 1, tid);
++}
++
++#define	MSGBUF_SEQ_TO_POS(size, seq)	((seq) % (size))
++
++static void
++kgdb_dmesg(void)
++{
++	CORE_ADDR bufp;
++	int size, rseq, wseq;
++	gdb_byte c;
++
++	/*
++	 * Display the unread portion of the message buffer. This gives the
++	 * user a some initial data to work from.
++	 */
++	if (kgdb_quiet)
++		return;
++	TRY {
++		bufp = parse_and_eval_address("msgbufp->msg_ptr");
++		size = parse_and_eval_long("msgbufp->msg_size");
++#ifdef __DragonFly__
++		rseq = parse_and_eval_long("msgbufp->msg_bufr");
++		wseq = parse_and_eval_long("msgbufp->msg_bufx");
++#else
++		rseq = parse_and_eval_long("msgbufp->msg_rseq");
++		wseq = parse_and_eval_long("msgbufp->msg_wseq");
++#endif
++	} CATCH(e, RETURN_MASK_ERROR) {
++		return;
++	} END_CATCH
++	rseq = MSGBUF_SEQ_TO_POS(size, rseq);
++	wseq = MSGBUF_SEQ_TO_POS(size, wseq);
++	if (rseq == wseq)
++		return;
++
++	printf("\nUnread portion of the kernel message buffer:\n");
++	while (rseq < wseq) {
++		read_memory(bufp + rseq, &c, 1);
++		putchar(c);
++		rseq++;
++		if (rseq == size)
++			rseq = 0;
++	}
++	if (c != '\n')
++		putchar('\n');
++	putchar('\n');
++}
++
++#define	KERNEL_INTERP		"/red/herring"
++
++enum gdb_osabi
++dfly_kernel_osabi_sniffer(bfd *abfd)
++{
++	asection *s;
++	bfd_byte buf[sizeof(KERNEL_INTERP)];
++	bfd_byte *bufp;
++
++#ifndef __DragonFly__
++	/* FreeBSD ELF kernels have a FreeBSD/ELF OS ABI. */
++	if (elf_elfheader(abfd)->e_ident[EI_OSABI] != ELFOSABI_FREEBSD)
++		return (GDB_OSABI_UNKNOWN);
++#endif
++
++#ifdef __DragonFly__
++	/* DragonFly ELF kernels have an interpreter path of "/red/herring". */
++	bufp = buf;
++	s = bfd_get_section_by_name(abfd, ".interp");
++	if (s != NULL && bfd_section_size(abfd, s) == sizeof(buf) &&
++	    bfd_get_full_section_contents(abfd, s, &bufp) &&
++	    memcmp(buf, KERNEL_INTERP, sizeof(buf)) == 0)
++		return (GDB_OSABI_DRAGONFLY_ELF_KERNEL);
++#else
++	/* FreeBSD ELF kernels have an interpreter path of "/red/herring". */
++	bufp = buf;
++	s = bfd_get_section_by_name(abfd, ".interp");
++	if (s != NULL && bfd_section_size(abfd, s) == sizeof(buf) &&
++	    bfd_get_full_section_contents(abfd, s, &bufp) &&
++	    memcmp(buf, KERNEL_INTERP, sizeof(buf)) == 0)
++		return (GDB_OSABI_FREEBSD_ELF_KERNEL);
++#endif
++
++	return (GDB_OSABI_UNKNOWN);
++}
++
++#ifdef HAVE_KVM_OPEN2
++static int
++kgdb_resolve_symbol(const char *name, kvaddr_t *kva)
++{
++	struct bound_minimal_symbol ms;
++
++	ms = lookup_minimal_symbol (name, NULL, NULL);
++	if (ms.minsym == NULL)
++		return (1);
++	*kva = BMSYMBOL_VALUE_ADDRESS (ms);
++	return (0);
++}
++#endif
++
++static void
++kgdb_trgt_open(const char *arg, int from_tty)
++{
++	struct dfly_vmcore_ops *ops = (struct dfly_vmcore_ops *)
++	    gdbarch_data (target_gdbarch(), dfly_vmcore_data);
++	struct inferior *inf;
++	struct cleanup *old_chain;
++	struct thread_info *ti;
++	struct kthr *kt;
++	kvm_t *nkvm;
++	char *temp, *kernel, *filename;
++
++	if (ops == NULL || ops->supply_pcb == NULL || ops->cpu_pcb_addr == NULL)
++		error ("ABI doesn't support a vmcore target");
++
++	target_preopen (from_tty);
++	kernel = get_exec_file (1);
++	if (kernel == NULL)
++		error ("Can't open a vmcore without a kernel");
++
++	if (arg != NULL) {
++		filename = tilde_expand (__DECONST(char *, arg));
++		if (!IS_ABSOLUTE_PATH (filename)) {
++			temp = concat (current_directory, "/", filename, NULL);
++			xfree(filename);
++			filename = temp;
++		}
++	} else
++		filename = NULL;
++
++	old_chain = make_cleanup (xfree, filename);
++
++#ifdef HAVE_KVM_OPEN2
++	nkvm = kvm_open2(kernel, filename,
++	    write_files ? O_RDWR : O_RDONLY, kvm_err, kgdb_resolve_symbol);
++#else
++	nkvm = kvm_openfiles(kernel, filename, NULL,
++	    write_files ? O_RDWR : O_RDONLY, kvm_err);
++#endif
++	if (nkvm == NULL)
++		error ("Failed to open vmcore: %s", kvm_err);
++
++	/* Don't free the filename now and close any previous vmcore. */
++	discard_cleanups(old_chain);
++	unpush_target(&kgdb_trgt_ops);
++
++	/*
++	 * Determine the first address in KVA.  Newer kernels export
++	 * VM_MAXUSER_ADDRESS and the first kernel address can be
++	 * determined by adding one.  Older kernels do not provide a
++	 * symbol that is valid on all platforms, but kernbase is close
++	 * for most platforms.
++	 */
++	TRY {
++		kernstart = parse_and_eval_address("vm_maxuser_address") + 1;
++	} CATCH(e, RETURN_MASK_ERROR) {
++		kernstart = kgdb_lookup("kernbase");
++	} END_CATCH
++
++	/*
++	 * Lookup symbols needed for stoppcbs[] handling, but don't
++	 * fail if they aren't present.
++	 */
++	stoppcbs = kgdb_lookup("stoppcbs");
++	TRY {
++		pcb_size = parse_and_eval_long("pcb_size");
++	} CATCH(e, RETURN_MASK_ERROR) {
++		TRY {
++			pcb_size = parse_and_eval_long("sizeof(struct pcb)");
++		} CATCH(e, RETURN_MASK_ERROR) {
++#ifdef HAVE_KVM_OPEN2
++			if (kvm_native(nkvm))
++				pcb_size = sizeof(struct pcb);
++			else
++				pcb_size = 0;
++#else
++			pcb_size = sizeof(struct pcb);
++#endif
++		} END_CATCH
++	} END_CATCH
++
++	kvm = nkvm;
++	vmcore = filename;
++	old_chain = make_cleanup(kgdb_core_cleanup, NULL);
++
++	push_target (&kgdb_trgt_ops);
++	discard_cleanups (old_chain);
++
++	kgdb_dmesg();
++
++	inf = current_inferior();
++	if (inf->pid == 0) {
++		inferior_appeared(inf, 1);
++		inf->fake_pid_p = 1;
++	}
++	solib_create_inferior_hook(0);
++	init_thread_list();
++	kt = kgdb_thr_init(ops->cpu_pcb_addr);
++	while (kt != NULL) {
++		ti = add_thread_silent(dfly_vmcore_ptid(kt->tid));
++		kt = kgdb_thr_next(kt);
++	}
++	if (curkthr != 0)
++		inferior_ptid = dfly_vmcore_ptid(curkthr->tid);
++
++	target_fetch_registers (get_current_regcache (), -1);
++
++	reinit_frame_cache ();
++	print_stack_frame (get_selected_frame (NULL), 0, SRC_AND_LOC, 1);
++}
++
++static void
++kgdb_trgt_close(struct target_ops *self)
++{
++
++	if (kvm != NULL) {
++		clear_solib();
++		if (kvm_close(kvm) != 0)
++			warning("cannot close \"%s\": %s", vmcore,
++			    kvm_geterr(kvm));
++		kvm = NULL;
++		xfree(vmcore);
++		vmcore = NULL;
++	}
++
++	inferior_ptid = null_ptid;
++}
++
++static void
++kgdb_core_cleanup(void *arg)
++{
++
++	kgdb_trgt_close(0);
++}
++
++static void
++kgdb_trgt_detach(struct target_ops *ops, const char *args, int from_tty)
++{
++
++	if (args)
++		error ("Too many arguments");
++	unpush_target(&kgdb_trgt_ops);
++	reinit_frame_cache();
++	if (from_tty)
++		printf_filtered("No vmcore file now.\n");
++}
++
++static char *
++kgdb_trgt_extra_thread_info(struct target_ops *ops, struct thread_info *ti)
++{
++
++	return (kgdb_thr_extra_thread_info(ptid_get_tid(ti->ptid)));
++}
++
++static void
++kgdb_trgt_files_info(struct target_ops *target)
++{
++
++	printf_filtered ("\t`%s', ", vmcore);
++	wrap_here ("        ");
++#ifdef __DragonFly__
++	printf_filtered ("file type %s.\n", "DragonFly kernel vmcore");
++#else
++	printf_filtered ("file type %s.\n", "FreeBSD kernel vmcore");
++#endif
++}
++
++static void
++kgdb_trgt_update_thread_list(struct target_ops *ops)
++{
++	/*
++	 * XXX: We should probably rescan the thread list here and update
++	 * it if there are any changes.  One nit though is that we'd have
++	 * to detect exited threads.
++	 */
++	gdb_assert(kvm != NULL);
++#if 0
++	prune_threads();
++#endif
++#if 0
++	struct target_ops *tb;
++	
++	if (kvm != NULL)
++		return;
++
++	tb = find_target_beneath(ops);
++	if (tb->to_update_thread_list != NULL)
++		tb->to_update_thread_list(tb);
++#endif
++}
++
++static char *
++kgdb_trgt_pid_to_str(struct target_ops *ops, ptid_t ptid)
++{
++	static char buf[33];
++
++	snprintf(buf, sizeof(buf), "Thread %ld", ptid_get_tid(ptid));
++	return (buf);
++}
++
++static int
++kgdb_trgt_thread_alive(struct target_ops *ops, ptid_t ptid)
++{
++	return (kgdb_thr_lookup_tid(ptid_get_tid(ptid)) != NULL);
++}
++
++static void
++kgdb_trgt_fetch_registers(struct target_ops *tops,
++			  struct regcache *regcache, int regnum)
++{
++	struct dfly_vmcore_ops *ops = (struct dfly_vmcore_ops *)
++	    gdbarch_data (target_gdbarch(), dfly_vmcore_data);
++	struct kthr *kt;
++
++	if (ops->supply_pcb == NULL)
++		return;
++	kt = kgdb_thr_lookup_tid(ptid_get_tid(inferior_ptid));
++	if (kt == NULL)
++		return;
++	ops->supply_pcb(regcache, kt->pcb);
++}
++
++static enum target_xfer_status
++kgdb_trgt_xfer_partial(struct target_ops *ops, enum target_object object,
++		       const char *annex, gdb_byte *readbuf,
++		       const gdb_byte *writebuf,
++		       ULONGEST offset, ULONGEST len, ULONGEST *xfered_len)
++{
++	ssize_t nbytes;
++
++	gdb_assert(kvm != NULL);
++	switch (object) {
++	case TARGET_OBJECT_MEMORY:
++		nbytes = len;
++		if (readbuf != NULL)
++#ifdef HAVE_KVM_OPEN2
++			nbytes = kvm_read2(kvm, offset, readbuf, len);
++#else
++			nbytes = kvm_read(kvm, offset, readbuf, len);
++#endif
++		if (writebuf != NULL && len > 0)
++			nbytes = kvm_write(kvm, offset, writebuf, len);
++		if (nbytes < 0)
++			return TARGET_XFER_E_IO;
++		if (nbytes == 0)
++			return TARGET_XFER_EOF;
++		*xfered_len = nbytes;
++		return TARGET_XFER_OK;
++	default:
++		return TARGET_XFER_E_IO;
++	}
++}
++
++static int
++kgdb_trgt_insert_breakpoint(struct target_ops *ops, struct gdbarch *gdbarch,
++    struct bp_target_info *bp_tgt)
++{
++
++	return 0;
++}
++
++static int
++kgdb_trgt_remove_breakpoint(struct target_ops *ops, struct gdbarch *gdbarch,
++    struct bp_target_info *bp_tgt, enum remove_bp_reason reason)
++{
++
++	return 0;
++}
++
++static void
++kgdb_switch_to_thread(int tid)
++{
++	char buf[16];
++	int thread_id;
++
++	thread_id = ptid_to_global_thread_id(dfly_vmcore_ptid(tid));
++	if (thread_id == 0)
++		error ("invalid tid");
++	snprintf(buf, sizeof(buf), "%d", thread_id);
++	gdb_thread_select(current_uiout, buf, NULL);
++}
++
++static void
++kgdb_set_proc_cmd (char *arg, int from_tty)
++{
++	CORE_ADDR addr;
++	struct kthr *thr;
++
++	if (!arg)
++		error_no_arg ("proc address for the new context");
++
++	if (kvm == NULL)
++		error ("only supported for core file target");
++
++	addr = parse_and_eval_address (arg);
++
++	if (addr < kernstart) {
++		thr = kgdb_thr_lookup_pid((int)addr);
++		if (thr == NULL)
++			error ("invalid pid");
++	} else {
++		thr = kgdb_thr_lookup_paddr(addr);
++		if (thr == NULL)
++			error("invalid proc address");
++	}
++	kgdb_switch_to_thread(thr->tid);
++}
++
++static void
++kgdb_set_tid_cmd (char *arg, int from_tty)
++{
++	CORE_ADDR addr;
++	struct kthr *thr;
++
++	if (!arg)
++		error_no_arg ("TID or thread address for the new context");
++
++	addr = (CORE_ADDR) parse_and_eval_address (arg);
++
++	if (kvm != NULL && addr >= kernstart) {
++		thr = kgdb_thr_lookup_taddr(addr);
++		if (thr == NULL)
++			error("invalid thread address");
++		addr = thr->tid;
++	}
++	kgdb_switch_to_thread(addr);
++}
++
++static int
++kgdb_trgt_return_one(struct target_ops *ops)
++{
++
++	return 1;
++}
++
++void _initialize_kgdb_target(void);
++
++void
++_initialize_kgdb_target(void)
++{
++
++	kgdb_trgt_ops.to_magic = OPS_MAGIC;
++	kgdb_trgt_ops.to_shortname = "vmcore";
++	kgdb_trgt_ops.to_longname = "kernel core dump file";
++	kgdb_trgt_ops.to_doc = 
++    "Use a vmcore file as a target.  Specify the filename of the vmcore file.";
++	kgdb_trgt_ops.to_stratum = process_stratum;
++	kgdb_trgt_ops.to_has_memory = kgdb_trgt_return_one;
++	kgdb_trgt_ops.to_has_registers = kgdb_trgt_return_one;
++	kgdb_trgt_ops.to_has_stack = kgdb_trgt_return_one;
++
++	kgdb_trgt_ops.to_open = kgdb_trgt_open;
++	kgdb_trgt_ops.to_close = kgdb_trgt_close;
++	kgdb_trgt_ops.to_detach = kgdb_trgt_detach;
++	kgdb_trgt_ops.to_extra_thread_info = kgdb_trgt_extra_thread_info;
++	kgdb_trgt_ops.to_fetch_registers = kgdb_trgt_fetch_registers;
++	kgdb_trgt_ops.to_files_info = kgdb_trgt_files_info;
++	kgdb_trgt_ops.to_update_thread_list = kgdb_trgt_update_thread_list;
++	kgdb_trgt_ops.to_pid_to_str = kgdb_trgt_pid_to_str;
++	kgdb_trgt_ops.to_thread_alive = kgdb_trgt_thread_alive;
++	kgdb_trgt_ops.to_xfer_partial = kgdb_trgt_xfer_partial;
++	kgdb_trgt_ops.to_insert_breakpoint = kgdb_trgt_insert_breakpoint;
++	kgdb_trgt_ops.to_remove_breakpoint = kgdb_trgt_remove_breakpoint;
++
++	add_target(&kgdb_trgt_ops);
++
++	dfly_vmcore_data = gdbarch_data_register_pre_init(dfly_vmcore_init);
++
++	add_com ("proc", class_obscure, kgdb_set_proc_cmd,
++	   "Set current process context");
++	add_com ("tid", class_obscure, kgdb_set_tid_cmd,
++	   "Set current thread context");
++}
++
++CORE_ADDR
++kgdb_trgt_stop_pcb(u_int cpuid)
++{
++
++	if (stoppcbs == 0 || pcb_size == 0)
++		return 0;
++
++	return (stoppcbs + pcb_size * cpuid);
++}
+diff --git a/gnu/usr.bin/gdb/kgdb/trgt.c b/gnu/usr.bin/gdb/kgdb/trgt.c
+deleted file mode 100644
+index fc1f248430..0000000000
+--- a/gnu/usr.bin/gdb/kgdb/trgt.c
++++ /dev/null
+@@ -1,372 +0,0 @@
+-/*
+- * Copyright (c) 2004 Marcel Moolenaar
+- * All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- *
+- * 1. Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- * 2. Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+- *
+- * $FreeBSD: src/gnu/usr.bin/gdb/kgdb/trgt.c,v 1.12 2008/05/01 20:36:48 jhb Exp $
+- */
+-
+-#include <sys/cdefs.h>
+-
+-#include <sys/param.h>
+-#include <sys/sysctl.h>
+-#include <sys/user.h>
+-#include <err.h>
+-#include <fcntl.h>
+-#include <kvm.h>
+-
+-#include <defs.h>
+-#include <readline/readline.h>
+-#include <readline/tilde.h>
+-#include <command.h>
+-#include <exec.h>
+-#include <frame-unwind.h>
+-#include <gdb.h>
+-#include <gdbcore.h>
+-#include <gdbthread.h>
+-#include <inferior.h>
+-#include <language.h>
+-#include <regcache.h>
+-#include <solib.h>
+-#include <target.h>
+-#include <ui-out.h>
+-#include <observer.h>
+-#include <arch-utils.h>
+-
+-#include "kgdb.h"
+-
+-static void	kgdb_core_cleanup(void *);
+-
+-static char *vmcore;
+-static struct target_ops kgdb_trgt_ops;
+-
+-kvm_t *kvm;
+-static char kvm_err[_POSIX2_LINE_MAX];
+-
+-#define	KERNOFF		(kgdb_kernbase ())
+-#define	INKERNEL(x)	((x) >= KERNOFF)
+-
+-static CORE_ADDR
+-kgdb_kernbase (void)
+-{
+-	static CORE_ADDR kernbase;
+-	struct minimal_symbol *sym;
+-
+-	if (kernbase == 0) {
+-		sym = lookup_minimal_symbol ("kernbase", NULL, NULL);
+-		if (sym == NULL) {
+-			kernbase = KERNBASE;
+-		} else {
+-			kernbase = SYMBOL_VALUE_ADDRESS (sym);
+-		}
+-	}
+-	return kernbase;
+-}
+-
+-static void
+-kgdb_trgt_open(char *filename, int from_tty)
+-{
+-	struct cleanup *old_chain;
+-	struct kthr *kt;
+-	struct inferior *inf8;
+-	struct program_space *pspace;
+-	kvm_t *nkvm;
+-	char *temp;
+-	int first_inferior = 1;
+-	struct gdbarch_info info;
+-	struct gdbarch *kgdbarch;
+-
+-	target_preopen (from_tty);
+-	if (!filename)
+-		error ("No vmcore file specified.");
+-	if (!exec_bfd)
+-		error ("Can't open a vmcore without a kernel");
+-
+-	filename = tilde_expand (filename);
+-	if (filename[0] != '/') {
+-		temp = concat (current_directory, "/", filename, NULL);
+-		xfree(filename);
+-		filename = temp;
+-	}
+-
+-	old_chain = make_cleanup (xfree, filename);
+-
+-	nkvm = kvm_openfiles(bfd_get_filename(exec_bfd), filename, NULL,
+-	    write_files ? O_RDWR : O_RDONLY, kvm_err);
+-	if (nkvm == NULL)
+-		error ("Failed to open vmcore: %s", kvm_err);
+-
+-	/* Don't free the filename now and close any previous vmcore. */
+-	discard_cleanups(old_chain);
+-	unpush_target(&kgdb_trgt_ops);
+-
+-	kvm = nkvm;
+-	vmcore = filename;
+-	old_chain = make_cleanup(kgdb_core_cleanup, NULL);
+-
+-	push_target (&kgdb_trgt_ops);
+-	discard_cleanups (old_chain);
+-
+-	kgdb_dmesg();
+-
+-	gdbarch_info_init (&info);
+-#if defined (__i386__)
+-	info.bfd_arch_info = bfd_scan_arch ("i386");
+-#elif defined (__x86_64__)
+-	info.bfd_arch_info = bfd_scan_arch ("i386:x86-64");
+-#else
+-#error platform not recognized
+-#endif
+-	info.byte_order = BFD_ENDIAN_LITTLE;
+-	gdbarch_info_fill (&info);
+-	kgdbarch = gdbarch_find_by_info (info);
+-
+-	init_thread_list();
+-	kt = kgdb_thr_init();
+-	while (kt != NULL) {
+-		if (!in_inferior_list(kt->pid)) {
+-                     if (first_inferior) {
+-                       first_inferior = 0;
+-                       inf8 = current_inferior();
+-                       inf8->pid = kt->pid;
+-                       inf8->attach_flag = 1;
+-                       inferior_appeared (inf8, kt->pid);
+-                       pspace = current_program_space;
+-                       pspace->ebfd = 0;
+-                       pspace->ebfd_mtime = 0;
+-                     } else {                    
+-                       inf8 = add_inferior(kt->pid);
+-                       inf8->attach_flag = 0;
+-                       pspace = add_program_space(new_address_space());
+-                       pspace->symfile_object_file = symfile_objfile;
+-                       pspace->objfiles = object_files;
+-                     }
+-                     inf8->pspace = pspace;
+-                     inf8->aspace = pspace->aspace;
+-                     inf8->fake_pid_p = 0;
+-                     inf8->gdbarch = kgdbarch;
+-                }
+-		add_thread(ptid_build(kt->pid, kt->lwpid, kt->tid));
+-		kt = kgdb_thr_next(kt);
+-	}
+-	if (curkthr != 0)
+-		inferior_ptid = ptid_build(curkthr->pid, curkthr->lwpid,
+-			curkthr->tid);
+-
+-	frame_unwind_prepend_unwinder(kgdbarch, &kgdb_trgt_trapframe_unwind);
+-
+-	kld_init(kgdbarch);
+-	reinit_frame_cache();
+-	select_frame (get_current_frame());
+-	print_stack_frame(get_selected_frame(NULL), 0, SRC_AND_LOC);
+-}
+-
+-static void
+-kgdb_trgt_close(int quitting)
+-{
+-
+-	if (kvm != NULL) {
+-		inferior_ptid = null_ptid;
+-		clear_solib();
+-		if (kvm_close(kvm) != 0)
+-			warning("cannot close \"%s\": %s", vmcore,
+-			    kvm_geterr(kvm));
+-		kvm = NULL;
+-		xfree(vmcore);
+-		vmcore = NULL;
+-	}
+-}
+-
+-static void
+-kgdb_core_cleanup(void *arg)
+-{
+-
+-	kgdb_trgt_close(0);
+-}
+-
+-static void
+-kgdb_trgt_detach(struct target_ops *target, char *args, int from_tty)
+-{
+-
+-	if (args)
+-		error ("Too many arguments");
+-	unpush_target(target);
+-	reinit_frame_cache();
+-	if (from_tty)
+-		printf_filtered("No vmcore file now.\n");
+-}
+-
+-static char *
+-kgdb_trgt_extra_thread_info(struct thread_info *ti)
+-{
+-
+-	return (kgdb_thr_extra_thread_info(ptid_get_tid(ti->ptid)));
+-}
+-
+-static void
+-kgdb_trgt_files_info(struct target_ops *target)
+-{
+-
+-	printf_filtered ("\t`%s', ", vmcore);
+-	wrap_here ("        ");
+-	printf_filtered ("file type %s.\n", "DragonFly kernel vmcore");
+-}
+-
+-static void
+-kgdb_trgt_find_new_threads(struct target_ops *target_ops)
+-{
+-	struct target_ops *tb;
+-
+-	if (kvm != NULL)
+-		return;
+-
+-	tb = find_target_beneath(target_ops);
+-	if (tb->to_find_new_threads != NULL)
+-		tb->to_find_new_threads(target_ops);
+-}
+-
+-static char *
+-kgdb_trgt_pid_to_str(struct target_ops *target_ops __unused, ptid_t ptid)
+-{
+-	return (kgdb_thr_pid_to_str(ptid));
+-}
+-
+-static int
+-kgdb_trgt_thread_alive(struct target_ops *target_ops __unused, ptid_t ptid)
+-{
+-	return (kgdb_thr_lookup_tid(ptid_get_tid(ptid)) != NULL);
+-}
+-
+-static LONGEST
+-kgdb_trgt_xfer_partial(struct target_ops *ops, enum target_object object,
+-		       const char *annex, gdb_byte *readbuf,
+-		       const gdb_byte *writebuf,
+-		       ULONGEST offset, LONGEST len)
+-{
+-	if (kvm != NULL) {
+-		if (len == 0)
+-			return (0);
+-		if (writebuf != NULL)
+-			return (kvm_write(kvm, offset, writebuf, len));
+-		if (readbuf != NULL)
+-			return (kvm_read(kvm, offset, readbuf, len));
+-	}
+-	return (ops->beneath->to_xfer_partial(ops->beneath, object, annex,
+-					      readbuf, writebuf, offset, len));
+-}
+-
+-static void
+-kgdb_switch_to_thread(struct kthr *thr)
+-{
+-	char buf[16];
+-	CORE_ADDR thread_id;
+-	char *err;
+-
+-	thread_id = thr->tid;
+-	if (thread_id == 0)
+-		error ("invalid tid");
+-	snprintf(buf, sizeof(buf), "%lu", thread_id);
+-	if (!gdb_thread_select(current_uiout, buf, &err))
+-		error ("%s", err);
+-}
+-
+-static void
+-kgdb_set_proc_cmd (char *arg, int from_tty)
+-{
+-	CORE_ADDR addr;
+-	struct kthr *thr;
+-
+-	if (!arg)
+-		error_no_arg ("proc address for the new context");
+-
+-	if (kvm == NULL)
+-		error ("only supported for core file target");
+-
+-	addr = (CORE_ADDR) parse_and_eval_address (arg);
+-
+-	if (!INKERNEL (addr)) {
+-		thr = kgdb_thr_lookup_pid((int)addr);
+-		if (thr == NULL)
+-			error ("invalid pid");
+-	} else {
+-		thr = kgdb_thr_lookup_paddr(addr);
+-		if (thr == NULL)
+-			error("invalid proc address");
+-	}
+-	kgdb_switch_to_thread(thr);
+-}
+-
+-static void
+-kgdb_set_tid_cmd (char *arg, int from_tty)
+-{
+-	CORE_ADDR addr;
+-	struct kthr *thr;
+-
+-	if (!arg)
+-		error_no_arg ("Thread address for the new context");
+-
+-	addr = (CORE_ADDR) parse_and_eval_address (arg);
+-	thr = kgdb_thr_lookup_taddr(addr);
+-
+-	if (thr == NULL)
+-		error("invalid thread address");
+-
+-	kgdb_switch_to_thread(thr);
+-}
+-
+-int fbsdcoreops_suppress_target = 1;
+-
+-void
+-initialize_kgdb_target(void)
+-{
+-	kgdb_trgt_ops.to_magic = OPS_MAGIC;
+-	kgdb_trgt_ops.to_shortname = "kernel";
+-	kgdb_trgt_ops.to_longname = "kernel core dump file";
+-	kgdb_trgt_ops.to_doc = 
+-    "Use a vmcore file as a target.  Specify the filename of the vmcore file.";
+-	kgdb_trgt_ops.to_stratum = process_stratum;
+-	kgdb_trgt_ops.to_has_registers = default_child_has_registers;
+-	kgdb_trgt_ops.to_has_memory = default_child_has_memory;
+-	kgdb_trgt_ops.to_has_stack = default_child_has_stack;
+-
+-	kgdb_trgt_ops.to_open = kgdb_trgt_open;
+-	kgdb_trgt_ops.to_close = kgdb_trgt_close;
+-	kgdb_trgt_ops.to_attach = find_default_attach;
+-	kgdb_trgt_ops.to_detach = kgdb_trgt_detach;
+-	kgdb_trgt_ops.to_extra_thread_info = kgdb_trgt_extra_thread_info;
+-	kgdb_trgt_ops.to_fetch_registers = kgdb_trgt_fetch_registers;
+-	kgdb_trgt_ops.to_files_info = kgdb_trgt_files_info;
+-	kgdb_trgt_ops.to_find_new_threads = kgdb_trgt_find_new_threads;
+-	kgdb_trgt_ops.to_pid_to_str = kgdb_trgt_pid_to_str;
+-	/*
+-	kgdb_trgt_ops.to_store_registers = NULL;
+-	*/
+-	kgdb_trgt_ops.to_thread_alive = kgdb_trgt_thread_alive;
+-	kgdb_trgt_ops.to_xfer_partial = kgdb_trgt_xfer_partial;
+-	add_target(&kgdb_trgt_ops);
+-
+-	add_com ("proc", class_obscure, kgdb_set_proc_cmd,
+-	   "Set current process context");
+-	add_com ("tid", class_obscure, kgdb_set_tid_cmd,
+-	   "Set current thread context");
+-}
+diff --git a/gnu/usr.bin/gdb/kgdb/trgt_x86_64.c b/gnu/usr.bin/gdb/kgdb/trgt_x86_64.c
+index 7a96770e56..b4acee4178 100644
+--- a/gnu/usr.bin/gdb/kgdb/trgt_x86_64.c
++++ b/gnu/usr.bin/gdb/kgdb/trgt_x86_64.c
+@@ -23,244 +23,309 @@
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+- * $FreeBSD: src/gnu/usr.bin/gdb/kgdb/trgt_amd64.c,v 1.10 2008/05/01 20:36:48 jhb Exp $
++ * $FreeBSD: head/devel/gdb/files/kgdb/amd64fbsd-kern.c 428876 2016-12-18 16:08:14Z tijl $
+  */
+ 
+ #include <sys/cdefs.h>
+ 
+ #include <sys/types.h>
+-#include <sys/thread.h>
++#ifdef __x86_64__
+ #include <machine/pcb.h>
+ #include <machine/frame.h>
+-#include <err.h>
+-#include <kvm.h>
++#endif
++#ifdef __DragonFly__
++#include <machine/segments.h>
++#endif
+ #include <string.h>
+ 
+ #include <defs.h>
+-#include <target.h>
+-#include <gdbthread.h>
+-#include <inferior.h>
+-#include <regcache.h>
+ #include <frame-unwind.h>
++#include "gdbcore.h"
++#include "osabi.h"
++#include <regcache.h>
++#include "solib.h"
++#include "stack.h"
++#include "symtab.h"
++#include "trad-frame.h"
+ #include <amd64-tdep.h>
+ 
+ #include "kgdb.h"
+ 
+-static int
+-kgdb_trgt_trapframe_sniffer(const struct frame_unwind *self,
+-			    struct frame_info *next_frame,
+-			    void **this_prologue_cache);
++/*
++ * The struct pcb is padded on DragonFly.
++ * register_t padxx[7], pcb_cr3_iso, pcb_cr3, pcb_r15, ...
++ */
++#define DFLY_PCB_OFFSET		((7 + 2) * 8)
+ 
+-void
+-kgdb_trgt_fetch_registers(struct target_ops *target_ops, struct regcache *regcache, int regno)
++static const int amd64dfly_pcb_offset[] = {
++  -1,				/* %rax */
++  6 * 8 + DFLY_PCB_OFFSET,	/* %rbx */
++  -1,				/* %rcx */
++  -1,				/* %rdx */
++  -1,				/* %rsi */
++  -1,				/* %rdi */
++  4 * 8 + DFLY_PCB_OFFSET,	/* %rbp */
++  5 * 8 + DFLY_PCB_OFFSET,	/* %rsp */
++  -1,				/* %r8 ...  */
++  -1,
++  -1,
++  -1,
++  3 * 8 + DFLY_PCB_OFFSET,
++  2 * 8 + DFLY_PCB_OFFSET,
++  1 * 8 + DFLY_PCB_OFFSET,
++  0 * 8 + DFLY_PCB_OFFSET,	/* ... %r15 */
++  7 * 8 + DFLY_PCB_OFFSET	/* %rip */
++#ifndef __DragonFly__
++  -1,				/* %eflags */
++  -1,				/* %cs */
++  -1,				/* %ss */
++  -1,				/* %ds */
++  -1,				/* %es */
++  -1,				/* %fs */
++  -1				/* %gs */
++#endif
++};
++
++#ifdef __DragonFly__
++#define	CODE_SEL	(1 << 3)
++#define	DATA_SEL	(2 << 3)
++#else
++#define	CODE_SEL	(4 << 3)
++#define	DATA_SEL	(5 << 3)
++#endif
++
++static void
++amd64dfly_supply_pcb(struct regcache *regcache, CORE_ADDR pcb_addr)
+ {
+-	struct kthr *kt;
+-	struct pcb pcb;
+-
+-	kt = kgdb_thr_lookup_tid(ptid_get_tid(inferior_ptid));
+-	if (kt == NULL) {
+-		regcache_raw_supply(regcache, regno, NULL);
+-		return;
+-	}
+-
+-	/*
+-	 * kt->pcb == 0 is a marker for "non-dumping kernel thread".
+-	 */
+-	if (kt->pcb == 0) {
+-		uintptr_t regs[7];
+-		uintptr_t addr;
+-		uintptr_t sp;
+-
+-		addr = kt->kaddr + offsetof(struct thread, td_sp);
+-		kvm_read(kvm, addr, &sp, sizeof(sp));
+-		/*
+-		 * Stack is:
+-		 * -2 ret
+-		 * -1 popfq
+-		 * 0 popq %r15	edi
+-		 * 1 popq %r14
+-		 * 2 popq %r13
+-		 * 3 popq %r12
+-		 * 4 popq %rbx
+-		 * 5 popq %rbp
+-		 * 6 ret
+-		 */
+-		if (kvm_read(kvm, sp + 2 * sizeof(regs[0]), regs, sizeof(regs)) != sizeof(regs)) {
+-			warnx("kvm_read: %s", kvm_geterr(kvm));
+-			memset(regs, 0, sizeof(regs));
+-		}
+-		regcache_raw_supply(regcache, AMD64_R8_REGNUM + 7, &regs[0]);
+-		regcache_raw_supply(regcache, AMD64_R8_REGNUM + 6, &regs[1]);
+-		regcache_raw_supply(regcache, AMD64_R8_REGNUM + 5, &regs[2]);
+-		regcache_raw_supply(regcache, AMD64_R8_REGNUM + 4, &regs[3]);
+-		regcache_raw_supply(regcache, AMD64_RBX_REGNUM, &regs[4]);
+-		regcache_raw_supply(regcache, AMD64_RBP_REGNUM, &regs[5]);
+-		regcache_raw_supply(regcache, AMD64_RIP_REGNUM, &regs[6]);
+-		sp += 9 * sizeof(regs[0]);
+-		regcache_raw_supply(regcache, AMD64_RSP_REGNUM, &sp);
+-		return;
+-	}
+-
+-	if (kvm_read(kvm, kt->pcb, &pcb, sizeof(pcb)) != sizeof(pcb)) {
+-		warnx("kvm_read: %s", kvm_geterr(kvm));
+-		memset(&pcb, 0, sizeof(pcb));
+-	}
+-
+-	regcache_raw_supply(regcache, AMD64_RBX_REGNUM, (char *)&pcb.pcb_rbx);
+-	regcache_raw_supply(regcache, AMD64_RBP_REGNUM, (char *)&pcb.pcb_rbp);
+-	regcache_raw_supply(regcache, AMD64_RSP_REGNUM, (char *)&pcb.pcb_rsp);
+-	regcache_raw_supply(regcache, AMD64_R8_REGNUM + 4, (char *)&pcb.pcb_r12);
+-	regcache_raw_supply(regcache, AMD64_R8_REGNUM + 5, (char *)&pcb.pcb_r13);
+-	regcache_raw_supply(regcache, AMD64_R8_REGNUM + 6, (char *)&pcb.pcb_r14);
+-	regcache_raw_supply(regcache, AMD64_R15_REGNUM, (char *)&pcb.pcb_r15);
+-	regcache_raw_supply(regcache, AMD64_RIP_REGNUM, (char *)&pcb.pcb_rip);
++  gdb_byte buf[8];
++  int i;
++  
++  for (i = 0; i < ARRAY_SIZE (amd64dfly_pcb_offset); i++)
++    if (amd64dfly_pcb_offset[i] != -1) {
++      if (target_read_memory(pcb_addr + amd64dfly_pcb_offset[i], buf,
++			     sizeof buf) != 0)
++	continue;
++      regcache_raw_supply(regcache, i, buf);
++    }
++
++  regcache_raw_supply_unsigned(regcache, AMD64_CS_REGNUM, CODE_SEL);
++  regcache_raw_supply_unsigned(regcache, AMD64_SS_REGNUM, DATA_SEL);
+ }
+ 
+-struct kgdb_frame_cache {
+-	int		frame_type;
+-	CORE_ADDR	pc;
+-	CORE_ADDR	sp;
++static const int amd64dfly_trapframe_offset[] = {
++  6 * 8,			/* %rax */
++  7 * 8,			/* %rbx */
++  3 * 8,			/* %rcx */
++  2 * 8,			/* %rdx */
++  1 * 8,			/* %rsi */
++  0 * 8,			/* %rdi */
++  8 * 8,			/* %rbp */
++  (1 + 22) * 8,			/* %rsp */
++  4 * 8,			/* %r8 ...  */
++  5 * 8,
++  9 * 8,
++  10 * 8,
++  11 * 8,
++  12 * 8,
++  13 * 8,
++  14 * 8,			/* ... %r15 */
++  (1 + 19) * 8,			/* %rip */
++  (1 + 21) * 8,			/* %eflags */
++  (1 + 20) * 8,			/* %cs */
++  (1 + 23) * 8,			/* %ss */
++  -1,				/* %ds */
++  -1,				/* %es */
++  -1,				/* %fs */
++  -1				/* %gs */
+ };
+ 
+-#define FT_NORMAL		1
+-#define FT_INTRFRAME		2
+-/*#define	FT_INTRTRAPFRAME        3*/
+-#define FT_TIMERFRAME		4
+-#define FT_CALLTRAP		5
+-
+-static int kgdb_trgt_frame_offset[20] = {
+-	offsetof(struct trapframe, tf_rax),
+-	offsetof(struct trapframe, tf_rbx),
+-	offsetof(struct trapframe, tf_rcx),
+-	offsetof(struct trapframe, tf_rdx),
+-	offsetof(struct trapframe, tf_rsi),
+-	offsetof(struct trapframe, tf_rdi),
+-	offsetof(struct trapframe, tf_rbp),
+-	offsetof(struct trapframe, tf_rsp),
+-	offsetof(struct trapframe, tf_r8),
+-	offsetof(struct trapframe, tf_r9),
+-	offsetof(struct trapframe, tf_r10),
+-	offsetof(struct trapframe, tf_r11),
+-	offsetof(struct trapframe, tf_r12),
+-	offsetof(struct trapframe, tf_r13),
+-	offsetof(struct trapframe, tf_r14),
+-	offsetof(struct trapframe, tf_r15),
+-	offsetof(struct trapframe, tf_rip),
+-	offsetof(struct trapframe, tf_rflags),
+-	offsetof(struct trapframe, tf_cs),
+-	offsetof(struct trapframe, tf_ss)
+-};
++#ifdef __DragonFly__
++#define TRAPFRAME_SIZE	200
++#else
++#define TRAPFRAME_SIZE	192
++#endif
+ 
+-static struct kgdb_frame_cache *
+-kgdb_trgt_frame_cache(struct frame_info *next_frame, void **this_cache)
++static struct trad_frame_cache *
++amd64dfly_trapframe_cache (struct frame_info *this_frame, void **this_cache)
+ {
+-	struct kgdb_frame_cache *cache;
+-	const char *pname;
+-
+-	cache = *this_cache;
+-	if (cache == NULL) {
+-		cache = FRAME_OBSTACK_ZALLOC(struct kgdb_frame_cache);
+-		*this_cache = cache;
+-		cache->pc = get_frame_address_in_block(next_frame);
+-		cache->sp = get_frame_sp(next_frame);
+-		find_pc_partial_function(cache->pc, &pname, NULL, NULL);
+-
+-		if (strcmp(pname, "calltrap") == 0)
+-			cache->frame_type = FT_CALLTRAP;
+-		else if (pname[0] != 'X')
+-			cache->frame_type = FT_NORMAL;
+-		else if (strcmp(pname, "Xtimerint") == 0)
+-			cache->frame_type = FT_TIMERFRAME;
+-		else
+-			cache->frame_type = FT_INTRFRAME;
+-	}
+-	return (cache);
++  struct gdbarch *gdbarch = get_frame_arch (this_frame);
++  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
++  struct trad_frame_cache *cache;
++  CORE_ADDR addr, func, pc, sp;
++  const char *name;
++  int i;
++
++  if (*this_cache != NULL)
++    return ((struct trad_frame_cache *)*this_cache);
++
++  cache = trad_frame_cache_zalloc (this_frame);
++  *this_cache = cache;
++
++  func = get_frame_func (this_frame);
++  sp = get_frame_register_unsigned (this_frame, AMD64_RSP_REGNUM);
++
++  find_pc_partial_function (func, &name, NULL, NULL);
++  if (strcmp(name, "fork_trampoline") == 0 && get_frame_pc (this_frame) == func)
++    {
++      /* fork_exit hasn't been called (kthread has never run), so %rsp
++	 in the pcb points to the trapframe.  GDB has auto-adjusted
++	 %rsp for this frame to account for the "call" into
++	 fork_trampoline, so "undo" the adjustment.  */
++      sp += 8;
++    }
++  
++  for (i = 0; i < ARRAY_SIZE (amd64dfly_trapframe_offset); i++)
++    if (amd64dfly_trapframe_offset[i] != -1)
++      trad_frame_set_reg_addr (cache, i, sp + amd64dfly_trapframe_offset[i]);
++
++  /* Read %rip from trap frame.  */
++  addr = sp + amd64dfly_trapframe_offset[AMD64_RIP_REGNUM];
++  pc = read_memory_unsigned_integer (addr, 8, byte_order);
++
++  if (pc == 0 && strcmp(name, "fork_trampoline") == 0)
++    {
++      /* Initial frame of a kthread; terminate backtrace.  */
++      trad_frame_set_id (cache, outer_frame_id);
++    }
++  else
++    {
++      /* Construct the frame ID using the function start.  */
++      trad_frame_set_id (cache, frame_id_build (sp + TRAPFRAME_SIZE, func));
++    }
++
++  return cache;
+ }
+ 
+ static void
+-kgdb_trgt_trapframe_this_id(struct frame_info *next_frame, void **this_cache,
+-    struct frame_id *this_id)
++amd64dfly_trapframe_this_id (struct frame_info *this_frame,
++			     void **this_cache, struct frame_id *this_id)
+ {
+-	struct kgdb_frame_cache *cache;
+-
+-	cache = kgdb_trgt_frame_cache(next_frame, this_cache);
+-	*this_id = frame_id_build(cache->sp, cache->pc);
++  struct trad_frame_cache *cache =
++    amd64dfly_trapframe_cache (this_frame, this_cache);
++  
++  trad_frame_get_id (cache, this_id);
+ }
+ 
+ static struct value *
+-kgdb_trgt_trapframe_prev_register(struct frame_info *next_frame,
+-    void **this_cache, int regnum)
++amd64dfly_trapframe_prev_register (struct frame_info *this_frame,
++				   void **this_cache, int regnum)
+ {
+-	CORE_ADDR addrp;
+-	struct kgdb_frame_cache *cache;
+-	int ofs;
+-
+-	if (regnum < AMD64_RAX_REGNUM || regnum > AMD64_EFLAGS_REGNUM + 2)
+-		return frame_unwind_got_register(next_frame, regnum, regnum);
+-
+-	ofs = kgdb_trgt_frame_offset[regnum];
+-
+-	cache = kgdb_trgt_frame_cache(next_frame, this_cache);
+-
+-	switch (cache->frame_type) {
+-	case FT_NORMAL:
+-		break;
+-	case FT_INTRFRAME:
+-		ofs += 8;
+-		break;
+-	case FT_TIMERFRAME:
+-		break;
+-		/*
+-	case FT_INTRTRAPFRAME:
+-		ofs -= ofs_fix;
+-		break;
+-		*/
+-	case FT_CALLTRAP:
+-		ofs += 0;
+-		break;
+-	default:
+-		fprintf_unfiltered(gdb_stderr, "Correct FT_XXX frame offsets "
+-		   "for %d\n", cache->frame_type);
+-		break;
+-	}
+-
+-	addrp = cache->sp + ofs;
+-	return frame_unwind_got_memory(next_frame, regnum, addrp);
++  struct trad_frame_cache *cache =
++    amd64dfly_trapframe_cache (this_frame, this_cache);
++
++  return trad_frame_get_register (cache, this_frame, regnum);
+ }
+ 
+-static enum unwind_stop_reason
+-kgdb_trgt_trapframe_unwind_reason(struct frame_info *next_frame,
+-    void **this_cache)
++static int
++amd64dfly_trapframe_sniffer (const struct frame_unwind *self,
++			     struct frame_info *this_frame,
++			     void **this_prologue_cache)
+ {
+-    /* XXX marino : populate logic to determine unwind stoppage */
+-    return UNWIND_NO_REASON;
++  const char *name;
++
++  find_pc_partial_function (get_frame_func (this_frame), &name, NULL, NULL);
++  return (name && ((strcmp (name, "calltrap") == 0)
++		   || (strcmp (name, "fork_trampoline") == 0)
++		   || (strcmp (name, "nmi_calltrap") == 0)
++		   || (name[0] == 'X' && name[1] != '_')));
+ }
+ 
+-const struct frame_unwind kgdb_trgt_trapframe_unwind = {
+-        NORMAL_FRAME,
+-        &kgdb_trgt_trapframe_unwind_reason,
+-        &kgdb_trgt_trapframe_this_id,
+-        &kgdb_trgt_trapframe_prev_register,
+-	.sniffer = kgdb_trgt_trapframe_sniffer
++static const struct frame_unwind amd64dfly_trapframe_unwind = {
++  SIGTRAMP_FRAME,
++  default_frame_unwind_stop_reason,
++  amd64dfly_trapframe_this_id,
++  amd64dfly_trapframe_prev_register,
++  NULL,
++  amd64dfly_trapframe_sniffer
+ };
+ 
+-static int
+-kgdb_trgt_trapframe_sniffer(const struct frame_unwind *self,
+-			    struct frame_info *next_frame,
+-			    void **this_prologue_cache)
++static void
++amd64dfly_kernel_init_abi(struct gdbarch_info info, struct gdbarch *gdbarch)
+ {
+-	const char *pname;
+-	CORE_ADDR pc;
+-
+-	pc = get_frame_address_in_block(next_frame);
+-	pname = NULL;
+-	find_pc_partial_function(pc, &pname, NULL, NULL);
+-	if (pname == NULL)
+-		return (0);
+-	if (strcmp(pname, "calltrap") == 0 ||
+-	    strcmp(pname, "dblfault_handler") == 0 ||
+-	    strcmp(pname, "nmi_calltrap") == 0 ||
+-	    (pname[0] == 'X' && pname[1] != '_'))
+-		return (1);
+-	return (0);
++
++	amd64_init_abi(info, gdbarch);
++
++	frame_unwind_prepend_unwinder(gdbarch, &amd64dfly_trapframe_unwind);
++
++	set_solib_ops(gdbarch, &kld_so_ops);
++
++	dfly_vmcore_set_supply_pcb(gdbarch, amd64dfly_supply_pcb);
++	dfly_vmcore_set_cpu_pcb_addr(gdbarch, kgdb_trgt_stop_pcb);
++}
++
++void _initialize_amd64_kgdb_tdep(void);
++
++void
++_initialize_amd64_kgdb_tdep(void)
++{
++#ifdef __DragonFly__
++	/* DragonFly BSD is x86_64 only so init here */
++	gdbarch_register_osabi_sniffer(bfd_arch_i386,
++				       bfd_target_elf_flavour,
++				       dfly_kernel_osabi_sniffer);
++#endif
++	gdbarch_register_osabi (bfd_arch_i386, bfd_mach_x86_64,
++	    GDB_OSABI_DRAGONFLY_ELF_KERNEL, amd64dfly_kernel_init_abi);
++
++#ifdef __x86_64__
++	gdb_assert(offsetof(struct pcb, pcb_rbx)
++		   == amd64dfly_pcb_offset[AMD64_RBX_REGNUM]);
++	gdb_assert(offsetof(struct pcb, pcb_rbp)
++		   == amd64dfly_pcb_offset[AMD64_RBP_REGNUM]);
++	gdb_assert(offsetof(struct pcb, pcb_rsp)
++		   == amd64dfly_pcb_offset[AMD64_RSP_REGNUM]);
++	gdb_assert(offsetof(struct pcb, pcb_r12)
++		   == amd64dfly_pcb_offset[AMD64_R12_REGNUM]);
++	gdb_assert(offsetof(struct pcb, pcb_r13)
++		   == amd64dfly_pcb_offset[AMD64_R13_REGNUM]);
++	gdb_assert(offsetof(struct pcb, pcb_r14)
++		   == amd64dfly_pcb_offset[AMD64_R14_REGNUM]);
++	gdb_assert(offsetof(struct pcb, pcb_r15)
++		   == amd64dfly_pcb_offset[AMD64_R15_REGNUM]);
++	gdb_assert(offsetof(struct pcb, pcb_rip)
++		   == amd64dfly_pcb_offset[AMD64_RIP_REGNUM]);
++	gdb_assert(CODE_SEL == GSEL(GCODE_SEL, SEL_KPL));
++	gdb_assert(DATA_SEL == GSEL(GDATA_SEL, SEL_KPL));
++	gdb_assert(sizeof(struct trapframe) == TRAPFRAME_SIZE);
++	gdb_assert(offsetof(struct trapframe, tf_rax)
++		   == amd64dfly_trapframe_offset[AMD64_RAX_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_rbx)
++		   == amd64dfly_trapframe_offset[AMD64_RBX_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_rcx)
++		   == amd64dfly_trapframe_offset[AMD64_RCX_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_rdx)
++		   == amd64dfly_trapframe_offset[AMD64_RDX_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_rsi)
++		   == amd64dfly_trapframe_offset[AMD64_RSI_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_rdi)
++		   == amd64dfly_trapframe_offset[AMD64_RDI_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_rbp)
++		   == amd64dfly_trapframe_offset[AMD64_RBP_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_rsp)
++		   == amd64dfly_trapframe_offset[AMD64_RSP_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_r8)
++		   == amd64dfly_trapframe_offset[AMD64_R8_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_r9)
++		   == amd64dfly_trapframe_offset[AMD64_R9_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_r10)
++		   == amd64dfly_trapframe_offset[AMD64_R10_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_r11)
++		   == amd64dfly_trapframe_offset[AMD64_R11_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_r12)
++		   == amd64dfly_trapframe_offset[AMD64_R12_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_r13)
++		   == amd64dfly_trapframe_offset[AMD64_R13_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_r14)
++		   == amd64dfly_trapframe_offset[AMD64_R14_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_r15)
++		   == amd64dfly_trapframe_offset[AMD64_R15_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_rip)
++		   == amd64dfly_trapframe_offset[AMD64_RIP_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_rflags)
++		   == amd64dfly_trapframe_offset[AMD64_EFLAGS_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_cs)
++		   == amd64dfly_trapframe_offset[AMD64_CS_REGNUM]);
++	gdb_assert(offsetof(struct trapframe, tf_ss)
++		   == amd64dfly_trapframe_offset[AMD64_SS_REGNUM]);
++#endif
+ }
+-- 
+2.22.0
+

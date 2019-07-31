@@ -1,0 +1,1430 @@
+From feae8cb83cfe7b6c8bfaa29c4337454a8497df06 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 31 Jul 2019 14:04:49 +0300
+Subject: [PATCH 04/10] update readmes
+
+---
+ contrib/gdb-7/README.DELETED   | 628 ++++++++++++++++++++++-----------
+ contrib/gdb-7/README.DRAGONFLY |  33 +-
+ 2 files changed, 437 insertions(+), 224 deletions(-)
+
+diff --git a/contrib/gdb-7/README.DELETED b/contrib/gdb-7/README.DELETED
+index 938e96acba..602e2bb9a5 100644
+--- a/contrib/gdb-7/README.DELETED
++++ b/contrib/gdb-7/README.DELETED
+@@ -17,6 +17,9 @@ bfd/ChangeLog-2009
+ bfd/ChangeLog-2010
+ bfd/ChangeLog-2011
+ bfd/ChangeLog-2012
++bfd/ChangeLog-2013
++bfd/ChangeLog-2014
++bfd/ChangeLog-2015
+ bfd/ChangeLog-9193
+ bfd/ChangeLog-9495
+ bfd/ChangeLog-9697
+@@ -42,8 +45,12 @@ bfd/aout32.c
+ bfd/aout64.c
+ bfd/aoutf1.h
+ bfd/aoutx.h
++bfd/arc-got.h
++bfd/arc-plt.def
++bfd/arc-plt.h
+ bfd/armnetbsd.c
+ bfd/bfd.m4
++bfd/bfdwin.c
+ bfd/bout.c
+ bfd/cf-i386lynx.c
+ bfd/cf-sparclynx.c
+@@ -63,7 +70,6 @@ bfd/coff-m68k.c
+ bfd/coff-m88k.c
+ bfd/coff-mcore.c
+ bfd/coff-mips.c
+-bfd/coff-or32.c
+ bfd/coff-ppc.c
+ bfd/coff-rs6000.c
+ bfd/coff-sh.c
+@@ -77,18 +83,15 @@ bfd/coff-tic80.c
+ bfd/coff-u68k.c
+ bfd/coff-w65.c
+ bfd/coff-we32k.c
+-bfd/coff-x86_64.c
+ bfd/coff-z80.c
+ bfd/coff-z8k.c
+ bfd/coff64-rs6000.c
+-bfd/coffcode.h
+-bfd/cofflink.c
+ bfd/coffswap.h
+ bfd/config.in
+ bfd/configure
++bfd/configure.ac
+ bfd/configure.com
+ bfd/configure.host
+-bfd/configure.in
+ bfd/cpu-aarch64.c
+ bfd/cpu-alpha.c
+ bfd/cpu-arc.c
+@@ -105,6 +108,7 @@ bfd/cpu-dlx.c
+ bfd/cpu-epiphany.c
+ bfd/cpu-fr30.c
+ bfd/cpu-frv.c
++bfd/cpu-ft32.c
+ bfd/cpu-h8300.c
+ bfd/cpu-h8500.c
+ bfd/cpu-hppa.c
+@@ -115,7 +119,6 @@ bfd/cpu-ia64-opc.c
+ bfd/cpu-ia64.c
+ bfd/cpu-ip2k.c
+ bfd/cpu-iq2000.c
+-bfd/cpu-k1om.c
+ bfd/cpu-lm32.c
+ bfd/cpu-m10200.c
+ bfd/cpu-m10300.c
+@@ -136,13 +139,12 @@ bfd/cpu-mmix.c
+ bfd/cpu-moxie.c
+ bfd/cpu-msp430.c
+ bfd/cpu-mt.c
++bfd/cpu-nds32.c
+ bfd/cpu-nios2.c
+ bfd/cpu-ns32k.c
+-bfd/cpu-openrisc.c
+-bfd/cpu-or32.c
++bfd/cpu-or1k.c
+ bfd/cpu-pdp11.c
+ bfd/cpu-pj.c
+-bfd/cpu-plugin.c
+ bfd/cpu-powerpc.c
+ bfd/cpu-rl78.c
+ bfd/cpu-rs6000.c
+@@ -162,6 +164,7 @@ bfd/cpu-tilepro.c
+ bfd/cpu-v850.c
+ bfd/cpu-v850_rh850.c
+ bfd/cpu-vax.c
++bfd/cpu-visium.c
+ bfd/cpu-w65.c
+ bfd/cpu-we32k.c
+ bfd/cpu-xc16x.c
+@@ -172,6 +175,7 @@ bfd/cpu-z80.c
+ bfd/cpu-z8k.c
+ bfd/demo64.c
+ bfd/dep-in.sed
++bfd/development.sh
+ bfd/doc/
+ bfd/ecoff.c
+ bfd/ecofflink.c
+@@ -193,9 +197,11 @@ bfd/elf32-crx.c
+ bfd/elf32-d10v.c
+ bfd/elf32-d30v.c
+ bfd/elf32-dlx.c
++bfd/elf32-dlx.h
+ bfd/elf32-epiphany.c
+ bfd/elf32-fr30.c
+ bfd/elf32-frv.c
++bfd/elf32-ft32.c
+ bfd/elf32-h8300.c
+ bfd/elf32-hppa.c
+ bfd/elf32-hppa.h
+@@ -222,14 +228,17 @@ bfd/elf32-mips.c
+ bfd/elf32-moxie.c
+ bfd/elf32-msp430.c
+ bfd/elf32-mt.c
++bfd/elf32-nds32.c
++bfd/elf32-nds32.h
+ bfd/elf32-nios2.c
+-bfd/elf32-openrisc.c
+-bfd/elf32-or32.c
++bfd/elf32-nios2.h
++bfd/elf32-or1k.c
+ bfd/elf32-pj.c
+ bfd/elf32-ppc.c
+ bfd/elf32-ppc.h
+ bfd/elf32-rl78.c
+ bfd/elf32-rx.c
++bfd/elf32-rx.h
+ bfd/elf32-s390.c
+ bfd/elf32-score.c
+ bfd/elf32-score.h
+@@ -251,12 +260,12 @@ bfd/elf32-tilepro.c
+ bfd/elf32-tilepro.h
+ bfd/elf32-v850.c
+ bfd/elf32-vax.c
++bfd/elf32-visium.c
+ bfd/elf32-xc16x.c
+ bfd/elf32-xgate.c
+ bfd/elf32-xgate.h
+ bfd/elf32-xstormy16.c
+ bfd/elf32-xtensa.c
+-bfd/elf64-aarch64.c
+ bfd/elf64-alpha.c
+ bfd/elf64-hppa.c
+ bfd/elf64-hppa.h
+@@ -271,7 +280,10 @@ bfd/elf64-sparc.c
+ bfd/elf64-tilegx.c
+ bfd/elf64-tilegx.h
+ bfd/elfn32-mips.c
++bfd/elfnn-aarch64.c
+ bfd/elfnn-ia64.c
++bfd/elfxx-aarch64.c
++bfd/elfxx-aarch64.h
+ bfd/elfxx-ia64.c
+ bfd/elfxx-ia64.h
+ bfd/elfxx-mips.c
+@@ -309,7 +321,6 @@ bfd/libhppa.h
+ bfd/libieee.h
+ bfd/libnlm.h
+ bfd/liboasys.h
+-bfd/libpei.h
+ bfd/libxcoff.h
+ bfd/lynx-core.c
+ bfd/m68k4knetbsd.c
+@@ -317,6 +328,8 @@ bfd/m68klinux.c
+ bfd/m68knetbsd.c
+ bfd/m88kmach3.c
+ bfd/m88kopenbsd.c
++bfd/mach-o-aarch64.c
++bfd/mach-o-arm.c
+ bfd/mach-o-i386.c
+ bfd/mach-o-target.c
+ bfd/mach-o-x86-64.c
+@@ -353,7 +366,6 @@ bfd/pe-mips.c
+ bfd/pe-ppc.c
+ bfd/pe-sh.c
+ bfd/pe-x86_64.c
+-bfd/peXXigen.c
+ bfd/pef-traceback.h
+ bfd/pef.c
+ bfd/pef.h
+@@ -365,10 +377,6 @@ bfd/pei-mcore.c
+ bfd/pei-mips.c
+ bfd/pei-ppc.c
+ bfd/pei-sh.c
+-bfd/pei-x86_64.c
+-bfd/peicode.h
+-bfd/plugin.c
+-bfd/plugin.h
+ bfd/po/
+ bfd/ppcboot.c
+ bfd/ptrace-core.c
+@@ -383,12 +391,12 @@ bfd/sparclynx.c
+ bfd/sparcnetbsd.c
+ bfd/stamp-h.in
+ bfd/sunos.c
+-bfd/ticoff.h
+ bfd/trad-core.c
+ bfd/vax1knetbsd.c
+ bfd/vaxbsd.c
+ bfd/vaxnetbsd.c
+ bfd/versados.c
++bfd/version.m4
+ bfd/vms-alpha.c
+ bfd/vms-lib.c
+ bfd/vms-misc.c
+@@ -400,11 +408,11 @@ bfd/xsym.h
+ bfd/xtensa-isa.c
+ bfd/xtensa-modules.c
+ compile
++config/
+ config-ml.in
+ config.guess
+ config.rpath
+ config.sub
+-config/
+ configure
+ configure.ac
+ cpu/
+@@ -438,10 +446,16 @@ gdb/ChangeLog-2009
+ gdb/ChangeLog-2010
+ gdb/ChangeLog-2011
+ gdb/ChangeLog-2012
++gdb/ChangeLog-2013
++gdb/ChangeLog-2014
++gdb/ChangeLog-2015
+ gdb/ChangeLog-3.x
+ gdb/MAINTAINERS
+ gdb/Makefile.in
+ gdb/NEWS
++gdb/PROBLEMS
++gdb/aarch32-linux-nat.c
++gdb/aarch32-linux-nat.h
+ gdb/aarch64-linux-nat.c
+ gdb/aarch64-linux-tdep.c
+ gdb/aarch64-linux-tdep.h
+@@ -456,8 +470,6 @@ gdb/aix-thread.c
+ gdb/alpha-linux-nat.c
+ gdb/alpha-linux-tdep.c
+ gdb/alpha-mdebug-tdep.c
+-gdb/alpha-nat.c
+-gdb/alpha-osf1-tdep.c
+ gdb/alpha-tdep.c
+ gdb/alpha-tdep.h
+ gdb/alphabsd-nat.c
+@@ -481,6 +493,7 @@ gdb/amd64nbsd-nat.c
+ gdb/amd64nbsd-tdep.c
+ gdb/amd64obsd-nat.c
+ gdb/amd64obsd-tdep.c
++gdb/arch/
+ gdb/arm-linux-nat.c
+ gdb/arm-linux-tdep.c
+ gdb/arm-linux-tdep.h
+@@ -496,69 +509,50 @@ gdb/avr-tdep.c
+ gdb/bfin-linux-tdep.c
+ gdb/bfin-tdep.c
+ gdb/bfin-tdep.h
++gdb/build-with-cxx.m4
+ gdb/c-exp.c
+-gdb/config/alpha/
+-gdb/config/arm/
+-gdb/config/djgpp/
+-gdb/config/i386/cygwin.mh
+-gdb/config/i386/darwin.mh
+-gdb/config/i386/fbsd.mh
+-gdb/config/i386/fbsd64.mh
+-gdb/config/i386/go32.mh
+-gdb/config/i386/i386gnu.mh
+-gdb/config/i386/i386sol2.mh
+-gdb/config/i386/linux.mh
+-gdb/config/i386/linux64.mh
+-gdb/config/i386/mingw.mh
+-gdb/config/i386/mingw64.mh
+-gdb/config/i386/nbsd64.mh
+-gdb/config/i386/nbsdaout.mh
+-gdb/config/i386/nbsdelf.mh
+-gdb/config/i386/nm-fbsd.h
+-gdb/config/i386/nm-i386gnu.h
+-gdb/config/i386/nto.mh
+-gdb/config/i386/obsd.mh
+-gdb/config/i386/obsd64.mh
+-gdb/config/i386/obsdaout.mh
+-gdb/config/i386/sol2-64.mh
+-gdb/config/ia64/
+-gdb/config/m32r/
+-gdb/config/m68k/
+-gdb/config/m88k/
+-gdb/config/mips/
+-gdb/config/nm-linux.h
+-gdb/config/nm-nto.h
+-gdb/config/pa/
+-gdb/config/powerpc/
+-gdb/config/rs6000/
+-gdb/config/s390/
+-gdb/config/sh/
+-gdb/config/sparc/
+-gdb/config/vax/
+-gdb/config/xtensa/
++gdb/common/common-regcache.c
++gdb/common/common.host
++gdb/common/common.m4
++gdb/common/create-version.sh
++gdb/common/mingw-strerror.c
++gdb/config/
++gdb/config.in
+ gdb/configure
+-gdb/contrib
++gdb/configure.ac
++gdb/configure.host
++gdb/configure.tgt
++gdb/contrib/
+ gdb/copying.awk
++gdb/copyright.py
+ gdb/core-regset.c
+ gdb/cp-name-parser.c
++gdb/cris-linux-tdep.c
+ gdb/cris-tdep.c
++gdb/cris-tdep.h
++gdb/d-exp.c
+ gdb/darwin-nat-info.c
+ gdb/darwin-nat.c
+ gdb/darwin-nat.h
+-gdb/dbug-rom.c
+-gdb/dec-thread.c
++gdb/data-directory/
+ gdb/dicos-tdep.c
+ gdb/dicos-tdep.h
+-gdb/dink32-rom.c
+ gdb/doc/ChangeLog
+-gdb/doc/LRS
++gdb/doc/Doxyfile-base.in
++gdb/doc/Doxyfile-gdb-api.in
++gdb/doc/Doxyfile-gdb-xref.in
++gdb/doc/Doxyfile-gdbserver.in
+ gdb/doc/Makefile.in
+ gdb/doc/a4rc.sed
+ gdb/doc/agentexpr.texi
+ gdb/doc/all-cfg.texi
+ gdb/doc/annotate.info
+ gdb/doc/annotate.texinfo
++gdb/doc/doxy-index.in
+ gdb/doc/fdl.texi
++gdb/doc/filter-for-doxygen
++gdb/doc/filter-params.pl
++gdb/doc/gcore.1
+ gdb/doc/gdb.info
+ gdb/doc/gdb.info-1
+ gdb/doc/gdb.info-2
+@@ -568,13 +562,13 @@ gdb/doc/gdb.info-5
+ gdb/doc/gdb.info-6
+ gdb/doc/gdb.info-7
+ gdb/doc/gdb.texinfo
+-gdb/doc/gdbint.info
+-gdb/doc/gdbint.info-1
+-gdb/doc/gdbint.info-2
+-gdb/doc/gdbint.texinfo
++gdb/doc/gdbinit.5
++gdb/doc/gdbserver.1
+ gdb/doc/gpl.texi
++gdb/doc/guile.texi
+ gdb/doc/lpsrc.sed
+ gdb/doc/psrc.sed
++gdb/doc/python.texi
+ gdb/doc/refcard.tex
+ gdb/doc/stabs.info
+ gdb/doc/stabs.texinfo
+@@ -583,14 +577,16 @@ gdb/doc/stack_frame.pdf
+ gdb/doc/stack_frame.png
+ gdb/doc/stack_frame.svg
+ gdb/doc/stack_frame.txt
+-gdb/dsrec.c
++gdb/dtrace-probe.c
+ gdb/exc_request.defs
+ gdb/f-exp.c
++gdb/fbsd-nat.c
++gdb/fbsd-nat.h
++gdb/fbsd-tdep.c
++gdb/fbsd-tdep.h
+ gdb/features/Makefile
+ gdb/features/aarch64-core.xml
+ gdb/features/aarch64-fpu.xml
+-gdb/features/aarch64-without-fpu.c
+-gdb/features/aarch64-without-fpu.xml
+ gdb/features/aarch64.c
+ gdb/features/aarch64.xml
+ gdb/features/arm-core.xml
+@@ -612,8 +608,64 @@ gdb/features/arm-with-vfpv2.c
+ gdb/features/arm-with-vfpv2.xml
+ gdb/features/arm-with-vfpv3.c
+ gdb/features/arm-with-vfpv3.xml
++gdb/features/btrace-conf.dtd
+ gdb/features/gdbserver-regs.xsl
++gdb/features/i386/32bit-avx.xml
++gdb/features/i386/32bit-avx512.xml
++gdb/features/i386/32bit-core.xml
++gdb/features/i386/32bit-linux.xml
++gdb/features/i386/32bit-mpx.xml
++gdb/features/i386/32bit-sse.xml
++gdb/features/i386/64bit-avx.xml
++gdb/features/i386/64bit-avx512.xml
++gdb/features/i386/64bit-core.xml
++gdb/features/i386/64bit-linux.xml
++gdb/features/i386/64bit-mpx.xml
++gdb/features/i386/64bit-sse.xml
++gdb/features/i386/amd64-avx-linux.xml
++gdb/features/i386/amd64-avx-mpx-linux.c
++gdb/features/i386/amd64-avx-mpx-linux.xml
++gdb/features/i386/amd64-avx-mpx.xml
++gdb/features/i386/amd64-avx.xml
++gdb/features/i386/amd64-avx512-linux.c
++gdb/features/i386/amd64-avx512-linux.xml
++gdb/features/i386/amd64-avx512.xml
++gdb/features/i386/amd64-linux.xml
++gdb/features/i386/amd64-mpx-linux.c
++gdb/features/i386/amd64-mpx-linux.xml
++gdb/features/i386/amd64-mpx.xml
++gdb/features/i386/amd64.xml
++gdb/features/i386/i386-avx-linux.xml
++gdb/features/i386/i386-avx-mpx-linux.c
++gdb/features/i386/i386-avx-mpx-linux.xml
++gdb/features/i386/i386-avx-mpx.xml
++gdb/features/i386/i386-avx.xml
++gdb/features/i386/i386-avx512-linux.c
++gdb/features/i386/i386-avx512-linux.xml
++gdb/features/i386/i386-avx512.xml
++gdb/features/i386/i386-linux.xml
++gdb/features/i386/i386-mmx-linux.xml
++gdb/features/i386/i386-mmx.xml
++gdb/features/i386/i386-mpx-linux.c
++gdb/features/i386/i386-mpx-linux.xml
++gdb/features/i386/i386-mpx.xml
++gdb/features/i386/i386.xml
++gdb/features/i386/x32-avx-linux.xml
++gdb/features/i386/x32-avx.xml
++gdb/features/i386/x32-avx512-linux.c
++gdb/features/i386/x32-avx512-linux.xml
++gdb/features/i386/x32-avx512.xml
++gdb/features/i386/x32-core.xml
++gdb/features/i386/x32-linux.xml
++gdb/features/i386/x32.xml
++gdb/features/library-list-aix.dtd
+ gdb/features/m68k-core.xml
++gdb/features/microblaze-core.xml
++gdb/features/microblaze-stack-protect.xml
++gdb/features/microblaze-with-stack-protect.c
++gdb/features/microblaze-with-stack-protect.xml
++gdb/features/microblaze.c
++gdb/features/microblaze.xml
+ gdb/features/mips-cp0.xml
+ gdb/features/mips-cpu.xml
+ gdb/features/mips-dsp-linux.c
+@@ -630,6 +682,16 @@ gdb/features/mips64-dsp.xml
+ gdb/features/mips64-fpu.xml
+ gdb/features/mips64-linux.c
+ gdb/features/mips64-linux.xml
++gdb/features/nds32-core.xml
++gdb/features/nds32-fpu.xml
++gdb/features/nds32-system.xml
++gdb/features/nds32.c
++gdb/features/nds32.xml
++gdb/features/nios2-cpu.xml
++gdb/features/nios2-linux.c
++gdb/features/nios2-linux.xml
++gdb/features/nios2.c
++gdb/features/nios2.xml
+ gdb/features/number-regs.xsl
+ gdb/features/rs6000/
+ gdb/features/s390-acr.xml
+@@ -648,6 +710,14 @@ gdb/features/s390-linux64v1.c
+ gdb/features/s390-linux64v1.xml
+ gdb/features/s390-linux64v2.c
+ gdb/features/s390-linux64v2.xml
++gdb/features/s390-tdb.xml
++gdb/features/s390-te-linux64.c
++gdb/features/s390-te-linux64.xml
++gdb/features/s390-tevx-linux64.c
++gdb/features/s390-tevx-linux64.xml
++gdb/features/s390-vx-linux64.c
++gdb/features/s390-vx-linux64.xml
++gdb/features/s390-vx.xml
+ gdb/features/s390x-core64.xml
+ gdb/features/s390x-linux64.c
+ gdb/features/s390x-linux64.xml
+@@ -655,6 +725,12 @@ gdb/features/s390x-linux64v1.c
+ gdb/features/s390x-linux64v1.xml
+ gdb/features/s390x-linux64v2.c
+ gdb/features/s390x-linux64v2.xml
++gdb/features/s390x-te-linux64.c
++gdb/features/s390x-te-linux64.xml
++gdb/features/s390x-tevx-linux64.c
++gdb/features/s390x-tevx-linux64.xml
++gdb/features/s390x-vx-linux64.c
++gdb/features/s390x-vx-linux64.xml
+ gdb/features/sort-regs.xsl
+ gdb/features/tic6x-c62x-linux.c
+ gdb/features/tic6x-c62x-linux.xml
+@@ -675,9 +751,14 @@ gdb/features/xscale-iwmmxt.xml
+ gdb/frv-linux-tdep.c
+ gdb/frv-tdep.c
+ gdb/frv-tdep.h
++gdb/ft32-tdep.c
++gdb/ft32-tdep.h
++gdb/gcore
++gdb/gcore.in
++gdb/gdb-code-style.el
++gdb/gdb-gdb.py
+ gdb/gdb_buildall.sh
+ gdb/gdb_expat.h
+-gdb/gdb_gcore.sh
+ gdb/gdb_indent.sh
+ gdb/gdb_mbuild.sh
+ gdb/gdb_proc_service.h
+@@ -696,52 +777,36 @@ gdb/gnulib/import/Makefile.am
+ gdb/gnulib/import/Makefile.in
+ gdb/gnulib/import/alloca.c
+ gdb/gnulib/import/alloca.in.h
++gdb/gnulib/import/basename-lgpl.c
++gdb/gnulib/import/canonicalize-lgpl.c
+ gdb/gnulib/import/config.charset
+-gdb/gnulib/import/extra/snippet/arg-nonnull.h
+-gdb/gnulib/import/extra/snippet/c++defs.h
+-gdb/gnulib/import/extra/snippet/warn-on-use.h
+-gdb/gnulib/import/extra/update-copyright
++gdb/gnulib/import/dirent.in.h
++gdb/gnulib/import/dirfd.c
++gdb/gnulib/import/dirname-lgpl.c
++gdb/gnulib/import/dirname.h
++gdb/gnulib/import/errno.in.h
++gdb/gnulib/import/extra/
++gdb/gnulib/import/float+.h
++gdb/gnulib/import/float.c
++gdb/gnulib/import/float.in.h
+ gdb/gnulib/import/fnmatch.in.h
++gdb/gnulib/import/fpucw.h
++gdb/gnulib/import/frexp.c
++gdb/gnulib/import/frexpl.c
++gdb/gnulib/import/gettimeofday.c
+ gdb/gnulib/import/inttypes.in.h
+-gdb/gnulib/import/m4/00gnulib.m4
+-gdb/gnulib/import/m4/alloca.m4
+-gdb/gnulib/import/m4/codeset.m4
+-gdb/gnulib/import/m4/configmake.m4
+-gdb/gnulib/import/m4/extensions.m4
+-gdb/gnulib/import/m4/extern-inline.m4
+-gdb/gnulib/import/m4/fcntl-o.m4
+-gdb/gnulib/import/m4/fnmatch.m4
+-gdb/gnulib/import/m4/glibc21.m4
+-gdb/gnulib/import/m4/gnulib-cache.m4
+-gdb/gnulib/import/m4/gnulib-common.m4
+-gdb/gnulib/import/m4/gnulib-comp.m4
+-gdb/gnulib/import/m4/gnulib-tool.m4
+-gdb/gnulib/import/m4/include_next.m4
+-gdb/gnulib/import/m4/inttypes-pri.m4
+-gdb/gnulib/import/m4/inttypes.m4
+-gdb/gnulib/import/m4/localcharset.m4
+-gdb/gnulib/import/m4/locale-fr.m4
+-gdb/gnulib/import/m4/locale-ja.m4
+-gdb/gnulib/import/m4/locale-zh.m4
+-gdb/gnulib/import/m4/longlong.m4
+-gdb/gnulib/import/m4/mbrtowc.m4
+-gdb/gnulib/import/m4/mbsinit.m4
+-gdb/gnulib/import/m4/mbsrtowcs.m4
+-gdb/gnulib/import/m4/mbstate_t.m4
+-gdb/gnulib/import/m4/memchr.m4
+-gdb/gnulib/import/m4/memmem.m4
+-gdb/gnulib/import/m4/mmap-anon.m4
+-gdb/gnulib/import/m4/multiarch.m4
+-gdb/gnulib/import/m4/onceonly.m4
+-gdb/gnulib/import/m4/stdbool.m4
+-gdb/gnulib/import/m4/stddef_h.m4
+-gdb/gnulib/import/m4/stdint.m4
+-gdb/gnulib/import/m4/string_h.m4
+-gdb/gnulib/import/m4/warn-on-use.m4
+-gdb/gnulib/import/m4/wchar_h.m4
+-gdb/gnulib/import/m4/wchar_t.m4
+-gdb/gnulib/import/m4/wctype_h.m4
+-gdb/gnulib/import/m4/wint_t.m4
++gdb/gnulib/import/isnan.c
++gdb/gnulib/import/isnand-nolibm.h
++gdb/gnulib/import/isnand.c
++gdb/gnulib/import/isnanl-nolibm.h
++gdb/gnulib/import/isnanl.c
++gdb/gnulib/import/itold.c
++gdb/gnulib/import/lstat.c
++gdb/gnulib/import/m4/
++gdb/gnulib/import/malloc.c
++gdb/gnulib/import/malloca.valgrind
++gdb/gnulib/import/math.c
++gdb/gnulib/import/math.in.h
+ gdb/gnulib/import/mbrtowc.c
+ gdb/gnulib/import/mbsinit.c
+ gdb/gnulib/import/mbsrtowcs-impl.h
+@@ -749,31 +814,76 @@ gdb/gnulib/import/mbsrtowcs-state.c
+ gdb/gnulib/import/mbsrtowcs.c
+ gdb/gnulib/import/memchr.c
+ gdb/gnulib/import/memchr.valgrind
++gdb/gnulib/import/rawmemchr.c
++gdb/gnulib/import/rawmemchr.valgrind
++gdb/gnulib/import/readlink.c
+ gdb/gnulib/import/ref-add.sin
+ gdb/gnulib/import/ref-del.sin
++gdb/gnulib/import/rename.c
++gdb/gnulib/import/rmdir.c
++gdb/gnulib/import/same-inode.h
++gdb/gnulib/import/signal.in.h
++gdb/gnulib/import/stat.c
+ gdb/gnulib/import/stdbool.in.h
+ gdb/gnulib/import/stddef.in.h
+ gdb/gnulib/import/stdint.in.h
++gdb/gnulib/import/stdio.in.h
++gdb/gnulib/import/stdlib.in.h
++gdb/gnulib/import/strchrnul.c
++gdb/gnulib/import/strchrnul.valgrind
+ gdb/gnulib/import/streq.h
+ gdb/gnulib/import/string.in.h
+-gdb/gnulib/import/verify.h
++gdb/gnulib/import/stripslash.c
++gdb/gnulib/import/strstr.c
++gdb/gnulib/import/strtok_r.c
++gdb/gnulib/import/sys_stat.in.h
++gdb/gnulib/import/sys_time.in.h
++gdb/gnulib/import/sys_types.in.h
++gdb/gnulib/import/time.in.h
++gdb/gnulib/import/unistd.c
++gdb/gnulib/import/unistd.in.h
+ gdb/gnulib/import/wchar.in.h
+ gdb/gnulib/import/wctype.in.h
+ gdb/gnulib/update-gnulib.sh
+ gdb/go32-nat.c
++gdb/guile/README
++gdb/guile/guile-internal.h
++gdb/guile/lib/
++gdb/guile/scm-arch.c
++gdb/guile/scm-auto-load.c
++gdb/guile/scm-block.c
++gdb/guile/scm-breakpoint.c
++gdb/guile/scm-cmd.c
++gdb/guile/scm-disasm.c
++gdb/guile/scm-exception.c
++gdb/guile/scm-frame.c
++gdb/guile/scm-gsmob.c
++gdb/guile/scm-iterator.c
++gdb/guile/scm-lazy-string.c
++gdb/guile/scm-math.c
++gdb/guile/scm-objfile.c
++gdb/guile/scm-param.c
++gdb/guile/scm-ports.c
++gdb/guile/scm-pretty-print.c
++gdb/guile/scm-progspace.c
++gdb/guile/scm-safe-call.c
++gdb/guile/scm-string.c
++gdb/guile/scm-symbol.c
++gdb/guile/scm-symtab.c
++gdb/guile/scm-type.c
++gdb/guile/scm-utils.c
++gdb/guile/scm-value.c
+ gdb/h8300-tdep.c
+-gdb/hppa-hpux-nat.c
+-gdb/hppa-hpux-tdep.c
+ gdb/hppa-linux-nat.c
+ gdb/hppa-linux-offsets.h
+ gdb/hppa-linux-tdep.c
+ gdb/hppa-tdep.c
+ gdb/hppa-tdep.h
+-gdb/hppabsd-nat.c
+ gdb/hppabsd-tdep.c
+ gdb/hppabsd-tdep.h
+ gdb/hppanbsd-nat.c
+ gdb/hppanbsd-tdep.c
++gdb/hppaobsd-nat.c
+ gdb/hppaobsd-tdep.c
+ gdb/i386-cygwin-tdep.c
+ gdb/i386-darwin-nat.c
+@@ -781,6 +891,7 @@ gdb/i386-darwin-tdep.c
+ gdb/i386-darwin-tdep.h
+ gdb/i386-dicos-tdep.c
+ gdb/i386-linux-nat.c
++gdb/i386-linux-nat.h
+ gdb/i386-linux-tdep.c
+ gdb/i386-linux-tdep.h
+ gdb/i386-nto-tdep.c
+@@ -788,6 +899,7 @@ gdb/i386-sol2-nat.c
+ gdb/i386-sol2-tdep.c
+ gdb/i386-windows-nat.c
+ gdb/i386fbsd-nat.c
++gdb/i386fbsd-tdep.h
+ gdb/i386gnu-nat.c
+ gdb/i386gnu-tdep.c
+ gdb/i386nbsd-nat.c
+@@ -795,9 +907,6 @@ gdb/i386nbsd-tdep.c
+ gdb/i386obsd-nat.c
+ gdb/i386obsd-tdep.c
+ gdb/i386v4-nat.c
+-gdb/ia64-hpux-nat.c
+-gdb/ia64-hpux-tdep.c
+-gdb/ia64-hpux-tdep.h
+ gdb/ia64-libunwind-tdep.c
+ gdb/ia64-libunwind-tdep.h
+ gdb/ia64-linux-nat.c
+@@ -805,11 +914,10 @@ gdb/ia64-linux-tdep.c
+ gdb/ia64-tdep.c
+ gdb/ia64-tdep.h
+ gdb/ia64-vms-tdep.c
+-gdb/inf-ttrace.c
+-gdb/inf-ttrace.h
+ gdb/iq2000-tdep.c
+-gdb/irix5-nat.c
+ gdb/jv-exp.c
++gdb/libiberty.m4
++gdb/libmcheck.m4
+ gdb/linux-fork.c
+ gdb/linux-fork.h
+ gdb/linux-nat.c
+@@ -824,7 +932,6 @@ gdb/m2-exp.c
+ gdb/m32c-tdep.c
+ gdb/m32r-linux-nat.c
+ gdb/m32r-linux-tdep.c
+-gdb/m32r-rom.c
+ gdb/m32r-tdep.c
+ gdb/m32r-tdep.h
+ gdb/m68hc11-tdep.c
+@@ -837,17 +944,17 @@ gdb/m68klinux-tdep.c
+ gdb/m88k-tdep.c
+ gdb/m88k-tdep.h
+ gdb/m88kbsd-nat.c
++gdb/make-target-delegates
+ gdb/mep-tdep.c
+ gdb/mi/ChangeLog-1999-2003
+ gdb/microblaze-linux-tdep.c
+-gdb/microblaze-rom.c
+ gdb/microblaze-tdep.c
+ gdb/microblaze-tdep.h
+ gdb/mingw-hdep.c
+-gdb/mips-irix-tdep.c
+ gdb/mips-linux-nat.c
+ gdb/mips-linux-tdep.c
+ gdb/mips-linux-tdep.h
++gdb/mips-sde-tdep.c
+ gdb/mips-tdep.c
+ gdb/mips-tdep.h
+ gdb/mips64obsd-nat.c
+@@ -858,21 +965,60 @@ gdb/mipsnbsd-tdep.h
+ gdb/mn10300-linux-tdep.c
+ gdb/mn10300-tdep.c
+ gdb/mn10300-tdep.h
+-gdb/monitor.c
+-gdb/monitor.h
+ gdb/moxie-tdep.c
+ gdb/moxie-tdep.h
+ gdb/msg.defs
+ gdb/msg_reply.defs
++gdb/msp430-tdep.c
+ gdb/mt-tdep.c
++gdb/nat/aarch64-linux-hw-point.c
++gdb/nat/aarch64-linux-hw-point.h
++gdb/nat/aarch64-linux.c
++gdb/nat/aarch64-linux.h
++gdb/nat/amd64-linux-siginfo.c
++gdb/nat/amd64-linux-siginfo.h
++gdb/nat/gdb_thread_db.h
++gdb/nat/glibc_thread_db.h
++gdb/nat/linux-btrace.c
++gdb/nat/linux-btrace.h
++gdb/nat/linux-namespaces.c
++gdb/nat/linux-namespaces.h
++gdb/nat/linux-nat.h
++gdb/nat/linux-osdata.c
++gdb/nat/linux-osdata.h
++gdb/nat/linux-personality.c
++gdb/nat/linux-personality.h
++gdb/nat/linux-procfs.c
++gdb/nat/linux-procfs.h
++gdb/nat/linux-ptrace.c
++gdb/nat/linux-ptrace.h
++gdb/nat/linux-waitpid.c
++gdb/nat/linux-waitpid.h
++gdb/nat/mips-linux-watch.c
++gdb/nat/mips-linux-watch.h
++gdb/nat/ppc-linux.c
++gdb/nat/ppc-linux.h
++gdb/nat/x86-cpuid.h
++gdb/nat/x86-gcc-cpuid.h
++gdb/nat/x86-linux-dregs.c
++gdb/nat/x86-linux-dregs.h
++gdb/nat/x86-linux.c
++gdb/nat/x86-linux.h
+ gdb/nbsd-nat.c
+ gdb/nbsd-nat.h
+ gdb/nbsd-tdep.c
+ gdb/nbsd-tdep.h
++gdb/nds32-tdep.c
++gdb/nds32-tdep.h
++gdb/nios2-linux-tdep.c
++gdb/nios2-tdep.c
++gdb/nios2-tdep.h
+ gdb/notify.defs
+ gdb/nto-procfs.c
+ gdb/nto-tdep.c
+ gdb/nto-tdep.h
++gdb/obsd-nat.c
++gdb/obsd-nat.h
+ gdb/obsd-tdep.c
+ gdb/obsd-tdep.h
+ gdb/p-exp.c
+@@ -884,7 +1030,6 @@ gdb/ppc-sysv-tdep.c
+ gdb/ppc-tdep.h
+ gdb/ppc64-tdep.c
+ gdb/ppc64-tdep.h
+-gdb/ppcbug-rom.c
+ gdb/ppcfbsd-nat.c
+ gdb/ppcfbsd-tdep.c
+ gdb/ppcfbsd-tdep.h
+@@ -903,16 +1048,75 @@ gdb/proc-why.c
+ gdb/process_reply.defs
+ gdb/procfs.c
+ gdb/procfs.h
+-gdb/regformats/aarch64-without-fpu.dat
++gdb/ptrace.m4
++gdb/python/lib/
++gdb/python/py-arch.c
++gdb/python/py-auto-load.c
++gdb/python/py-block.c
++gdb/python/py-bpevent.c
++gdb/python/py-breakpoint.c
++gdb/python/py-cmd.c
++gdb/python/py-continueevent.c
++gdb/python/py-event.c
++gdb/python/py-event.h
++gdb/python/py-events.h
++gdb/python/py-evtregistry.c
++gdb/python/py-evts.c
++gdb/python/py-exitedevent.c
++gdb/python/py-finishbreakpoint.c
++gdb/python/py-frame.c
++gdb/python/py-framefilter.c
++gdb/python/py-function.c
++gdb/python/py-gdb-readline.c
++gdb/python/py-inferior.c
++gdb/python/py-infevents.c
++gdb/python/py-infthread.c
++gdb/python/py-lazy-string.c
++gdb/python/py-linetable.c
++gdb/python/py-newobjfileevent.c
++gdb/python/py-objfile.c
++gdb/python/py-param.c
++gdb/python/py-prettyprint.c
++gdb/python/py-progspace.c
++gdb/python/py-signalevent.c
++gdb/python/py-stopevent.c
++gdb/python/py-stopevent.h
++gdb/python/py-symbol.c
++gdb/python/py-symtab.c
++gdb/python/py-threadevent.c
++gdb/python/py-type.c
++gdb/python/py-unwind.c
++gdb/python/py-utils.c
++gdb/python/py-value.c
++gdb/python/py-varobj.c
++gdb/python/py-xmethods.c
++gdb/python/python-config.py
++gdb/python/python-internal.h
+ gdb/regformats/aarch64.dat
+ gdb/regformats/arm-with-iwmmxt.dat
+ gdb/regformats/arm-with-neon.dat
+ gdb/regformats/arm-with-vfpv2.dat
+ gdb/regformats/arm-with-vfpv3.dat
++gdb/regformats/i386/amd64-avx-mpx-linux.dat
++gdb/regformats/i386/amd64-avx-mpx.dat
++gdb/regformats/i386/amd64-avx512-linux.dat
++gdb/regformats/i386/amd64-avx512.dat
++gdb/regformats/i386/amd64-mpx-linux.dat
++gdb/regformats/i386/amd64-mpx.dat
++gdb/regformats/i386/i386-avx-mpx-linux.dat
++gdb/regformats/i386/i386-avx-mpx.dat
++gdb/regformats/i386/i386-avx512-linux.dat
++gdb/regformats/i386/i386-avx512.dat
++gdb/regformats/i386/i386-mpx-linux.dat
++gdb/regformats/i386/i386-mpx.dat
++gdb/regformats/i386/x32-avx512-linux.dat
++gdb/regformats/i386/x32-avx512.dat
++gdb/regformats/microblaze-with-stack-protect.dat
+ gdb/regformats/mips-dsp-linux.dat
+ gdb/regformats/mips-linux.dat
+ gdb/regformats/mips64-dsp-linux.dat
+ gdb/regformats/mips64-linux.dat
++gdb/regformats/nios2-linux.dat
+ gdb/regformats/reg-arm.dat
+ gdb/regformats/reg-cf.dat
+ gdb/regformats/reg-cris.dat
+@@ -933,29 +1137,35 @@ gdb/regformats/s390-linux32v2.dat
+ gdb/regformats/s390-linux64.dat
+ gdb/regformats/s390-linux64v1.dat
+ gdb/regformats/s390-linux64v2.dat
++gdb/regformats/s390-te-linux64.dat
++gdb/regformats/s390-tevx-linux64.dat
++gdb/regformats/s390-vx-linux64.dat
+ gdb/regformats/s390x-linux64.dat
+ gdb/regformats/s390x-linux64v1.dat
+ gdb/regformats/s390x-linux64v2.dat
++gdb/regformats/s390x-te-linux64.dat
++gdb/regformats/s390x-tevx-linux64.dat
++gdb/regformats/s390x-vx-linux64.dat
+ gdb/regformats/tic6x-c62x-linux.dat
+ gdb/regformats/tic6x-c62x.dat
+ gdb/regformats/tic6x-c64x-linux.dat
+ gdb/regformats/tic6x-c64x.dat
+ gdb/regformats/tic6x-c64xp-linux.dat
+ gdb/regformats/tic6x-c64xp.dat
+-gdb/remote-m32r-sdi.c
+-gdb/remote-mips.c
+ gdb/remote-sim.c
+ gdb/reply_mig_hack.awk
+ gdb/rl78-tdep.c
+ gdb/rs6000-aix-tdep.c
++gdb/rs6000-aix-tdep.h
+ gdb/rs6000-lynx178-tdep.c
+ gdb/rs6000-nat.c
+ gdb/rs6000-tdep.c
+ gdb/rs6000-tdep.h
++gdb/rust-exp.c
+ gdb/rx-tdep.c
+-gdb/s390-nat.c
+-gdb/s390-tdep.c
+-gdb/s390-tdep.h
++gdb/s390-linux-nat.c
++gdb/s390-linux-tdep.c
++gdb/s390-linux-tdep.h
+ gdb/score-tdep.c
+ gdb/score-tdep.h
+ gdb/ser-go32.c
+@@ -970,22 +1180,14 @@ gdb/shnbsd-tdep.c
+ gdb/sol-thread.c
+ gdb/sol2-tdep.c
+ gdb/sol2-tdep.h
++gdb/solib-aix.c
++gdb/solib-aix.h
+ gdb/solib-darwin.c
+ gdb/solib-darwin.h
+ gdb/solib-dsbt.c
+ gdb/solib-frv.c
+-gdb/solib-ia64-hpux.c
+-gdb/solib-ia64-hpux.h
+-gdb/solib-irix.c
+-gdb/solib-irix.h
+-gdb/solib-osf.c
+-gdb/solib-pa64.c
+-gdb/solib-pa64.h
+-gdb/solib-som.c
+-gdb/solib-som.h
+ gdb/solib-spu.c
+ gdb/solib-spu.h
+-gdb/solib-sunos.c
+ gdb/sparc-linux-nat.c
+ gdb/sparc-linux-tdep.c
+ gdb/sparc-nat.c
+@@ -1004,6 +1206,7 @@ gdb/sparc64fbsd-nat.c
+ gdb/sparc64fbsd-tdep.c
+ gdb/sparc64nbsd-nat.c
+ gdb/sparc64nbsd-tdep.c
++gdb/sparc64obsd-nat.c
+ gdb/sparc64obsd-tdep.c
+ gdb/sparcnbsd-nat.c
+ gdb/sparcnbsd-tdep.c
+@@ -1012,18 +1215,11 @@ gdb/spu-linux-nat.c
+ gdb/spu-multiarch.c
+ gdb/spu-tdep.c
+ gdb/spu-tdep.h
+-gdb/srec.h
++gdb/stub-termcap.c
++gdb/stubs/ChangeLog
+ gdb/symfile-mem.c
+-gdb/syscalls/amd64-linux.xml
+-gdb/syscalls/bfin-linux.xml
+-gdb/syscalls/i386-linux.xml
+-gdb/syscalls/mips-n32-linux.xml
+-gdb/syscalls/mips-n64-linux.xml
+-gdb/syscalls/mips-o32-linux.xml
+-gdb/syscalls/ppc-linux.xml
+-gdb/syscalls/ppc64-linux.xml
+-gdb/syscalls/sparc-linux.xml
+-gdb/syscalls/sparc64-linux.xml
++gdb/syscalls/
++gdb/system-gdbinit/
+ gdb/testsuite/
+ gdb/tic6x-linux-tdep.c
+ gdb/tic6x-tdep.c
+@@ -1032,22 +1228,23 @@ gdb/tilegx-linux-nat.c
+ gdb/tilegx-linux-tdep.c
+ gdb/tilegx-tdep.c
+ gdb/tilegx-tdep.h
++gdb/transform.m4
+ gdb/tui/ChangeLog-1998-2003
+ gdb/v850-tdep.c
+-gdb/vax-nat.c
+ gdb/vax-tdep.c
+ gdb/vax-tdep.h
+ gdb/vaxbsd-nat.c
+ gdb/vaxnbsd-tdep.c
+ gdb/vaxobsd-tdep.c
++gdb/warning.m4
+ gdb/windows-nat.c
+ gdb/windows-nat.h
+ gdb/windows-tdep.c
+ gdb/windows-tdep.h
+-gdb/windows-termcap.c
++gdb/x86-linux-nat.c
++gdb/x86-linux-nat.h
+ gdb/xcoffread.c
+ gdb/xcoffread.h
+-gdb/xcoffsolib.c
+ gdb/xstormy16-tdep.c
+ gdb/xtensa-config.c
+ gdb/xtensa-linux-nat.c
+@@ -1056,10 +1253,11 @@ gdb/xtensa-tdep.c
+ gdb/xtensa-tdep.h
+ gdb/xtensa-xtregs.c
+ include/ChangeLog
++include/ChangeLog-0415
+ include/ChangeLog-9103
+ include/MAINTAINERS
+ include/alloca-conf.h
+-include/aout/ChangeLog
++include/aout/ChangeLog-9115
+ include/aout/adobe.h
+ include/aout/dynix3.h
+ include/aout/encap.h
+@@ -1071,14 +1269,13 @@ include/aout/reloc.h
+ include/aout/sun4.h
+ include/binary-io.h
+ include/bout.h
+-include/cgen/ChangeLog
+-include/coff/ChangeLog
++include/cgen/ChangeLog-0915
++include/coff/ChangeLog-0415
+ include/coff/ChangeLog-9103
+ include/coff/alpha.h
+ include/coff/apollo.h
+ include/coff/arm.h
+ include/coff/aux-coff.h
+-include/coff/external.h
+ include/coff/go32exe.h
+ include/coff/h8300.h
+ include/coff/h8500.h
+@@ -1091,8 +1288,6 @@ include/coff/m88k.h
+ include/coff/mcore.h
+ include/coff/mips.h
+ include/coff/mipspe.h
+-include/coff/or32.h
+-include/coff/pe.h
+ include/coff/powerpc.h
+ include/coff/rs6000.h
+ include/coff/rs6k64.h
+@@ -1105,14 +1300,14 @@ include/coff/tic54x.h
+ include/coff/tic80.h
+ include/coff/w65.h
+ include/coff/we32k.h
+-include/coff/x86_64.h
+ include/coff/xcoff.h
+ include/coff/z80.h
+ include/coff/z8k.h
+-include/elf/ChangeLog
++include/elf/ChangeLog-0415
+ include/elf/ChangeLog-9103
+ include/elf/aarch64.h
+ include/elf/alpha.h
++include/elf/arc-reloc.def
+ include/elf/arc.h
+ include/elf/arm.h
+ include/elf/avr.h
+@@ -1127,6 +1322,7 @@ include/elf/dlx.h
+ include/elf/epiphany.h
+ include/elf/fr30.h
+ include/elf/frv.h
++include/elf/ft32.h
+ include/elf/h8.h
+ include/elf/hppa.h
+ include/elf/i370.h
+@@ -1150,9 +1346,9 @@ include/elf/mn10300.h
+ include/elf/moxie.h
+ include/elf/msp430.h
+ include/elf/mt.h
++include/elf/nds32.h
+ include/elf/nios2.h
+-include/elf/openrisc.h
+-include/elf/or32.h
++include/elf/or1k.h
+ include/elf/pj.h
+ include/elf/ppc.h
+ include/elf/ppc64.h
+@@ -1169,6 +1365,7 @@ include/elf/tilegx.h
+ include/elf/tilepro.h
+ include/elf/v850.h
+ include/elf/vax.h
++include/elf/visium.h
+ include/elf/xc16x.h
+ include/elf/xgate.h
+ include/elf/xstormy16.h
+@@ -1178,10 +1375,12 @@ include/fopen-vms.h
+ include/gdb/ChangeLog
+ include/gdb/callback.h
+ include/gdb/remote-sim.h
++include/gdb/sim-aarch64.h
+ include/gdb/sim-arm.h
+ include/gdb/sim-cr16.h
+ include/gdb/sim-d10v.h
+ include/gdb/sim-frv.h
++include/gdb/sim-ft32.h
+ include/gdb/sim-h8300.h
+ include/gdb/sim-lm32.h
+ include/gdb/sim-m32c.h
+@@ -1189,18 +1388,22 @@ include/gdb/sim-ppc.h
+ include/gdb/sim-rl78.h
+ include/gdb/sim-rx.h
+ include/gdb/sim-sh.h
+-include/gdbm.h
+ include/hp-symtab.h
+ include/ieee.h
++include/longlong.h
++include/mach-o/ChangeLog-1115
+ include/mach-o/arm.h
++include/mach-o/arm64.h
+ include/mach-o/codesign.h
++include/mach-o/unwind.h
+ include/md5.h
+ include/nlm/
+ include/oasys.h
+-include/opcode/ChangeLog
++include/opcode/ChangeLog-0415
+ include/opcode/ChangeLog-9103
+ include/opcode/aarch64.h
+ include/opcode/alpha.h
++include/opcode/arc-func.h
+ include/opcode/arc.h
+ include/opcode/arm.h
+ include/opcode/avr.h
+@@ -1213,6 +1416,7 @@ include/opcode/crx.h
+ include/opcode/d10v.h
+ include/opcode/d30v.h
+ include/opcode/dlx.h
++include/opcode/ft32.h
+ include/opcode/h8300.h
+ include/opcode/hppa.h
+ include/opcode/i370.h
+@@ -1228,11 +1432,14 @@ include/opcode/mmix.h
+ include/opcode/mn10200.h
+ include/opcode/mn10300.h
+ include/opcode/moxie.h
++include/opcode/msp430-decode.h
+ include/opcode/msp430.h
++include/opcode/nds32.h
+ include/opcode/nios2.h
++include/opcode/nios2r1.h
++include/opcode/nios2r2.h
+ include/opcode/np1.h
+ include/opcode/ns32k.h
+-include/opcode/or32.h
+ include/opcode/pdp11.h
+ include/opcode/pj.h
+ include/opcode/pn.h
+@@ -1259,15 +1466,16 @@ include/opcode/tilegx.h
+ include/opcode/tilepro.h
+ include/opcode/v850.h
+ include/opcode/vax.h
++include/opcode/visium.h
+ include/opcode/xgate.h
+ include/os9k.h
+ include/partition.h
+-include/plugin-api.h
+ include/progress.h
+ include/sha1.h
+ include/som/
+ include/sort.h
+ include/vms/
++include/vtv-change-permission.h
+ include/xtensa-config.h
+ include/xtensa-isa-internal.h
+ include/xtensa-isa.h
+@@ -1302,6 +1510,7 @@ libdecnumber/decSingle.h
+ libdecnumber/decSingleSymbols.h
+ libiberty/.gitignore
+ libiberty/ChangeLog
++libiberty/ChangeLog.jit
+ libiberty/Makefile.in
+ libiberty/_doprnt.c
+ libiberty/aclocal.m4
+@@ -1317,15 +1526,14 @@ libiberty/bzero.c
+ libiberty/calloc.c
+ libiberty/choose-temp.c
+ libiberty/clock.c
++libiberty/config/
+ libiberty/config.h-vms
+ libiberty/config.in
+-libiberty/config/
+ libiberty/configure
+ libiberty/configure.ac
+ libiberty/configure.com
+ libiberty/copying-lib.texi
+ libiberty/copysign.c
+-libiberty/crc32.c
+ libiberty/fdmatch.c
+ libiberty/ffs.c
+ libiberty/fibheap.c
+@@ -1382,21 +1590,26 @@ libiberty/strsignal.c
+ libiberty/strstr.c
+ libiberty/strtod.c
+ libiberty/strtol.c
++libiberty/strtoll.c
+ libiberty/strtoul.c
++libiberty/strtoull.c
+ libiberty/strverscmp.c
+ libiberty/testsuite/
+ libiberty/tmpnam.c
+ libiberty/vasprintf.c
+ libiberty/vfork.c
+ libiberty/vfprintf.c
++libiberty/vprintf-support.c
++libiberty/vprintf-support.h
+ libiberty/vprintf.c
+ libiberty/vsnprintf.c
+ libiberty/vsprintf.c
+ libiberty/waitpid.c
++libiberty/xasprintf.c
+ libiberty/xatexit.c
+ libiberty/xmalloc.c
+ libiberty/xmemdup.c
+-libiberty/xstrndup.c
++libiberty/xvasprintf.c
+ libtool.m4
+ ltgcc.m4
+ ltmain.sh
+@@ -1422,6 +1635,9 @@ opcodes/ChangeLog-2009
+ opcodes/ChangeLog-2010
+ opcodes/ChangeLog-2011
+ opcodes/ChangeLog-2012
++opcodes/ChangeLog-2013
++opcodes/ChangeLog-2014
++opcodes/ChangeLog-2015
+ opcodes/ChangeLog-9297
+ opcodes/ChangeLog-9899
+ opcodes/MAINTAINERS
+@@ -1443,9 +1659,14 @@ opcodes/alpha-dis.c
+ opcodes/alpha-opc.c
+ opcodes/arc-dis.c
+ opcodes/arc-dis.h
++opcodes/arc-ext-tbl.h
+ opcodes/arc-ext.c
+ opcodes/arc-ext.h
++opcodes/arc-fxi.h
++opcodes/arc-nps400-tbl.h
+ opcodes/arc-opc.c
++opcodes/arc-regs.h
++opcodes/arc-tbl.h
+ opcodes/arm-dis.c
+ opcodes/avr-dis.c
+ opcodes/bfin-dis.c
+@@ -1459,8 +1680,8 @@ opcodes/cgen-opc.c
+ opcodes/cgen.sh
+ opcodes/config.in
+ opcodes/configure
++opcodes/configure.ac
+ opcodes/configure.com
+-opcodes/configure.in
+ opcodes/cr16-dis.c
+ opcodes/cr16-opc.c
+ opcodes/cris-dis.c
+@@ -1494,6 +1715,8 @@ opcodes/frv-dis.c
+ opcodes/frv-ibld.c
+ opcodes/frv-opc.c
+ opcodes/frv-opc.h
++opcodes/ft32-dis.c
++opcodes/ft32-opc.c
+ opcodes/h8300-dis.c
+ opcodes/h8500-dis.c
+ opcodes/h8500-opc.h
+@@ -1586,12 +1809,15 @@ opcodes/microblaze-opc.h
+ opcodes/microblaze-opcm.h
+ opcodes/micromips-opc.c
+ opcodes/mips-dis.c
++opcodes/mips-formats.h
+ opcodes/mips-opc.c
+ opcodes/mips16-opc.c
+ opcodes/mmix-dis.c
+ opcodes/mmix-opc.c
+ opcodes/moxie-dis.c
+ opcodes/moxie-opc.c
++opcodes/msp430-decode.c
++opcodes/msp430-decode.opc
+ opcodes/msp430-dis.c
+ opcodes/mt-asm.c
+ opcodes/mt-desc.c
+@@ -1600,19 +1826,22 @@ opcodes/mt-dis.c
+ opcodes/mt-ibld.c
+ opcodes/mt-opc.c
+ opcodes/mt-opc.h
++opcodes/nds32-asm.c
++opcodes/nds32-asm.h
++opcodes/nds32-dis.c
++opcodes/nds32-opc.h
+ opcodes/nios2-dis.c
+ opcodes/nios2-opc.c
+ opcodes/ns32k-dis.c
+ opcodes/opc2c.c
+-opcodes/openrisc-asm.c
+-opcodes/openrisc-desc.c
+-opcodes/openrisc-desc.h
+-opcodes/openrisc-dis.c
+-opcodes/openrisc-ibld.c
+-opcodes/openrisc-opc.c
+-opcodes/openrisc-opc.h
+-opcodes/or32-dis.c
+-opcodes/or32-opc.c
++opcodes/or1k-asm.c
++opcodes/or1k-desc.c
++opcodes/or1k-desc.h
++opcodes/or1k-dis.c
++opcodes/or1k-ibld.c
++opcodes/or1k-opc.c
++opcodes/or1k-opc.h
++opcodes/or1k-opinst.c
+ opcodes/pdp11-dis.c
+ opcodes/pdp11-opc.c
+ opcodes/pj-dis.c
+@@ -1657,6 +1886,8 @@ opcodes/tilepro-opc.c
+ opcodes/v850-dis.c
+ opcodes/v850-opc.c
+ opcodes/vax-dis.c
++opcodes/visium-dis.c
++opcodes/visium-opc.c
+ opcodes/w65-dis.c
+ opcodes/w65-opc.h
+ opcodes/xc16x-asm.c
+@@ -1695,26 +1926,15 @@ readline/config.h.in
+ readline/configure
+ readline/configure.in
+ readline/cross-build/
+-readline/doc/ChangeLog.gdb
+-readline/doc/Makefile.in
+-readline/doc/fdl.texi
+-readline/doc/history.3
+-readline/doc/history.texi
+-readline/doc/hstech.texi
+-readline/doc/readline.3
+-readline/doc/rlman.texi
+-readline/doc/rltech.texi
+-readline/doc/rluserman.texi
+-readline/doc/texi2dvi
+-readline/doc/texi2html
+-readline/doc/version.texi
++readline/doc/
+ readline/examples/
+ readline/patchlevel
+ readline/savestring.c
+ readline/shlib/
+ readline/support/
+ sim/
+-src-release
++src-release.sh
+ symlink-tree
+ texinfo/
+ ylwrap
++zlib/
+diff --git a/contrib/gdb-7/README.DRAGONFLY b/contrib/gdb-7/README.DRAGONFLY
+index 8a441b1367..6ab0a6d1be 100644
+--- a/contrib/gdb-7/README.DRAGONFLY
++++ b/contrib/gdb-7/README.DRAGONFLY
+@@ -1,34 +1,27 @@
+-GNU GDB 7.6.1
+-=============
++GNU GDB 7.12.1
++==============
+ 
+ Original source can be downloaded from:
+ http://ftp.gnu.org/gnu/gdb
+ 
+-file = gdb-7.6.1.tar.bz2
+-date = 30 August 2013
+-size = 24338919
+-sha1 = 0e38633b3902070d9c6755e4c54602148a094361
++file = gdb-7.12.1.tar.xz
++date = 21 January 2017
++size = 19225392
++sha1 = ef77c5345d6f9fdcdf7a5d8503301242b701936e
+ 
+ A list of files and directories removed is in README.DELETED
+ 
++Configured with
++===============
++./configure --enable-64-bit-bfd --with-separate-debug-dir=/usr/lib/debug \
++	    --without-libunwind-ia64 --without-python --without-expat \
++	    --disable-nls --enable-tui --disable-build-with-cxx
++
+ The following files were added:
++===============================
+ 	gdb/amd64dfly-nat.c
+ 	gdb/amd64dfly-tdep.c
+ 	gdb/i386dfly-nat.c
+ 	gdb/i386dfly-tdep.c
+ 
+ Local modifications applied to following files:
+-	gdb/amd64-tdep.h
+-	gdb/common/ptid.h
+-	gdb/configure.host
+-	gdb/configure.tgt
+-	gdb/defs.h
+-	gdb/exec.c
+-	gdb/i386-tdep.h
+-	gdb/i386bsd-nat.c
+-	gdb/i386fbsd-tdep.c
+-	gdb/inferiors.c
+-	gdb/main.c
+-	gdb/osabi.c
+-	include/elf/common.h
+-	include/libiberty.h
+-- 
+2.22.0
+
