@@ -1,0 +1,64 @@
+From a122946f8f94d2043d37da7cc862f370d40fc26c Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 3 Aug 2019 14:14:50 +0300
+Subject: [PATCH 2/8] lib: Update dependencies.
+
+ No libraries depend on libprivate_ssh, it can be built as rest.
+
+ While there, remove LIBSSH from MINUSPAM list.
+---
+ Makefile.inc1            | 3 ---
+ lib/Makefile             | 2 +-
+ share/mk/bsd.libnames.mk | 2 --
+ 3 files changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/Makefile.inc1 b/Makefile.inc1
+index 94e3db32a5..d92c1cd9dd 100644
+--- a/Makefile.inc1
++++ b/Makefile.inc1
+@@ -1041,9 +1041,6 @@ _generic_libs+=	lib
+ _prebuild_libs+=	lib/librecrypto lib/libressl
+ lib/libressl__L: lib/librecrypto__L
+ 
+-_prebuild_libs+=	lib/libssh
+-lib/libssh__L: lib/librecrypto__L lib/libutil__L lib/libz__L
+-
+ _prebuild_libs+=	lib/libradius
+ lib/libradius__L: lib/librecrypto__L
+ 
+diff --git a/lib/Makefile b/lib/Makefile
+index 7422194ce9..06fcfc032e 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -29,7 +29,6 @@ SUBDIR_ORDERED= \
+ 	liblzma \
+ 	libz \
+ 	libutil \
+-	libssh \
+ 	libypclnt \
+ 	libncurses \
+ 	libradius \
+@@ -85,6 +84,7 @@ SUBDIR=	${SUBDIR_ORDERED} \
+ 	libsmb \
+ 	${_libsmdb} \
+ 	${_libsmutil} \
++	libssh \
+ 	libstand \
+ 	libtelnet \
+ 	libu4bhid \
+diff --git a/share/mk/bsd.libnames.mk b/share/mk/bsd.libnames.mk
+index eacf2b46c0..a5eb82514f 100644
+--- a/share/mk/bsd.libnames.mk
++++ b/share/mk/bsd.libnames.mk
+@@ -59,8 +59,6 @@ LIBNETGRAPH?=	${DESTDIR}${LIBDIR}/libnetgraph.a
+ LIBPAM?=	${DESTDIR}${LIBDIR}/libpam.a
+ MINUSLPAM?=	-lpam
+ .if defined(NOSHARED) && ${NOSHARED} != "no" && ${NOSHARED} != "NO"
+-LIBPAM+=	${LIBSSH}
+-MINUSLPAM+=	-lprivate_ssh
+ LIBPAM+=	${LIBRADIUS} ${LIBTACPLUS} ${LIBYPCLNT} \
+ 		${LIBCRYPT} ${LIBCRYPTO} ${LIBUTIL}
+ MINUSLPAM+=	-lradius -ltacplus -lypclnt \
+-- 
+2.22.0
+
