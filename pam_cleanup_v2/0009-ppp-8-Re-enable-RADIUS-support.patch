@@ -1,4 +1,4 @@
-From ce937eab7b26c0130e783523573a6a45c60b44f3 Mon Sep 17 00:00:00 2001
+From 660b43c6c0d0b30a50f3ae275fa2d8952ffae1bf Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 4 Aug 2019 13:55:44 +0300
 Subject: [PATCH 9/9] ppp(8): Re-enable RADIUS support.
@@ -14,7 +14,7 @@ Subject: [PATCH 9/9] ppp(8): Re-enable RADIUS support.
  3 files changed, 40 insertions(+), 35 deletions(-)
 
 diff --git a/usr.sbin/ppp/Makefile b/usr.sbin/ppp/Makefile
-index 70c936fbce..e0741df833 100644
+index 70c936fbce..1da54ad563 100644
 --- a/usr.sbin/ppp/Makefile
 +++ b/usr.sbin/ppp/Makefile
 @@ -60,13 +60,15 @@ CFLAGS+=-DNODES
@@ -30,9 +30,9 @@ index 70c936fbce..e0741df833 100644
 -DPADD+= ${LIBRADIUS}
 +.PATH: ${.CURDIR}/libradius
 +SRCS+=	radlib.c
-+FLAGS_GROUPS+=	radiuz
-+radiuz_FLAGS=	-I${.CURDIR}/libradius -DWITH_SSL
-+radiuz_FLAGS_FILES= radius.c radlib.c
++FLAGS_GROUPS+=	radius
++radius_FLAGS=	-I${.CURDIR}/libradius -DWITH_SSL
++radius_FLAGS_FILES= radius.c radlib.c
  .endif
  
  .if defined(WANT_NETGRAPH7)
