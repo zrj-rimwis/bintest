@@ -1,0 +1,60 @@
+From 94a65596bdaa18f76b35d9d545102e4f423352ce Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 3 Aug 2019 21:30:51 +0300
+Subject: [PATCH 6/9] ppp(8): Disable RADIUS support.
+
+ If there are still users making use of RADIUS support in ppp(8),
+ then it could be added back directly into ppp(8).
+
+ Add __unused for few arguments to pet WARNS in case of -DNORADIUS.
+---
+ usr.sbin/ppp/Makefile | 1 +
+ usr.sbin/ppp/mppe.c   | 6 +++---
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/usr.sbin/ppp/Makefile b/usr.sbin/ppp/Makefile
+index a508731e15..70c936fbce 100644
+--- a/usr.sbin/ppp/Makefile
++++ b/usr.sbin/ppp/Makefile
+@@ -60,6 +60,7 @@ CFLAGS+=-DNODES
+ SRCS+=		chap_ms.c mppe.c
+ .endif
+ 
++NORADIUS=
+ .if defined(NORADIUS)
+ CFLAGS+=-DNORADIUS
+ .else
+diff --git a/usr.sbin/ppp/mppe.c b/usr.sbin/ppp/mppe.c
+index e948832092..7a1f0deb29 100644
+--- a/usr.sbin/ppp/mppe.c
++++ b/usr.sbin/ppp/mppe.c
+@@ -471,7 +471,7 @@ MPPERequired(struct fsm *fp)
+ }
+ 
+ static u_int32_t
+-MPPE_ConfigVal(struct bundle *bundle, const struct ccp_config *cfg)
++MPPE_ConfigVal(struct bundle *bundle __unused, const struct ccp_config *cfg)
+ {
+   u_int32_t val;
+ 
+@@ -677,7 +677,7 @@ MPPE_InitState(struct fsm_opt *o)
+ }
+ 
+ static void *
+-MPPEInitInput(struct bundle *bundle, struct fsm_opt *o)
++MPPEInitInput(struct bundle *bundle __unused, struct fsm_opt *o)
+ {
+   struct mppe_state *mip;
+ 
+@@ -733,7 +733,7 @@ MPPEInitInput(struct bundle *bundle, struct fsm_opt *o)
+ }
+ 
+ static void *
+-MPPEInitOutput(struct bundle *bundle, struct fsm_opt *o)
++MPPEInitOutput(struct bundle *bundle __unused, struct fsm_opt *o)
+ {
+   struct mppe_state *mop;
+ 
+-- 
+2.22.0
+

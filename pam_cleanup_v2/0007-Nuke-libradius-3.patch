@@ -1,0 +1,1037 @@
+From 2f104ff4c98713a1d66c25b106ea6fef8b47d9b3 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 3 Aug 2019 21:47:36 +0300
+Subject: [PATCH 7/9] Nuke libradius(3).
+
+ It was moved to DPorts.
+
+ For now keep radlib.c code directly in ppp(8). Other BSDs have it atm.
+---
+ Makefile.inc1                                 |   3 -
+ Makefile_upgrade.inc                          |  42 ++
+ lib/Makefile                                  |   3 +-
+ lib/libradius/Makefile                        |  73 ---
+ lib/libradius/libradius.3                     | 600 ------------------
+ lib/libradius/radius.conf.5                   | 198 ------
+ share/mk/bsd.libnames.mk                      |   1 -
+ {lib => usr.sbin/ppp}/libradius/radlib.c      |   0
+ {lib => usr.sbin/ppp}/libradius/radlib.h      |   0
+ .../ppp}/libradius/radlib_private.h           |   0
+ {lib => usr.sbin/ppp}/libradius/radlib_vs.h   |   0
+ 11 files changed, 43 insertions(+), 877 deletions(-)
+ delete mode 100644 lib/libradius/Makefile
+ delete mode 100644 lib/libradius/libradius.3
+ delete mode 100644 lib/libradius/radius.conf.5
+ rename {lib => usr.sbin/ppp}/libradius/radlib.c (100%)
+ rename {lib => usr.sbin/ppp}/libradius/radlib.h (100%)
+ rename {lib => usr.sbin/ppp}/libradius/radlib_private.h (100%)
+ rename {lib => usr.sbin/ppp}/libradius/radlib_vs.h (100%)
+
+diff --git a/Makefile.inc1 b/Makefile.inc1
+index cb2a83d34e..a47325d6cb 100644
+--- a/Makefile.inc1
++++ b/Makefile.inc1
+@@ -1041,9 +1041,6 @@ _generic_libs+=	lib
+ _prebuild_libs+=	lib/librecrypto lib/libressl
+ lib/libressl__L: lib/librecrypto__L
+ 
+-_prebuild_libs+=	lib/libradius
+-lib/libradius__L: lib/librecrypto__L
+-
+ _prebuild_libs+= lib/libsbuf lib/libm \
+ 		lib/libpam/libpam lib/libypclnt lib/lib${THREAD_LIB} \
+ 		lib/libpthread lib/libprop
+diff --git a/Makefile_upgrade.inc b/Makefile_upgrade.inc
+index 5fa04799c8..63b12748da 100644
+--- a/Makefile_upgrade.inc
++++ b/Makefile_upgrade.inc
+@@ -3793,6 +3793,48 @@ TO_REMOVE+=/usr/share/man/man3/tac_set_rem_addr.3.gz
+ TO_REMOVE+=/usr/share/man/man3/tac_set_user.3.gz
+ TO_REMOVE+=/usr/share/man/man3/tac_strerror.3.gz
+ TO_REMOVE+=/usr/share/man/man5/tacplus.conf.5.gz
++TO_REMOVE+=/usr/include/radlib.h
++TO_REMOVE+=/usr/include/radlib_vs.h
++TO_REMOVE+=/usr/lib/libradius.a
++TO_REMOVE+=/usr/lib/libradius.so
++TO_REMOVE+=/usr/lib/libradius.so.3
++TO_REMOVE+=/usr/lib/profile/libradius.a
++TO_REMOVE+=/usr/share/man/man3/libradius.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_acct_open.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_add_server.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_add_server_ex.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_auth_open.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_bind_to.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_close.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_config.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_continue_send_request.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_create_request.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_create_response.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_cvt_addr.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_cvt_int.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_cvt_string.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_demangle.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_demangle_mppe_key.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_get_attr.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_get_vendor_attr.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_init_send_request.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_put_addr.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_put_attr.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_put_int.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_put_message_authentic.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_put_string.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_put_vendor_addr.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_put_vendor_attr.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_put_vendor_int.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_put_vendor_string.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_receive_request.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_request_authenticator.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_send_request.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_send_response.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_server_open.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_server_secret.3.gz
++TO_REMOVE+=/usr/share/man/man3/rad_strerror.3.gz
++TO_REMOVE+=/usr/share/man/man5/radius.conf.5.gz
+ 
+ .if !defined(WANT_INSTALLER)
+ TO_REMOVE+=/usr/sbin/dfuibe_installer
+diff --git a/lib/Makefile b/lib/Makefile
+index 1210719edc..79f46b7a33 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -8,7 +8,7 @@
+ #    libthread_xu|libc_r must be built before libpthread.
+ #    libprop must be built before libdevattr
+ #
+-# libcrypt must be built before libfetch, libarchive, and libradius.
++# libcrypt must be built before libfetch, libarchive.
+ # libz must be built before libarchive, libmagic.
+ # libbz2 must be built before libarchive
+ # liblmza must be built before libarchive.
+@@ -31,7 +31,6 @@ SUBDIR_ORDERED= \
+ 	libutil \
+ 	libypclnt \
+ 	libncurses \
+-	libradius \
+ 	libsbuf \
+ 	libthread_xu \
+ 	libpthread \
+diff --git a/lib/libradius/Makefile b/lib/libradius/Makefile
+deleted file mode 100644
+index 48fe6d270e..0000000000
+--- a/lib/libradius/Makefile
++++ /dev/null
+@@ -1,73 +0,0 @@
+-# Copyright 1998 Juniper Networks, Inc.
+-# All rights reserved.
+-#
+-# Redistribution and use in source and binary forms, with or without
+-# modification, are permitted provided that the following conditions
+-# are met:
+-# 1. Redistributions of source code must retain the above copyright
+-#    notice, this list of conditions and the following disclaimer.
+-# 2. Redistributions in binary form must reproduce the above copyright
+-#    notice, this list of conditions and the following disclaimer in the
+-#    documentation and/or other materials provided with the distribution.
+-#
+-# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+-# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+-# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+-# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+-# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+-# SUCH DAMAGE.
+-#
+-#	$FreeBSD: src/lib/libradius/Makefile,v 1.17 2010/01/02 09:58:07 ed Exp $
+-
+-LIB=		radius
+-SRCS=		radlib.c
+-INCS=		radlib.h radlib_vs.h
+-
+-DPADD=		${LIBCRYPTO}
+-LDADD=		-lprivate_crypto
+-LDFLAGS+=	${PRIVATELIB_LDFLAGS}
+-CFLAGS+=	-DWITH_SSL -I${.CURDIR}/../../crypto/libressl/include
+-
+-SHLIB_MAJOR=	3
+-MAN=		libradius.3 radius.conf.5
+-MLINKS+=	libradius.3 rad_acct_open.3
+-MLINKS+=	libradius.3 rad_add_server.3
+-MLINKS+=	libradius.3 rad_add_server_ex.3
+-MLINKS+=	libradius.3 rad_auth_open.3
+-MLINKS+=	libradius.3 rad_bind_to.3
+-MLINKS+=	libradius.3 rad_close.3
+-MLINKS+=	libradius.3 rad_config.3
+-MLINKS+=	libradius.3 rad_continue_send_request.3
+-MLINKS+=	libradius.3 rad_create_request.3
+-MLINKS+=	libradius.3 rad_create_response.3
+-MLINKS+=	libradius.3 rad_cvt_addr.3
+-MLINKS+=	libradius.3 rad_cvt_int.3
+-MLINKS+=	libradius.3 rad_cvt_string.3
+-MLINKS+=	libradius.3 rad_demangle.3
+-MLINKS+=	libradius.3 rad_demangle_mppe_key.3
+-MLINKS+=	libradius.3 rad_get_attr.3
+-MLINKS+=	libradius.3 rad_get_vendor_attr.3
+-MLINKS+=	libradius.3 rad_init_send_request.3
+-MLINKS+=	libradius.3 rad_put_addr.3
+-MLINKS+=	libradius.3 rad_put_attr.3
+-MLINKS+=	libradius.3 rad_put_int.3
+-MLINKS+=	libradius.3 rad_put_message_authentic.3
+-MLINKS+=	libradius.3 rad_put_string.3
+-MLINKS+=	libradius.3 rad_put_vendor_addr.3
+-MLINKS+=	libradius.3 rad_put_vendor_attr.3
+-MLINKS+=	libradius.3 rad_put_vendor_int.3
+-MLINKS+=	libradius.3 rad_put_vendor_string.3
+-MLINKS+=	libradius.3 rad_receive_request.3
+-MLINKS+=	libradius.3 rad_request_authenticator.3
+-MLINKS+=	libradius.3 rad_send_request.3
+-MLINKS+=	libradius.3 rad_send_response.3
+-MLINKS+=	libradius.3 rad_server_open.3
+-MLINKS+=	libradius.3 rad_server_secret.3
+-MLINKS+=	libradius.3 rad_strerror.3
+-
+-.include <bsd.lib.mk>
+diff --git a/lib/libradius/libradius.3 b/lib/libradius/libradius.3
+deleted file mode 100644
+index e5fdf2a2d2..0000000000
+--- a/lib/libradius/libradius.3
++++ /dev/null
+@@ -1,600 +0,0 @@
+-.\" Copyright 1998 Juniper Networks, Inc.
+-.\" All rights reserved.
+-.\"
+-.\" Redistribution and use in source and binary forms, with or without
+-.\" modification, are permitted provided that the following conditions
+-.\" are met:
+-.\" 1. Redistributions of source code must retain the above copyright
+-.\"    notice, this list of conditions and the following disclaimer.
+-.\" 2. Redistributions in binary form must reproduce the above copyright
+-.\"    notice, this list of conditions and the following disclaimer in the
+-.\"    documentation and/or other materials provided with the distribution.
+-.\"
+-.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+-.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+-.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+-.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+-.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+-.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+-.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+-.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+-.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+-.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+-.\" SUCH DAMAGE.
+-.\"
+-.\" $FreeBSD: src/lib/libradius/libradius.3,v 1.19 2010/08/16 15:18:30 joel Exp $
+-.\"
+-.Dd September 24, 2010
+-.Dt LIBRADIUS 3
+-.Os
+-.Sh NAME
+-.Nm libradius
+-.Nd RADIUS client/server library
+-.Sh LIBRARY
+-.Lb libradius
+-.Sh SYNOPSIS
+-.In radlib.h
+-.In radlib_vs.h
+-.Ft "struct rad_handle *"
+-.Fn rad_acct_open "void"
+-.Ft int
+-.Fn rad_add_server "struct rad_handle *h" "const char *host" "int port" "const char *secret" "int timeout" "int max_tries"
+-.Ft "struct rad_handle *"
+-.Fn rad_auth_open "void"
+-.Ft void
+-.Fn rad_close "struct rad_handle *h"
+-.Ft int
+-.Fn rad_config "struct rad_handle *h" "const char *file"
+-.Ft int
+-.Fn rad_continue_send_request "struct rad_handle *h" "int selected" "int *fd" "struct timeval *tv"
+-.Ft int
+-.Fn rad_create_request "struct rad_handle *h" "int code"
+-.Ft int
+-.Fn rad_create_response "struct rad_handle *h" "int code"
+-.Ft "struct in_addr"
+-.Fn rad_cvt_addr "const void *data"
+-.Ft u_int32_t
+-.Fn rad_cvt_int "const void *data"
+-.Ft char *
+-.Fn rad_cvt_string "const void *data" "size_t len"
+-.Ft int
+-.Fn rad_get_attr "struct rad_handle *h" "const void **data" "size_t *len"
+-.Ft int
+-.Fn rad_get_vendor_attr "u_int32_t *vendor" "const void **data" "size_t *len"
+-.Ft int
+-.Fn rad_init_send_request "struct rad_handle *h" "int *fd" "struct timeval *tv"
+-.Ft int
+-.Fn rad_put_addr "struct rad_handle *h" "int type" "struct in_addr addr"
+-.Ft int
+-.Fn rad_put_attr "struct rad_handle *h" "int type" "const void *data" "size_t len"
+-.Ft int
+-.Fn rad_put_int "struct rad_handle *h" "int type" "u_int32_t value"
+-.Ft int
+-.Fn rad_put_string "struct rad_handle *h" "int type" "const char *str"
+-.Ft int
+-.Fn rad_put_message_authentic "struct rad_handle *h"
+-.Ft int
+-.Fn rad_put_vendor_addr "struct rad_handle *h" "int vendor" "int type" "struct in_addr addr"
+-.Ft int
+-.Fn rad_put_vendor_attr "struct rad_handle *h" "int vendor" "int type" "const void *data" "size_t len"
+-.Ft int
+-.Fn rad_put_vendor_int "struct rad_handle *h" "int vendor" "int type" "u_int32_t value"
+-.Ft int
+-.Fn rad_put_vendor_string "struct rad_handle *h" "int vendor" "int type" "const char *str"
+-.Ft ssize_t
+-.Fn rad_request_authenticator "struct rad_handle *h" "char *buf" "size_t len"
+-.Ft int
+-.Fn rad_receive_request "struct rad_handle *h"
+-.Ft int
+-.Fn rad_send_request "struct rad_handle *h"
+-.Ft int
+-.Fn rad_send_response "struct rad_handle *h"
+-.Ft "struct rad_handle *"
+-.Fn rad_server_open "int fd"
+-.Ft "const char *"
+-.Fn rad_server_secret "struct rad_handle *h"
+-.Ft u_char *
+-.Fn rad_demangle "struct rad_handle *h" "const void *mangled" "size_t mlen"
+-.Ft u_char *
+-.Fn rad_demangle_mppe_key "struct rad_handle *h" "const void *mangled" "size_t mlen" "size_t *len"
+-.Ft "const char *"
+-.Fn rad_strerror "struct rad_handle *h"
+-.Sh DESCRIPTION
+-The
+-.Nm
+-library implements the Remote Authentication Dial In User Service (RADIUS).
+-RADIUS, defined in RFCs 2865 and 2866,
+-allows clients to perform authentication and accounting by means of
+-network requests to remote servers.
+-.Ss Initialization
+-To use the library, an application must first call
+-.Fn rad_auth_open
+-,
+-.Fn rad_acct_open
+-or
+-.Fn rad_server_open
+-to obtain a
+-.Vt "struct rad_handle *" ,
+-which provides the context for subsequent operations.
+-The former function is used for RADIUS authentication and the
+-latter is used for RADIUS accounting.
+-Calls to
+-.Fn rad_auth_open
+-,
+-.Fn rad_acct_open
+-and
+-.Fn rad_server_open
+-always succeed unless insufficient virtual memory is available.
+-If
+-the necessary memory cannot be allocated, the functions return
+-.Dv NULL .
+-For compatibility with earlier versions of this library,
+-.Fn rad_open
+-is provided as a synonym for
+-.Fn rad_auth_open .
+-.Pp
+-Before issuing any RADIUS requests, the library must be made aware
+-of the servers it can contact.
+-The easiest way to configure the
+-library is to call
+-.Fn rad_config .
+-.Fn rad_config
+-causes the library to read a configuration file whose format is
+-described in
+-.Xr radius.conf 5 .
+-The pathname of the configuration file is passed as the
+-.Fa file
+-argument to
+-.Fn rad_config .
+-This argument may also be given as
+-.Dv NULL ,
+-in which case the standard configuration file
+-.Pa /etc/radius.conf
+-is used.
+-.Fn rad_config
+-returns 0 on success, or \-1 if an error occurs.
+-.Pp
+-The library can also be configured programmatically by calls to
+-.Fn rad_add_server .
+-The
+-.Fa host
+-parameter specifies the server host, either as a fully qualified
+-domain name or as a dotted-quad IP address in text form.
+-The
+-.Fa port
+-parameter specifies the UDP port to contact on the server.
+-If
+-.Fa port
+-is given as 0, the library looks up the
+-.Ql radius/udp
+-or
+-.Ql radacct/udp
+-service in the network
+-.Xr services 5
+-database, and uses the port found
+-there.
+-If no entry is found, the library uses the standard RADIUS
+-ports, 1812 for authentication and 1813 for accounting.
+-The shared secret for the server host is passed to the
+-.Fa secret
+-parameter.
+-It may be any
+-.Dv NUL Ns -terminated
+-string of bytes.
+-The RADIUS protocol
+-ignores all but the leading 128 bytes of the shared secret.
+-The timeout for receiving replies from the server is passed to the
+-.Fa timeout
+-parameter, in units of seconds.
+-The maximum number of repeated
+-requests to make before giving up is passed into the
+-.Fa max_tries
+-parameter.
+-.Fn rad_add_server
+-returns 0 on success, or \-1 if an error occurs.
+-.Pp
+-.Fn rad_add_server
+-may be called multiple times, and it may be used together with
+-.Fn rad_config .
+-At most 10 servers may be specified.
+-When multiple servers are given, they are tried in round-robin
+-fashion until a valid response is received, or until each server's
+-.Fa max_tries
+-limit has been reached.
+-.Ss Creating a RADIUS Request
+-A RADIUS request consists of a code specifying the kind of request,
+-and zero or more attributes which provide additional information.
+-To
+-begin constructing a new request, call
+-.Fn rad_create_request .
+-In addition to the usual
+-.Vt "struct rad_handle *" ,
+-this function takes a
+-.Fa code
+-parameter which specifies the type of the request.
+-Most often this
+-will be
+-.Dv RAD_ACCESS_REQUEST .
+-.Fn rad_create_request
+-returns 0 on success, or \-1 on if an error occurs.
+-.Pp
+-After the request has been created with
+-.Fn rad_create_request ,
+-attributes can be attached to it.
+-This is done through calls to
+-.Fn rad_put_addr ,
+-.Fn rad_put_int ,
+-and
+-.Fn rad_put_string .
+-Each accepts a
+-.Fa type
+-parameter identifying the attribute, and a value which may be
+-an Internet address, an integer, or a
+-.Dv NUL Ns -terminated
+-string,
+-respectively.
+-Alternatively,
+-.Fn rad_put_vendor_addr ,
+-.Fn rad_put_vendor_int
+-or
+-.Fn rad_put_vendor_string
+-may be used to specify vendor specific attributes.
+-Vendor specific
+-definitions may be found in
+-.In radlib_vs.h
+-.Pp
+-The library also provides a function
+-.Fn rad_put_attr
+-which can be used to supply a raw, uninterpreted attribute.
+-The
+-.Fa data
+-argument points to an array of bytes, and the
+-.Fa len
+-argument specifies its length.
+-.Pp
+-It is possible adding the Message-Authenticator to the request.
+-This is an HMAC-MD5 hash of the entire Access-Request packet (see RFC 3579).
+-This attribute must be present in any packet that includes an EAP-Message
+-attribute.
+-It can be added by using the
+-.Fn rad_put_message_authentic
+-function.
+-The
+-.Nm
+-library
+-calculates the HMAC-MD5 hash implicitly before sending the request.
+-If the Message-Authenticator was found inside the response packet,
+-then the packet is silently dropped, if the validation failed.
+-In order to get this feature, the library should be compiled with
+-OpenSSL support.
+-.Pp
+-The
+-.Fn rad_put_X
+-functions return 0 on success, or \-1 if an error occurs.
+-.Ss Sending the Request and Receiving the Response
+-After the RADIUS request has been constructed, it is sent either by means of
+-.Fn rad_send_request
+-or by a combination of calls to
+-.Fn rad_init_send_request
+-and
+-.Fn rad_continue_send_request .
+-.Pp
+-The
+-.Fn rad_send_request
+-function sends the request and waits for a valid reply,
+-retrying the defined servers in round-robin fashion as necessary.
+-If a valid response is received,
+-.Fn rad_send_request
+-returns the RADIUS code which specifies the type of the response.
+-This will typically be
+-.Dv RAD_ACCESS_ACCEPT ,
+-.Dv RAD_ACCESS_REJECT ,
+-or
+-.Dv RAD_ACCESS_CHALLENGE .
+-If no valid response is received,
+-.Fn rad_send_request
+-returns \-1.
+-.Pp
+-As an alternative, if you do not wish to block waiting for a response,
+-.Fn rad_init_send_request
+-and
+-.Fn rad_continue_send_request
+-may be used instead.
+-If a reply is received from the RADIUS server or a
+-timeout occurs, these functions return a value as described for
+-.Fn rad_send_request .
+-Otherwise, a value of zero is returned and the values pointed to by
+-.Fa fd
+-and
+-.Fa tv
+-are set to the descriptor and timeout that should be passed to
+-.Xr select 2 .
+-.Pp
+-.Fn rad_init_send_request
+-must be called first, followed by repeated calls to
+-.Fn rad_continue_send_request
+-as long as a return value of zero is given.
+-Between each call, the application should call
+-.Xr select 2 ,
+-passing
+-.Fa *fd
+-as a read descriptor and timing out after the interval specified by
+-.Fa tv .
+-When
+-.Xr select 2
+-returns,
+-.Fn rad_continue_send_request
+-should be called with
+-.Fa selected
+-set to a non-zero value if
+-.Xr select 2
+-indicated that the descriptor is readable.
+-.Pp
+-Like RADIUS requests, each response may contain zero or more
+-attributes.
+-After a response has been received successfully by
+-.Fn rad_send_request
+-or
+-.Fn rad_continue_send_request ,
+-its attributes can be extracted one by one using
+-.Fn rad_get_attr .
+-Each time
+-.Fn rad_get_attr
+-is called, it gets the next attribute from the current response, and
+-stores a pointer to the data and the length of the data via the
+-reference parameters
+-.Fa data
+-and
+-.Fa len ,
+-respectively.
+-Note that the data resides in the response itself,
+-and must not be modified.
+-A successful call to
+-.Fn rad_get_attr
+-returns the RADIUS attribute type.
+-If no more attributes remain in the current response,
+-.Fn rad_get_attr
+-returns 0.
+-If an error such as a malformed attribute is detected, \-1 is
+-returned.
+-.Pp
+-If
+-.Fn rad_get_attr
+-returns
+-.Dv RAD_VENDOR_SPECIFIC ,
+-.Fn rad_get_vendor_attr
+-may be called to determine the vendor.
+-The vendor specific RADIUS attribute type is returned.
+-The reference parameters
+-.Fa data
+-and
+-.Fa len
+-(as returned from
+-.Fn rad_get_attr )
+-are passed to
+-.Fn rad_get_vendor_attr ,
+-and are adjusted to point to the vendor specific attribute data.
+-.Pp
+-The common types of attributes can be decoded using
+-.Fn rad_cvt_addr ,
+-.Fn rad_cvt_int ,
+-and
+-.Fn rad_cvt_string .
+-These functions accept a pointer to the attribute data, which should
+-have been obtained using
+-.Fn rad_get_attr
+-and optionally
+-.Fn rad_get_vendor_attr .
+-In the case of
+-.Fn rad_cvt_string ,
+-the length
+-.Fa len
+-must also be given.
+-These functions interpret the attribute as an
+-Internet address, an integer, or a string, respectively, and return
+-its value.
+-.Fn rad_cvt_string
+-returns its value as a
+-.Dv NUL Ns -terminated
+-string in dynamically
+-allocated memory.
+-The application should free the string using
+-.Xr free 3
+-when it is no longer needed.
+-.Pp
+-If insufficient virtual memory is available,
+-.Fn rad_cvt_string
+-returns
+-.Dv NULL .
+-.Fn rad_cvt_addr
+-and
+-.Fn rad_cvt_int
+-cannot fail.
+-.Pp
+-The
+-.Fn rad_request_authenticator
+-function may be used to obtain the Request-Authenticator attribute value
+-associated with the current RADIUS server according to the supplied
+-rad_handle.
+-The target buffer
+-.Fa buf
+-of length
+-.Fa len
+-must be supplied and should be at least 16 bytes.
+-The return value is the number of bytes written to
+-.Fa buf
+-or \-1 to indicate that
+-.Fa len
+-was not large enough.
+-.Pp
+-The
+-.Fn rad_server_secret
+-returns the secret shared with the current RADIUS server according to the
+-supplied rad_handle.
+-.Pp
+-The
+-.Fn rad_demangle
+-function demangles attributes containing passwords and MS-CHAPv1 MPPE-Keys.
+-The return value is
+-.Dv NULL
+-on failure, or the plaintext attribute.
+-This value should be freed using
+-.Xr free 3
+-when it is no longer needed.
+-.Pp
+-The
+-.Fn rad_demangle_mppe_key
+-function demangles the send- and recv-keys when using MPPE (see RFC 2548).
+-The return value is
+-.Dv NULL
+-on failure, or the plaintext attribute.
+-This value should be freed using
+-.Xr free 3
+-when it is no longer needed.
+-.Ss Obtaining Error Messages
+-Those functions which accept a
+-.Vt "struct rad_handle *"
+-argument record an error message if they fail.
+-The error message
+-can be retrieved by calling
+-.Fn rad_strerror .
+-The message text is overwritten on each new error for the given
+-.Vt "struct rad_handle *" .
+-Thus the message must be copied if it is to be preserved through
+-subsequent library calls using the same handle.
+-.Ss Cleanup
+-To free the resources used by the RADIUS library, call
+-.Fn rad_close .
+-.Ss Server operation
+-Server mode operates much alike to client mode, except packet send and receive
+-steps are swapped.
+-To operate as server you should obtain server context with
+-.Fn rad_server_open
+-function, passing opened and bound UDP socket file descriptor as argument.
+-You should define allowed clients and their secrets using
+-.Fn rad_add_server
+-function.
+-port, timeout and max_tries arguments are ignored in server mode.
+-You should call
+-.Fn rad_receive_request
+-function to receive request from client.
+-If you do not want to block on socket read, you are free to use any
+-.Fn poll ,
+-.Fn select
+-or non-blocking sockets for the socket.
+-Received request can be parsed with same parsing functions as for client.
+-To respond to the request you should call
+-.Fn rad_create_response
+-and fill response content with same packet writing functions as for client.
+-When packet is ready, it should be sent with
+-.Fn rad_send_response
+-.Sh RETURN VALUES
+-The following functions return a non-negative value on success.
+-If
+-they detect an error, they return \-1 and record an error message
+-which can be retrieved using
+-.Fn rad_strerror .
+-.Pp
+-.Bl -item -offset indent -compact
+-.It
+-.Fn rad_add_server
+-.It
+-.Fn rad_config
+-.It
+-.Fn rad_create_request
+-.It
+-.Fn rad_create_response
+-.It
+-.Fn rad_get_attr
+-.It
+-.Fn rad_put_addr
+-.It
+-.Fn rad_put_attr
+-.It
+-.Fn rad_put_int
+-.It
+-.Fn rad_put_string
+-.It
+-.Fn rad_put_message_authentic
+-.It
+-.Fn rad_init_send_request
+-.It
+-.Fn rad_continue_send_request
+-.It
+-.Fn rad_send_request
+-.It
+-.Fn rad_send_response
+-.El
+-.Pp
+-The following functions return a
+-.No non- Ns Dv NULL
+-pointer on success.
+-If they are unable to allocate sufficient
+-virtual memory, they return
+-.Dv NULL ,
+-without recording an error message.
+-.Pp
+-.Bl -item -offset indent -compact
+-.It
+-.Fn rad_acct_open
+-.It
+-.Fn rad_auth_open
+-.It
+-.Fn rad_server_open
+-.It
+-.Fn rad_cvt_string
+-.El
+-.Pp
+-The following functions return a
+-.No non- Ns Dv NULL
+-pointer on success.
+-If they fail, they return
+-.Dv NULL ,
+-with recording an error message.
+-.Pp
+-.Bl -item -offset indent -compact
+-.It
+-.Fn rad_demangle
+-.It
+-.Fn rad_demangle_mppe_key
+-.El
+-.Sh FILES
+-.Bl -tag -width indent
+-.It Pa /etc/radius.conf
+-.El
+-.Sh SEE ALSO
+-.Xr radius.conf 5
+-.Rs
+-.%A "C. Rigney, et al"
+-.%T "Remote Authentication Dial In User Service (RADIUS)"
+-.%O "RFC 2865"
+-.Re
+-.Rs
+-.%A "C. Rigney"
+-.%T "RADIUS Accounting"
+-.%O "RFC 2866"
+-.Re
+-.Rs
+-.%A G. Zorn
+-.%T "Microsoft Vendor-specific RADIUS attributes"
+-.%O RFC 2548
+-.Re
+-.Rs
+-.%A C. Rigney, et al
+-.%T "RADIUS extensions"
+-.%O RFC 2869
+-.Re
+-.Sh AUTHORS
+-.An -nosplit
+-This software was originally written by
+-.An John Polstra ,
+-and donated to the
+-.Fx
+-project by Juniper Networks, Inc.
+-.An Oleg Semyonov
+-subsequently added the ability to perform RADIUS
+-accounting.
+-Later additions and changes by
+-.An Michael Bretterklieber .
+-Server mode support was added by
+-.An Alexander Motin .
+diff --git a/lib/libradius/radius.conf.5 b/lib/libradius/radius.conf.5
+deleted file mode 100644
+index df5e189ffc..0000000000
+--- a/lib/libradius/radius.conf.5
++++ /dev/null
+@@ -1,198 +0,0 @@
+-.\" Copyright 1998 Juniper Networks, Inc.
+-.\" All rights reserved.
+-.\"
+-.\" Redistribution and use in source and binary forms, with or without
+-.\" modification, are permitted provided that the following conditions
+-.\" are met:
+-.\" 1. Redistributions of source code must retain the above copyright
+-.\"    notice, this list of conditions and the following disclaimer.
+-.\" 2. Redistributions in binary form must reproduce the above copyright
+-.\"    notice, this list of conditions and the following disclaimer in the
+-.\"    documentation and/or other materials provided with the distribution.
+-.\"
+-.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+-.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+-.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+-.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+-.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+-.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+-.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+-.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+-.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+-.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+-.\" SUCH DAMAGE.
+-.\"
+-.\" $FreeBSD: src/lib/libradius/radius.conf.5,v 1.4.2.3 2001/08/17 15:43:06 ru Exp $
+-.\"
+-.Dd October 30, 1999
+-.Dt RADIUS.CONF 5
+-.Os
+-.Sh NAME
+-.Nm radius.conf
+-.Nd RADIUS client configuration file
+-.Sh SYNOPSIS
+-.Pa /etc/radius.conf
+-.Sh DESCRIPTION
+-.Nm
+-contains the information necessary to configure the RADIUS client
+-library.
+-It is parsed by
+-.Xr rad_config 3 .
+-The file contains one or more lines of text, each describing a
+-single RADIUS server which will be used by the library.
+-Leading
+-white space is ignored, as are empty lines and lines containing
+-only comments.
+-.Pp
+-A RADIUS server is described by three to seven fields on a line:
+-.Pp
+-.Bl -item -offset indent -compact
+-.It
+-Service type
+-.It
+-Server host
+-.It
+-Shared secret
+-.It
+-Timeout
+-.It
+-Retries
+-.It
+-Dead time
+-.It
+-Bind address
+-.El
+-.Pp
+-The fields are separated by white space.
+-The
+-.Ql #
+-character at the beginning of a field begins a comment, which extends
+-to the end of the line.
+-A field may be enclosed in double quotes,
+-in which case it may contain white space and/or begin with the
+-.Ql #
+-character.
+-Within a quoted string, the double quote character can
+-be represented by
+-.Ql \e\&" ,
+-and the backslash can be represented by
+-.Ql \e\e .
+-No other escape sequences are supported.
+-.Pp
+-The first field gives the service type, either
+-.Ql auth
+-for RADIUS authentication or
+-.Ql acct
+-for RADIUS accounting.
+-If a single server provides both services, two
+-lines are required in the file.
+-Earlier versions of this file did
+-not include a service type.
+-For backward compatibility, if the first
+-field is not
+-.Ql auth
+-or
+-.Ql acct
+-the library behaves as if
+-.Ql auth
+-were specified, and interprets the fields in the line as if they
+-were fields two through five.
+-.Pp
+-The second field specifies
+-the server host, either as a fully qualified domain name or as a
+-dotted-quad IP address.
+-The host may optionally be followed by a
+-.Ql \&:
+-and a numeric port number, without intervening white space.
+-If the
+-port specification is omitted, it defaults to the
+-.Ql radius
+-or
+-.Ql radacct
+-service in the
+-.Pa /etc/services
+-file for service types
+-.Ql auth
+-and
+-.Ql acct ,
+-respectively.
+-If no such entry is present, the standard ports 1812 and 1813 are
+-used.
+-.Pp
+-The third field contains the shared secret, which should be known
+-only to the client and server hosts.
+-It is an arbitrary string of
+-characters, though it must be enclosed in double quotes if it
+-contains white space.
+-The shared secret may be
+-any length, but the RADIUS protocol uses only the first 128
+-characters.
+-N.B., some popular RADIUS servers have bugs which
+-prevent them from working properly with secrets longer than 16
+-characters.
+-.Pp
+-The fourth field contains a decimal integer specifying the timeout in
+-seconds for receiving a valid reply from the server.
+-If this field
+-is omitted, it defaults to 3 seconds.
+-.Pp
+-The fifth field contains a decimal integer specifying the maximum
+-number of attempts that will be made to authenticate with the server
+-before giving up.
+-If omitted, it defaults to 3 attempts.
+-Note,
+-this is the total number of attempts and not the number of retries.
+-.Pp
+-The sixth field contains a decimal integer specifying a time interval
+-in seconds when the server will not requested if it was inaccessible
+-on the last try. 0 means ask always.
+-.Pp
+-The seventh field contains an IP address on multihomed host. All
+-requests will be binded to this IP.
+-.Pp
+-Up to 10 RADIUS servers may be specified for each service type.
+-The servers are tried in
+-round-robin fashion, until a valid response is received or the
+-maximum number of tries has been reached for all servers.
+-.Pp
+-The standard location for this file is
+-.Pa /etc/radius.conf .
+-But an alternate pathname may be specified in the call to
+-.Xr rad_config 3 .
+-Since the file contains sensitive information in the form of the
+-shared secrets, it should not be readable except by root.
+-.Sh FILES
+-.Pa /etc/radius.conf
+-.Sh EXAMPLES
+-.Bd -literal
+-# A simple entry using all the defaults:
+-acct  radius1.domain.com  OurLittleSecret
+-
+-# A server still using the obsolete RADIUS port, with increased
+-# timeout and maximum tries:
+-auth  auth.domain.com:1645  "I can't see you"  5  4
+-
+-# As above but set dead time and bind address
+-auth  auth.domain.com:1645  "I can't see you"  5  4  60  192.168.1.8
+-
+-# A server specified by its IP address:
+-auth  192.168.27.81  $X*#..38947ax-+=
+-.Ed
+-.Sh SEE ALSO
+-.Xr libradius 3
+-.Rs
+-.%A C. Rigney, et al
+-.%T "Remote Authentication Dial In User Service (RADIUS)"
+-.%O RFC 2138
+-.Re
+-.Rs
+-.%A C. Rigney
+-.%T RADIUS Accounting
+-.%O RFC 2139
+-.Re
+-.Sh AUTHORS
+-This documentation was written by
+-.An John Polstra ,
+-and donated to the
+-.Fx
+-project by Juniper Networks, Inc.
+diff --git a/share/mk/bsd.libnames.mk b/share/mk/bsd.libnames.mk
+index 5ad00d9175..a7b73fb5aa 100644
+--- a/share/mk/bsd.libnames.mk
++++ b/share/mk/bsd.libnames.mk
+@@ -68,7 +68,6 @@ LIBPANEL?=	${DESTDIR}${LIBDIR}/priv/libprivate_panel.a
+ LIBPCAP?=	${DESTDIR}${LIBDIR}/libpcap.a
+ LIBPOSIX1E?=	${DESTDIR}${LIBDIR}/libposix1e.a
+ LIBPROP?=	${DESTDIR}${LIBDIR}/libprop.a
+-LIBRADIUS?=	${DESTDIR}${LIBDIR}/libradius.a
+ LIBRPCSVC?=	${DESTDIR}${LIBDIR}/librpcsvc.a
+ LIBRT?=		${DESTDIR}${LIBDIR}/librt.a
+ LIBSBUF?=	${DESTDIR}${LIBDIR}/libsbuf.a
+diff --git a/lib/libradius/radlib.c b/usr.sbin/ppp/libradius/radlib.c
+similarity index 100%
+rename from lib/libradius/radlib.c
+rename to usr.sbin/ppp/libradius/radlib.c
+diff --git a/lib/libradius/radlib.h b/usr.sbin/ppp/libradius/radlib.h
+similarity index 100%
+rename from lib/libradius/radlib.h
+rename to usr.sbin/ppp/libradius/radlib.h
+diff --git a/lib/libradius/radlib_private.h b/usr.sbin/ppp/libradius/radlib_private.h
+similarity index 100%
+rename from lib/libradius/radlib_private.h
+rename to usr.sbin/ppp/libradius/radlib_private.h
+diff --git a/lib/libradius/radlib_vs.h b/usr.sbin/ppp/libradius/radlib_vs.h
+similarity index 100%
+rename from lib/libradius/radlib_vs.h
+rename to usr.sbin/ppp/libradius/radlib_vs.h
+-- 
+2.22.0
+
