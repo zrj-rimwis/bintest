@@ -1,0 +1,40 @@
+From 42d4f0cda636d4bd283c69fbfb1ccc1d413e7b21 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 12 Aug 2019 19:48:05 +0300
+Subject: [PATCH 11/12] <stdint.h>: Remove C99 constant/limits guards for c++.
+
+ It seems that in C11 problematic clauses where removed.  This removes
+ the inconsistency for -std=c++98 between base c++ and DPorts c++
+ compilers (that have #include_next <stdint.h> wrapper for this issue).
+ For now keep guard defines in <sys/cdefs.h>.
+
+ No functional change in buildworld.
+---
+ include/stdint.h | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/include/stdint.h b/include/stdint.h
+index deec0d395c..841df23675 100644
+--- a/include/stdint.h
++++ b/include/stdint.h
+@@ -67,11 +67,8 @@ typedef __uint_least16_t	uint_least16_t;
+ typedef __uint_least32_t	uint_least32_t;
+ typedef __uint_least64_t	uint_least64_t;
+ 
+-#if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS)
+ #include <machine/int_const.h>
+-#endif /* !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS) */
+ 
+-#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
+ #include <machine/int_limits.h>
+ #include <machine/wchar_limits.h>
+ 
+@@ -94,5 +91,3 @@ typedef __uint_least64_t	uint_least64_t;
+ 
+ #endif
+ 
+-#endif
+-
+-- 
+2.22.0
+

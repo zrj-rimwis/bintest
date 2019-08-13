@@ -1,0 +1,49 @@
+From b9c3d6b3c2e870e3cc3d00d31bea86ddd8d10379 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 12 Aug 2019 23:05:56 +0300
+Subject: [PATCH 12/12] <wchar.h>: Remove limits polution.
+
+ The <wchar.h> now should properly only define WCHAR_MIN/WCHAR_MAX as per
+ opengroups.  Fix fallout in col(1) that makes use of INT_MIN/INT_MAX.
+
+ No binary differences for buildworld.
+
+ While there, add comment why <ctype.h> is in <wchar.h>.
+---
+ include/wchar.h   | 5 ++---
+ usr.bin/col/col.c | 1 +
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/include/wchar.h b/include/wchar.h
+index 789ec822b6..52c25e35de 100644
+--- a/include/wchar.h
++++ b/include/wchar.h
+@@ -63,11 +63,10 @@
+ #include <sys/cdefs.h>
+ #include <sys/_null.h>
+ #include <sys/types.h>
+-#include <machine/limits.h>
+-#include <machine/stdarg.h> /* for __va_list */
++#include <machine/stdarg.h>	/* for __va_list */
+ #include <machine/wchar_limits.h>
+ #include <machine/wchar.h>
+-#include <ctype.h>
++#include <ctype.h>		/* for __wcwidth() */
+ 
+ #if __POSIX_VISIBLE >= 200809 || __XSI_VISIBLE
+ #ifndef _VA_LIST_DECLARED
+diff --git a/usr.bin/col/col.c b/usr.bin/col/col.c
+index f1346a5536..363b6b6b50 100644
+--- a/usr.bin/col/col.c
++++ b/usr.bin/col/col.c
+@@ -36,6 +36,7 @@
+ 
+ #include <err.h>
+ #include <errno.h>
++#include <limits.h>
+ #include <locale.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+-- 
+2.22.0
+

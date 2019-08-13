@@ -1,0 +1,298 @@
+From 35f24d6c1e07927f290baeb2f04435611dad6028 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 12 Aug 2019 13:54:38 +0300
+Subject: [PATCH 08/12] <wchar.h>: Refactor wchar_t/wint_t/mb_state setup.
+
+ Kernel has no wchar support functions (except for VKERNEL64).
+
+ * Extract wide-character types setup to common <machine/wchar.h>.
+ * Avoid using __wchar_t for clang -fms-extensions issue.
+ * Add more handling for c++ and -fshort-wchar (not supported in libc).
+
+ This essentially removes these types from kernel namespace and paves
+ the way for further both userland/kernelland visibility cleanup by
+ making <sys/stdint.h> clean.
+ The WCHAR_MAX/WCHAR_MIN limits will be addressed in separate commit.
+---
+ include/inttypes.h                |  5 +-
+ include/stddef.h                  |  5 +-
+ include/stdlib.h                  |  5 +-
+ include/uchar.h                   |  1 +
+ include/wchar.h                   |  3 +-
+ include/wctype.h                  |  1 +
+ lib/libc/locale/xlocale_private.h |  1 +
+ sys/cpu/x86_64/include/wchar.h    | 79 +++++++++++++++++++++++++++++++
+ sys/sys/stdint.h                  | 34 -------------
+ sys/sys/types.h                   |  4 --
+ 10 files changed, 96 insertions(+), 42 deletions(-)
+ create mode 100644 sys/cpu/x86_64/include/wchar.h
+
+diff --git a/include/inttypes.h b/include/inttypes.h
+index 064dd15809..6c72370481 100644
+--- a/include/inttypes.h
++++ b/include/inttypes.h
+@@ -30,12 +30,15 @@
+ #define	_INTTYPES_H_
+ 
+ #include <machine/inttypes.h>
++#ifndef __cplusplus
++#include <machine/wchar.h>		/* for ___wchar_t */
++#endif
+ #include <stdint.h>
+ 
+ #ifndef __cplusplus
+ #ifndef _WCHAR_T_DECLARED
+ #define	_WCHAR_T_DECLARED
+-typedef __wchar_t	wchar_t;
++typedef ___wchar_t	wchar_t;
+ #endif
+ #endif
+ 
+diff --git a/include/stddef.h b/include/stddef.h
+index 93d37198d8..97d513063c 100644
+--- a/include/stddef.h
++++ b/include/stddef.h
+@@ -36,6 +36,9 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_null.h>
++#ifndef __cplusplus
++#include <machine/wchar.h>		/* for ___wchar_t */
++#endif
+ #ifndef _SYS_STDINT_H_
+ #include <sys/stdint.h>			/* __rune_t and friends */
+ #endif
+@@ -53,7 +56,7 @@ typedef	__ptrdiff_t	ptrdiff_t;	/* open group, _GCC_PTRDIFF_T OK */
+ #ifndef	__cplusplus
+ #ifndef _WCHAR_T_DECLARED
+ #define _WCHAR_T_DECLARED
+-typedef	__wchar_t	wchar_t;	/* open group, _GCC_WCHAR_T OK */
++typedef	___wchar_t	wchar_t;	/* open group, _GCC_WCHAR_T OK */
+ #endif
+ #endif
+ 
+diff --git a/include/stdlib.h b/include/stdlib.h
+index cbd4b5f34d..fbd70de4c5 100644
+--- a/include/stdlib.h
++++ b/include/stdlib.h
+@@ -36,6 +36,9 @@
+ #include <sys/cdefs.h>
+ #include <sys/_null.h>
+ #include <sys/types.h>
++#ifndef __cplusplus
++#include <machine/wchar.h>		/* for ___wchar_t */
++#endif
+ 
+ #ifndef _SIZE_T_DECLARED
+ typedef	__size_t	size_t;		/* _GCC_SIZE_T OK */
+@@ -44,7 +47,7 @@ typedef	__size_t	size_t;		/* _GCC_SIZE_T OK */
+ 
+ #ifndef	__cplusplus
+ #ifndef _WCHAR_T_DECLARED
+-typedef	__wchar_t	wchar_t;	/* _GCC_WCHAR_T OK */
++typedef	___wchar_t	wchar_t;	/* _GCC_WCHAR_T OK */
+ #define	_WCHAR_T_DECLARED
+ #endif
+ #endif
+diff --git a/include/uchar.h b/include/uchar.h
+index 4dbb1c2e8f..4866f15b42 100644
+--- a/include/uchar.h
++++ b/include/uchar.h
+@@ -31,6 +31,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/types.h>
++#include <machine/wchar.h>	/* for __mbstate_t */
+ 
+ #if !defined(__cplusplus) || __cplusplus < 201103
+ typedef	__uint_least16_t	char16_t;
+diff --git a/include/wchar.h b/include/wchar.h
+index 550a5ca1cc..72b597da3c 100644
+--- a/include/wchar.h
++++ b/include/wchar.h
+@@ -65,6 +65,7 @@
+ #include <sys/types.h>
+ #include <machine/limits.h>
+ #include <machine/stdarg.h> /* for __va_list */
++#include <machine/wchar.h>
+ #include <ctype.h>
+ 
+ #if __POSIX_VISIBLE >= 200809 || __XSI_VISIBLE
+@@ -80,7 +81,7 @@ typedef	__va_list	va_list;
+ #ifndef __cplusplus
+ #ifndef _WCHAR_T_DECLARED
+ #define	_WCHAR_T_DECLARED
+-typedef	__wchar_t	wchar_t;
++typedef	___wchar_t	wchar_t;
+ #endif
+ #endif
+ 
+diff --git a/include/wctype.h b/include/wctype.h
+index 4f70be50f9..be61aa6ee5 100644
+--- a/include/wctype.h
++++ b/include/wctype.h
+@@ -33,6 +33,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/types.h>
++#include <machine/wchar.h>		/* for __wint_t */
+ 
+ #include <ctype.h>
+ 
+diff --git a/lib/libc/locale/xlocale_private.h b/lib/libc/locale/xlocale_private.h
+index 85c4c2df3c..6f0a04da35 100644
+--- a/lib/libc/locale/xlocale_private.h
++++ b/lib/libc/locale/xlocale_private.h
+@@ -42,6 +42,7 @@
+ #include <stdint.h>
+ #include <sys/types.h>
+ #include <machine/atomic.h>
++#include <machine/wchar.h>		/* for __mbstate_t, XXX use mbstate_t here? */
+ #include "setlocale.h"
+ 
+ /**
+diff --git a/sys/cpu/x86_64/include/wchar.h b/sys/cpu/x86_64/include/wchar.h
+new file mode 100644
+index 0000000000..d95fb63896
+--- /dev/null
++++ b/sys/cpu/x86_64/include/wchar.h
+@@ -0,0 +1,79 @@
++/*
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#ifndef _CPU_WCHAR_H_
++#define _CPU_WCHAR_H_
++
++#include <machine/stdint.h>
++
++/*
++ * wchar_t, wint_t and rune_t are signed so that EOF (-1) can be naturally
++ * assigned to it and used.  rune_t is meant for internal use only
++ * (see <machine/ctype.h>).
++ */
++
++/*
++ * wchar_t and rune_t have to be of the same type.  However there are some
++ * issues with language binding (c++ specifically where it is a keyword).
++ * Also "clang -fms-extensions" has a reserved keyword __wchar_t.  Use
++ * ___wchar_t type only to declare wchar_t to avoid conflicts in headers.
++ *
++ * ANSI specifies ``int'' as argument for the is*() and to*() routines.
++ * Keeping wchar_t and rune_t as ``int'' instead of the more natural
++ * ``long'' helps ANSI conformance. ISO 10646 will most likely end up as
++ * 31 bit standard and all supported architectures have sizeof(int) >= 4.
++ *
++ * Allow compiler to override wchar_t with -fshort-wchar.
++ */
++#ifndef __cplusplus
++#if defined(__SIZEOF_WCHAR_T__) && __SIZEOF_WCHAR_T__ == 2
++#if defined(__WCHAR_TYPE__)
++typedef	__WCHAR_TYPE__	___wchar_t;	/* compiler short wchar type */
++#else
++typedef	unsigned short	___wchar_t;
++#endif
++#else
++typedef	int		___wchar_t;	/* same as __ct_rune_t */
++#endif
++#endif
++
++/*
++ * wint_t and rune_t must be the same type.  Also, wint_t should be able to
++ * hold all members of the largest character set plus one extra value (WEOF),
++ * and must be at least 16 bits.
++ */
++typedef	int		__wint_t;
++
++/*
++ * mbstate_t is an opaque object to keep conversion state, during multibyte
++ * stream conversions.  The content must not be referenced by user programs.
++ */
++typedef union {
++	__uint8_t	__mbstate8[128];
++	__int64_t	__mbstateL;	/* for alignment */
++} __mbstate_t;
++
++#endif /* !_CPU_WCHAR_H_ */
+diff --git a/sys/sys/stdint.h b/sys/sys/stdint.h
+index 706c7505e5..fc8f198fe7 100644
+--- a/sys/sys/stdint.h
++++ b/sys/sys/stdint.h
+@@ -13,38 +13,4 @@
+ #include <sys/cdefs.h>
+ #include <machine/stdint.h>
+ 
+-/*
+- * wchar_t and rune_t have to be of the same type. rune_t is meant
+- * for internal use only.
+- *
+- * wchar_t, wint_t and rune_t are signed, to allow EOF (-1) to naturally
+- * assigned.
+- *
+- * ANSI specifies ``int'' as argument for the is*() and to*() routines.
+- * Keeping wchar_t and rune_t as ``int'' instead of the more natural
+- * ``long'' helps ANSI conformance. ISO 10646 will most likely end up
+- * as 31 bit standard and all supported architectures have
+- * sizeof(int) >= 4. Unless compiler has overridden it with -fshort-wchar.
+- */
+-#ifndef __cplusplus
+-#if defined(__SIZEOF_WCHAR_T__) && __SIZEOF_WCHAR_T__ == 2
+-typedef	unsigned short	__wchar_t;
+-#else
+-typedef	int		__wchar_t;
+-#endif
+-#endif
+-#ifndef ___WINT_T_DECLARED
+-typedef	int		__wint_t;
+-#define	___WINT_T_DECLARED
+-#endif
+-
+-/*
+- * mbstate_t is an opaque object to keep conversion state, during multibyte
+- * stream conversions.  The content must not be referenced by user programs.
+- */
+-typedef union {
+-	__uint8_t __mbstate8[128];
+-	__int64_t __mbstateL;	/* for alignment */
+-} __mbstate_t;
+-
+ #endif	/* SYS_STDINT_H */
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index ce652cc6dd..5fd56e0fa3 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -268,9 +268,5 @@ typedef	__timer_t	timer_t;
+  * must be at least 16 bits.
+  */
+ typedef	int		__ct_rune_t;	/* arg type for ctype funcs */
+-#ifndef ___WINT_T_DECLARED
+-typedef	__ct_rune_t	__wint_t;	/* wint_t (see above) */
+-#define	___WINT_T_DECLARED
+-#endif
+ 
+ #endif /* !_SYS_TYPES_H_ */
+-- 
+2.22.0
+
