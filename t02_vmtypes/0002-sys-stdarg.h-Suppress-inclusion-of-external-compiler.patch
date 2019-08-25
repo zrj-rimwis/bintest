@@ -1,0 +1,32 @@
+From 0f939cdcc35922c053996ebdb5a62b17731f6381 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 9 Aug 2019 10:57:26 +0300
+Subject: [PATCH 02/52] <sys/stdarg.h>: Suppress inclusion of external
+ compilers private <stdarg.h>.
+
+ Only to help kernel code compilation with external compilers.
+---
+ sys/sys/stdarg.h | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/sys/sys/stdarg.h b/sys/sys/stdarg.h
+index d138dfdfdb..05d2aad937 100644
+--- a/sys/sys/stdarg.h
++++ b/sys/sys/stdarg.h
+@@ -44,4 +44,13 @@ typedef	__va_list	va_list;
+ #endif
+ #define va_end(ap)		__va_end(ap)
+ 
++/*
++ * Work around compiler specific <stdarg.h> inclusion.  This header is
++ * intended to be directly used only from kernel code!  Userspace applications
++ * should use standard <stdarg.h> that might contain additional features not
++ * required by the kernel code.  Suppress Clang and GCC <stdarg.h> variants.
++ */
++#define __STDARG_H
++#define _STDARG_H
++
+ #endif /* !_SYS_STDARG_H_ */
+-- 
+2.22.0
+

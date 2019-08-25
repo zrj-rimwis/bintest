@@ -1,0 +1,593 @@
+From b2a2415e6fef818f2fa2a97a4aabf6cfb5a1f8a7 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 24 Aug 2019 22:58:09 +0300
+Subject: [PATCH 51/52] kernel: Finish vm_object_t separation.
+
+ Where it is clear use u_long type, where is not - use __vm_offset_t to
+ play it safe for future reference.
+
+ No functional change.
+---
+ sys/dev/disk/isp/isp_pci.c              |  2 +-
+ sys/dev/disk/mpt/mpt_cam.c              |  5 ++--
+ sys/dev/disk/sym/sym_hipd.c             | 16 +++++++------
+ sys/dev/misc/syscons/sckmsrndr.c        | 20 ++++++++--------
+ sys/dev/misc/syscons/scvgarndr.c        | 32 ++++++++++++-------------
+ sys/dev/video/bktr/bktr_mem.c           | 15 ++++++------
+ sys/dev/video/bktr/bktr_mem.h           |  5 ++--
+ sys/dev/video/bktr/bktr_reg.h           | 14 ++++++-----
+ sys/dev/video/fb/fbreg.h                |  6 +++--
+ sys/kern/subr_module.c                  |  6 ++---
+ sys/platform/pc64/include/framebuffer.h |  4 ++--
+ sys/sys/kerneldump.h                    |  7 ++++--
+ sys/sys/linker.h                        |  2 +-
+ sys/sys/uio.h                           |  3 ++-
+ 14 files changed, 74 insertions(+), 63 deletions(-)
+
+diff --git a/sys/dev/disk/isp/isp_pci.c b/sys/dev/disk/isp/isp_pci.c
+index 560f35ce8f..1d5fec9ac3 100644
+--- a/sys/dev/disk/isp/isp_pci.c
++++ b/sys/dev/disk/isp/isp_pci.c
+@@ -1879,7 +1879,7 @@ isp_pci_dmasetup(ispsoftc_t *isp, struct ccb_scsiio *csio, void *ff)
+ 		} else {
+ 			/* Pointer to physical buffer */
+ 			struct bus_dma_segment seg;
+-			seg.ds_addr = (bus_addr_t)(vm_offset_t)csio->data_ptr;
++			seg.ds_addr = (bus_addr_t)(__vm_offset_t)csio->data_ptr;
+ 			seg.ds_len = csio->dxfer_len;
+ 			(*eptr)(mp, &seg, 1, 0);
+ 		}
+diff --git a/sys/dev/disk/mpt/mpt_cam.c b/sys/dev/disk/mpt/mpt_cam.c
+index d62d49649f..dde48fddb7 100644
+--- a/sys/dev/disk/mpt/mpt_cam.c
++++ b/sys/dev/disk/mpt/mpt_cam.c
+@@ -113,6 +113,7 @@
+ #include <sys/callout.h>
+ #include <sys/kthread.h>
+ #include <sys/sysctl.h>
++#include <machine/vm.h>		/* for __vm_offset_t */
+ 
+ static void mpt_poll(struct cam_sim *);
+ static timeout_t mpt_timeout;
+@@ -2243,7 +2244,7 @@ mpt_start(struct cam_sim *sim, union ccb *ccb)
+ 				 */
+ 				struct bus_dma_segment seg;
+ 				seg.ds_addr =
+-				    (bus_addr_t)(vm_offset_t)csio->data_ptr;
++				    (bus_addr_t)(__vm_offset_t)csio->data_ptr;
+ 				seg.ds_len = csio->dxfer_len;
+ 				(*cb)(req, &seg, 1, 0);
+ 			}
+@@ -4483,7 +4484,7 @@ mpt_target_start_io(struct mpt_softc *mpt, union ccb *ccb)
+ 				 */
+ 				struct bus_dma_segment seg;
+ 				seg.ds_addr = (bus_addr_t)
+-				    (vm_offset_t)csio->data_ptr;
++				    (__vm_offset_t)csio->data_ptr;
+ 				seg.ds_len = csio->dxfer_len;
+ 				(*cb)(req, &seg, 1, 0);
+ 			}
+diff --git a/sys/dev/disk/sym/sym_hipd.c b/sys/dev/disk/sym/sym_hipd.c
+index e5a3a23bf1..30eb311f1a 100644
+--- a/sys/dev/disk/sym/sym_hipd.c
++++ b/sys/dev/disk/sym/sym_hipd.c
+@@ -97,6 +97,8 @@
+ #include <bus/cam/scsi/scsi_all.h>
+ #include <bus/cam/scsi/scsi_message.h>
+ 
++#include <machine/vm.h>		/* for __vm_offset_t */
++
+ /* Short and quite clear integer types */
+ typedef int8_t    s8;
+ typedef int16_t   s16;
+@@ -761,7 +763,7 @@ static m_addr_t __vtobus(bus_dma_tag_t dev_dmat, void *m)
+  * The _uvptv_ macro avoids a nasty warning about pointer to volatile
+  * being discarded.
+  */
+-#define _uvptv_(p) ((void *)((vm_offset_t)(p)))
++#define _uvptv_(p) ((void *)((__vm_offset_t)(p)))
+ #define _sym_calloc_dma(np, s, n)	__sym_calloc_dma(np->bus_dmat, s, n)
+ #define _sym_mfree_dma(np, p, s, n)	\
+ 				__sym_mfree_dma(np->bus_dmat, _uvptv_(p), s, n)
+@@ -1479,7 +1481,7 @@ struct sym_hcb {
+ 	 *  their bus addresses.
+ 	 */
+ 	struct sym_actscr idletask, notask, bad_itl, bad_itlq;
+-	vm_offset_t idletask_ba, notask_ba, bad_itl_ba, bad_itlq_ba;
++	__vm_offset_t idletask_ba, notask_ba, bad_itl_ba, bad_itlq_ba;
+ 
+ 	/*
+ 	 *  Dummy lun table to protect us against target
+@@ -1574,10 +1576,10 @@ struct sym_hcb {
+ 	/*
+ 	 *  BUS addresses of the chip
+ 	 */
+-	vm_offset_t	mmio_ba;	/* MMIO BUS address		*/
++	__vm_offset_t	mmio_ba;	/* MMIO BUS address		*/
+ 	int		mmio_ws;	/* MMIO Window size		*/
+ 
+-	vm_offset_t	ram_ba;		/* RAM BUS address		*/
++	__vm_offset_t	ram_ba;		/* RAM BUS address		*/
+ 	int		ram_ws;		/* RAM window size		*/
+ 
+ 	/*
+@@ -1588,9 +1590,9 @@ struct sym_hcb {
+ 	 */
+ 	u_char		*scripta0;	/* Copies of script and scripth	*/
+ 	u_char		*scriptb0;	/* Copies of script and scripth	*/
+-	vm_offset_t	scripta_ba;	/* Actual script and scripth	*/
+-	vm_offset_t	scriptb_ba;	/*  bus addresses.		*/
+-	vm_offset_t	scriptb0_ba;
++	__vm_offset_t	scripta_ba;	/* Actual script and scripth	*/
++	__vm_offset_t	scriptb_ba;	/*  bus addresses.		*/
++	__vm_offset_t	scriptb0_ba;
+ 	u_short		scripta_sz;	/* Actual size of script A	*/
+ 	u_short		scriptb_sz;	/* Actual size of script B	*/
+ 
+diff --git a/sys/dev/misc/syscons/sckmsrndr.c b/sys/dev/misc/syscons/sckmsrndr.c
+index 5555943100..335c72c2a3 100644
+--- a/sys/dev/misc/syscons/sckmsrndr.c
++++ b/sys/dev/misc/syscons/sckmsrndr.c
+@@ -133,10 +133,10 @@ kms_nop(scr_stat *scp, ...)
+ 
+ static inline void
+ blit_blk32(scr_stat *scp, u_char *char_data, int sw, int sh,
+-	   vm_offset_t draw_pos, int dw, int dh,
++	   __vm_offset_t draw_pos, int dw, int dh,
+ 	   int line_width, uint32_t fg, uint32_t bg, int how)
+ {
+-	vm_offset_t p;
++	__vm_offset_t p;
+ 	int pos;
+ 	int x;		/* destination iterator (whole pixels) */
+ 	int y;
+@@ -203,10 +203,10 @@ blit_blk32(scr_stat *scp, u_char *char_data, int sw, int sh,
+ 
+ static inline void
+ blit_blk24(scr_stat *scp, u_char *char_data, int sw, int sh,
+-	   vm_offset_t draw_pos, int dw, int dh,
++	   __vm_offset_t draw_pos, int dw, int dh,
+ 	   int line_width, uint32_t fg, uint32_t bg, int how)
+ {
+-	vm_offset_t p;
++	__vm_offset_t p;
+ 	int pos;
+ 	int x;		/* destination iterator (whole pixels) */
+ 	int y;
+@@ -280,7 +280,7 @@ blit_blk24(scr_stat *scp, u_char *char_data, int sw, int sh,
+ }
+ 
+ static void
+-fill_rect32(scr_stat *scp, vm_offset_t draw_pos, int width, int height,
++fill_rect32(scr_stat *scp, __vm_offset_t draw_pos, int width, int height,
+ 	    int line_width, uint32_t fg)
+ {
+ 	int i, j;
+@@ -293,7 +293,7 @@ fill_rect32(scr_stat *scp, vm_offset_t draw_pos, int width, int height,
+ }
+ 
+ static void
+-fill_rect24(scr_stat *scp, vm_offset_t draw_pos, int width, int height,
++fill_rect24(scr_stat *scp, __vm_offset_t draw_pos, int width, int height,
+ 	    int line_width, uint32_t fg)
+ {
+ 	int i, j, d;
+@@ -337,7 +337,7 @@ kms_draw_border(scr_stat *scp, int color)
+ 	int line_width, pixel_size;
+ 	int rightpixel, bottompixel;
+ 	uint32_t fg;
+-	vm_offset_t draw_pos;
++	__vm_offset_t draw_pos;
+ 
+ 	if (sc->fbi->vaddr == 0)
+ 		return;
+@@ -377,7 +377,7 @@ kms_draw(scr_stat *scp, int from, int count, int flip)
+ 	u_char *char_data;
+ 	int a, i;
+ 	uint32_t fg, bg;
+-	vm_offset_t draw_pos, p;
++	__vm_offset_t draw_pos, p;
+ 	int line_width, pixel_size;
+ 
+ 	if (sc->fbi->vaddr == 0)
+@@ -435,7 +435,7 @@ draw_kmscursor(scr_stat *scp, int at, int on, int flip)
+ 	int a;
+ 	uint32_t fg, bg;
+ 	unsigned char *char_data;
+-	vm_offset_t draw_pos;
++	__vm_offset_t draw_pos;
+ 
+ 	if (sc->fbi->vaddr == 0)
+ 		return;
+@@ -529,7 +529,7 @@ draw_kmsmouse(scr_stat *scp, int x, int y)
+ 	sc_softc_t *sc = scp->sc;
+ 	int line_width, pixel_size;
+ 	int blk_width, blk_height;
+-	vm_offset_t draw_pos;
++	__vm_offset_t draw_pos;
+ 
+ 	if (sc->fbi->vaddr == 0)
+ 		return;
+diff --git a/sys/dev/misc/syscons/scvgarndr.c b/sys/dev/misc/syscons/scvgarndr.c
+index c4614619a8..c0c7fd7b08 100644
+--- a/sys/dev/misc/syscons/scvgarndr.c
++++ b/sys/dev/misc/syscons/scvgarndr.c
+@@ -440,7 +440,7 @@ vga_pxlborder_direct(scr_stat *scp, int color)
+ 	int i, x, y;
+ 	int line_width, pixel_size;
+ 	uint32_t u32 = 0;
+-	vm_offset_t draw_pos, draw_end, p;
++	__vm_offset_t draw_pos, draw_end, p;
+ 
+ 	line_width = scp->sc->adp->va_line_width;
+ 	pixel_size = scp->sc->adp->va_info.vi_pixel_size;
+@@ -499,7 +499,7 @@ vga_pxlborder_packed(scr_stat *scp, int color)
+ 	int i, x, y;
+ 	int line_width;
+ 	uint32_t u32;
+-	vm_offset_t draw_pos, draw_end, p;
++	__vm_offset_t draw_pos, draw_end, p;
+ 
+ 	line_width = scp->sc->adp->va_line_width;
+ 	u32 = (color << 24) + (color << 16) + (color << 8) + color;
+@@ -550,7 +550,7 @@ vga_pxlborder_packed(scr_stat *scp, int color)
+ static void
+ vga_pxlborder_planar(scr_stat *scp, int color)
+ {
+-	vm_offset_t p;
++	__vm_offset_t p;
+ 	int line_width;
+ 	int x;
+ 	int y;
+@@ -594,7 +594,7 @@ vga_vgadraw_direct(scr_stat *scp, int from, int count, int flip)
+ 	int a, i, j, k, l, pos;
+ 	uint32_t fg, bg, u32;
+ 	unsigned char *char_data;
+-	vm_offset_t draw_pos, p;
++	__vm_offset_t draw_pos, p;
+ 
+ 	line_width = scp->sc->adp->va_line_width;
+ 	pixel_size = scp->sc->adp->va_info.vi_pixel_size;
+@@ -654,7 +654,7 @@ vga_vgadraw_packed(scr_stat *scp, int from, int count, int flip)
+ 	int a, i, j;
+ 	uint32_t fg, bg, u32;
+ 	unsigned char *char_data;
+-	vm_offset_t draw_pos, p;
++	__vm_offset_t draw_pos, p;
+ 
+ 	line_width = scp->sc->adp->va_line_width;
+ 
+@@ -705,8 +705,8 @@ vga_vgadraw_packed(scr_stat *scp, int from, int count, int flip)
+ static void
+ vga_vgadraw_planar(scr_stat *scp, int from, int count, int flip)
+ {
+-	vm_offset_t d;
+-	vm_offset_t e;
++	__vm_offset_t d;
++	__vm_offset_t e;
+ 	u_char *f;
+ 	u_short bg;
+ 	u_short col1, col2;
+@@ -774,14 +774,14 @@ vga_pxlcursor_shape(scr_stat *scp, int base, int height, int blink)
+ #endif
+ }
+ 
+-static void 
++static void
+ draw_pxlcursor_direct(scr_stat *scp, int at, int on, int flip)
+ {
+ 	int line_width, pixel_size, height;
+ 	int a, i, j, k, pos;
+ 	uint32_t fg, bg, u32;
+ 	unsigned char *char_data;
+-	vm_offset_t draw_pos;
++	__vm_offset_t draw_pos;
+ 
+ 	line_width = scp->sc->adp->va_line_width;
+ 	pixel_size = scp->sc->adp->va_info.vi_pixel_size;
+@@ -834,7 +834,7 @@ draw_pxlcursor_packed(scr_stat *scp, int at, int on, int flip)
+ 	int a, i;
+ 	uint32_t fg, bg, u32;
+ 	unsigned char *char_data;
+-	vm_offset_t draw_pos;
++	__vm_offset_t draw_pos;
+ 
+ 	line_width = scp->sc->adp->va_line_width;
+ 
+@@ -873,10 +873,10 @@ draw_pxlcursor_packed(scr_stat *scp, int at, int on, int flip)
+ 	}
+ }
+ 
+-static void 
++static void
+ draw_pxlcursor_planar(scr_stat *scp, int at, int on, int flip)
+ {
+-	vm_offset_t d;
++	__vm_offset_t d;
+ 	u_char *f;
+ 	int line_width;
+ 	int height;
+@@ -1046,13 +1046,13 @@ vga_pxlblink_planar(scr_stat *scp, int at, int flip)
+ 
+ #ifndef SC_NO_CUTPASTE
+ 
+-static void 
++static void
+ draw_pxlmouse_direct(scr_stat *scp, int x, int y)
+ {
+ 	int line_width, pixel_size;
+ 	int xend, yend;
+ 	int i, j;
+-	vm_offset_t draw_pos;
++	__vm_offset_t draw_pos;
+ 
+ 	line_width = scp->sc->adp->va_line_width;
+ 	pixel_size = scp->sc->adp->va_info.vi_pixel_size;
+@@ -1096,7 +1096,7 @@ draw_pxlmouse_packed(scr_stat *scp, int x, int y)
+ 	int line_width;
+ 	int xend, yend;
+ 	int i, j;
+-	vm_offset_t draw_pos;
++	__vm_offset_t draw_pos;
+ 
+ 	line_width = scp->sc->adp->va_line_width;
+ 
+@@ -1122,7 +1122,7 @@ draw_pxlmouse_packed(scr_stat *scp, int x, int y)
+ static void
+ draw_pxlmouse_planar(scr_stat *scp, int x, int y)
+ {
+-	vm_offset_t p;
++	__vm_offset_t p;
+ 	int line_width;
+ 	int xoff;
+ 	int ymax;
+diff --git a/sys/dev/video/bktr/bktr_mem.c b/sys/dev/video/bktr/bktr_mem.c
+index 726309bb3b..b2370c8dd3 100644
+--- a/sys/dev/video/bktr/bktr_mem.c
++++ b/sys/dev/video/bktr/bktr_mem.c
+@@ -50,15 +50,16 @@
+ #include <sys/param.h>
+ #include <sys/kernel.h>
+ #include <sys/systm.h>
++#include <machine/vm.h>		/* for __vm_offset_t */
+ #include <dev/video/bktr/bktr_mem.h>
+ 
+ struct memory_pointers {
+ 	int		addresses_stored;
+-	vm_offset_t	dma_prog;
+-	vm_offset_t	odd_dma_prog;
+-	vm_offset_t	vbidata;
+-	vm_offset_t	vbibuffer;
+-	vm_offset_t	buf;
++	__vm_offset_t	dma_prog;
++	__vm_offset_t	odd_dma_prog;
++	__vm_offset_t	vbidata;
++	__vm_offset_t	vbibuffer;
++	__vm_offset_t	buf;
+ } memory_pointers;
+ 
+ static struct memory_pointers memory_list[BKTR_MEM_MAX_DEVICES];
+@@ -100,7 +101,7 @@ bktr_has_stored_addresses(int unit)
+ /*************************************************************/
+ 
+ void
+-bktr_store_address(int unit, int type, vm_offset_t addr)
++bktr_store_address(int unit, int type, __vm_offset_t addr)
+ {
+ 
+ 	if (unit < 0 || unit >= BKTR_MEM_MAX_DEVICES) {
+@@ -139,7 +140,7 @@ bktr_store_address(int unit, int type, vm_offset_t addr)
+ 
+ /*************************************************************/
+ 
+-vm_offset_t
++__vm_offset_t
+ bktr_retrieve_address(int unit, int type)
+ {
+ 
+diff --git a/sys/dev/video/bktr/bktr_mem.h b/sys/dev/video/bktr/bktr_mem.h
+index 8d3d94835b..bf8213438d 100644
+--- a/sys/dev/video/bktr/bktr_mem.h
++++ b/sys/dev/video/bktr/bktr_mem.h
+@@ -1,5 +1,4 @@
+ /* $FreeBSD: src/sys/dev/bktr/bktr_mem.h,v 1.2 2005/01/06 01:42:31 imp Exp $ */
+-/* $DragonFly: src/sys/dev/video/bktr/bktr_mem.h,v 1.4 2007/10/03 19:27:08 swildner Exp $ */
+ 
+ /*
+  * This is part of the Driver for Video Capture Cards (Frame grabbers)
+@@ -59,5 +58,5 @@
+ 
+ /* Prototypes */
+ int         bktr_has_stored_addresses(int unit);
+-void        bktr_store_address(int unit, int type, vm_offset_t addr);
+-vm_offset_t bktr_retrieve_address(int unit, int type);
++void        bktr_store_address(int unit, int type, __vm_offset_t addr);
++__vm_offset_t bktr_retrieve_address(int unit, int type);
+diff --git a/sys/dev/video/bktr/bktr_reg.h b/sys/dev/video/bktr/bktr_reg.h
+index f2afb210c8..78bd26866e 100644
+--- a/sys/dev/video/bktr/bktr_reg.h
++++ b/sys/dev/video/bktr/bktr_reg.h
+@@ -34,6 +34,8 @@
+  *
+  */
+ 
++#include <machine/vm.h>		/* for __vm_offset_t */
++
+ /*
+  * The kernel options for the driver now all begin with BKTR.
+  * Support the older kernel options on FreeBSD and OpenBSD.
+@@ -449,11 +451,11 @@ struct bktr_softc {
+     bus_size_t		obmemsz;/* Size of card (bytes) */
+     char	bktr_xname[7];	/* device name and unit number */
+ 
+-    vm_offset_t bigbuf;	     /* buffer that holds the captured image */
+-    vm_offset_t vbidata;     /* RISC program puts VBI data from the current frame here */
+-    vm_offset_t vbibuffer;   /* Circular buffer holding VBI data for the user */
+-    vm_offset_t dma_prog;    /* RISC prog for single and/or even field capture*/
+-    vm_offset_t odd_dma_prog;/* RISC program for Odd field capture */
++    __vm_offset_t bigbuf;	/* buffer that holds the captured image */
++    __vm_offset_t vbidata;	/* RISC program puts VBI data from the current frame here */
++    __vm_offset_t vbibuffer;	/* Circular buffer holding VBI data for the user */
++    __vm_offset_t dma_prog;	/* RISC prog for single and/or even field capture*/
++    __vm_offset_t odd_dma_prog;	/* RISC program for Odd field capture */
+ 
+     /* the following definitions are common over all platforms */
+     int		alloc_pages;	/* number of pages in bigbuf */
+@@ -463,7 +465,7 @@ struct bktr_softc {
+     uint32_t	vbi_sequence_number;	/* sequence number for VBI */
+     int		vbi_read_blocked;	/* user process blocked on read() from /dev/vbi */
+     struct kqinfo vbi_kq;	/* Data used by select()/poll()/kevent() on /dev/vbi */
+-    
++
+ 
+     struct proc	*proc;		/* process to receive raised signal */
+     int		signal;		/* signal to send to process */
+diff --git a/sys/dev/video/fb/fbreg.h b/sys/dev/video/fb/fbreg.h
+index 22586c5f8a..46f1383b6d 100644
+--- a/sys/dev/video/fb/fbreg.h
++++ b/sys/dev/video/fb/fbreg.h
+@@ -31,6 +31,8 @@
+ 
+ #ifdef _KERNEL
+ 
++#include <machine/vm.h>		/* for __vm_offset_t */
++
+ #define V_MAX_ADAPTERS		8		/* XXX */
+ 
+ /* some macros */
+@@ -63,7 +65,7 @@ typedef int vi_set_hw_cursor_t(video_adapter_t *adp, int col, int row);
+ typedef int vi_set_hw_cursor_shape_t(video_adapter_t *adp, int base,
+ 				     int height, int celsize, int blink);
+ typedef int vi_blank_display_t(video_adapter_t *adp, int mode);
+-typedef int vi_mmap_t(video_adapter_t *adp, vm_offset_t offset, int prot);
++typedef int vi_mmap_t(video_adapter_t *adp, __vm_offset_t offset, int prot);
+ typedef int vi_ioctl_t(video_adapter_t *adp, u_long cmd, caddr_t data);
+ typedef int vi_clear_t(video_adapter_t *adp);
+ typedef int vi_fill_rect_t(video_adapter_t *adp, int val, int x, int y,
+@@ -196,7 +198,7 @@ int		genfbioctl(genfb_softc_t *sc, video_adapter_t *adp,
+ 			   u_long cmd, caddr_t arg, int flag,
+ 			   struct ucred *cred);
+ int		genfbmmap(genfb_softc_t *sc, video_adapter_t *adp,
+-			  vm_offset_t offset, int prot);
++			  __vm_offset_t offset, int prot);
+ 
+ #endif /* FB_INSTALL_CDEV */
+ 
+diff --git a/sys/kern/subr_module.c b/sys/kern/subr_module.c
+index df21ea596c..c5a17db798 100644
+--- a/sys/kern/subr_module.c
++++ b/sys/kern/subr_module.c
+@@ -254,11 +254,11 @@ preload_delete_name(const char *name)
+ 
+ /* Called from hammer_time() on pc64.  Convert physical pointers to kvm. Sigh. */
+ void
+-preload_bootstrap_relocate(vm_offset_t offset)
++preload_bootstrap_relocate(u_long offset)
+ {
+     caddr_t	curp;
+     u_int32_t	*hdr;
+-    vm_offset_t	*ptr;
++    u_long	*ptr;
+     int		next;
+ 
+     if (preload_metadata != NULL) {
+@@ -274,7 +274,7 @@ preload_bootstrap_relocate(vm_offset_t offset)
+ 	    case MODINFO_ADDR:
+ 	    case MODINFO_METADATA|MODINFOMD_SSYM:
+ 	    case MODINFO_METADATA|MODINFOMD_ESYM:
+-		ptr = (vm_offset_t *)(curp + (sizeof(u_int32_t) * 2));
++		ptr = (u_long *)(curp + (sizeof(u_int32_t) * 2));
+ 		*ptr += offset;
+ 		break;
+ 	    }
+diff --git a/sys/platform/pc64/include/framebuffer.h b/sys/platform/pc64/include/framebuffer.h
+index 7dab50d18d..c2ce70ceaa 100644
+--- a/sys/platform/pc64/include/framebuffer.h
++++ b/sys/platform/pc64/include/framebuffer.h
+@@ -4,7 +4,7 @@
+ #ifdef _KERNEL
+ 
+ #include <sys/bus.h>
+-#include <machine/vm.h>		/* for __vm_paddr */
++#include <machine/vm.h>		/* for __vm_* types */
+ 
+ struct fb_info;
+ 
+@@ -15,7 +15,7 @@ struct fb_ops {
+ };
+ 
+ struct fb_info {
+-	vm_offset_t vaddr;
++	__vm_offset_t vaddr;
+ 	__vm_paddr_t paddr;
+ 	uint16_t width;
+ 	uint16_t height;
+diff --git a/sys/sys/kerneldump.h b/sys/sys/kerneldump.h
+index 8fd2e702fd..d4a4bfb8a1 100644
+--- a/sys/sys/kerneldump.h
++++ b/sys/sys/kerneldump.h
+@@ -40,6 +40,9 @@
+ 
+ #include <machine/endian.h>
+ #include <machine/pcb.h>
++#ifdef _KERNEL
++#include <machine/vm.h>
++#endif
+ 
+ #if BYTE_ORDER == LITTLE_ENDIAN
+ #define	dtoh32(x)	__bswap32(x)
+@@ -107,7 +110,7 @@ void mkdumpheader(struct kerneldumpheader *kdh, char *magic, uint32_t archver,
+ typedef int dumper_t(
+ 	void *_priv,		/* Private to the driver. */
+ 	void *_virtual,		/* Virtual (mapped) address. */
+-	vm_offset_t _physical,	/* Physical address of virtual. */
++	__vm_offset_t _physical, /* Physical address of virtual. */
+ 	off_t _offset,		/* Byte-offset to write at. */
+ 	size_t _length);	/* Number of bytes to dump. */
+ 
+@@ -122,7 +125,7 @@ struct dumperinfo {
+ };
+ 
+ int set_dumper(struct dumperinfo *);
+-int dump_write(struct dumperinfo *, void *, vm_offset_t, off_t, size_t);
++int dump_write(struct dumperinfo *, void *, __vm_offset_t, off_t, size_t);
+ void dumpsys(void);
+ void md_dumpsys(struct dumperinfo *);
+ void dump_reactivate_cpus(void);
+diff --git a/sys/sys/linker.h b/sys/sys/linker.h
+index 0c0377da7c..58d29133db 100644
+--- a/sys/sys/linker.h
++++ b/sys/sys/linker.h
+@@ -303,7 +303,7 @@ extern caddr_t		preload_search_by_type(const char *);
+ extern caddr_t		preload_search_next_name(caddr_t);
+ extern caddr_t		preload_search_info(caddr_t, int);
+ extern void		preload_delete_name(const char *);
+-extern void		preload_bootstrap_relocate(vm_offset_t);
++extern void		preload_bootstrap_relocate(u_long);
+ extern struct mod_metadata *find_mod_metadata(const char *);
+ 
+ #ifdef KLD_DEBUG
+diff --git a/sys/sys/uio.h b/sys/sys/uio.h
+index aca9068b8e..de4c626cfb 100644
+--- a/sys/sys/uio.h
++++ b/sys/sys/uio.h
+@@ -40,6 +40,7 @@
+ #endif
+ #if defined(_KERNEL)
+ #include <sys/malloc.h>		/* Needed to inline iovec_free(). */
++#include <machine/vm.h>		/* for __vm_offset_t */
+ #endif
+ 
+ #ifndef _SSIZE_T_DECLARED
+@@ -99,7 +100,7 @@ int	uiomove_nofault (caddr_t, size_t, struct uio *);
+ int	uiomovebp (struct buf *, caddr_t, size_t, struct uio *);
+ int	uiomovez (size_t, struct uio *);
+ int 	uiomove_frombuf (void *buf, size_t buflen, struct uio *uio);
+-int     uiomove_fromphys(struct vm_page *ma[], vm_offset_t offset,
++int	uiomove_fromphys(struct vm_page *ma[], __vm_offset_t offset,
+ 			    size_t n, struct uio *uio);
+ int	uioread (int, struct uio *, struct vm_object *, int *);
+ int	iovec_copyin(const struct iovec *, struct iovec **, struct iovec *,
+-- 
+2.22.0
+

@@ -1,0 +1,28 @@
+From 7275bb885f9707b113ff09420b41b402dc1b95a0 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 14 Aug 2019 10:45:53 +0300
+Subject: [PATCH 14/52] <machine/param.h>: Remove unused KSTACK_PAGES.
+
+ Unused since 4611d87f91be625f8ef4c7ea2709b86abe035b65
+---
+ sys/platform/pc64/include/param.h | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/sys/platform/pc64/include/param.h b/sys/platform/pc64/include/param.h
+index 8283684601..9206767539 100644
+--- a/sys/platform/pc64/include/param.h
++++ b/sys/platform/pc64/include/param.h
+@@ -11,10 +11,5 @@
+ 
+ #include <cpu/param.h>
+ 
+-/* JG from fbsd/sys/amd64/include/param.h */
+-#ifndef	KSTACK_PAGES
+-#define	KSTACK_PAGES	4	/* pages of kstack (with pcb) */
+-#endif
+-
+ #endif
+ 
+-- 
+2.22.0
+

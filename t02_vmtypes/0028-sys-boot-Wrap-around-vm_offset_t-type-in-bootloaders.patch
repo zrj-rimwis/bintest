@@ -1,0 +1,213 @@
+From 548b2d0dbd5c5bfb6201b3fe265ee8c0493b13dc Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 21 Aug 2019 16:16:59 +0300
+Subject: [PATCH 28/52] sys/boot: Wrap around vm_offset_t type in bootloaders.
+
+ Loader does not have same VM meaning as running system and this makes
+ grepping through annotated asm listings a lot easier without changing
+ a lot of code.
+
+ While there, adjust order of few headers and trim some whitespaces.
+ No functional change.
+---
+ sys/boot/common/bootstrap.h       | 26 +++++++++++++++-----------
+ sys/boot/common/module.c          |  4 ++--
+ sys/boot/efi/loader/autoload.c    |  1 +
+ sys/boot/pc32/libi386/biosmem.c   |  6 ++++--
+ sys/boot/pc32/libi386/i386_copy.c |  6 +++---
+ 5 files changed, 25 insertions(+), 18 deletions(-)
+
+diff --git a/sys/boot/common/bootstrap.h b/sys/boot/common/bootstrap.h
+index 45ed5fd2e5..2382f4ffce 100644
+--- a/sys/boot/common/bootstrap.h
++++ b/sys/boot/common/bootstrap.h
+@@ -30,14 +30,18 @@
+ #include <sys/queue.h>
+ #include <sys/linker_set.h>
+ 
++/* Avoid running system vm_offset_t definition, use own type */
++typedef unsigned long	stand_offset_t;
++#define vm_offset_t	stand_offset_t
++
+ struct stat;
+ 
+ /*
+- * Generic device specifier; architecture-dependant 
++ * Generic device specifier; architecture-dependant
+  * versions may be larger, but should be allowed to
+  * overlap.
+  */
+-struct devdesc 
++struct devdesc
+ {
+     struct devsw	*d_dev;
+     int			d_type;
+@@ -50,7 +54,7 @@ struct devdesc
+ /* Commands and return values; nonzero return sets command_errmsg != NULL */
+ typedef int	(bootblk_cmd_t)(int argc, char *argv[]);
+ #define	COMMAND_ERRBUFSZ	(256)
+-extern char	*command_errmsg;	
++extern char	*command_errmsg;
+ extern char	command_errbuf[COMMAND_ERRBUFSZ];
+ extern int	CurrentCondition;
+ #define CMD_OK		0
+@@ -100,14 +104,15 @@ void slowprint(char c);
+  */
+ struct bcache_devdata
+ {
+-    int         (*dv_strategy)(void *devdata, int rw, daddr_t blk, size_t size, char *buf, size_t *rsize);
++    int         (*dv_strategy)(void *devdata, int rw, daddr_t blk,
++			size_t size, char *buf, size_t *rsize);
+     void	*dv_devdata;
+ };
+ 
+ /*
+  * Modular console support.
+  */
+-struct console 
++struct console
+ {
+     const char	*c_name;
+     const char	*c_desc;
+@@ -128,7 +133,7 @@ void		cons_probe(void);
+ /*
+  * Plug-and-play enumerator/configurator interface.
+  */
+-struct pnphandler 
++struct pnphandler
+ {
+     const char	*pp_name;		/* handler/bus name */
+     void	(* pp_enumerate)(void);	/* enumerate PnP devices, add to chain */
+@@ -177,7 +182,7 @@ extern int			isapnp_readport;
+  * Metadata are allocated on our heap, and copied into kernel space
+  * before executing the kernel.
+  */
+-struct file_metadata 
++struct file_metadata
+ {
+     size_t			md_size;
+     u_int16_t			md_type;
+@@ -241,7 +246,6 @@ void file_addmetadata(struct preloaded_file *fp, int type, size_t size, void *p)
+ int  file_addmodule(struct preloaded_file *fp, char *modname, int version,
+ 	struct kernel_module **newmp);
+ 
+-
+ /* MI module loaders */
+ #ifdef __elfN
+ /* Relocation types. */
+@@ -263,9 +267,9 @@ int	__elfN(reloc)(struct elf_file *ef, symaddr_fn *symaddr,
+ #endif
+ 
+ /*
+- * Support for commands 
++ * Support for commands
+  */
+-struct bootblk_command 
++struct bootblk_command
+ {
+     const char		*c_name;
+     const char		*c_desc;
+@@ -285,7 +289,7 @@ struct bootblk_command
+ 
+ SET_DECLARE(Xcommand_set, struct bootblk_command);
+ 
+-/* 
++/*
+  * The intention of the architecture switch is to provide a convenient
+  * encapsulation of the interface between the bootstrap MI and MD code.
+  * MD code may selectively populate the switch at runtime based on the
+diff --git a/sys/boot/common/module.c b/sys/boot/common/module.c
+index 24ff89ea61..7c9f1d61d4 100644
+--- a/sys/boot/common/module.c
++++ b/sys/boot/common/module.c
+@@ -36,12 +36,12 @@
+ #include <sys/linker.h>
+ #include <sys/module.h>
+ #include <sys/queue.h>
++
++#include "bootstrap.h"
+ #ifndef EFI
+ #include "libi386/libi386.h"
+ #endif
+ 
+-#include "bootstrap.h"
+-
+ #define	MDIR_REMOVED	0x0001
+ #define	MDIR_NOHINTS	0x0002
+ 
+diff --git a/sys/boot/efi/loader/autoload.c b/sys/boot/efi/loader/autoload.c
+index 6e55493904..08a6246dd7 100644
+--- a/sys/boot/efi/loader/autoload.c
++++ b/sys/boot/efi/loader/autoload.c
+@@ -26,6 +26,7 @@
+  * $FreeBSD: head/sys/boot/efi/loader/autoload.c 293724 2016-01-12 02:17:39Z smh $
+  */
+ 
++#include "bootstrap.h"
+ #include "loader_efi.h"
+ 
+ extern int i386_autoload(void);
+diff --git a/sys/boot/pc32/libi386/biosmem.c b/sys/boot/pc32/libi386/biosmem.c
+index 132a7ffbf9..2dba5e2e5c 100644
+--- a/sys/boot/pc32/libi386/biosmem.c
++++ b/sys/boot/pc32/libi386/biosmem.c
+@@ -31,6 +31,8 @@
+ #include <stand.h>
+ #include <machine/pc/bios.h>
+ #include <machine/psl.h>
++
++#include "bootstrap.h"
+ #include "libi386.h"
+ #include "btxv86.h"
+ 
+@@ -86,7 +88,7 @@ bios_getmem(void)
+ 	v86.ctl = 0;
+ 	v86.addr = 0x12;		/* int 0x12 */
+ 	v86int();
+-	
++
+ 	bios_basemem = (v86.eax & 0xffff) * 1024;
+ 	bios_howmem = 2;
+     }
+@@ -127,5 +129,5 @@ bios_getmem(void)
+ #endif
+     memtop = 64 * 1024 * 1024;
+     heapbase = memtop - LOADER_HEAP_SIZE;
+-}    
++}
+ 
+diff --git a/sys/boot/pc32/libi386/i386_copy.c b/sys/boot/pc32/libi386/i386_copy.c
+index 520688fe2a..6adbf5ff21 100644
+--- a/sys/boot/pc32/libi386/i386_copy.c
++++ b/sys/boot/pc32/libi386/i386_copy.c
+@@ -24,16 +24,16 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/boot/i386/libi386/i386_copy.c,v 1.10 2003/08/25 23:28:31 obrien Exp $
+- * $DragonFly: src/sys/boot/pc32/libi386/i386_copy.c,v 1.3 2003/11/10 06:08:36 dillon Exp $
+  */
+ 
+ /*
+- * MD primitives supporting placement of module data 
++ * MD primitives supporting placement of module data
+  *
+  * XXX should check load address/size against memory top.
+  */
+ #include <stand.h>
+ 
++#include "bootstrap.h"
+ #include "libi386.h"
+ #include "btxv86.h"
+ 
+@@ -58,7 +58,7 @@ i386_copyout(const vm_offset_t src, void *dest, const size_t len)
+ 	errno = EFBIG;
+ 	return(-1);
+     }
+-    
++
+     bcopy(PTOV(src), dest, len);
+     return(len);
+ }
+-- 
+2.22.0
+

@@ -1,0 +1,133 @@
+From aedc3b0d2ee240184015123fa2aebcdd19a13e30 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 24 Aug 2019 15:08:59 +0300
+Subject: [PATCH 45/52] kernel: Hide platform dump_add_page/dump_drop_page
+ functions.
+
+ Something is fishy in sys/vm_page.c, for now strictly non functional
+ change only by adding early_dump_add_page().
+
+ While there, fix type for vm_page_dump_size, it is platform global.
+---
+ sys/platform/pc64/include/md_var.h          |  4 +---
+ sys/platform/pc64/x86_64/minidump_machdep.c | 17 ++++++++++++++---
+ sys/vm/vm_extern.h                          |  3 +++
+ sys/vm/vm_page.c                            |  3 +--
+ 4 files changed, 19 insertions(+), 8 deletions(-)
+
+diff --git a/sys/platform/pc64/include/md_var.h b/sys/platform/pc64/include/md_var.h
+index e5c34c5594..b14e541a87 100644
+--- a/sys/platform/pc64/include/md_var.h
++++ b/sys/platform/pc64/include/md_var.h
+@@ -65,7 +65,7 @@ extern	char	kstack[];
+ extern	char	sigcode[];
+ extern	int	szsigcode;
+ extern	uint64_t *vm_page_dump;
+-extern	vm_offset_t vm_page_dump_size;
++extern	uint64_t vm_page_dump_size;
+ 
+ 
+ typedef void alias_for_inthand_t(u_int cs, u_int ef, u_int esp, u_int ss);
+@@ -106,8 +106,6 @@ void	syscall2 (struct trapframe *);
+ void	trap_handle_userenter(struct thread *);
+ void	trap_handle_userexit(struct trapframe *, int);
+ void    minidumpsys(struct dumperinfo *);
+-void	dump_add_page(vm_paddr_t);
+-void	dump_drop_page(vm_paddr_t);
+ boolean_t cpu_mwait_hint_valid(uint32_t);
+ void	cpu_mwait_cx_no_bmsts(void);
+ void	cpu_mwait_cx_no_bmarb(void);
+diff --git a/sys/platform/pc64/x86_64/minidump_machdep.c b/sys/platform/pc64/x86_64/minidump_machdep.c
+index 137b86cfcb..48ce0915e6 100644
+--- a/sys/platform/pc64/x86_64/minidump_machdep.c
++++ b/sys/platform/pc64/x86_64/minidump_machdep.c
+@@ -37,6 +37,7 @@
+ #include <sys/msgbuf.h>
+ #include <sys/kbio.h>
+ #include <vm/vm.h>
++#include <vm/vm_extern.h>
+ #include <vm/vm_kern.h>
+ #include <vm/pmap.h>
+ #include <machine/atomic.h>
+@@ -60,7 +61,7 @@ CTASSERT(sizeof(struct kerneldumpheader) == 512);
+ extern uint64_t KPDPphys;
+ 
+ uint64_t *vm_page_dump;
+-vm_offset_t vm_page_dump_size;
++uint64_t vm_page_dump_size;
+ 
+ static struct kerneldumpheader kdh;
+ static off_t dumplo;
+@@ -176,6 +177,16 @@ blk_write(struct dumperinfo *di, char *ptr, vm_paddr_t pa, size_t sz)
+ 	return (0);
+ }
+ 
++static void dump_add_page(vm_paddr_t);
++static void dump_drop_page(vm_paddr_t);
++
++/* XXX called from vm/vm_page.c, extra checks? */
++void
++early_dump_add_page(vm_paddr_t pa)
++{
++	dump_add_page(pa);
++}
++
+ /* A fake page table page, to avoid having to handle both 4K and 2M pages */
+ static pt_entry_t fakept[NPTEPG];
+ 
+@@ -451,7 +462,7 @@ minidumpsys(struct dumperinfo *di)
+ 		kprintf("\n** DUMP FAILED (ERROR %d) **\n", error);
+ }
+ 
+-void
++static void
+ dump_add_page(vm_paddr_t pa)
+ {
+ 	int idx, bit;
+@@ -462,7 +473,7 @@ dump_add_page(vm_paddr_t pa)
+ 	atomic_set_long(&vm_page_dump[idx], 1ul << bit);
+ }
+ 
+-void
++static void
+ dump_drop_page(vm_paddr_t pa)
+ {
+ 	int idx, bit;
+diff --git a/sys/vm/vm_extern.h b/sys/vm/vm_extern.h
+index bdbeabeb0c..0c359927a4 100644
+--- a/sys/vm/vm_extern.h
++++ b/sys/vm/vm_extern.h
+@@ -136,6 +136,9 @@ kmem_alloc_stack(struct vm_map *map, vm_size_t size, int kmflags)
+ }
+ 
+ /* Implemented in platform code */
++#ifndef _KERNEL_VIRTUAL
++void early_dump_add_page(vm_paddr_t pa);	/* XXX */
++#endif
+ int is_globaldata_space(vm_offset_t saddr, vm_offset_t eaddr);
+ int kvm_access_check(vm_offset_t, vm_offset_t, int);
+ 
+diff --git a/sys/vm/vm_page.c b/sys/vm/vm_page.c
+index 97b9617e46..5df665a72f 100644
+--- a/sys/vm/vm_page.c
++++ b/sys/vm/vm_page.c
+@@ -93,7 +93,6 @@
+ #include <vm/swap_pager.h>
+ 
+ #include <machine/inttypes.h>
+-#include <machine/md_var.h>
+ #include <machine/smp.h>
+ #include <machine/specialreg.h>
+ #include <machine/bus_dma.h>
+@@ -423,7 +422,7 @@ vm_page_startup(void)
+ 	for (pa = new_end;
+ 	     pa < phys_avail[biggestone].phys_end;
+ 	     pa += PAGE_SIZE) {
+-		dump_add_page(pa);
++		early_dump_add_page(pa);	/* XXX */
+ 	}
+ #endif
+ 
+-- 
+2.22.0
+

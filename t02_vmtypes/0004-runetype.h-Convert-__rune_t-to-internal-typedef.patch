@@ -1,0 +1,74 @@
+From f3dc3f4318f2eb93303da6d60e5f2161c1275c62 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 9 Aug 2019 11:01:45 +0300
+Subject: [PATCH 04/52] <runetype.h>: Convert __rune_t to internal typedef.
+
+ The __ct_rune_t is a basic type for __rune_t/__wint_t/__wchar_t.
+
+ No functional change.
+
+ While there, remove two trailing white spaces.
+---
+ include/runetype.h | 6 ++++--
+ sys/sys/stdint.h   | 4 ----
+ sys/sys/types.h    | 4 ----
+ 3 files changed, 4 insertions(+), 10 deletions(-)
+
+diff --git a/include/runetype.h b/include/runetype.h
+index e18687fba4..15498519fc 100644
+--- a/include/runetype.h
++++ b/include/runetype.h
+@@ -42,6 +42,8 @@
+ #define	_CACHED_RUNES	(1 <<8 )	/* Must be a power of 2 */
+ #define	_CRMASK		(~(_CACHED_RUNES - 1))
+ 
++typedef __ct_rune_t	__rune_t;	/* Internal runetype.h type */
++
+ /*
+  * The lower 8 bits of runetype[] contain the digit value of the rune.
+  */
+@@ -93,9 +95,9 @@ extern __thread const _RuneLocale *_ThreadRuneLocale;
+ static __inline const _RuneLocale *__getCurrentRuneLocale(void)
+ {
+ 
+-	if (_ThreadRuneLocale) 
++	if (_ThreadRuneLocale)
+ 		return _ThreadRuneLocale;
+-	if (_CurrentRuneLocale) 
++	if (_CurrentRuneLocale)
+ 		return _CurrentRuneLocale;
+ 	return &_DefaultRuneLocale;
+ }
+diff --git a/sys/sys/stdint.h b/sys/sys/stdint.h
+index 138a6d6d9c..540802379f 100644
+--- a/sys/sys/stdint.h
++++ b/sys/sys/stdint.h
+@@ -37,10 +37,6 @@ typedef	int		__wchar_t;
+ typedef	int		__wint_t;
+ #define	___WINT_T_DECLARED
+ #endif
+-#ifndef ___RUNE_T_DECLARED
+-typedef	int		__rune_t;
+-#define ___RUNE_T_DECLARED
+-#endif
+ 
+ /*
+  * mbstate_t is an opaque object to keep conversion state, during multibyte
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index 54495f7d9f..8d5f70927f 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -268,10 +268,6 @@ typedef	__timer_t	timer_t;
+  * must be at least 16 bits.
+  */
+ typedef	int		__ct_rune_t;	/* arg type for ctype funcs */
+-#ifndef ___RUNE_T_DECLARED
+-typedef	__ct_rune_t	__rune_t;	/* rune_t (see above) */
+-#define	___RUNE_T_DECLARED
+-#endif
+ #ifndef ___WINT_T_DECLARED
+ typedef	__ct_rune_t	__wint_t;	/* wint_t (see above) */
+ #define	___WINT_T_DECLARED
+-- 
+2.22.0
+

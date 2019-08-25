@@ -1,0 +1,48 @@
+From 3c19e4a15ebf73a427f5108483e1c46b51c0b65d Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 22 Aug 2019 16:59:07 +0300
+Subject: [PATCH 37/52] <sys/types.h>: Remove non standard u_register_t type.
+
+ No longer used in base (after fnv_64*() func removal).
+ OpenBSD/NetBSD does not provide such synthetic type.
+---
+ sys/cpu/x86_64/include/stdint.h | 2 --
+ sys/cpu/x86_64/include/types.h  | 2 --
+ 2 files changed, 4 deletions(-)
+
+diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
+index fc310e14b0..51939e71ea 100644
+--- a/sys/cpu/x86_64/include/stdint.h
++++ b/sys/cpu/x86_64/include/stdint.h
+@@ -112,12 +112,10 @@ typedef	__uint64_t	__uint_least64_t;
+ typedef __uint64_t	__size_t;
+ typedef __int64_t	__ssize_t;
+ typedef __int64_t	__register_t;
+-typedef __uint64_t	__u_register_t;
+ #else
+ typedef __uint32_t	__size_t;
+ typedef __int32_t	__ssize_t;
+ typedef __int32_t	__register_t;
+-typedef __uint32_t	__u_register_t;
+ #endif
+ 
+ typedef long		__suseconds_t;
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index a6aaf41b35..faaf20e1e6 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -39,11 +39,9 @@
+ #if defined(__x86_64__)
+ typedef	__int64_t	__segsz_t;	/* segment size */
+ typedef	__int64_t	register_t;
+-typedef	__uint64_t	u_register_t;
+ #elif defined(__i386__)
+ typedef	__int32_t	__segsz_t;	/* segment size */
+ typedef	__int32_t	register_t;
+-typedef	__uint32_t	u_register_t;
+ #endif
+ 
+ typedef unsigned long	vm_offset_t;    /* address space bounded offset */
+-- 
+2.22.0
+

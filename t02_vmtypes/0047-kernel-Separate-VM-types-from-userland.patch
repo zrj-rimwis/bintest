@@ -1,0 +1,608 @@
+From 1e82a250f68986d2f072b2ada86af10dde9b3571 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 24 Aug 2019 19:43:18 +0300
+Subject: [PATCH 47/52] kernel: Separate VM types from userland.
+
+ This reduces namespace pollution in a major way.  For now keep overly
+ abused vm_offset_t.  It will be handled separately because of scope.
+
+ Collect all vm_* types into vm/vm.h and remove all other retypefs.
+ Use __ variants where it is usefull to avoid namespace pollution in
+ kernel to better show explicit dependencies.
+
+ No differences in asm intermediates.
+---
+ sys/cpu/x86_64/include/types.h            | 12 ++++--------
+ sys/cpu/x86_64/include/vm.h               | 10 ++++++++++
+ sys/dev/acpica/acpivar.h                  |  1 +
+ sys/dev/agp/agppriv.h                     |  1 +
+ sys/dev/raid/mpr/mpr.c                    |  2 +-
+ sys/dev/raid/mpr/mprvar.h                 |  4 +++-
+ sys/dev/raid/mps/mps.c                    |  2 +-
+ sys/dev/raid/mps/mpsvar.h                 |  4 +++-
+ sys/dev/virtual/virtio/scsi/virtio_scsi.c |  1 +
+ sys/dev/virtual/virtio/virtio/virtqueue.h |  5 +++--
+ sys/emulation/ndis/pe_var.h               |  2 ++
+ sys/platform/pc64/acpica/acpi_sdt_var.h   |  2 ++
+ sys/platform/pc64/apic/ioapic.h           |  5 ++---
+ sys/platform/pc64/apic/lapic.h            |  3 ++-
+ sys/platform/pc64/include/framebuffer.h   |  3 ++-
+ sys/platform/pc64/include/pmap.h          | 16 +++++-----------
+ sys/platform/vkernel64/include/pmap.h     | 14 ++++----------
+ sys/sys/device.h                          |  3 +++
+ sys/sys/efi.h                             |  5 ++++-
+ sys/sys/exec.h                            | 12 ++++++------
+ sys/sys/sglist.h                          |  5 +++--
+ sys/sys/vfsops.h                          |  3 +++
+ sys/vm/vm.h                               | 19 +++++++++++--------
+ sys/vm/vm_page.h                          |  8 +++-----
+ sys/vm/vm_zone.h                          |  2 +-
+ 25 files changed, 81 insertions(+), 63 deletions(-)
+
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index ca75796d37..142883fbeb 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -42,13 +42,9 @@ typedef	__int64_t	register_t;
+ typedef	__int32_t	register_t;
+ #endif
+ 
+-typedef unsigned long	vm_offset_t;    /* address space bounded offset */
+-typedef unsigned long	vm_size_t;      /* address space bounded size */
+-
+-typedef __uint64_t	vm_pindex_t;    /* physical page index */
+-typedef __uint64_t	vm_spindex_t;   /* physical page index (signed) */
+-typedef	__int64_t	vm_ooffset_t;	/* VM object bounded offset */
+-typedef __uint64_t	vm_poff_t;	/* physical offset */
+-typedef __uint64_t	vm_paddr_t;	/* physical addr (same as vm_poff_t) */
++#ifndef _VM_OFFSET_T_DECLARED
++#define _VM_OFFSET_T_DECLARED
++typedef unsigned long	vm_offset_t;    /* depreciated */
++#endif
+ 
+ #endif /* !_CPU_TYPES_H_ */
+diff --git a/sys/cpu/x86_64/include/vm.h b/sys/cpu/x86_64/include/vm.h
+index 016d5a8457..9ca1cef147 100644
+--- a/sys/cpu/x86_64/include/vm.h
++++ b/sys/cpu/x86_64/include/vm.h
+@@ -27,8 +27,18 @@
+ #ifndef _CPU_VM_H_
+ #define _CPU_VM_H_
+ 
++#include <machine/stdint.h>
+ #include <machine/specialreg.h>
+ 
++typedef unsigned long	__vm_offset_t;	/* address space bounded offset */
++typedef unsigned long	__vm_size_t;	/* address space bounded size */
++
++typedef __uint64_t	__vm_pindex_t;	/* physical page index */
++typedef __uint64_t	__vm_spindex_t;	/* physical page index (signed) */
++typedef __int64_t	__vm_ooffset_t;	/* VM object bounded offset */
++typedef __uint64_t	__vm_poff_t;	/* physical offset */
++typedef __uint64_t	__vm_paddr_t;	/* physical addr (same as vm_poff_t) */
++
+ /* Memory attributes. */
+ #define VM_MEMATTR_UNCACHEABLE		((vm_memattr_t)PAT_UNCACHEABLE)
+ #define VM_MEMATTR_WRITE_COMBINING	((vm_memattr_t)PAT_WRITE_COMBINING)
+diff --git a/sys/dev/acpica/acpivar.h b/sys/dev/acpica/acpivar.h
+index 50102cff48..02a8dd9b66 100644
+--- a/sys/dev/acpica/acpivar.h
++++ b/sys/dev/acpica/acpivar.h
+@@ -41,6 +41,7 @@
+ #include <sys/spinlock.h>
+ #include <sys/spinlock2.h>
+ #include <sys/serialize.h>
++#include <vm/vm.h>
+ #include <contrib/dev/acpica/source/include/acmacros.h>
+ #include <contrib/dev/acpica/source/include/acconfig.h>
+ #include <contrib/dev/acpica/source/include/aclocal.h>
+diff --git a/sys/dev/agp/agppriv.h b/sys/dev/agp/agppriv.h
+index b2411e20c6..0fc0e3bbb6 100644
+--- a/sys/dev/agp/agppriv.h
++++ b/sys/dev/agp/agppriv.h
+@@ -34,6 +34,7 @@
+  */
+ 
+ #include <sys/agpio.h>
++#include <vm/vm.h>
+ #include "agpvar.h"
+ 
+ #define AGP_DEBUGxx
+diff --git a/sys/dev/raid/mpr/mpr.c b/sys/dev/raid/mpr/mpr.c
+index c49d37d922..97ad7ecde9 100644
+--- a/sys/dev/raid/mpr/mpr.c
++++ b/sys/dev/raid/mpr/mpr.c
+@@ -3407,7 +3407,7 @@ mpr_push_ieee_sge(struct mpr_command *cm, void *sgep, int segsleft)
+  * Add one dma segment to the scatter-gather list for a command.
+  */
+ int
+-mpr_add_dmaseg(struct mpr_command *cm, vm_paddr_t pa, size_t len, u_int flags,
++mpr_add_dmaseg(struct mpr_command *cm, __vm_paddr_t pa, size_t len, u_int flags,
+     int segsleft)
+ {
+ 	MPI2_SGE_SIMPLE64 sge;
+diff --git a/sys/dev/raid/mpr/mprvar.h b/sys/dev/raid/mpr/mprvar.h
+index b2ed55cae8..8bc80a164f 100644
+--- a/sys/dev/raid/mpr/mprvar.h
++++ b/sys/dev/raid/mpr/mprvar.h
+@@ -33,6 +33,8 @@
+ #ifndef _MPRVAR_H
+ #define _MPRVAR_H
+ 
++#include <machine/vm.h>		/* for __vm_paddr_t */
++
+ #define MPR_DRIVER_VERSION	"18.03.00.00-fbsd"
+ 
+ #define MPR_DB_MAX_WAIT		2500
+@@ -767,7 +769,7 @@ void mpr_build_nvme_prp(struct mpr_softc *sc, struct mpr_command *cm,
+     uint32_t data_in_sz, uint32_t data_out_sz);
+ int mpr_push_sge(struct mpr_command *, MPI2_SGE_SIMPLE64 *, size_t, int);
+ int mpr_push_ieee_sge(struct mpr_command *, void *, int);
+-int mpr_add_dmaseg(struct mpr_command *, vm_paddr_t, size_t, u_int, int);
++int mpr_add_dmaseg(struct mpr_command *, __vm_paddr_t, size_t, u_int, int);
+ int mpr_attach_sas(struct mpr_softc *sc);
+ int mpr_detach_sas(struct mpr_softc *sc);
+ int mpr_read_config_page(struct mpr_softc *, struct mpr_config_params *);
+diff --git a/sys/dev/raid/mps/mps.c b/sys/dev/raid/mps/mps.c
+index 4c1a15c24d..b43f2783e2 100644
+--- a/sys/dev/raid/mps/mps.c
++++ b/sys/dev/raid/mps/mps.c
+@@ -1990,7 +1990,7 @@ mps_push_sge(struct mps_command *cm, void *sgep, size_t len, int segsleft)
+  * Add one dma segment to the scatter-gather list for a command.
+  */
+ int
+-mps_add_dmaseg(struct mps_command *cm, vm_paddr_t pa, size_t len, u_int flags,
++mps_add_dmaseg(struct mps_command *cm, __vm_paddr_t pa, size_t len, u_int flags,
+     int segsleft)
+ {
+ 	MPI2_SGE_SIMPLE64 sge;
+diff --git a/sys/dev/raid/mps/mpsvar.h b/sys/dev/raid/mps/mpsvar.h
+index 8f77da6456..3db4e6c719 100644
+--- a/sys/dev/raid/mps/mpsvar.h
++++ b/sys/dev/raid/mps/mpsvar.h
+@@ -58,6 +58,8 @@
+ #ifndef _MPSVAR_H
+ #define _MPSVAR_H
+ 
++#include <machine/vm.h>		/* for __vm_paddr_t */
++
+ #define MPS_DRIVER_VERSION     "13.00.00.02-fbsd"
+ 
+ #define MPS_DB_MAX_WAIT		2500
+@@ -691,7 +693,7 @@ int mps_restart(struct mps_softc *);
+ int mps_update_events(struct mps_softc *, struct mps_event_handle *, uint8_t *);
+ int mps_deregister_events(struct mps_softc *, struct mps_event_handle *);
+ int mps_push_sge(struct mps_command *, void *, size_t, int);
+-int mps_add_dmaseg(struct mps_command *, vm_paddr_t, size_t, u_int, int);
++int mps_add_dmaseg(struct mps_command *, __vm_paddr_t, size_t, u_int, int);
+ int mps_attach_sas(struct mps_softc *sc);
+ int mps_detach_sas(struct mps_softc *sc);
+ int mps_read_config_page(struct mps_softc *, struct mps_config_params *);
+diff --git a/sys/dev/virtual/virtio/scsi/virtio_scsi.c b/sys/dev/virtual/virtio/scsi/virtio_scsi.c
+index 02dca8ac4b..8ccb1d60e9 100644
+--- a/sys/dev/virtual/virtio/scsi/virtio_scsi.c
++++ b/sys/dev/virtual/virtio/scsi/virtio_scsi.c
+@@ -45,6 +45,7 @@
+ 
+ #include <sys/bus.h>
+ #include <sys/rman.h>
++#include <vm/vm.h>
+ 
+ #include <bus/cam/cam.h>
+ #include <bus/cam/cam_ccb.h>
+diff --git a/sys/dev/virtual/virtio/virtio/virtqueue.h b/sys/dev/virtual/virtio/virtio/virtqueue.h
+index 312984a8a3..c2c7256f8b 100644
+--- a/sys/dev/virtual/virtio/virtio/virtqueue.h
++++ b/sys/dev/virtual/virtio/virtio/virtqueue.h
+@@ -31,6 +31,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/serialize.h>
++#include <machine/vm.h>		/* for __vm_paddr_t */
+ 
+ struct virtqueue;
+ struct sglist;
+@@ -64,7 +65,7 @@ struct vq_alloc_info {
+ uint64_t virtqueue_filter_features(uint64_t features);
+ 
+ int	 virtqueue_alloc(device_t dev, uint16_t queue, uint16_t size,
+-	     int align, vm_paddr_t highaddr, struct vq_alloc_info *info,
++	     int align, __vm_paddr_t highaddr, struct vq_alloc_info *info,
+ 	     struct virtqueue **vqp);
+ void	*virtqueue_drain(struct virtqueue *vq, int *last);
+ void	 virtqueue_free(struct virtqueue *vq);
+@@ -76,7 +77,7 @@ int	 virtqueue_postpone_intr(struct virtqueue *vq);
+ void	 virtqueue_disable_intr(struct virtqueue *vq);
+ 
+ /* Get physical address of the virtqueue ring. */
+-vm_paddr_t virtqueue_paddr(struct virtqueue *vq);
++__vm_paddr_t virtqueue_paddr(struct virtqueue *vq);
+ 
+ int	 virtqueue_full(struct virtqueue *vq);
+ int	 virtqueue_empty(struct virtqueue *vq);
+diff --git a/sys/emulation/ndis/pe_var.h b/sys/emulation/ndis/pe_var.h
+index 0ac691cf36..51335f6498 100644
+--- a/sys/emulation/ndis/pe_var.h
++++ b/sys/emulation/ndis/pe_var.h
+@@ -35,6 +35,8 @@
+ #ifndef _PE_VAR_H_
+ #define	_PE_VAR_H_
+ 
++#include <vm/vm.h>
++
+ /*
+  *  Image Format
+  */
+diff --git a/sys/platform/pc64/acpica/acpi_sdt_var.h b/sys/platform/pc64/acpica/acpi_sdt_var.h
+index 44c325ea80..0bf3811f32 100644
+--- a/sys/platform/pc64/acpica/acpi_sdt_var.h
++++ b/sys/platform/pc64/acpica/acpi_sdt_var.h
+@@ -1,6 +1,8 @@
+ #ifndef _ACPI_SDT_VAR_H_
+ #define _ACPI_SDT_VAR_H_
+ 
++#include <vm/vm.h>
++
+ void		*sdt_sdth_map(vm_paddr_t);
+ void		sdt_sdth_unmap(ACPI_TABLE_HEADER *);
+ 
+diff --git a/sys/platform/pc64/apic/ioapic.h b/sys/platform/pc64/apic/ioapic.h
+index b439c263e2..4b92e6dcf9 100644
+--- a/sys/platform/pc64/apic/ioapic.h
++++ b/sys/platform/pc64/apic/ioapic.h
+@@ -24,7 +24,6 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/i386/include/mpapic.h,v 1.14.2.2 2000/09/30 02:49:34 ps Exp $
+- * $DragonFly: src/sys/platform/pc64/apic/mpapic.h,v 1.1 2008/08/29 17:07:12 dillon Exp $
+  */
+ 
+ #ifndef _ARCH_APIC_IOAPIC_H_
+@@ -33,10 +32,10 @@
+ #ifndef _SYS_BUS_H_
+ #include <sys/bus.h>
+ #endif
+-
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
++#include <machine/vm.h>		/* for __vm_paddr_t */
+ 
+ u_int	ioapic_read(volatile void *, int);
+ void	ioapic_write(volatile void *, int, u_int);
+@@ -61,7 +60,7 @@ void	ioapic_pin_setup(void *, int, int,
+ void	ioapic_extpin_setup(void *, int, int);
+ int	ioapic_extpin_gsi(void);
+ int	ioapic_gsi(int, int);
+-void	*ioapic_map(vm_paddr_t);
++void	*ioapic_map(__vm_paddr_t);
+ 
+ extern int	ioapic_enable;
+ 
+diff --git a/sys/platform/pc64/apic/lapic.h b/sys/platform/pc64/apic/lapic.h
+index e0d0f3e183..e12d5e8fa2 100644
+--- a/sys/platform/pc64/apic/lapic.h
++++ b/sys/platform/pc64/apic/lapic.h
+@@ -40,6 +40,7 @@
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
++#include <machine/vm.h>		/* for __vm_paddr_t */
+ 
+ struct lapic_enumerator {
+ 	int	lapic_prio;
+@@ -70,7 +71,7 @@ void	set_apic_timer(int);
+ int	read_apic_timer(void);
+ void	u_sleep(int);
+ 
+-void	lapic_map(vm_paddr_t);
++void	lapic_map(__vm_paddr_t);
+ int	lapic_unused_apic_id(int);
+ void	lapic_fixup_noioapic(void);
+ void	lapic_seticr_sync(uint32_t, uint32_t);
+diff --git a/sys/platform/pc64/include/framebuffer.h b/sys/platform/pc64/include/framebuffer.h
+index 838f1a7c01..7dab50d18d 100644
+--- a/sys/platform/pc64/include/framebuffer.h
++++ b/sys/platform/pc64/include/framebuffer.h
+@@ -4,6 +4,7 @@
+ #ifdef _KERNEL
+ 
+ #include <sys/bus.h>
++#include <machine/vm.h>		/* for __vm_paddr */
+ 
+ struct fb_info;
+ 
+@@ -15,7 +16,7 @@ struct fb_ops {
+ 
+ struct fb_info {
+ 	vm_offset_t vaddr;
+-	vm_paddr_t paddr;
++	__vm_paddr_t paddr;
+ 	uint16_t width;
+ 	uint16_t height;
+ 	uint16_t stride;
+diff --git a/sys/platform/pc64/include/pmap.h b/sys/platform/pc64/include/pmap.h
+index 720baed02c..53c07bbea2 100644
+--- a/sys/platform/pc64/include/pmap.h
++++ b/sys/platform/pc64/include/pmap.h
+@@ -174,6 +174,9 @@
+ #ifndef _MACHINE_PARAM_H_
+ #include <machine/param.h>
+ #endif
++#ifndef _VM_VM_H_
++#include <vm/vm.h>
++#endif
+ 
+ /*
+  * Address of current and alternate address space page table maps
+@@ -193,7 +196,7 @@
+ 
+ extern u_int64_t KPML4phys;	/* physical address of kernel level 4 */
+ extern int pmap_fast_kernel_cpusync;
+-#endif
++#endif	/* _KERNEL */
+ 
+ #ifdef _KERNEL
+ 
+@@ -203,7 +206,7 @@ extern int pmap_fast_kernel_cpusync;
+ #define	vtophys(va)	pmap_kextract(((vm_offset_t)(va)))
+ #define	vtophys_pte(va)	((pt_entry_t)pmap_kextract(((vm_offset_t)(va))))
+ 
+-#endif
++#endif	/* _KERNEL */
+ 
+ #define	pte_load_clear(pte)	atomic_readandclear_long(pte)
+ 
+@@ -370,15 +373,6 @@ extern vm_offset_t clean_eva;
+ extern vm_offset_t clean_sva;
+ extern char *ptvmmap;		/* poor name! */
+ 
+-#ifndef __VM_PAGE_T_DEFINED__
+-#define __VM_PAGE_T_DEFINED__
+-typedef struct vm_page *vm_page_t;
+-#endif
+-#ifndef __VM_MEMATTR_T_DEFINED__
+-#define __VM_MEMATTR_T_DEFINED__
+-typedef char vm_memattr_t;
+-#endif
+-
+ void	pmap_release(struct pmap *pmap);
+ void	pmap_interlock_wait (struct vmspace *);
+ void	pmap_bootstrap (vm_paddr_t *);
+diff --git a/sys/platform/vkernel64/include/pmap.h b/sys/platform/vkernel64/include/pmap.h
+index a1419384ed..2c1462293d 100644
+--- a/sys/platform/vkernel64/include/pmap.h
++++ b/sys/platform/vkernel64/include/pmap.h
+@@ -112,6 +112,9 @@
+ #ifndef _MACHINE_PARAM_H_
+ #include <machine/param.h>
+ #endif
++#ifndef _VM_VM_H_
++#include <vm/vm.h>
++#endif
+ 
+ #ifdef _KERNEL
+ 
+@@ -121,7 +124,7 @@
+ #define	vtophys(va)	pmap_kextract(((vm_offset_t)(va)))
+ #define	vtophys_pte(va)	((pt_entry_t)pmap_kextract(((vm_offset_t)(va))))
+ 
+-#endif
++#endif	/* _KERNEL */
+ 
+ #define	pte_load_clear(pte)	atomic_readandclear_long(pte)
+ 
+@@ -203,15 +206,6 @@ extern char *ptvmmap;		/* poor name! */
+ extern vm_offset_t clean_sva;
+ extern vm_offset_t clean_eva;
+ 
+-#ifndef __VM_PAGE_T_DEFINED__
+-#define __VM_PAGE_T_DEFINED__
+-typedef struct vm_page *vm_page_t;
+-#endif
+-#ifndef __VM_MEMATTR_T_DEFINED__
+-#define __VM_MEMATTR_T_DEFINED__
+-typedef char vm_memattr_t;
+-#endif
+-
+ void	pmap_bootstrap(vm_paddr_t *, int64_t);
+ void	*pmap_mapdev (vm_paddr_t, vm_size_t);
+ void	pmap_page_set_memattr(vm_page_t m, vm_memattr_t ma);
+diff --git a/sys/sys/device.h b/sys/sys/device.h
+index af159cc0b5..a1835d4bb3 100644
+--- a/sys/sys/device.h
++++ b/sys/sys/device.h
+@@ -45,6 +45,9 @@
+ #ifndef _SYS_SYSLINK_RPC_H_
+ #include <sys/syslink_rpc.h>
+ #endif
++#ifndef _VM_VM_H_
++#include <vm/vm.h>
++#endif
+ 
+ struct cdev;
+ struct ucred;
+diff --git a/sys/sys/efi.h b/sys/sys/efi.h
+index 946b191fcb..8340643005 100644
+--- a/sys/sys/efi.h
++++ b/sys/sys/efi.h
+@@ -30,6 +30,9 @@
+ #define _SYS_EFI_H_
+ 
+ #include <sys/uuid.h>
++#ifdef _KERNEL
++#include <machine/vm.h>		/* for __vm_paddr_t */
++#endif
+ 
+ #define	EFI_PAGE_SHIFT		12
+ #define	EFI_PAGE_SIZE		(1 << EFI_PAGE_SHIFT)
+@@ -163,7 +166,7 @@ struct efi_systbl {
+ };
+ 
+ #ifdef _KERNEL
+-extern vm_paddr_t efi_systbl_phys;
++extern __vm_paddr_t efi_systbl_phys;
+ #endif	/* _KERNEL */
+ 
+ #endif /* _SYS_EFI_H_ */
+diff --git a/sys/sys/exec.h b/sys/sys/exec.h
+index aaf17d23dd..a283bc5e53 100644
+--- a/sys/sys/exec.h
++++ b/sys/sys/exec.h
+@@ -33,7 +33,6 @@
+  *
+  *	@(#)exec.h	8.3 (Berkeley) 1/21/94
+  * $FreeBSD: src/sys/sys/exec.h,v 1.26 1999/12/29 04:24:40 peter Exp $
+- * $DragonFly: src/sys/sys/exec.h,v 1.5 2006/12/23 00:27:03 swildner Exp $
+  */
+ 
+ #ifndef _SYS_EXEC_H_
+@@ -71,13 +70,14 @@ struct execsw {
+ 
+ #ifdef _KERNEL
+ #include <sys/cdefs.h>
++#include <machine/vm.h>
+ 
+ struct lwbuf;
+-int exec_map_page(struct image_params *, vm_pindex_t, struct lwbuf **,
++int exec_map_page(struct image_params *, __vm_pindex_t, struct lwbuf **,
+ 		  const char **);
+ void exec_unmap_page(struct lwbuf *);
+-int exec_map_first_page (struct image_params *);        
+-void exec_unmap_first_page (struct image_params *);       
++int exec_map_first_page (struct image_params *);
++void exec_unmap_first_page (struct image_params *);
+ 
+ int exec_register (const struct execsw *);
+ int exec_unregister (const struct execsw *);
+@@ -126,6 +126,6 @@ int exec_unregister (const struct execsw *);
+ #define EXEC_SET(name, execsw_arg)					\
+ 	EXEC_SET_ORDERED(name, execsw_arg, SI_ORDER_ANY)
+ 
+-#endif
++#endif	/* _KERNEL */
+ 
+-#endif
++#endif	/* !_SYS_EXEC_H_ */
+diff --git a/sys/sys/sglist.h b/sys/sys/sglist.h
+index ee5b894e8b..56545b0b2a 100644
+--- a/sys/sys/sglist.h
++++ b/sys/sys/sglist.h
+@@ -40,9 +40,10 @@
+ #define	__SGLIST_H__
+ 
+ #include <sys/refcount.h>
++#include <machine/vm.h>		/* for __vm_paddr_t */
+ 
+ struct sglist_seg {
+-	vm_paddr_t	ss_paddr;
++	__vm_paddr_t	ss_paddr;
+ 	size_t		ss_len;
+ };
+ 
+@@ -84,7 +85,7 @@ sglist_hold(struct sglist *sg)
+ struct sglist *sglist_alloc(int nsegs, int mflags);
+ int	sglist_append(struct sglist *sg, void *buf, size_t len);
+ int	sglist_append_mbuf(struct sglist *sg, struct mbuf *m0);
+-int	sglist_append_phys(struct sglist *sg, vm_paddr_t paddr,
++int	sglist_append_phys(struct sglist *sg, __vm_paddr_t paddr,
+ 	    size_t len);
+ int	sglist_append_uio(struct sglist *sg, struct uio *uio);
+ int	sglist_append_user(struct sglist *sg, void *buf, size_t len,
+diff --git a/sys/sys/vfsops.h b/sys/sys/vfsops.h
+index d42be5ccb1..640d8e7887 100644
+--- a/sys/sys/vfsops.h
++++ b/sys/sys/vfsops.h
+@@ -72,6 +72,9 @@
+ #ifndef _SYS_FCNTL_H_
+ #include <sys/fcntl.h>	/* AT_EACCESS */
+ #endif
++#ifndef _VM_VM_H_
++#include <vm/vm.h>
++#endif
+ 
+ struct syslink_desc;
+ struct vnode;
+diff --git a/sys/vm/vm.h b/sys/vm/vm.h
+index 5969e87cfc..8e109462f2 100644
+--- a/sys/vm/vm.h
++++ b/sys/vm/vm.h
+@@ -106,18 +106,21 @@ struct vm_map;
+ struct vm_object;
+ typedef struct vm_object *vm_object_t;
+ 
+-/*
+- * This is also defined in vm/vm_page.h.
+- */
+-#ifndef __VM_PAGE_T_DEFINED__
+-#define __VM_PAGE_T_DEFINED__
+ struct vm_page;
+ typedef struct vm_page *vm_page_t;
+-#endif
+ 
+-#ifndef __VM_MEMATTR_T_DEFINED__
+-#define __VM_MEMATTR_T_DEFINED__
+ typedef char vm_memattr_t;
++
++#ifndef _VM_OFFSET_T_DECLARED
++#define _VM_OFFSET_T_DECLARED
++typedef unsigned long	vm_offset_t;	/* address space bounded offset */
+ #endif
++typedef unsigned long	vm_size_t;	/* address space bounded size */
++
++typedef __vm_pindex_t	vm_pindex_t;	/* physical page index */
++typedef __vm_spindex_t	vm_spindex_t;	/* physical page index (signed) */
++typedef __vm_ooffset_t	vm_ooffset_t;	/* VM object bounded offset */
++typedef __vm_poff_t	vm_poff_t;	/* physical offset */
++typedef __vm_paddr_t	vm_paddr_t;	/* physical addr (same as vm_poff_t) */
+ 
+ #endif	/* !_VM_VM_H_ */
+diff --git a/sys/vm/vm_page.h b/sys/vm/vm_page.h
+index 38507fe032..d337bcb76b 100644
+--- a/sys/vm/vm_page.h
++++ b/sys/vm/vm_page.h
+@@ -81,6 +81,9 @@
+ #ifndef _VM_PMAP_H_
+ #include <vm/pmap.h>
+ #endif
++#ifndef _VM_VM_H_
++#include <vm/vm.h>
++#endif
+ #include <machine/atomic.h>
+ 
+ #ifdef _KERNEL
+@@ -210,11 +213,6 @@ struct vm_page {
+ #define PBUSY_SWAPINPROG	0x20000000U
+ #define PBUSY_MASK		0x1FFFFFFFU
+ 
+-#ifndef __VM_PAGE_T_DEFINED__
+-#define __VM_PAGE_T_DEFINED__
+-typedef struct vm_page *vm_page_t;
+-#endif
+-
+ /*
+  * Page coloring parameters.  We use generous parameters designed to
+  * statistically spread pages over available cpu cache space.  This has
+diff --git a/sys/vm/vm_zone.h b/sys/vm/vm_zone.h
+index 04173e889d..cc608f51c0 100644
+--- a/sys/vm/vm_zone.h
++++ b/sys/vm/vm_zone.h
+@@ -12,7 +12,6 @@
+  *	John S. Dyson.
+  *
+  * $FreeBSD: src/sys/vm/vm_zone.h,v 1.13.2.2 2002/10/10 19:50:16 dillon Exp $
+- * $DragonFly: src/sys/vm/vm_zone.h,v 1.10 2008/01/21 20:21:19 nth Exp $
+  */
+ 
+ #ifndef _VM_VM_ZONE_H_
+@@ -29,6 +28,7 @@
+ 
+ #include <sys/spinlock.h>
+ #include <sys/thread.h>
++#include <vm/vm.h>
+ 
+ /*
+  * Zone allocator.
+-- 
+2.22.0
+

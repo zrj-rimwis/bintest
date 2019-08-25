@@ -1,0 +1,49 @@
+From 9471912ec14738051b5bd31f41bfe27f8c4027d6 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 24 Aug 2019 11:44:39 +0300
+Subject: [PATCH 43/52] <sys/systm.h>: Move out Maxmem prototype.
+
+ The vm/pmap.h is more suitable place.  There is also Realmem, but it is
+ only referenced once as extern in dev/drm code.
+---
+ sys/sys/systm.h | 1 -
+ sys/vm/pmap.h   | 4 ++++
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/sys/sys/systm.h b/sys/sys/systm.h
+index 36667dcf7d..657e3b73f7 100644
+--- a/sys/sys/systm.h
++++ b/sys/sys/systm.h
+@@ -87,7 +87,6 @@ extern int ncpus_fit_mask;	/* ncpus_fit - 1 */
+ extern int clocks_running;	/* timing/timeout subsystem is operational */
+ 
+ extern int nfs_diskless_valid;	/* NFS diskless params were obtained */
+-extern vm_paddr_t Maxmem;	/* Highest physical memory address in system */
+ 
+ #ifdef	INVARIANTS		/* The option is always available */
+ #define	KASSERT(exp,msg)	do { if (__predict_false(!(exp)))	\
+diff --git a/sys/vm/pmap.h b/sys/vm/pmap.h
+index d63d45f6e3..df139233ed 100644
+--- a/sys/vm/pmap.h
++++ b/sys/vm/pmap.h
+@@ -133,6 +133,9 @@ typedef struct vm_phystable {
+  * phys_avail[]		- Array of {start,end} physical addresses, not
+  *			  including physical memory allocated by MD startup
+  *			  code.  Used to initialize the VM subsystem.
++ *
++ * Maxmem		- One larger than the highest page of the physical
++ *			  address space.  Maxmem isn't the "maximum memory".
+  */
+ extern vm_offset_t KvaStart;
+ extern vm_offset_t KvaEnd;
+@@ -143,6 +146,7 @@ extern vm_offset_t virtual2_start;
+ extern vm_offset_t virtual2_end;
+ extern vm_phystable_t phys_avail[];
+ extern vm_phystable_t dump_avail[];
++extern vm_paddr_t Maxmem;	/* Should be Maxphyspage */
+ 
+ /*
+  * High-level pmap scan
+-- 
+2.22.0
+

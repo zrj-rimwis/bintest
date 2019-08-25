@@ -1,0 +1,128 @@
+From 89b3d51460b0d776bfff1874cf3498db9f89302c Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 15 Aug 2019 14:57:21 +0300
+Subject: [PATCH 18/52] kernel: Extract cpulock_t type into its own header.
+
+ Already used directly in sys/kern/sys_vmm.c sys_vmm_guest_sync_addr()
+ and stuct proc.  Only three headers need to include it.
+ Based on cc694a4adfe3bad609fd893fc883e5e1f25d3bd6 it is MI type.
+---
+ sys/cpu/x86_64/include/types.h        |  7 -----
+ sys/platform/pc64/include/pmap.h      |  3 +++
+ sys/platform/vkernel64/include/pmap.h |  3 +++
+ sys/sys/cpulock.h                     | 39 +++++++++++++++++++++++++++
+ sys/sys/proc.h                        |  1 +
+ 5 files changed, 46 insertions(+), 7 deletions(-)
+ create mode 100644 sys/sys/cpulock.h
+
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index f6193423b5..4a8d6c3250 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -60,8 +60,6 @@ typedef	__int64_t	intfptr_t;
+ typedef	__uint64_t	uintfptr_t;
+ #endif
+ 
+-typedef __uint32_t      cpulock_t;      /* count and exclusive lock */
+-
+ /*
+  * cpumask_t - a mask representing a set of cpus and supporting routines.
+  *
+@@ -77,9 +75,4 @@ typedef struct {
+ 	__uint64_t      ary[4];
+ } cpumask_t;
+ 
+-#define CPULOCK_EXCLBIT	0		/* exclusive lock bit number */
+-#define CPULOCK_EXCL	0x00000001	/* exclusive lock */
+-#define CPULOCK_INCR	0x00000002	/* auxillary counter add/sub */
+-#define CPULOCK_CNTMASK	0x7FFFFFFE
+-
+ #endif /* !_CPU_TYPES_H_ */
+diff --git a/sys/platform/pc64/include/pmap.h b/sys/platform/pc64/include/pmap.h
+index c4f4c8e035..0892ee164e 100644
+--- a/sys/platform/pc64/include/pmap.h
++++ b/sys/platform/pc64/include/pmap.h
+@@ -153,6 +153,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_CPULOCK_H_
++#include <sys/cpulock.h>
++#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+diff --git a/sys/platform/vkernel64/include/pmap.h b/sys/platform/vkernel64/include/pmap.h
+index 21fb44db11..862c86ab01 100644
+--- a/sys/platform/vkernel64/include/pmap.h
++++ b/sys/platform/vkernel64/include/pmap.h
+@@ -91,6 +91,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_CPULOCK_H_
++#include <sys/cpulock.h>
++#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+diff --git a/sys/sys/cpulock.h b/sys/sys/cpulock.h
+new file mode 100644
+index 0000000000..6affb3d8d1
+--- /dev/null
++++ b/sys/sys/cpulock.h
+@@ -0,0 +1,39 @@
++/*
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#ifndef _SYS_CPULOCK_H_
++#define _SYS_CPULOCK_H_
++
++#include <machine/stdint.h>
++
++typedef	__uint32_t	cpulock_t;	/* count and exclusive lock */
++
++#define	CPULOCK_EXCLBIT	0		/* exclusive lock bit number */
++#define	CPULOCK_EXCL	0x00000001	/* exclusive lock */
++#define	CPULOCK_INCR	0x00000002	/* auxillary counter add/sub */
++#define	CPULOCK_CNTMASK	0x7FFFFFFE
++
++#endif /* !_SYS_CPULOCK_H_ */
+diff --git a/sys/sys/proc.h b/sys/sys/proc.h
+index 0531308903..11f564c11c 100644
+--- a/sys/sys/proc.h
++++ b/sys/sys/proc.h
+@@ -41,6 +41,7 @@
+ #else
+ 
+ #include <sys/callout.h>		/* For struct callout. */
++#include <sys/cpulock.h>
+ #include <sys/filedesc.h>
+ #include <sys/queue.h>
+ #include <sys/tree.h>
+-- 
+2.22.0
+

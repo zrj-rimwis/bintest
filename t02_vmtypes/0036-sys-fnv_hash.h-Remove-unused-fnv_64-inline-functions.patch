@@ -1,0 +1,64 @@
+From 7f4d1ee4b74c42f74a6e5e428a1efebed9ed4342 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 22 Aug 2019 16:55:48 +0300
+Subject: [PATCH 36/52] <sys/fnv_hash.h>: Remove unused fnv_64*() inline
+ functions.
+
+ Unused in base (neither OpenBSD or NetBSD has this header).
+ Reduces kernel.stripped size by 72 bytes.
+---
+ sys/sys/fnv_hash.h | 31 +------------------------------
+ 1 file changed, 1 insertion(+), 30 deletions(-)
+
+diff --git a/sys/sys/fnv_hash.h b/sys/sys/fnv_hash.h
+index 6c4475ebed..cfb3781812 100644
+--- a/sys/sys/fnv_hash.h
++++ b/sys/sys/fnv_hash.h
+@@ -16,13 +16,9 @@
+ #endif
+ 
+ typedef u_int32_t Fnv32_t;
+-typedef u_int64_t Fnv64_t;
+ 
+ #define FNV1_32_INIT ((Fnv32_t) 33554467UL)
+-#define FNV1_64_INIT ((Fnv64_t) 0xcbf29ce484222325ULL)
+-
+ #define FNV_32_PRIME ((Fnv32_t) 0x01000193UL)
+-#define FNV_64_PRIME ((Fnv64_t) 0x100000001b3ULL)
+ 
+ static __inline Fnv32_t
+ fnv_32_buf(const void *buf, size_t len, Fnv32_t hval)
+@@ -49,29 +45,4 @@ fnv_32_str(const char *str, Fnv32_t hval)
+ 	return hval;
+ }
+ 
+-static __inline Fnv64_t
+-fnv_64_buf(const void *buf, size_t len, Fnv64_t hval)
+-{
+-	const u_int8_t *s = (const u_int8_t *)buf;
+-
+-	while (len-- != 0) {
+-		hval *= FNV_64_PRIME;
+-		hval ^= *s++;
+-	}
+-	return hval;
+-}
+-
+-static __inline Fnv64_t
+-fnv_64_str(const char *str, Fnv64_t hval)
+-{
+-	const u_int8_t *s = (const u_int8_t *)str;
+-	u_register_t c;		 /* 64 bit on x86_64 */
+-
+-	while ((c = *s++) != 0) {
+-		hval *= FNV_64_PRIME;
+-		hval ^= c;
+-	}
+-	return hval;
+-}
+-
+-#endif
++#endif	/* !_SYS_FNV_HASH_H_ */
+-- 
+2.22.0
+

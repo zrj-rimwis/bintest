@@ -1,0 +1,453 @@
+From a7dc3affca77d23c5d34323dea7fecfa619267ca Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 15 Aug 2019 23:39:34 +0300
+Subject: [PATCH 20/52] merge two previous commits.
+
+ Given that <sched.h> includes cpumask_t and macros.
+ Adjust cpuset_t visibility in previous commit.
+---
+ include/pthread_np.h                  | 17 ++---------------
+ lib/libthread_xu/thread/thr_private.h |  2 +-
+ sbin/usched/usched.c                  |  2 +-
+ sys/cpu/x86_64/include/cpumask.h      |  2 +-
+ sys/kern/kern_usched.c                |  2 +-
+ sys/kern/makesyscalls.sh              |  2 +-
+ sys/platform/pc64/apic/lapic.h        |  8 ++++----
+ sys/platform/pc64/include/pmap.h      |  5 ++---
+ sys/platform/vkernel64/include/pmap.h |  5 ++---
+ sys/platform/vkernel64/x86_64/mp.c    |  3 +--
+ sys/sys/cpu_topology.h                |  2 +-
+ sys/sys/{cpulock.h => cpumask.h}      | 27 ++++++++++++++++++++++++---
+ sys/sys/lwp.h                         |  2 +-
+ sys/sys/proc.h                        |  3 +--
+ sys/sys/sched.h                       | 17 +----------------
+ sys/sys/sysproto.h                    |  2 +-
+ sys/sys/thread.h                      |  8 +++++---
+ sys/sys/thread2.h                     | 10 ++++++----
+ usr.sbin/powerd/powerd.c              |  2 +-
+ 19 files changed, 57 insertions(+), 64 deletions(-)
+ rename sys/sys/{cpulock.h => cpumask.h} (66%)
+
+diff --git a/include/pthread_np.h b/include/pthread_np.h
+index b1820c2de6..da22c03474 100644
+--- a/include/pthread_np.h
++++ b/include/pthread_np.h
+@@ -33,7 +33,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/types.h>
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ #include <time.h>
+ 
+ /* In case <sched.h> has limited visibility. */
+@@ -41,20 +41,7 @@
+ #define	__CPU_SET_T_DECLARED
+ typedef	cpumask_t		cpu_set_t;
+ #endif
+-
+-#ifndef __CPU_SET_FUNC_DECLARED
+-#define	__CPU_SET_FUNC_DECLARED
+-#define	CPU_SETSIZE		((int)(sizeof(cpumask_t) * 8))
+-#define	CPU_ZERO(set)			__CPU_ZERO(set)
+-#define	CPU_SET(cpu, set)		__CPU_SET(cpu, set)
+-#define	CPU_CLR(cpu, set)		__CPU_CLR(cpu, set)
+-#define	CPU_ISSET(cpu, set)		__CPU_ISSET(cpu, set)
+-#define	CPU_COUNT(set)			__CPU_COUNT(set)
+-#define	CPU_AND(dst, set1, set2)	__CPU_AND(dst, set1, set2)
+-#define	CPU_OR(dst, set1, set2)		__CPU_OR(dst, set1, set2)
+-#define	CPU_XOR(dst, set1, set2)	__CPU_XOR(dst, set1, set2)
+-#define	CPU_EQUAL(set1, set2)		__CPU_EQUAL(set1, set2)
+-#endif
++typedef	cpumask_t		cpuset_t;	/* FreeBSD compat */
+ 
+ /*
+  * Non-POSIX type definitions:
+diff --git a/lib/libthread_xu/thread/thr_private.h b/lib/libthread_xu/thread/thr_private.h
+index 675942e1fe..dc5e76d174 100644
+--- a/lib/libthread_xu/thread/thr_private.h
++++ b/lib/libthread_xu/thread/thr_private.h
+@@ -45,10 +45,10 @@
+ #include <sys/rtprio.h>
+ #include <sys/mman.h>
+ #include <machine/atomic.h>
+-#include <machine/cpumask.h>
+ #include <errno.h>
+ #include <limits.h>
+ #include <signal.h>
++#include <sys/cpumask.h>
+ #include <sys/sched.h>
+ #include <stdarg.h>
+ #include <unistd.h>
+diff --git a/sbin/usched/usched.c b/sbin/usched/usched.c
+index 213e92145b..df8ed00e1d 100644
+--- a/sbin/usched/usched.c
++++ b/sbin/usched/usched.c
+@@ -35,7 +35,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/usched.h>
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+diff --git a/sys/cpu/x86_64/include/cpumask.h b/sys/cpu/x86_64/include/cpumask.h
+index 5d1c682ff6..c2a3caac15 100644
+--- a/sys/cpu/x86_64/include/cpumask.h
++++ b/sys/cpu/x86_64/include/cpumask.h
+@@ -51,7 +51,7 @@
+ 
+ typedef struct {
+ 	__uint64_t	ary[4];
+-} cpumask_t;
++} __cpumask_t;
+ 
+ #define CPUMASK_ELEMENTS	4
+ 
+diff --git a/sys/kern/kern_usched.c b/sys/kern/kern_usched.c
+index 8399d8cf52..1c8dfe0681 100644
+--- a/sys/kern/kern_usched.c
++++ b/sys/kern/kern_usched.c
+@@ -33,6 +33,7 @@
+  *
+  */
+ 
++#include <sys/cpumask.h>
+ #include <sys/errno.h>
+ #include <sys/globaldata.h>		/* curthread */
+ #include <sys/proc.h>
+@@ -41,7 +42,6 @@
+ #include <sys/systm.h>			/* strcmp() */
+ #include <sys/usched.h>
+ 
+-#include <machine/cpumask.h>
+ #include <machine/smp.h>
+ 
+ static TAILQ_HEAD(, usched) usched_list = TAILQ_HEAD_INITIALIZER(usched_list);
+diff --git a/sys/kern/makesyscalls.sh b/sys/kern/makesyscalls.sh
+index fbe448f3c8..37d4d65b19 100644
+--- a/sys/kern/makesyscalls.sh
++++ b/sys/kern/makesyscalls.sh
+@@ -87,7 +87,7 @@ s/\$//g
+ 		printf "#include <sys/select.h>\n" > sysarg
+ 		printf "#include <sys/signal.h>\n" > sysarg
+ 		printf "#include <sys/acl.h>\n" > sysarg
+-		printf "#include <machine/cpumask.h>\n" > sysarg
++		printf "#include <sys/cpumask.h>\n" > sysarg
+ 		printf "#include <sys/msgport.h>\n" > sysarg
+ 		printf "#include <sys/sysmsg.h>\n" > sysarg
+ 		printf "#include <sys/procctl.h>\n\n" > sysarg
+diff --git a/sys/platform/pc64/apic/lapic.h b/sys/platform/pc64/apic/lapic.h
+index d6a5afd5e4..e0d0f3e183 100644
+--- a/sys/platform/pc64/apic/lapic.h
++++ b/sys/platform/pc64/apic/lapic.h
+@@ -80,15 +80,15 @@ void	lapic_x2apic_enter(boolean_t);
+ #include <machine/smp.h>
+ #endif
+ 
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
++#endif
++
+ void	selected_apic_ipi(cpumask_t, int, int);
+ 
+ /*
+  * Send an IPI INTerrupt containing 'vector' to all CPUs EXCEPT myself
+  */
+-#ifndef _CPU_CPUMASK_H_
+-#include <machine/cpumask.h>
+-#endif
+-
+ static __inline int
+ all_but_self_ipi(int vector)
+ {
+diff --git a/sys/platform/pc64/include/pmap.h b/sys/platform/pc64/include/pmap.h
+index fd772043de..720baed02c 100644
+--- a/sys/platform/pc64/include/pmap.h
++++ b/sys/platform/pc64/include/pmap.h
+@@ -153,10 +153,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
+-#ifndef _SYS_CPULOCK_H_
+-#include <sys/cpulock.h>
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
+ #endif
+-#include <machine/cpumask.h>
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+diff --git a/sys/platform/vkernel64/include/pmap.h b/sys/platform/vkernel64/include/pmap.h
+index 44c44ca16e..a1419384ed 100644
+--- a/sys/platform/vkernel64/include/pmap.h
++++ b/sys/platform/vkernel64/include/pmap.h
+@@ -91,10 +91,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
+-#ifndef _SYS_CPULOCK_H_
+-#include <sys/cpulock.h>
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
+ #endif
+-#include <machine/cpumask.h>
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+diff --git a/sys/platform/vkernel64/x86_64/mp.c b/sys/platform/vkernel64/x86_64/mp.c
+index 8377d7a577..4845131791 100644
+--- a/sys/platform/vkernel64/x86_64/mp.c
++++ b/sys/platform/vkernel64/x86_64/mp.c
+@@ -32,7 +32,7 @@
+  * SUCH DAMAGE.
+  */
+ 
+-
++#include <sys/cpumask.h>
+ #include <sys/interrupt.h>
+ #include <sys/kernel.h>
+ #include <sys/memrange.h>
+@@ -50,7 +50,6 @@
+ 
+ #include <machine/cpu.h>
+ #include <machine/cpufunc.h>
+-#include <machine/cpumask.h>
+ #include <machine/globaldata.h>
+ #include <machine/md_var.h>
+ #include <machine/pmap.h>
+diff --git a/sys/sys/cpu_topology.h b/sys/sys/cpu_topology.h
+index 3db45c0af4..a0b441d5cf 100644
+--- a/sys/sys/cpu_topology.h
++++ b/sys/sys/cpu_topology.h
+@@ -3,7 +3,7 @@
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ 
+ /* CPU TOPOLOGY DATA AND FUNCTIONS */
+ struct cpu_node {
+diff --git a/sys/sys/cpulock.h b/sys/sys/cpumask.h
+similarity index 66%
+rename from sys/sys/cpulock.h
+rename to sys/sys/cpumask.h
+index 6affb3d8d1..4d11fd218b 100644
+--- a/sys/sys/cpulock.h
++++ b/sys/sys/cpumask.h
+@@ -24,11 +24,32 @@
+  * SUCH DAMAGE.
+  */
+ 
+-#ifndef _SYS_CPULOCK_H_
+-#define _SYS_CPULOCK_H_
++#ifndef _SYS_CPUMASK_H_
++#define _SYS_CPUMASK_H_
+ 
++#include <machine/cpumask.h>
+ #include <machine/stdint.h>
+ 
++typedef	__cpumask_t	cpumask_t;
++
++#ifndef _KERNEL
++#define	CPU_SETSIZE		((int)(sizeof(cpumask_t) * 8))
++#define	CPU_ZERO(set)			__CPU_ZERO(set)
++#define	CPU_SET(cpu, set)		__CPU_SET(cpu, set)
++#define	CPU_CLR(cpu, set)		__CPU_CLR(cpu, set)
++#define	CPU_ISSET(cpu, set)		__CPU_ISSET(cpu, set)
++#define	CPU_COUNT(set)			__CPU_COUNT(set)
++#define	CPU_AND(dst, set1, set2)	__CPU_AND(dst, set1, set2)
++#define	CPU_OR(dst, set1, set2)		__CPU_OR(dst, set1, set2)
++#define	CPU_XOR(dst, set1, set2)	__CPU_XOR(dst, set1, set2)
++#define	CPU_EQUAL(set1, set2)		__CPU_EQUAL(set1, set2)
++#endif
++
++/*
++ * It is convenient to place this type here due to its proximity to the
++ * cpumask_t use cases in structs.  Keep public for easier access to
++ * struct proc for now.
++ */
+ typedef	__uint32_t	cpulock_t;	/* count and exclusive lock */
+ 
+ #define	CPULOCK_EXCLBIT	0		/* exclusive lock bit number */
+@@ -36,4 +57,4 @@ typedef	__uint32_t	cpulock_t;	/* count and exclusive lock */
+ #define	CPULOCK_INCR	0x00000002	/* auxillary counter add/sub */
+ #define	CPULOCK_CNTMASK	0x7FFFFFFE
+ 
+-#endif /* !_SYS_CPULOCK_H_ */
++#endif /* !_SYS_CPUMASK_H_ */
+diff --git a/sys/sys/lwp.h b/sys/sys/lwp.h
+index 80b7ee7e2f..5694acdfda 100644
+--- a/sys/sys/lwp.h
++++ b/sys/sys/lwp.h
+@@ -16,7 +16,7 @@ struct lwp_params {
+ 
+ #if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
+ 
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ 
+ __BEGIN_DECLS
+ 
+diff --git a/sys/sys/proc.h b/sys/sys/proc.h
+index 4b9f146bb5..846c486509 100644
+--- a/sys/sys/proc.h
++++ b/sys/sys/proc.h
+@@ -41,8 +41,7 @@
+ #else
+ 
+ #include <sys/callout.h>		/* For struct callout. */
+-#include <sys/cpulock.h>
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ #include <sys/filedesc.h>
+ #include <sys/queue.h>
+ #include <sys/tree.h>
+diff --git a/sys/sys/sched.h b/sys/sys/sched.h
+index f3e7e36a26..66383f4a70 100644
+--- a/sys/sys/sched.h
++++ b/sys/sys/sched.h
+@@ -56,27 +56,12 @@ struct sched_param
+ #include <time.h>		/* Per P1003.4 */
+ 
+ #if __BSD_VISIBLE
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ 
+ #ifndef __CPU_SET_T_DECLARED
+ #define	__CPU_SET_T_DECLARED
+ typedef	cpumask_t		cpu_set_t;
+ #endif
+-typedef	cpumask_t		cpuset_t;	/* FreeBSD compat */
+-
+-#ifndef __CPU_SET_FUNC_DECLARED
+-#define	__CPU_SET_FUNC_DECLARED
+-#define	CPU_SETSIZE		((int)(sizeof(cpumask_t) * 8))
+-#define	CPU_ZERO(set)			__CPU_ZERO(set)
+-#define	CPU_SET(cpu, set)		__CPU_SET(cpu, set)
+-#define	CPU_CLR(cpu, set)		__CPU_CLR(cpu, set)
+-#define	CPU_ISSET(cpu, set)		__CPU_ISSET(cpu, set)
+-#define	CPU_COUNT(set)			__CPU_COUNT(set)
+-#define	CPU_AND(dst, set1, set2)	__CPU_AND(dst, set1, set2)
+-#define	CPU_OR(dst, set1, set2)		__CPU_OR(dst, set1, set2)
+-#define	CPU_XOR(dst, set1, set2)	__CPU_XOR(dst, set1, set2)
+-#define	CPU_EQUAL(set1, set2)		__CPU_EQUAL(set1, set2)
+-#endif
+ #endif /* __BSD_VISIBLE */
+ 
+ __BEGIN_DECLS
+diff --git a/sys/sys/sysproto.h b/sys/sys/sysproto.h
+index 1249c619f3..1eda82da20 100644
+--- a/sys/sys/sysproto.h
++++ b/sys/sys/sysproto.h
+@@ -11,7 +11,7 @@
+ #include <sys/select.h>
+ #include <sys/signal.h>
+ #include <sys/acl.h>
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ #include <sys/msgport.h>
+ #include <sys/sysmsg.h>
+ #include <sys/procctl.h>
+diff --git a/sys/sys/thread.h b/sys/sys/thread.h
+index 75b5864cf3..b2ff1a602f 100644
+--- a/sys/sys/thread.h
++++ b/sys/sys/thread.h
+@@ -1,7 +1,7 @@
+ /*
+  * SYS/THREAD.H
+  *
+- *	Implements the architecture independant portion of the LWKT 
++ *	Implements the architecture independant portion of the LWKT
+  *	subsystem.
+  *
+  * Types which must already be defined when this header is included by
+@@ -26,6 +26,9 @@
+ #ifndef _SYS_TIME_H_
+ #include <sys/time.h>   	/* struct timeval */
+ #endif
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>	/* cpumask_t */
++#endif
+ #ifndef _SYS_LOCK_H
+ #include <sys/lock.h>
+ #endif
+@@ -35,7 +38,6 @@
+ #ifndef _SYS_IOSCHED_H_
+ #include <sys/iosched.h>
+ #endif
+-#include <machine/cpumask.h>
+ #include <machine/thread.h>
+ 
+ struct globaldata;
+@@ -306,7 +308,7 @@ struct thread {
+ #define CRIT_DEBUG_ARRAY_MASK   (CRIT_DEBUG_ARRAY_SIZE - 1)
+     const char	*td_crit_debug_array[CRIT_DEBUG_ARRAY_SIZE];
+     int		td_crit_debug_index;
+-    int		td_in_crit_report;	
++    int		td_in_crit_report;
+ #endif
+     struct md_thread td_mach;
+ #ifdef DEBUG_LOCKS
+diff --git a/sys/sys/thread2.h b/sys/sys/thread2.h
+index abef300fbc..7a7db68ff6 100644
+--- a/sys/sys/thread2.h
++++ b/sys/sys/thread2.h
+@@ -1,7 +1,7 @@
+ /*
+  * SYS/THREAD2.H
+  *
+- * Implements inline procedure support for the LWKT subsystem. 
++ * Implements inline procedure support for the LWKT subsystem.
+  *
+  * Generally speaking these routines only operate on threads associated
+  * with the current cpu.  For example, a higher priority thread pending
+@@ -25,8 +25,10 @@
+ #ifndef _SYS_GLOBALDATA_H_
+ #include <sys/globaldata.h>
+ #endif
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
++#endif
+ #include <machine/cpufunc.h>
+-#include <machine/cpumask.h>
+ 
+ /*
+  * Don't let GCC reorder critical section count adjustments, because it
+@@ -303,7 +305,7 @@ lwkt_cpusync_init(lwkt_cpusync_t cs, cpumask_t mask,
+ /*
+  * IPIQ messaging wrappers.  IPIQ remote functions are passed three arguments:
+  * a void * pointer, an integer, and a pointer to the trap frame (or NULL if
+- * the trap frame is not known).  However, we wish to provide opaque 
++ * the trap frame is not known).  However, we wish to provide opaque
+  * interfaces for simpler callbacks... the basic IPI messaging function as
+  * used by the kernel takes a single argument.
+  */
+@@ -338,7 +340,7 @@ lwkt_send_ipiq_passive(globaldata_t target, ipifunc1_t func, void *arg)
+ }
+ 
+ static __inline int
+-lwkt_send_ipiq2_passive(globaldata_t target, ipifunc2_t func, 
++lwkt_send_ipiq2_passive(globaldata_t target, ipifunc2_t func,
+ 		       void *arg1, int arg2)
+ {
+     return(lwkt_send_ipiq3_passive(target, (ipifunc3_t)func, arg1, arg2));
+diff --git a/usr.sbin/powerd/powerd.c b/usr.sbin/powerd/powerd.c
+index 2e1c82564b..78d757777b 100644
+--- a/usr.sbin/powerd/powerd.c
++++ b/usr.sbin/powerd/powerd.c
+@@ -49,8 +49,8 @@
+ #include <sys/soundcard.h>
+ #include <sys/sensors.h>
+ #include <sys/time.h>
++#include <sys/cpumask.h>
+ #include <machine/cpufunc.h>
+-#include <machine/cpumask.h>
+ #include <err.h>
+ #include <signal.h>
+ #include <stdio.h>
+-- 
+2.22.0
+

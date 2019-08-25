@@ -1,0 +1,434 @@
+From 8402a26708810648d2311446e29ac14f2c482932 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 20 Aug 2019 21:02:37 +0300
+Subject: [PATCH 27/52] kernel: Make chflags syscalls argument types consistent
+ with userland.
+
+ There was an inconsistency between userland and syscalls argument types
+ that was inherited after initial fork.  Adjust prototypes to use u_long
+ and add missing const char* too.  Rerun sysent.  Change tmpfs/dirfs to
+ use u_int for flags since mask for superuser changeable flags is
+ SF_SETTABLE 0xffff0000 (most fs use uint32_t), adjust mksubr script.
+ Remove no longer needed (u_long) casts I could find elsewhere.
+
+ While there, adjust unistd.h protypes to use generic types too.
+---
+ bin/mv/mv.c                |  2 +-
+ include/unistd.h           |  4 ++--
+ lib/libc/gen/strtofflags.3 |  7 +++----
+ lib/libc/sys/chflags.2     | 10 +++++-----
+ sys/kern/syscalls.master   |  8 ++++----
+ sys/kern/vfs_syscalls.c    | 12 ++++++------
+ sys/sys/stat.h             |  8 ++++----
+ sys/sys/sysproto.h         | 12 ++++++------
+ sys/vfs/dirfs/dirfs.h      |  4 ++--
+ sys/vfs/dirfs/dirfs_subr.c |  2 +-
+ sys/vfs/tmpfs/tmpfs.h      |  4 ++--
+ sys/vfs/tmpfs/tmpfs_subr.c |  2 +-
+ usr.bin/kdump/kdump.c      |  2 +-
+ usr.bin/kdump/kdump_subr.h |  2 +-
+ usr.bin/kdump/mksubr       | 40 +++++++++++++++++++++++++++++++++++++-
+ 15 files changed, 78 insertions(+), 41 deletions(-)
+
+diff --git a/bin/mv/mv.c b/bin/mv/mv.c
+index b83f72d6e7..81f0354b0d 100644
+--- a/bin/mv/mv.c
++++ b/bin/mv/mv.c
+@@ -332,7 +332,7 @@ err:		if (unlink(to))
+ 	 * on a file that we copied, i.e., that we didn't create.)
+ 	 */
+ 	errno = 0;
+-	if (fchflags(to_fd, (u_long)sbp->st_flags))
++	if (fchflags(to_fd, sbp->st_flags))
+ 		if (errno != EOPNOTSUPP || sbp->st_flags != 0)
+ 			warn("%s: set flags (was: 0%07o)", to, sbp->st_flags);
+ 
+diff --git a/include/unistd.h b/include/unistd.h
+index e34c6fbec0..1496da32cf 100644
+--- a/include/unistd.h
++++ b/include/unistd.h
+@@ -532,7 +532,7 @@ ssize_t	 extpread(int, void *, size_t, int, off_t);
+ ssize_t	 extpreadv(int, const struct iovec *, int, int, off_t);
+ ssize_t	 extpwrite(int, const void *, size_t, int, off_t);
+ ssize_t	 extpwritev(int, const struct iovec *, int, int, off_t);
+-char	*fflagstostr(u_long);
++char	*fflagstostr(unsigned long);
+ int	 getdomainname(char *, int);
+ int	 getgrouplist(const char *, gid_t, gid_t *, int *);
+ mode_t	 getmode(const void *, mode_t);
+@@ -591,7 +591,7 @@ int	 setresuid(uid_t, uid_t, uid_t);
+ int	 setrgid(gid_t);
+ int	 setruid(uid_t);
+ void	 setusershell(void);
+-int	 strtofflags(char **, u_long *, u_long *);
++int	 strtofflags(char **, unsigned long *, unsigned long *);
+ int	 swapoff(const char *);
+ int	 swapon(const char *);
+ int	 syscall(int, ...);
+diff --git a/lib/libc/gen/strtofflags.3 b/lib/libc/gen/strtofflags.3
+index bec4837b30..e7de053823 100644
+--- a/lib/libc/gen/strtofflags.3
++++ b/lib/libc/gen/strtofflags.3
+@@ -27,9 +27,8 @@
+ .\"
+ .\"     @(#)setmode.3	8.2 (Berkeley) 4/28/95
+ .\" $FreeBSD: src/lib/libc/gen/strtofflags.3,v 1.5.2.3 2001/12/14 18:33:51 ru Exp $
+-.\" $DragonFly: src/lib/libc/gen/strtofflags.3,v 1.3 2007/06/30 19:03:52 swildner Exp $
+ .\"
+-.Dd January 1, 2000
++.Dd August 20, 2019
+ .Dt STRTOFFLAGS 3
+ .Os
+ .Sh NAME
+@@ -41,9 +40,9 @@
+ .Sh SYNOPSIS
+ .In unistd.h
+ .Ft char *
+-.Fn fflagstostr "u_long flags"
++.Fn fflagstostr "unsigned long flags"
+ .Ft int
+-.Fn strtofflags "char **stringp" "u_long *setp" "u_long *clrp"
++.Fn strtofflags "char **stringp" "unsigned long *setp" "unsigned long *clrp"
+ .Sh DESCRIPTION
+ The
+ .Fn fflagstostr
+diff --git a/lib/libc/sys/chflags.2 b/lib/libc/sys/chflags.2
+index 059696cce8..c993d1c5fd 100644
+--- a/lib/libc/sys/chflags.2
++++ b/lib/libc/sys/chflags.2
+@@ -28,7 +28,7 @@
+ .\"	@(#)chflags.2	8.3 (Berkeley) 5/2/95
+ .\" $FreeBSD: src/lib/libc/sys/chflags.2,v 1.11.2.7 2001/12/14 18:34:00 ru Exp $
+ .\"
+-.Dd February 13, 2015
++.Dd August 20, 2019
+ .Dt CHFLAGS 2
+ .Os
+ .Sh NAME
+@@ -43,13 +43,13 @@
+ .In sys/stat.h
+ .In unistd.h
+ .Ft int
+-.Fn chflags "const char *path" "u_long flags"
++.Fn chflags "const char *path" "unsigned long flags"
+ .Ft int
+-.Fn lchflags "const char *path" "u_long flags"
++.Fn lchflags "const char *path" "unsigned long flags"
+ .Ft int
+-.Fn fchflags "int fd" "u_long flags"
++.Fn fchflags "int fd" "unsigned long flags"
+ .Ft int
+-.Fn chflagsat "int fd" "const char *path" "u_long flags" "int atflag"
++.Fn chflagsat "int fd" "const char *path" "unsigned long flags" "int atflag"
+ .Sh DESCRIPTION
+ The file whose name
+ is given by
+diff --git a/sys/kern/syscalls.master b/sys/kern/syscalls.master
+index 6310190ea6..80549b9f1b 100644
+--- a/sys/kern/syscalls.master
++++ b/sys/kern/syscalls.master
+@@ -82,8 +82,8 @@
+ 31	STD	{ int getpeername(int fdes, caddr_t asa, int *alen); }
+ 32	STD	{ int getsockname(int fdes, caddr_t asa, int *alen); }
+ 33	STD	{ int access(char *path, int flags); }
+-34	STD	{ int chflags(char *path, int flags); }
+-35	STD	{ int fchflags(int fd, int flags); }
++34	STD	{ int chflags(const char *path, u_long flags); }
++35	STD	{ int fchflags(int fd, u_long flags); }
+ 36	STD	{ int sync(void); }
+ 37	STD	{ int kill(int pid, int signum); }
+ 38	OBSOL	old stat
+@@ -530,7 +530,7 @@
+ 388	UNIMPL	nosys
+ 389	UNIMPL	nosys
+ 390	STD	{ int kenv(int what, const char *name, char *value, int len); }
+-391	STD	{ int lchflags(char *path, int flags); }
++391	STD	{ int lchflags(const char *path, u_long flags); }
+ 392	STD	{ int uuidgen(struct uuid *store, int count); }
+ 393	STD	{ int sendfile(int fd, int s, off_t offset, size_t nbytes, \
+ 				struct sf_hdtr *hdtr, off_t *sbytes, int flags); }
+@@ -719,7 +719,7 @@
+ 534	STD	{ int vmm_guest_ctl(int op, struct vmm_guest_options *options); }
+ 535	STD	{ int vmm_guest_sync_addr(long *dstaddr, long *srcaddr); }
+ 536	STD	{ int procctl(idtype_t idtype, id_t id, int cmd, void *data); }
+-537	STD	{ int chflagsat(int fd, const char *path, int flags, int atflags);}
++537	STD	{ int chflagsat(int fd, const char *path, u_long flags, int atflags);}
+ 538	STD	{ int pipe2(int *fildes, int flags); }
+ 539	STD	{ int utimensat(int fd, const char *path, const struct timespec *ts, int flags); }
+ 540	STD	{ int futimens(int fd, const struct timespec *ts); }
+diff --git a/sys/kern/vfs_syscalls.c b/sys/kern/vfs_syscalls.c
+index f409d10be8..1eda1998f7 100644
+--- a/sys/kern/vfs_syscalls.c
++++ b/sys/kern/vfs_syscalls.c
+@@ -86,7 +86,7 @@ static int getutimes (struct timeval *, struct timespec *);
+ static int getutimens (const struct timespec *, struct timespec *, int *);
+ static int setfown (struct mount *, struct vnode *, uid_t, gid_t);
+ static int setfmode (struct vnode *, int);
+-static int setfflags (struct vnode *, int);
++static int setfflags (struct vnode *, u_long);
+ static int setutimes (struct vnode *, struct vattr *,
+ 			const struct timespec *, int);
+ 
+@@ -3154,7 +3154,7 @@ sys_readlinkat(struct readlinkat_args *uap)
+ }
+ 
+ static int
+-setfflags(struct vnode *vp, int flags)
++setfflags(struct vnode *vp, u_long flags)
+ {
+ 	struct thread *td = curthread;
+ 	int error;
+@@ -3184,7 +3184,7 @@ setfflags(struct vnode *vp, int flags)
+ }
+ 
+ /*
+- * chflags(char *path, int flags)
++ * chflags(const char *path, u_long flags)
+  *
+  * Change flags of a file given a path name.
+  */
+@@ -3212,7 +3212,7 @@ sys_chflags(struct chflags_args *uap)
+ }
+ 
+ /*
+- * lchflags(char *path, int flags)
++ * lchflags(const char *path, u_long flags)
+  *
+  * Change flags of a file given a path name, but don't follow symlinks.
+  */
+@@ -3240,7 +3240,7 @@ sys_lchflags(struct lchflags_args *uap)
+ }
+ 
+ /*
+- * fchflags_args(int fd, int flags)
++ * fchflags_args(int fd, u_flags flags)
+  *
+  * Change flags of a file given a file descriptor.
+  */
+@@ -3262,7 +3262,7 @@ sys_fchflags(struct fchflags_args *uap)
+ }
+ 
+ /*
+- * chflagsat_args(int fd, const char *path, int flags, int atflags)
++ * chflagsat_args(int fd, const char *path, u_long flags, int atflags)
+  * change flags given a pathname relative to a filedescriptor
+  */
+ int sys_chflagsat(struct chflagsat_args *uap)
+diff --git a/sys/sys/stat.h b/sys/sys/stat.h
+index ad7152b40e..10a6a05dfd 100644
+--- a/sys/sys/stat.h
++++ b/sys/sys/stat.h
+@@ -282,10 +282,10 @@ int	mkfifoat(int, const char *, mode_t);
+ int	mknodat(int, const char *, mode_t, dev_t);
+ #endif
+ #if __BSD_VISIBLE
+-int	chflags(const char *, u_long);
+-int	fchflags(int, u_long);
+-int	lchflags(const char *, u_long);
+-int	chflagsat(int, const char *, u_long, int);
++int	chflags(const char *, unsigned long);
++int	fchflags(int, unsigned long);
++int	lchflags(const char *, unsigned long);
++int	chflagsat(int, const char *, unsigned long, int);
+ int	lchmod(const char *, mode_t);
+ #endif
+ __END_DECLS
+diff --git a/sys/sys/sysproto.h b/sys/sys/sysproto.h
+index c6582014ae..d9aaf9cc55 100644
+--- a/sys/sys/sysproto.h
++++ b/sys/sys/sysproto.h
+@@ -249,15 +249,15 @@ struct	chflags_args {
+ #ifdef _KERNEL
+ 	struct sysmsg sysmsg;
+ #endif
+-	char *	path;	char path_[PAD_(char *)];
+-	int	flags;	char flags_[PAD_(int)];
++	const char *	path;	char path_[PAD_(const char *)];
++	u_long	flags;	char flags_[PAD_(u_long)];
+ };
+ struct	fchflags_args {
+ #ifdef _KERNEL
+ 	struct sysmsg sysmsg;
+ #endif
+ 	int	fd;	char fd_[PAD_(int)];
+-	int	flags;	char flags_[PAD_(int)];
++	u_long	flags;	char flags_[PAD_(u_long)];
+ };
+ struct	sync_args {
+ #ifdef _KERNEL
+@@ -1623,8 +1623,8 @@ struct	lchflags_args {
+ #ifdef _KERNEL
+ 	struct sysmsg sysmsg;
+ #endif
+-	char *	path;	char path_[PAD_(char *)];
+-	int	flags;	char flags_[PAD_(int)];
++	const char *	path;	char path_[PAD_(const char *)];
++	u_long	flags;	char flags_[PAD_(u_long)];
+ };
+ struct	uuidgen_args {
+ #ifdef _KERNEL
+@@ -2252,7 +2252,7 @@ struct	chflagsat_args {
+ #endif
+ 	int	fd;	char fd_[PAD_(int)];
+ 	const char *	path;	char path_[PAD_(const char *)];
+-	int	flags;	char flags_[PAD_(int)];
++	u_long	flags;	char flags_[PAD_(u_long)];
+ 	int	atflags;	char atflags_[PAD_(int)];
+ };
+ struct	pipe2_args {
+diff --git a/sys/vfs/dirfs/dirfs.h b/sys/vfs/dirfs/dirfs.h
+index f063efb664..ab53a19efc 100644
+--- a/sys/vfs/dirfs/dirfs.h
++++ b/sys/vfs/dirfs/dirfs.h
+@@ -157,7 +157,7 @@ struct dirfs_node {
+ 	uid_t			dn_uid;
+ 	gid_t			dn_gid;
+ 	mode_t			dn_mode;
+-	int			dn_flags;
++	u_int			dn_flags;
+ 	nlink_t			dn_links;
+ 	int32_t			dn_atime;
+ 	int32_t			dn_atimensec;
+@@ -270,7 +270,7 @@ int dirfs_close_helper(dirfs_node_t);
+ int dirfs_node_refcnt(dirfs_node_t);
+ char *dirfs_flag2str(dirfs_node_t);
+ int dirfs_node_getperms(dirfs_node_t, int *);
+-int dirfs_node_chflags(dirfs_node_t, int, struct ucred *);
++int dirfs_node_chflags(dirfs_node_t, u_long, struct ucred *);
+ int dirfs_node_chtimes(dirfs_node_t);
+ int dirfs_node_chmod(dirfs_mount_t, dirfs_node_t, mode_t cur_mode);
+ int dirfs_node_chown(dirfs_mount_t, dirfs_node_t,
+diff --git a/sys/vfs/dirfs/dirfs_subr.c b/sys/vfs/dirfs/dirfs_subr.c
+index f525023ea5..b227f49b95 100644
+--- a/sys/vfs/dirfs/dirfs_subr.c
++++ b/sys/vfs/dirfs/dirfs_subr.c
+@@ -669,7 +669,7 @@ dirfs_node_chtimes(dirfs_node_t dnp)
+ }
+ 
+ int
+-dirfs_node_chflags(dirfs_node_t dnp, int vaflags, struct ucred *cred)
++dirfs_node_chflags(dirfs_node_t dnp, u_long vaflags, struct ucred *cred)
+ {
+ 	struct vnode *vp;
+ 	dirfs_mount_t dmp;
+diff --git a/sys/vfs/tmpfs/tmpfs.h b/sys/vfs/tmpfs/tmpfs.h
+index fd5aa46068..9aabcba131 100644
+--- a/sys/vfs/tmpfs/tmpfs.h
++++ b/sys/vfs/tmpfs/tmpfs.h
+@@ -175,7 +175,7 @@ struct tmpfs_node {
+ 	uid_t			tn_uid;
+ 	gid_t			tn_gid;
+ 	mode_t			tn_mode;
+-	int			tn_flags;
++	u_int			tn_flags;
+ 	nlink_t			tn_links;
+ 	long			tn_atime;
+ 	long			tn_atimensec;
+@@ -414,7 +414,7 @@ int	tmpfs_dir_getdotdotdent(struct tmpfs_mount *,
+ struct tmpfs_dirent *	tmpfs_dir_lookupbycookie(struct tmpfs_node *, off_t);
+ int	tmpfs_dir_getdents(struct tmpfs_node *, struct uio *, off_t *);
+ int	tmpfs_reg_resize(struct vnode *, off_t, int);
+-int	tmpfs_chflags(struct vnode *, int, struct ucred *);
++int	tmpfs_chflags(struct vnode *, u_long, struct ucred *);
+ int	tmpfs_chmod(struct vnode *, mode_t, struct ucred *);
+ int	tmpfs_chown(struct vnode *, uid_t, gid_t, struct ucred *);
+ int	tmpfs_chsize(struct vnode *, u_quad_t, struct ucred *);
+diff --git a/sys/vfs/tmpfs/tmpfs_subr.c b/sys/vfs/tmpfs/tmpfs_subr.c
+index 38a652e044..3bb91ff5a1 100644
+--- a/sys/vfs/tmpfs/tmpfs_subr.c
++++ b/sys/vfs/tmpfs/tmpfs_subr.c
+@@ -1040,7 +1040,7 @@ tmpfs_reg_resize(struct vnode *vp, off_t newsize, int trivial)
+  * The vnode must be locked on entry and remain locked on exit.
+  */
+ int
+-tmpfs_chflags(struct vnode *vp, int vaflags, struct ucred *cred)
++tmpfs_chflags(struct vnode *vp, u_long vaflags, struct ucred *cred)
+ {
+ 	int error;
+ 	struct tmpfs_node *node;
+diff --git a/usr.bin/kdump/kdump.c b/usr.bin/kdump/kdump.c
+index e0b29f0bde..dcb0023efe 100644
+--- a/usr.bin/kdump/kdump.c
++++ b/usr.bin/kdump/kdump.c
+@@ -430,7 +430,7 @@ ktrsyscall(struct ktr_syscall *ktr)
+ 					print_number(ip,narg,c);
+ 				print_number(ip,narg,c);
+ 				putchar(',');
+-				chflagsname((int)*ip);
++				chflagsname((long)*ip);
+ 				ip++;
+ 				narg--;
+ 				if (ktr->ktr_code == SYS_chflagsat) {
+diff --git a/usr.bin/kdump/kdump_subr.h b/usr.bin/kdump/kdump_subr.h
+index d80b6a1e9f..bc43329a84 100644
+--- a/usr.bin/kdump/kdump_subr.h
++++ b/usr.bin/kdump/kdump_subr.h
+@@ -52,6 +52,6 @@ void uschedcmdname (int);
+ void ckpttypename (int);
+ void procctlcmdname (int);
+ void mountctlopname (int);
+-void chflagsname (int);
++void chflagsname (long);
+ void atflagsname (int);
+ void varsymlvlname (int);
+diff --git a/usr.bin/kdump/mksubr b/usr.bin/kdump/mksubr
+index a6044ec03e..ae1d30423a 100644
+--- a/usr.bin/kdump/mksubr
++++ b/usr.bin/kdump/mksubr
+@@ -67,6 +67,44 @@ cat <<_EOF_
+ _EOF_
+ }
+ 
++#
++# Automatically generates a C function that will print out the
++# numeric input as a pipe-delimited string of the appropriate
++# #define keys. ex:
++# S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH
++# The XOR is necessary to prevent including the "0"-value in every
++# line.
++#
++auto_or_typel () {
++	local name grep file
++	name=$1
++	grep=$2
++	file=$3
++
++	cat <<_EOF_
++/* AUTO */
++void
++$name (long arg)
++{
++	long	or = 0;
++	printf("%#lx<", arg);
++_EOF_
++	egrep "^#[[:space:]]*define[[:space:]]+"${grep}"[[:space:]]*" \
++		$include_dir/$file | \
++	awk '{ for (i = 1; i <= NF; i++) \
++		if ($i ~ /define/) \
++			break; \
++		++i; \
++		printf "\tif(!((arg>0)^((%s)>0)))\n\t\tif_print_or(arg, %s, or);\n", $i, $i }'
++cat <<_EOF_
++	printf(">");
++	if (or == 0)
++		printf("<invalid>%ld", (long)arg);
++}
++
++_EOF_
++}
++
+ #
+ # Automatically generates a C function used when the argument
+ # maps to a single, specific #definition
+@@ -332,7 +370,7 @@ auto_or_type "flockname" "LOCK_[A-Z]+[[:space:]]+0x[0-9]+" "sys/fcntl.h"
+ auto_or_type "mlockallname" "MCL_[A-Z]+[[:space:]]+0x[0-9]+" "sys/mman.h"
+ auto_or_type "shmatname" "SHM_[A-Z]+[[:space:]]+[0-9]{6}+" "sys/shm.h"
+ auto_or_type "rforkname" "RF[A-Z]+[[:space:]]+\([0-9]+<<[0-9]+\)" "sys/unistd.h"
+-auto_or_type "chflagsname" "[SU]F_[A-Z]+[[:space:]]+0x[0-9]+" "sys/stat.h"
++auto_or_typel "chflagsname" "[SU]F_[A-Z]+[[:space:]]+0x[0-9]+" "sys/stat.h"
+ auto_or_type "atflagsname" "AT_[A-Z_]+[[:space:]]+[1-9]+[0-9]*" "sys/fcntl.h"
+ 
+ auto_switch_type "whencename" "SEEK_[A-Z]+[[:space:]]+[0-9]+" "sys/unistd.h"
+-- 
+2.22.0
+

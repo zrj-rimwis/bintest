@@ -1,0 +1,25 @@
+From 8a23fc4850f6694c1b0d71a0248aeb4b2db52c4c Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 22 Aug 2019 10:12:22 +0300
+Subject: [PATCH 31/52] libdevattr: Remove not needed header include.
+
+ Nothing is needed from <sys/device.h> here.
+---
+ lib/libdevattr/devattr.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/lib/libdevattr/devattr.c b/lib/libdevattr/devattr.c
+index 1f46c73fe9..fe183cc2db 100644
+--- a/lib/libdevattr/devattr.c
++++ b/lib/libdevattr/devattr.c
+@@ -32,7 +32,6 @@
+  * SUCH DAMAGE.
+  */
+ #include <sys/types.h>
+-#include <sys/device.h>
+ #include <sys/wait.h>
+ #include <sys/socket.h>
+ #include <sys/ioctl.h>
+-- 
+2.22.0
+

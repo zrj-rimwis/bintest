@@ -1,0 +1,143 @@
+From d673e32a730a8bb9ae178a757c816fa4b17f5ece Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 19 Aug 2019 15:07:32 +0300
+Subject: [PATCH 22/52] <systm.h>: Move out MD specifix externals to MD header.
+
+ The cpu_feature fields are x86 specific.
+ While there, use cpufunc.h define in altq_subr.c, exclude cpu_feature2
+ and cpu_mi_feature on VKERNEL (not implemented in vkernel).
+---
+ sys/cpu/x86_64/include/cputypes.h  | 11 +++++++++++
+ sys/kern/init_main.c               |  1 -
+ sys/kern/kern_ktr.c                |  4 ++++
+ sys/net/altq/altq_subr.c           |  5 ++---
+ sys/platform/pc64/x86_64/initcpu.c |  1 +
+ sys/sys/param.h                    |  6 ------
+ sys/sys/systm.h                    |  5 -----
+ 7 files changed, 18 insertions(+), 15 deletions(-)
+
+diff --git a/sys/cpu/x86_64/include/cputypes.h b/sys/cpu/x86_64/include/cputypes.h
+index 5cfb266596..0cdb7ab92b 100644
+--- a/sys/cpu/x86_64/include/cputypes.h
++++ b/sys/cpu/x86_64/include/cputypes.h
+@@ -51,9 +51,20 @@
+ #define	CPU_VENDOR_INTEL	0x8086		/* Intel */
+ #define	CPU_VENDOR_CENTAUR	CPU_VENDOR_IDT
+ 
++/*
++ * cpu_mi_feature bits.
++ */
++#define CPU_MI_BZERONT		0x00000001
++#define CPU_MI_MONITOR		0x00000010
++
+ #ifndef LOCORE
+ extern int	cpu_type;
+ extern int	cpu_class;
++extern u_int	cpu_feature;	/* CPUID_* features */
++#ifndef _KERNEL_VIRTUAL
++extern u_int	cpu_feature2;	/* CPUID2_* features */
++extern u_int	cpu_mi_feature;	/* CPU_MI_XXX machine-nonspecific features */
++#endif
+ #endif
+ 
+ #endif /* !_CPU_CPUTYPES_H_ */
+diff --git a/sys/kern/init_main.c b/sys/kern/init_main.c
+index 98ebac21df..8964122ad9 100644
+--- a/sys/kern/init_main.c
++++ b/sys/kern/init_main.c
+@@ -91,7 +91,6 @@ struct sys_kpmap *kpmap;
+ struct sysreaper initreaper;
+ 
+ int cmask = CMASK;
+-u_int cpu_mi_feature;
+ cpumask_t usched_global_cpumask;
+ extern	struct user *proc0paddr;
+ 
+diff --git a/sys/kern/kern_ktr.c b/sys/kern/kern_ktr.c
+index 3970852a0b..1d8322fabe 100644
+--- a/sys/kern/kern_ktr.c
++++ b/sys/kern/kern_ktr.c
+@@ -365,8 +365,12 @@ ktr_resync_callback(void *dummy __unused)
+ 	 */
+ 	if (ktr_resynchronize == 0)
+ 		goto done;
++#ifdef _RDTSC_SUPPORTED_
+ 	if ((cpu_feature & CPUID_TSC) == 0)
+ 		return;
++#else
++	return;
++#endif
+ 
+ 	crit_enter();
+ 	lwkt_cpusync_init(&cs, smp_active_mask, ktr_resync_remote,
+diff --git a/sys/net/altq/altq_subr.c b/sys/net/altq/altq_subr.c
+index ba4f25ab3b..73afdc6e7b 100644
+--- a/sys/net/altq/altq_subr.c
++++ b/sys/net/altq/altq_subr.c
+@@ -66,8 +66,7 @@
+ 
+ /* machine dependent clock related includes */
+ #include <machine/clock.h>		/* for tsc_frequency */
+-#include <machine/md_var.h>		/* for cpu_feature */
+-#include <machine/specialreg.h>		/* for CPUID_TSC */
++#include <machine/cpufunc.h>		/* for _RDTSC_SUPPORTED_ */
+ 
+ /*
+  * internal function prototypes
+@@ -843,7 +842,7 @@ init_machclk(void)
+ 	machclk_usepcc = 1;
+ #endif
+ 
+-#if defined(__x86_64__)
++#ifdef _RDTSC_SUPPORTED_
+ 	if (tsc_mpsync && tsc_present)
+ 		machclk_freq = tsc_frequency;
+ 	else
+diff --git a/sys/platform/pc64/x86_64/initcpu.c b/sys/platform/pc64/x86_64/initcpu.c
+index fd20657b99..c5f62cadab 100644
+--- a/sys/platform/pc64/x86_64/initcpu.c
++++ b/sys/platform/pc64/x86_64/initcpu.c
+@@ -55,6 +55,7 @@ SYSCTL_INT(_hw, OID_AUTO, instruction_sse, CTLFLAG_RD,
+ int	cpu_type;		/* XXX CPU_CLAWHAMMER */
+ u_int	cpu_feature;		/* Feature flags */
+ u_int	cpu_feature2;		/* Feature flags */
++u_int	cpu_mi_feature;		/* Feature flags */
+ u_int	amd_feature;		/* AMD feature flags */
+ u_int	amd_feature2;		/* AMD feature flags */
+ u_int	via_feature_rng;	/* VIA RNG features */
+diff --git a/sys/sys/param.h b/sys/sys/param.h
+index 22699637ee..9866321a70 100644
+--- a/sys/sys/param.h
++++ b/sys/sys/param.h
+@@ -288,12 +288,6 @@
+ #define NODEV	(dev_t)(-1)	/* non-existent device */
+ #endif
+ 
+-/*
+- * cpu_mi_feature bits
+- */
+-#define CPU_MI_BZERONT	0x00000001
+-#define CPU_MI_MONITOR	0x00000010
+-
+ /*
+  * File system parameters and macros.
+  *
+diff --git a/sys/sys/systm.h b/sys/sys/systm.h
+index fd8ce55c2c..d07854a198 100644
+--- a/sys/sys/systm.h
++++ b/sys/sys/systm.h
+@@ -86,11 +86,6 @@ extern int ncpus_fit;		/* round up to a power of 2 */
+ extern int ncpus_fit_mask;	/* ncpus_fit - 1 */
+ extern int clocks_running;	/* timing/timeout subsystem is operational */
+ 
+-/* XXX TGEN these don't belong here, they're MD on pc64 */
+-extern u_int cpu_feature;	/* CPUID_* features */
+-extern u_int cpu_feature2;	/* CPUID2_* features */
+-extern u_int cpu_mi_feature;	/* CPU_MI_XXX machine-nonspecific features */
+-
+ extern int nfs_diskless_valid;	/* NFS diskless params were obtained */
+ extern vm_paddr_t Maxmem;	/* Highest physical memory address in system */
+ 
+-- 
+2.22.0
+
