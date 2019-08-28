@@ -1,0 +1,141 @@
+From 7afcf731199e6fd848effd6f89e0931d0d0dc5fb Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 22 Aug 2019 13:54:51 +0300
+Subject: [PATCH 32/66] mptable(1): Eliminate use of vm_offset_t.
+
+ Use plain u_long type, while there trim some trailing whitespace.
+
+ No functional change.
+---
+ usr.sbin/mptable/mptable.c | 30 +++++++++++++++---------------
+ 1 file changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/usr.sbin/mptable/mptable.c b/usr.sbin/mptable/mptable.c
+index 94cdfd138c..5507493c79 100644
+--- a/usr.sbin/mptable/mptable.c
++++ b/usr.sbin/mptable/mptable.c
+@@ -250,15 +250,15 @@ typedef struct CBASMENTRY {
+ 
+ 
+ 
+-static void apic_probe( vm_offset_t* paddr, int* where );
++static void apic_probe( u_long* paddr, int* where );
+ 
+ static void MPConfigDefault( int featureByte );
+ 
+-static void MPFloatingPointer( vm_offset_t paddr, int where, mpfps_t* mpfps );
++static void MPFloatingPointer( u_long paddr, int where, mpfps_t* mpfps );
+ static void MPConfigTableHeader( uint32_t pap );
+ 
+ static int readType( void );
+-static void seekEntry( vm_offset_t addr );
++static void seekEntry( u_long addr );
+ static void readEntry( void* entry, int size );
+ 
+ static void processorEntry( void );
+@@ -302,7 +302,7 @@ usage( void )
+ int
+ main( int argc, char *argv[] )
+ {
+-    vm_offset_t	paddr;
++    u_long	paddr;
+     int		where;
+     mpfps_t	mpfps;
+     int		defaultConfig;
+@@ -404,7 +404,7 @@ findMpSig(uint32_t target, size_t bufsize)
+  * set PHYSICAL address of MP floating pointer structure
+  */
+ static void
+-apic_probe( vm_offset_t* paddr, int* where )
++apic_probe( u_long* paddr, int* where )
+ {
+     /*
+      * c rewrite of apic_probe() by Jack F. Vogel
+@@ -412,7 +412,7 @@ apic_probe( vm_offset_t* paddr, int* where )
+ 
+     int		x;
+     uint16_t	segment;
+-    vm_offset_t	target;
++    u_long	target;
+ 
+     if ( verbose )
+         printf( "\n" );
+@@ -420,10 +420,10 @@ apic_probe( vm_offset_t* paddr, int* where )
+     /* search Extended Bios Data Area, if present */
+     if ( verbose )
+         printf( " looking for EBDA pointer @ 0x%04x, ", EBDA_POINTER );
+-    seekEntry( (vm_offset_t)EBDA_POINTER );
++    seekEntry( (u_long)EBDA_POINTER );
+     readEntry( &segment, sizeof(segment) );
+     if ( segment ) {		    /* search EBDA */
+-        target = (vm_offset_t)segment << 4;
++        target = (u_long)segment << 4;
+ 	if ( verbose )
+ 	    printf( "found, searching EBDA @ 0x%08lx\n", target );
+ 
+@@ -439,7 +439,7 @@ apic_probe( vm_offset_t* paddr, int* where )
+     }
+ 
+     /* read CMOS for real top of mem */
+-    seekEntry( (vm_offset_t)TOPOFMEM_POINTER );
++    seekEntry( (u_long)TOPOFMEM_POINTER );
+     readEntry( &segment, sizeof(segment) );
+     --segment;						/* less ONE_KBYTE */
+     target = segment * 1024;
+@@ -511,7 +511,7 @@ apic_probe( vm_offset_t* paddr, int* where )
+     }
+ 
+     *where = 0;
+-    *paddr = (vm_offset_t)0;
++    *paddr = (u_long)0;
+ }
+ 
+ 
+@@ -519,7 +519,7 @@ apic_probe( vm_offset_t* paddr, int* where )
+  * 
+  */
+ static void
+-MPFloatingPointer( vm_offset_t paddr, int where, mpfps_t* mpfps )
++MPFloatingPointer( u_long paddr, int where, mpfps_t* mpfps )
+ {
+ 
+     /* read in mpfps structure*/
+@@ -647,7 +647,7 @@ MPConfigDefault( int featureByte )
+ static void
+ MPConfigTableHeader( uint32_t pap )
+ {
+-    vm_offset_t paddr;
++    u_long paddr;
+     mpcth_t	cth;
+     int		x;
+     int		totalSize;
+@@ -660,7 +660,7 @@ MPConfigTableHeader( uint32_t pap )
+     }
+ 
+     /* convert physical address to virtual address */
+-    paddr = (vm_offset_t)pap;
++    paddr = (u_long)pap;
+ 
+     /* read in cth structure */
+     seekEntry( paddr );
+@@ -789,7 +789,7 @@ MPConfigTableHeader( uint32_t pap )
+ #if defined( OEM_PROCESSING_READY )
+ # error your on your own here!
+         /* convert OEM table pointer to virtual address */
+-        poemtp = (vm_offset_t)cth.oem_table_pointer;
++        poemtp = (u_long)cth.oem_table_pointer;
+ 
+         /* read in oem table structure */
+         if ( (oemdata = (void*)malloc( cth.oem_table_size )) == NULL )
+@@ -843,7 +843,7 @@ readType( void )
+  * 
+  */
+ static void
+-seekEntry( vm_offset_t addr )
++seekEntry( u_long addr )
+ {
+     if ( lseek( pfd, (off_t)addr, SEEK_SET ) < 0 )
+         err( 1, "%s seek", _PATH_MEM );
+-- 
+2.22.0
+

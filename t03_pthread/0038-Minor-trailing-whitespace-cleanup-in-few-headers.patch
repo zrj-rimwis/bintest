@@ -1,0 +1,138 @@
+From d95dc660ff0b0ec82d8bcb00ff76d4b70dafccd8 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 22 Aug 2019 17:44:35 +0300
+Subject: [PATCH 38/66] Minor trailing whitespace cleanup in few headers.
+
+---
+ sys/sys/kinfo.h  |  8 ++++----
+ sys/vm/vm_glue.c |  6 +++---
+ sys/vm/vm_map.h  | 16 ++++++++--------
+ 3 files changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/sys/sys/kinfo.h b/sys/sys/kinfo.h
+index 98b6b24b8a..a1cf53ea0d 100644
+--- a/sys/sys/kinfo.h
++++ b/sys/sys/kinfo.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Joerg Sonnenberger <joerg@bec.de>.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/sys/vm/vm_glue.c b/sys/vm/vm_glue.c
+index 9c81d18a77..f86e47ea4e 100644
+--- a/sys/vm/vm_glue.c
++++ b/sys/vm/vm_glue.c
+@@ -177,7 +177,7 @@ useracc(c_caddr_t addr, int len, int rw)
+ 	rv = vm_map_check_protection(map, trunc_page((vm_offset_t)addr),
+ 				     round_page(wrap), prot, TRUE);
+ 	vm_map_unlock_read(map);
+-	
++
+ 	return (rv == TRUE);
+ }
+ 
+@@ -355,7 +355,7 @@ scheduler(void *dummy)
+ 	/*
+ 	 * Nothing to do, back to sleep for at least 1/10 of a second.  If
+ 	 * we are woken up, immediately process the next request.  If
+-	 * multiple requests have built up the first is processed 
++	 * multiple requests have built up the first is processed
+ 	 * immediately and the rest are staggered.
+ 	 */
+ 	if ((p = info.pp) == NULL) {
+@@ -488,7 +488,7 @@ SYSCTL_INT(_vm, OID_AUTO, swap_idle_threshold2,
+ /*
+  * Swapout is driven by the pageout daemon.  Very simple, we find eligible
+  * procs and mark them as being swapped out.  This will cause the kernel
+- * to prefer to pageout those proc's pages first and the procs in question 
++ * to prefer to pageout those proc's pages first and the procs in question
+  * will not return to user mode until the swapper tells them they can.
+  *
+  * If any procs have been sleeping/stopped for at least maxslp seconds,
+diff --git a/sys/vm/vm_map.h b/sys/vm/vm_map.h
+index abbcfda02b..7b5c84f3f0 100644
+--- a/sys/vm/vm_map.h
++++ b/sys/vm/vm_map.h
+@@ -261,18 +261,18 @@ typedef struct vm_map_entry *vm_map_entry_t;
+ #define FW_WIRED	0x0001
+ #define FW_DIDCOW	0x0002
+ 
+-static __inline u_char   
++static __inline u_char
+ vm_map_entry_behavior(struct vm_map_entry *entry)
+-{                  
++{
+ 	return entry->eflags & MAP_ENTRY_BEHAV_MASK;
+ }
+ 
+ static __inline void
+ vm_map_entry_set_behavior(struct vm_map_entry *entry, u_char behavior)
+-{              
++{
+ 	entry->eflags = (entry->eflags & ~MAP_ENTRY_BEHAV_MASK) |
+ 		(behavior & MAP_ENTRY_BEHAV_MASK);
+-}                       
++}
+ 
+ /*
+  * VA interlock for map (VPAGETABLE / vkernel support)
+@@ -353,7 +353,7 @@ typedef struct vm_map *vm_map_t;
+  */
+ #define MAP_WIREFUTURE		0x0001	/* wire all future pages */
+ 
+-/* 
++/*
+  * Shareable process virtual address space.
+  *
+  * Refd pointers from vmresident, proc
+@@ -392,7 +392,7 @@ struct vmspace {
+ /*
+  * Resident executable holding structure.  A user program can take a snapshot
+  * of just its VM address space (typically done just after dynamic link
+- * libraries have completed loading) and register it as a resident 
++ * libraries have completed loading) and register it as a resident
+  * executable associated with the program binary's vnode, which is also
+  * locked into memory.  Future execs of the vnode will start with a copy
+  * of the resident vmspace instead of running the binary from scratch,
+@@ -471,7 +471,7 @@ struct vmresident {
+ #define	vm_map_unlock(map) \
+ 	lockmgr(&(map)->lock, LK_RELEASE)
+ #define	vm_map_lock_read(map) \
+-	lockmgr(&(map)->lock, LK_SHARED) 
++	lockmgr(&(map)->lock, LK_SHARED)
+ #define	vm_map_unlock_read(map) \
+ 	lockmgr(&(map)->lock, LK_RELEASE)
+ #endif
+@@ -495,7 +495,7 @@ static __inline__ int
+ vm_map_lock_upgrade(vm_map_t map) {
+ 	int error;
+ #if defined(MAP_LOCK_DIAGNOSTIC)
+-	kprintf("locking map LK_EXCLUPGRADE: 0x%x\n", map); 
++	kprintf("locking map LK_EXCLUPGRADE: 0x%x\n", map);
+ #endif
+ 	error = lockmgr(&map->lock, LK_EXCLUPGRADE);
+ 	if (error == 0)
+-- 
+2.22.0
+

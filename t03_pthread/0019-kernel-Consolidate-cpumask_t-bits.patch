@@ -1,0 +1,347 @@
+From 77519add567f0685a8750db668bdac5a245e44de Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 15 Aug 2019 21:09:39 +0300
+Subject: [PATCH 19/66] kernel: Consolidate cpumask_t bits.
+
+ Cleans up the namespace and simplifies platform handling in asm macros.
+ The cpumask_t together with its macros is already non MI feature that is
+ used in userland utilities, libraries, kernel scheduler and syscalls.
+ It deserves sys/ header.  Adjust syscalls.master and rerun sysent.
+
+ While there, fix an issue in ports that set POSIX env, but has
+ implementation of setting thread names through pthread_set_name_np().
+---
+ include/pthread_np.h                  | 25 ++++++++++-
+ sys/cpu/x86_64/include/cpumask.h      | 65 ++++++++++++++++++++++++---
+ sys/cpu/x86_64/include/types.h        | 15 -------
+ sys/kern/init_sysent.c                |  1 -
+ sys/kern/makesyscalls.sh              |  1 +
+ sys/kern/syscalls.master              |  1 -
+ sys/platform/pc64/include/pmap.h      |  1 +
+ sys/platform/vkernel64/include/pmap.h |  1 +
+ sys/sys/proc.h                        |  1 +
+ sys/sys/sched.h                       | 58 +++++++-----------------
+ sys/sys/sysproto.h                    |  1 +
+ sys/sys/thread.h                      |  1 +
+ 12 files changed, 105 insertions(+), 66 deletions(-)
+
+diff --git a/include/pthread_np.h b/include/pthread_np.h
+index 28d0ebb117..b1820c2de6 100644
+--- a/include/pthread_np.h
++++ b/include/pthread_np.h
+@@ -31,7 +31,30 @@
+ #ifndef _PTHREAD_NP_H_
+ #define _PTHREAD_NP_H_
+ 
+-#include <sched.h>
++#include <sys/cdefs.h>
++#include <sys/types.h>
++#include <machine/cpumask.h>
++#include <time.h>
++
++/* In case <sched.h> has limited visibility. */
++#ifndef __CPU_SET_T_DECLARED
++#define	__CPU_SET_T_DECLARED
++typedef	cpumask_t		cpu_set_t;
++#endif
++
++#ifndef __CPU_SET_FUNC_DECLARED
++#define	__CPU_SET_FUNC_DECLARED
++#define	CPU_SETSIZE		((int)(sizeof(cpumask_t) * 8))
++#define	CPU_ZERO(set)			__CPU_ZERO(set)
++#define	CPU_SET(cpu, set)		__CPU_SET(cpu, set)
++#define	CPU_CLR(cpu, set)		__CPU_CLR(cpu, set)
++#define	CPU_ISSET(cpu, set)		__CPU_ISSET(cpu, set)
++#define	CPU_COUNT(set)			__CPU_COUNT(set)
++#define	CPU_AND(dst, set1, set2)	__CPU_AND(dst, set1, set2)
++#define	CPU_OR(dst, set1, set2)		__CPU_OR(dst, set1, set2)
++#define	CPU_XOR(dst, set1, set2)	__CPU_XOR(dst, set1, set2)
++#define	CPU_EQUAL(set1, set2)		__CPU_EQUAL(set1, set2)
++#endif
+ 
+ /*
+  * Non-POSIX type definitions:
+diff --git a/sys/cpu/x86_64/include/cpumask.h b/sys/cpu/x86_64/include/cpumask.h
+index 5173efec02..bc1cecdc30 100644
+--- a/sys/cpu/x86_64/include/cpumask.h
++++ b/sys/cpu/x86_64/include/cpumask.h
+@@ -35,16 +35,25 @@
+ #ifndef _CPU_CPUMASK_H_
+ #define	_CPU_CPUMASK_H_
+ 
+-#include <cpu/types.h>
++#include <machine/stdint.h>
+ #ifdef _KERNEL
+ #include <cpu/atomic.h>
+ #endif
+ 
+-#if _CPUMASK_ELEMENTS != 4
+-#error "CPUMASK macros incompatible with cpumask_t"
+-#endif
++/*
++ * cpumask_t - a mask representing a set of cpus and supporting routines.
++ *
++ * WARNING! It is recommended that this mask NOT be made variably-sized
++ *	    because it affects a huge number of system structures.  However,
++ *	    kernel code (non-module) can be optimized to not operate on the
++ *	    whole mask.
++ */
+ 
+-#define CPUMASK_ELEMENTS	_CPUMASK_ELEMENTS
++typedef struct {
++	__uint64_t	ary[4];
++} cpumask_t;
++
++#define CPUMASK_ELEMENTS	4
+ 
+ #define CPUMASK_INITIALIZER_ALLONES	{ .ary = { (__uint64_t)-1, \
+ 					  (__uint64_t)-1, \
+@@ -212,6 +221,52 @@
+ 					(mask).ary[3] ^= -1L;		\
+ 					} while(0)
+ 
++#ifndef _KERNEL
++#define	__CPU_SETSIZE		((int)(sizeof(cpumask_t) * 8))
++
++#define	__CPU_COUNT(set)	(					\
++				__builtin_popcountl((set)->ary[0]) +	\
++				__builtin_popcountl((set)->ary[1]) +	\
++				__builtin_popcountl((set)->ary[2]) +	\
++				__builtin_popcountl((set)->ary[3]))
++
++#define	__CPU_CLR(cpu, set)	CPUMASK_NANDBIT(*set, cpu)
++#define	__CPU_EQUAL(set1, set2)	CPUMASK_CMPMASKEQ(*set1, *set2)
++#define	__CPU_ISSET(cpu, set)	CPUMASK_TESTBIT(*set, cpu)
++#define	__CPU_SET(cpu, set)	CPUMASK_ORBIT(*set, cpu)
++#define	__CPU_ZERO(set)		CPUMASK_ASSZERO(*set)
++
++#define	__CPU_AND(dst, set1, set2)					\
++			do {						\
++				if (dst == set1) {			\
++					CPUMASK_ANDMASK(*dst, *set2);	\
++				} else {				\
++					*dst = *set2;			\
++					CPUMASK_ANDMASK(*dst, *set1);	\
++				}					\
++			} while (0)
++
++#define	__CPU_OR(dst, set1, set2)					\
++			do {						\
++				if (dst == set1) {			\
++					CPUMASK_ORMASK(*dst, *set2);	\
++				} else {				\
++					*dst = *set2;			\
++					CPUMASK_ORMASK(*dst, *set1);	\
++				}					\
++			} while (0)
++
++#define	__CPU_XOR(dst, set1, set2)					\
++			do {						\
++				if (dst == set1) {			\
++					CPUMASK_XORMASK(*dst, *set2);	\
++				} else {				\
++					*dst = *set2;			\
++					CPUMASK_XORMASK(*dst, *set1);	\
++				}					\
++			} while (0)
++#endif
++
+ #ifdef _KERNEL
+ #define ATOMIC_CPUMASK_ORBIT(mask, i)					  \
+ 			atomic_set_cpumask(&(mask).ary[((i) >> 6) & 3],	  \
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index 4a8d6c3250..a875dafbdd 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -60,19 +60,4 @@ typedef	__int64_t	intfptr_t;
+ typedef	__uint64_t	uintfptr_t;
+ #endif
+ 
+-/*
+- * cpumask_t - a mask representing a set of cpus and supporting routines.
+- *
+- * WARNING! It is recommended that this mask NOT be made variably-sized
+- *	    because it affects a huge number of system structures.  However,
+- *	    kernel code (non-module) can be optimized to not operate on the
+- *	    whole mask.
+- */
+-
+-#define _CPUMASK_ELEMENTS	4	/* tested by assembly for #error */
+-
+-typedef struct {
+-	__uint64_t      ary[4];
+-} cpumask_t;
+-
+ #endif /* !_CPU_TYPES_H_ */
+diff --git a/sys/kern/init_sysent.c b/sys/kern/init_sysent.c
+index 97b02ecd7e..8a796061cd 100644
+--- a/sys/kern/init_sysent.c
++++ b/sys/kern/init_sysent.c
+@@ -9,7 +9,6 @@
+ #include <sys/sysent.h>
+ #include <sys/sysproto.h>
+ #include <sys/statvfs.h>
+-#include <machine/cpumask.h>
+ 
+ #define AS(name) ((sizeof(struct name) - sizeof(struct sysmsg)) / sizeof(register_t))
+ 
+diff --git a/sys/kern/makesyscalls.sh b/sys/kern/makesyscalls.sh
+index ddd7e0afe6..fbe448f3c8 100644
+--- a/sys/kern/makesyscalls.sh
++++ b/sys/kern/makesyscalls.sh
+@@ -87,6 +87,7 @@ s/\$//g
+ 		printf "#include <sys/select.h>\n" > sysarg
+ 		printf "#include <sys/signal.h>\n" > sysarg
+ 		printf "#include <sys/acl.h>\n" > sysarg
++		printf "#include <machine/cpumask.h>\n" > sysarg
+ 		printf "#include <sys/msgport.h>\n" > sysarg
+ 		printf "#include <sys/sysmsg.h>\n" > sysarg
+ 		printf "#include <sys/procctl.h>\n\n" > sysarg
+diff --git a/sys/kern/syscalls.master b/sys/kern/syscalls.master
+index 1652d8e66c..1487358e94 100644
+--- a/sys/kern/syscalls.master
++++ b/sys/kern/syscalls.master
+@@ -32,7 +32,6 @@
+ #include <sys/sysent.h>
+ #include <sys/sysproto.h>
+ #include <sys/statvfs.h>
+-#include <machine/cpumask.h>
+ 
+ ; Reserved/unimplemented system calls in the range 0-150 inclusive
+ ; are reserved for use in future Berkeley releases.
+diff --git a/sys/platform/pc64/include/pmap.h b/sys/platform/pc64/include/pmap.h
+index 0892ee164e..fd772043de 100644
+--- a/sys/platform/pc64/include/pmap.h
++++ b/sys/platform/pc64/include/pmap.h
+@@ -156,6 +156,7 @@
+ #ifndef _SYS_CPULOCK_H_
+ #include <sys/cpulock.h>
+ #endif
++#include <machine/cpumask.h>
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+diff --git a/sys/platform/vkernel64/include/pmap.h b/sys/platform/vkernel64/include/pmap.h
+index 862c86ab01..44c44ca16e 100644
+--- a/sys/platform/vkernel64/include/pmap.h
++++ b/sys/platform/vkernel64/include/pmap.h
+@@ -94,6 +94,7 @@
+ #ifndef _SYS_CPULOCK_H_
+ #include <sys/cpulock.h>
+ #endif
++#include <machine/cpumask.h>
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+diff --git a/sys/sys/proc.h b/sys/sys/proc.h
+index a45ebe641a..387dfbe415 100644
+--- a/sys/sys/proc.h
++++ b/sys/sys/proc.h
+@@ -42,6 +42,7 @@
+ 
+ #include <sys/callout.h>		/* For struct callout. */
+ #include <sys/cpulock.h>
++#include <machine/cpumask.h>
+ #include <sys/filedesc.h>
+ #include <sys/queue.h>
+ #include <sys/tree.h>
+diff --git a/sys/sys/sched.h b/sys/sys/sched.h
+index 3f3e3b901f..f3e7e36a26 100644
+--- a/sys/sys/sched.h
++++ b/sys/sys/sched.h
+@@ -58,53 +58,25 @@ struct sched_param
+ #if __BSD_VISIBLE
+ #include <machine/cpumask.h>
+ 
++#ifndef __CPU_SET_T_DECLARED
++#define	__CPU_SET_T_DECLARED
+ typedef	cpumask_t		cpu_set_t;
++#endif
+ typedef	cpumask_t		cpuset_t;	/* FreeBSD compat */
+ 
++#ifndef __CPU_SET_FUNC_DECLARED
++#define	__CPU_SET_FUNC_DECLARED
+ #define	CPU_SETSIZE		((int)(sizeof(cpumask_t) * 8))
+-
+-#define	CPU_ZERO(set)		CPUMASK_ASSZERO(*set)
+-#define	CPU_SET(cpu, set)	CPUMASK_ORBIT(*set, cpu)
+-#define	CPU_CLR(cpu, set)	CPUMASK_NANDBIT(*set, cpu)
+-#define	CPU_ISSET(cpu, set)	CPUMASK_TESTBIT(*set, cpu)
+-
+-#define	CPU_COUNT(set)				\
+-	(__builtin_popcountl((set)->ary[0]) +	\
+-	 __builtin_popcountl((set)->ary[1]) +	\
+-	 __builtin_popcountl((set)->ary[2]) +	\
+-	 __builtin_popcountl((set)->ary[3]))
+-
+-#define	CPU_AND(dst, set1, set2)		\
+-do {						\
+-	if (dst == set1) {			\
+-		CPUMASK_ANDMASK(*dst, *set2);	\
+-	} else {				\
+-		*dst = *set2;			\
+-		CPUMASK_ANDMASK(*dst, *set1);	\
+-	}					\
+-} while (0)
+-
+-#define	CPU_OR(dst, set1, set2)			\
+-do {						\
+-	if (dst == set1) {			\
+-		CPUMASK_ORMASK(*dst, *set2);	\
+-	} else {				\
+-		*dst = *set2;			\
+-		CPUMASK_ORMASK(*dst, *set1);	\
+-	}					\
+-} while (0)
+-
+-#define	CPU_XOR(dst, set1, set2)		\
+-do {						\
+-	if (dst == set1) {			\
+-		CPUMASK_XORMASK(*dst, *set2);	\
+-	} else {				\
+-		*dst = *set2;			\
+-		CPUMASK_XORMASK(*dst, *set1);	\
+-	}					\
+-} while (0)
+-
+-#define	CPU_EQUAL(set1, set2)	CPUMASK_CMPMASKEQ(*set1, *set2)
++#define	CPU_ZERO(set)			__CPU_ZERO(set)
++#define	CPU_SET(cpu, set)		__CPU_SET(cpu, set)
++#define	CPU_CLR(cpu, set)		__CPU_CLR(cpu, set)
++#define	CPU_ISSET(cpu, set)		__CPU_ISSET(cpu, set)
++#define	CPU_COUNT(set)			__CPU_COUNT(set)
++#define	CPU_AND(dst, set1, set2)	__CPU_AND(dst, set1, set2)
++#define	CPU_OR(dst, set1, set2)		__CPU_OR(dst, set1, set2)
++#define	CPU_XOR(dst, set1, set2)	__CPU_XOR(dst, set1, set2)
++#define	CPU_EQUAL(set1, set2)		__CPU_EQUAL(set1, set2)
++#endif
+ #endif /* __BSD_VISIBLE */
+ 
+ __BEGIN_DECLS
+diff --git a/sys/sys/sysproto.h b/sys/sys/sysproto.h
+index f8f7289ef5..1249c619f3 100644
+--- a/sys/sys/sysproto.h
++++ b/sys/sys/sysproto.h
+@@ -11,6 +11,7 @@
+ #include <sys/select.h>
+ #include <sys/signal.h>
+ #include <sys/acl.h>
++#include <machine/cpumask.h>
+ #include <sys/msgport.h>
+ #include <sys/sysmsg.h>
+ #include <sys/procctl.h>
+diff --git a/sys/sys/thread.h b/sys/sys/thread.h
+index b60502843b..f0003e9e36 100644
+--- a/sys/sys/thread.h
++++ b/sys/sys/thread.h
+@@ -35,6 +35,7 @@
+ #ifndef _SYS_IOSCHED_H_
+ #include <sys/iosched.h>
+ #endif
++#include <machine/cpumask.h>
+ #include <machine/thread.h>
+ 
+ struct globaldata;
+-- 
+2.22.0
+

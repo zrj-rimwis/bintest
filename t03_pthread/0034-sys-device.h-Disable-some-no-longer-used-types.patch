@@ -1,0 +1,182 @@
+From 911211fe87922dabe498ca402a6c12d20a08a0df Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 22 Aug 2019 14:11:20 +0300
+Subject: [PATCH 34/66] <sys/device.h>: Disable some no longer used types.
+
+ Some additional cleanup in sys/devfs.h and sys/vfsops.h:
+ * dev_args_union/vop_args_union unused since introduced in
+   fef8985e09e16aeee4a2014876e2e4b758656ac2 and
+   2d3e977e265c8a4a48b58061b9d91ad235ed2265
+ * devfs_unit_hash unused since 898c91ee87ff48eab03bcce3add7afc16a58754e
+ * D_NAGGED unused since 335dda388a5c13edd38c87c32b72e51eaaedce75
+ * DEVFS_ISDIGIT unused since 07dfa375a25f4ef43c956ee33c739661306f601
+
+ While there, minor trailing whitespace cleanup in sys/vfsops.h.
+---
+ sys/sys/devfs.h  |  4 ++++
+ sys/sys/device.h |  4 +++-
+ sys/sys/vfsops.h | 26 ++++++++++++++------------
+ 3 files changed, 21 insertions(+), 13 deletions(-)
+
+diff --git a/sys/sys/devfs.h b/sys/sys/devfs.h
+index c9ca6473ee..02b56a1123 100644
+--- a/sys/sys/devfs.h
++++ b/sys/sys/devfs.h
+@@ -251,7 +251,9 @@ typedef void* (devfs_iterate_callback_t)(struct devfs_node *, void *);
+ #define DEVFS_MNTDATA(x)	((struct devfs_mnt_data *)((x)->mnt_data))
+ #define DEVFS_ORPHANLIST(x)	(&(DEVFS_MNTDATA(x)->orphan_list))
+ #define DEVFS_DENODE_HEAD(x)	(&((x)->list))
++#if 0
+ #define DEVFS_ISDIGIT(x)	((x >= '0') && (x <= '9'))
++#endif
+ 
+ /*
+  * -rwxr-xr-x
+@@ -328,11 +330,13 @@ struct devfs_bitmap {
+ 	unsigned long	*bitmap;
+ };
+ 
++#if 0
+ struct devfs_unit_hash {
+         struct devfs_unit_hash *next;
+         int		unit_no;
+ 	cdev_t		dev;
+ };
++#endif
+ 
+ void devfs_clone_bitmap_init(struct devfs_bitmap *);
+ void devfs_clone_bitmap_uninit(struct devfs_bitmap *);
+diff --git a/sys/sys/device.h b/sys/sys/device.h
+index 525a74c258..9540562a5f 100644
+--- a/sys/sys/device.h
++++ b/sys/sys/device.h
+@@ -270,7 +270,7 @@ struct dev_ops {
+  *			should skip buffers related to such devices.
+  */
+ #define D_MEMDISK	0x00010000	/* memory type disk */
+-#define D_NAGGED	0x00020000	/* nagged about missing make_dev() */
++#define D_UNUSED17	0x00020000	/* was: nagged about missing make_dev() */
+ #define D_CANFREE	0x00040000	/* can free blocks */
+ #define D_TRACKCLOSE	0x00080000	/* track all closes */
+ #define D_MASTER	0x00100000	/* used by pty/tty code */
+@@ -282,6 +282,7 @@ struct dev_ops {
+ /*
+  * A union of all possible argument structures.
+  */
++#if 0
+ union dev_args_union {
+ 	struct dev_generic_args	du_head;
+ 	struct dev_open_args	du_open;
+@@ -296,6 +297,7 @@ union dev_args_union {
+ 	struct dev_kqfilter_args du_kqfilter;
+ 	struct dev_clone_args	du_clone;
+ };
++#endif
+ 
+ /*
+  * Linking structure for mask/match registration
+diff --git a/sys/sys/vfsops.h b/sys/sys/vfsops.h
+index 8ebf374783..56923d7139 100644
+--- a/sys/sys/vfsops.h
++++ b/sys/sys/vfsops.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -37,7 +37,7 @@
+  * fixed set of vectors.
+  *
+  * In DragonFly the ultimate goal is to thread the VFS, which means that
+- * the dispatch functions will eventually be called from the context of 
++ * the dispatch functions will eventually be called from the context of
+  * a management thread rather then directly called by a process.  This
+  * requires us to divorce direct process dependancies (in particular ioctl
+  * and UIO's).  In addition, it is our intention to implement kernel
+@@ -574,7 +574,7 @@ struct vop_nrename_args {
+  * function wrappers to implement hooks for per-mount management functions
+  * such as journaling and cache coherency protocols.  The second section is
+  * the function dispatch for the VFSs.  The functions are supposed to run
+- * in the context of the VFS's thread (if it has one) and should not be 
++ * in the context of the VFS's thread (if it has one) and should not be
+  * directly called from random kernel code.  Note that VOCALL()s are direct
+  * calls used for chaining vop_ops structures from a VFS context.
+  */
+@@ -664,6 +664,7 @@ struct vop_ops {
+  * structures.  The vop_args_union can hold any VOP call argument structure.
+  * Note that vu_head is broken out.
+  */
++#if 0
+ union vop_args_union {
+ 	struct vop_generic_args vu_head;
+ 	struct vop_generic_args vu_default;
+@@ -723,6 +724,7 @@ union vop_args_union {
+ 	struct vop_nrmdir_args vu_nrmdir;
+ 	struct vop_nrename_args vu_nrename;
+ };
++#endif
+ 
+ #ifdef _KERNEL
+ 
+@@ -734,14 +736,14 @@ union vop_args_union {
+  * routine directly in order to allow DragonFly to properly wrap the operation
+  * in a message and dispatch it to the correct thread.
+  */
+-int vop_old_lookup(struct vop_ops *ops, struct vnode *dvp, 
++int vop_old_lookup(struct vop_ops *ops, struct vnode *dvp,
+ 		struct vnode **vpp, struct componentname *cnp);
+ int vop_old_create(struct vop_ops *ops, struct vnode *dvp,
+ 		struct vnode **vpp, struct componentname *cnp,
+ 		struct vattr *vap);
+-int vop_old_whiteout(struct vop_ops *ops, struct vnode *dvp, 
++int vop_old_whiteout(struct vop_ops *ops, struct vnode *dvp,
+ 		struct componentname *cnp, int flags);
+-int vop_old_mknod(struct vop_ops *ops, struct vnode *dvp, 
++int vop_old_mknod(struct vop_ops *ops, struct vnode *dvp,
+ 		struct vnode **vpp, struct componentname *cnp,
+ 		struct vattr *vap);
+ int vop_open(struct vop_ops *ops, struct vnode *vp, int mode,
+@@ -785,7 +787,7 @@ int vop_old_symlink(struct vop_ops *ops, struct vnode *dvp,
+ 		struct vnode **vpp, struct componentname *cnp,
+ 		struct vattr *vap, char *target);
+ int vop_readdir(struct vop_ops *ops, struct vnode *vp, struct uio *uio,
+-		struct ucred *cred, int *eofflag, 
++		struct ucred *cred, int *eofflag,
+ 		int *ncookies, off_t **cookies, struct file *fp);
+ int vop_readlink(struct vop_ops *ops, struct vnode *vp, struct uio *uio,
+ 		struct ucred *cred);
+@@ -853,8 +855,8 @@ int vop_nrename(struct vop_ops *ops,
+ 
+ /*
+  * Kernel VOP forwarding wrappers.  These are called when a VFS such as
+- * nullfs needs to push down into another VFS, changing the 
+- * a_ops pointer and consequentially necessitating additional 
++ * nullfs needs to push down into another VFS, changing the
++ * a_ops pointer and consequentially necessitating additional
+  * cache management.
+  *
+  * Note that this is different from vop_ops chaining within the same
+-- 
+2.22.0
+

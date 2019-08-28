@@ -1,0 +1,51 @@
+From 122480302e6b66c49aad282c653e5fee0dc0bef3 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 9 Aug 2019 10:59:55 +0300
+Subject: [PATCH 03/66] Nuke legacy non standard rune_t type.
+
+ Not used anywhere and comments indicate it is meant not to be used
+ outside lib/libc/locale anyway.
+---
+ include/stddef.h | 7 -------
+ include/stdlib.h | 7 -------
+ 2 files changed, 14 deletions(-)
+
+diff --git a/include/stddef.h b/include/stddef.h
+index 92855e2c10..93d37198d8 100644
+--- a/include/stddef.h
++++ b/include/stddef.h
+@@ -50,13 +50,6 @@ typedef	__size_t	size_t;		/* open group, _GCC_SIZE_T OK */
+ typedef	__ptrdiff_t	ptrdiff_t;	/* open group, _GCC_PTRDIFF_T OK */
+ #endif
+ 
+-#if __BSD_VISIBLE
+-#ifndef _RUNE_T_DECLARED
+-#define _RUNE_T_DECLARED
+-typedef	__rune_t	rune_t;
+-#endif
+-#endif
+-
+ #ifndef	__cplusplus
+ #ifndef _WCHAR_T_DECLARED
+ #define _WCHAR_T_DECLARED
+diff --git a/include/stdlib.h b/include/stdlib.h
+index a2c78d4d53..cbd4b5f34d 100644
+--- a/include/stdlib.h
++++ b/include/stdlib.h
+@@ -37,13 +37,6 @@
+ #include <sys/_null.h>
+ #include <sys/types.h>
+ 
+-#if __BSD_VISIBLE
+-#ifndef _RUNE_T_DECLARED
+-typedef	__rune_t	rune_t;
+-#define	_RUNE_T_DECLARED
+-#endif
+-#endif
+-
+ #ifndef _SIZE_T_DECLARED
+ typedef	__size_t	size_t;		/* _GCC_SIZE_T OK */
+ #define	_SIZE_T_DECLARED
+-- 
+2.22.0
+

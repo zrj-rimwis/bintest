@@ -1,0 +1,1807 @@
+From e88315319d52c728dc4d1e13ff30b9bc27d8f17c Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 27 Aug 2019 18:24:19 +0300
+Subject: [PATCH 59/66] libc_r: Minor trailing whitespace cleanup.
+
+ To separate from real changes next.
+---
+ include/pthread.h                           |  10 +-
+ lib/libc_r/uthread/pthread_private.h        |   4 +-
+ lib/libc_r/uthread/uthread_accept.c         |   8 +-
+ lib/libc_r/uthread/uthread_aio_suspend.c    |   4 +-
+ lib/libc_r/uthread/uthread_close.c          |   2 +-
+ lib/libc_r/uthread/uthread_closefrom.c      |   8 +-
+ lib/libc_r/uthread/uthread_cond.c           |  10 +-
+ lib/libc_r/uthread/uthread_connect.c        |   2 +-
+ lib/libc_r/uthread/uthread_creat.c          |   6 +-
+ lib/libc_r/uthread/uthread_create.c         |  10 +-
+ lib/libc_r/uthread/uthread_dup.c            |   2 +-
+ lib/libc_r/uthread/uthread_dup2.c           |   4 +-
+ lib/libc_r/uthread/uthread_execve.c         |   2 +-
+ lib/libc_r/uthread/uthread_faccessat.c      |   8 +-
+ lib/libc_r/uthread/uthread_fchmodat.c       |   8 +-
+ lib/libc_r/uthread/uthread_fchownat.c       |   8 +-
+ lib/libc_r/uthread/uthread_fcntl.c          |   6 +-
+ lib/libc_r/uthread/uthread_fd.c             | 126 ++++++++++----------
+ lib/libc_r/uthread/uthread_file.c           |   2 +-
+ lib/libc_r/uthread/uthread_fork.c           |   2 +-
+ lib/libc_r/uthread/uthread_fstatat.c        |   8 +-
+ lib/libc_r/uthread/uthread_gc.c             |   8 +-
+ lib/libc_r/uthread/uthread_init.c           |   2 +-
+ lib/libc_r/uthread/uthread_jmp.c            |   4 +-
+ lib/libc_r/uthread/uthread_join.c           |   2 +-
+ lib/libc_r/uthread/uthread_kern.c           |  12 +-
+ lib/libc_r/uthread/uthread_kevent.c         |   2 +-
+ lib/libc_r/uthread/uthread_mutex.c          |  18 +--
+ lib/libc_r/uthread/uthread_open.c           |   8 +-
+ lib/libc_r/uthread/uthread_pause.c          |   6 +-
+ lib/libc_r/uthread/uthread_poll.c           |   2 +-
+ lib/libc_r/uthread/uthread_priority_queue.c |   2 +-
+ lib/libc_r/uthread/uthread_select.c         |   4 +-
+ lib/libc_r/uthread/uthread_sem.c            |   8 +-
+ lib/libc_r/uthread/uthread_sendfile.c       |   8 +-
+ lib/libc_r/uthread/uthread_setschedparam.c  |   2 +-
+ lib/libc_r/uthread/uthread_sig.c            |   8 +-
+ lib/libc_r/uthread/uthread_sigaction.c      |   2 +-
+ lib/libc_r/uthread/uthread_sigwait.c        |   4 +-
+ lib/libc_r/uthread/uthread_sleep.c          |   6 +-
+ lib/libc_r/uthread/uthread_spec.c           |   6 +-
+ lib/libc_r/uthread/uthread_stubs.c          |   8 +-
+ lib/libc_r/uthread/uthread_system.c         |   6 +-
+ lib/libc_r/uthread/uthread_tcdrain.c        |   6 +-
+ lib/libc_r/uthread/uthread_unlinkat.c       |   8 +-
+ lib/libc_r/uthread/uthread_wait.c           |   4 +-
+ lib/libc_r/uthread/uthread_waitpid.c        |   6 +-
+ lib/libc_r/uthread/uthread_writev.c         |   2 +-
+ 48 files changed, 197 insertions(+), 197 deletions(-)
+
+diff --git a/include/pthread.h b/include/pthread.h
+index 9252e94101..8504c29192 100644
+--- a/include/pthread.h
++++ b/include/pthread.h
+@@ -14,20 +14,20 @@
+  * 3. All advertising materials mentioning features or use of this software
+  *    must display the following acknowledgement:
+  *  This product includes software developed by Chris Provenzano.
+- * 4. The name of Chris Provenzano may not be used to endorse or promote 
++ * 4. The name of Chris Provenzano may not be used to endorse or promote
+  *	  products derived from this software without specific prior written
+  *	  permission.
+  *
+  * THIS SOFTWARE IS PROVIDED BY CHRIS PROVENZANO ``AS IS'' AND
+  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+- * ARE DISCLAIMED.  IN NO EVENT SHALL CHRIS PROVENZANO BE LIABLE FOR ANY 
++ * ARE DISCLAIMED.  IN NO EVENT SHALL CHRIS PROVENZANO BE LIABLE FOR ANY
+  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
++ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
++ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/include/pthread.h,v 1.20.2.4 2003/05/27 18:18:01 jdp Exp $
+diff --git a/lib/libc_r/uthread/pthread_private.h b/lib/libc_r/uthread/pthread_private.h
+index f2049d6abf..1e9048080d 100644
+--- a/lib/libc_r/uthread/pthread_private.h
++++ b/lib/libc_r/uthread/pthread_private.h
+@@ -1192,7 +1192,7 @@ void	_waitq_remove(pthread_t pthread);
+ void	_waitq_setactive(void);
+ void	_waitq_clearactive(void);
+ #endif
+-void    _thread_exit(char *, int, char *);
++void    _thread_exit(char *, int, char *) __dead2;
+ void    _thread_exit_cleanup(void);
+ int	_thread_fd_getflags(int);
+ int     _thread_fd_lock(int, int, struct timespec *);
+@@ -1328,7 +1328,7 @@ int	__sys_sigreturn(ucontext_t *);
+ 
+ /* #include <unistd.h> */
+ #ifdef _UNISTD_H_
+-void	__sys_exit(int);
++void	__sys_exit(int) __dead2;
+ int	__sys_close(int);
+ int	__sys_closefrom(int);
+ int	__sys_dup(int);
+diff --git a/lib/libc_r/uthread/uthread_accept.c b/lib/libc_r/uthread/uthread_accept.c
+index 9da0629fbe..a1be0b0508 100644
+--- a/lib/libc_r/uthread/uthread_accept.c
++++ b/lib/libc_r/uthread/uthread_accept.c
+@@ -75,7 +75,7 @@ _accept(int fd, struct sockaddr * name, socklen_t *namelen)
+ 			} else {
+ 				/*
+ 				 * Another error has occurred, so exit the
+-				 * loop here: 
++				 * loop here:
+ 				 */
+ 				break;
+ 			}
+@@ -92,11 +92,11 @@ _accept(int fd, struct sockaddr * name, socklen_t *namelen)
+ 			/* Return an error: */
+ 			ret = -1;
+ 		}
+-		/* 
++		/*
+ 		 * If the parent socket was blocking, make sure that
+ 		 * the new socket is also set blocking here (as the
+-		 * call to _thread_fd_table_init() above will always 
+-		 * set the new socket flags to non-blocking, as that 
++		 * call to _thread_fd_table_init() above will always
++		 * set the new socket flags to non-blocking, as that
+ 		 * will be the inherited state of the new socket.
+ 		 */
+ 		if((ret > 0) && (_thread_fd_getflags(fd) & O_NONBLOCK) == 0)
+diff --git a/lib/libc_r/uthread/uthread_aio_suspend.c b/lib/libc_r/uthread/uthread_aio_suspend.c
+index 567601fa8b..18d421b67c 100644
+--- a/lib/libc_r/uthread/uthread_aio_suspend.c
++++ b/lib/libc_r/uthread/uthread_aio_suspend.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2000 Jason Evans <jasone@freebsd.org>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -13,7 +13,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+diff --git a/lib/libc_r/uthread/uthread_close.c b/lib/libc_r/uthread/uthread_close.c
+index 5dfbac639d..687ff7212f 100644
+--- a/lib/libc_r/uthread/uthread_close.c
++++ b/lib/libc_r/uthread/uthread_close.c
+@@ -116,6 +116,6 @@ close(int fd)
+ 	_thread_enter_cancellation_point();
+ 	ret = _close(fd);
+ 	_thread_leave_cancellation_point();
+-	
++
+ 	return ret;
+ }
+diff --git a/lib/libc_r/uthread/uthread_closefrom.c b/lib/libc_r/uthread/uthread_closefrom.c
+index 430e056928..9a0750f2b6 100644
+--- a/lib/libc_r/uthread/uthread_closefrom.c
++++ b/lib/libc_r/uthread/uthread_closefrom.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2005 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Joerg Sonnenberger <joerg@bec.de>.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/lib/libc_r/uthread/uthread_cond.c b/lib/libc_r/uthread/uthread_cond.c
+index 2c778c198c..b3481ca7d4 100644
+--- a/lib/libc_r/uthread/uthread_cond.c
++++ b/lib/libc_r/uthread/uthread_cond.c
+@@ -82,7 +82,7 @@ _pthread_cond_init(pthread_cond_t * __restrict cond,
+ 	else {
+ 		/*
+ 		 * Check if a pointer to a condition variable attribute
+-		 * structure was passed by the caller: 
++		 * structure was passed by the caller:
+ 		 */
+ 		if (cond_attr != NULL && *cond_attr != NULL) {
+ 			/* Default to a fast condition variable: */
+@@ -168,7 +168,7 @@ _pthread_cond_wait(pthread_cond_t * __restrict cond,
+ 	int	seqno;
+ 
+ 	_thread_enter_cancellation_point();
+-	
++
+ 	if (cond == NULL)
+ 		return (EINVAL);
+ 
+@@ -329,7 +329,7 @@ _pthread_cond_timedwait(pthread_cond_t * __restrict cond,
+ 	int	seqno;
+ 
+ 	_thread_enter_cancellation_point();
+-	
++
+ 	if (abstime == NULL || abstime->tv_sec < 0 || abstime->tv_nsec < 0 ||
+ 	    abstime->tv_nsec >= 1000000000)
+ 		return (EINVAL);
+@@ -399,7 +399,7 @@ _pthread_cond_timedwait(pthread_cond_t * __restrict cond,
+ 					/*
+ 					 * Cannot unlock the mutex, so remove
+ 					 * the running thread from the condition
+-					 * variable queue: 
++					 * variable queue:
+ 					 */
+ 					cond_queue_remove(*cond, curthread);
+ 
+@@ -593,7 +593,7 @@ _pthread_cond_broadcast(pthread_cond_t * cond)
+ 			/* There are no more waiting threads: */
+ 			(*cond)->c_mutex = NULL;
+ 			break;
+-	
++
+ 		/* Trap invalid condition variable types: */
+ 		default:
+ 			/* Return an invalid argument error: */
+diff --git a/lib/libc_r/uthread/uthread_connect.c b/lib/libc_r/uthread/uthread_connect.c
+index 7bc4304647..f2dcbad128 100644
+--- a/lib/libc_r/uthread/uthread_connect.c
++++ b/lib/libc_r/uthread/uthread_connect.c
+@@ -63,7 +63,7 @@ _connect(int fd, const struct sockaddr * name, socklen_t namelen)
+ 
+ 					/*
+ 					 * Get the error, this function
+-					 * should not fail 
++					 * should not fail
+ 					 */
+ 					errnolen = sizeof(errno);
+ 					__sys_getsockopt(fd, SOL_SOCKET, SO_ERROR, &errno, &errnolen);
+diff --git a/lib/libc_r/uthread/uthread_creat.c b/lib/libc_r/uthread/uthread_creat.c
+index c2aa2435c1..1ef02dbdd4 100644
+--- a/lib/libc_r/uthread/uthread_creat.c
++++ b/lib/libc_r/uthread/uthread_creat.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2000 Jason Evans <jasone@freebsd.org>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -13,7 +13,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+@@ -43,6 +43,6 @@ creat(const char *path, mode_t mode)
+ 	_thread_enter_cancellation_point();
+ 	ret = __creat(path, mode);
+ 	_thread_leave_cancellation_point();
+-	
++
+ 	return ret;
+ }
+diff --git a/lib/libc_r/uthread/uthread_create.c b/lib/libc_r/uthread/uthread_create.c
+index 45c747f259..1ce0ce5ce9 100644
+--- a/lib/libc_r/uthread/uthread_create.c
++++ b/lib/libc_r/uthread/uthread_create.c
+@@ -99,24 +99,24 @@ _pthread_create(pthread_t * __restrict thread,
+ 		/* Allocate memory for a default-size stack: */
+ 		else if (pattr->stacksize_attr == PTHREAD_STACK_DEFAULT) {
+ 			struct stack	*spare_stack;
+-			
++
+ 			/* Allocate or re-use a default-size stack. */
+-			
++
+ 			/*
+ 			 * Use the garbage collector mutex for synchronization
+ 			 * of the spare stack list.
+ 			 */
+ 			if (pthread_mutex_lock(&_gc_mutex) != 0)
+ 				PANIC("Cannot lock gc mutex");
+-			
++
+ 			if ((spare_stack = SLIST_FIRST(&_stackq)) != NULL) {
+ 				/* Use the spare stack. */
+ 				SLIST_REMOVE_HEAD(&_stackq, qe);
+-				
++
+ 				/* Unlock the garbage collector mutex. */
+ 				if (pthread_mutex_unlock(&_gc_mutex) != 0)
+ 					PANIC("Cannot unlock gc mutex");
+-				
++
+ 				stack = sizeof(struct stack)
+ 				    + (void *) spare_stack
+ 				    - PTHREAD_STACK_DEFAULT;
+diff --git a/lib/libc_r/uthread/uthread_dup.c b/lib/libc_r/uthread/uthread_dup.c
+index 5decf7b6b6..d8dca7cead 100644
+--- a/lib/libc_r/uthread/uthread_dup.c
++++ b/lib/libc_r/uthread/uthread_dup.c
+@@ -56,7 +56,7 @@ _dup(int fd)
+ 		} else {
+ 			/*
+ 			 * Save the file open flags so that they can be
+-			 * checked later: 
++			 * checked later:
+ 			 */
+ 			_thread_fd_setflags(ret, _thread_fd_getflags(fd));
+ 		}
+diff --git a/lib/libc_r/uthread/uthread_dup2.c b/lib/libc_r/uthread/uthread_dup2.c
+index 082afc863f..0abee4d509 100644
+--- a/lib/libc_r/uthread/uthread_dup2.c
++++ b/lib/libc_r/uthread/uthread_dup2.c
+@@ -54,7 +54,7 @@ _dup2(int fd, int newfd)
+ 	/* Lock the file descriptor: */
+ 	else if ((ret = _FD_LOCK(fd, FD_RDWR, NULL)) == 0) {
+ 		/* Lock the file descriptor: */
+-		if (!(newfd_opened = (_thread_fd_table[newfd] != NULL)) || 
++		if (!(newfd_opened = (_thread_fd_table[newfd] != NULL)) ||
+ 		    (ret = _FD_LOCK(newfd, FD_RDWR, NULL)) == 0) {
+ 			/* Perform the 'dup2' syscall: */
+ 			ret = __sys_dup2(fd, newfd);
+@@ -78,7 +78,7 @@ _dup2(int fd, int newfd)
+ 				} else {
+ 					/*
+ 					 * Save the file open flags so that
+-					 * they can be checked later: 
++					 * they can be checked later:
+ 					 */
+ 					_thread_fd_setflags(ret,
+ 					    _thread_fd_getflags(fd));
+diff --git a/lib/libc_r/uthread/uthread_execve.c b/lib/libc_r/uthread/uthread_execve.c
+index 252f71ec9e..c9dd671bd4 100644
+--- a/lib/libc_r/uthread/uthread_execve.c
++++ b/lib/libc_r/uthread/uthread_execve.c
+@@ -38,7 +38,7 @@
+ #include <pthread.h>
+ #include "pthread_private.h"
+ 
+-int 
++int
+ _execve(const char *name, char *const * argv, char *const * envp)
+ {
+ 	struct pthread	*curthread = _get_curthread();
+diff --git a/lib/libc_r/uthread/uthread_faccessat.c b/lib/libc_r/uthread/uthread_faccessat.c
+index 1d585dfa6b..3f0cfd618b 100644
+--- a/lib/libc_r/uthread/uthread_faccessat.c
++++ b/lib/libc_r/uthread/uthread_faccessat.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2009 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Nicolas Thery <nthery@gmail.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/lib/libc_r/uthread/uthread_fchmodat.c b/lib/libc_r/uthread/uthread_fchmodat.c
+index cae0e2ab89..3847f0ff3d 100644
+--- a/lib/libc_r/uthread/uthread_fchmodat.c
++++ b/lib/libc_r/uthread/uthread_fchmodat.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2009 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Nicolas Thery <nthery@gmail.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/lib/libc_r/uthread/uthread_fchownat.c b/lib/libc_r/uthread/uthread_fchownat.c
+index 6a5ff7dcae..87294256e3 100644
+--- a/lib/libc_r/uthread/uthread_fchownat.c
++++ b/lib/libc_r/uthread/uthread_fchownat.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2009 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Nicolas Thery <nthery@gmail.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/lib/libc_r/uthread/uthread_fcntl.c b/lib/libc_r/uthread/uthread_fcntl.c
+index 829a23ee0c..cfae04594a 100644
+--- a/lib/libc_r/uthread/uthread_fcntl.c
++++ b/lib/libc_r/uthread/uthread_fcntl.c
+@@ -58,7 +58,7 @@ _fcntl(int fd, int cmd,...)
+ 		case F_DUPFD:
+ 			/*
+ 			 * Get the file descriptor that the caller wants to
+-			 * use: 
++			 * use:
+ 			 */
+ 			oldfd = va_arg(ap, int);
+ 
+@@ -75,7 +75,7 @@ _fcntl(int fd, int cmd,...)
+ 			} else {
+ 				/*
+ 				 * Save the file open flags so that they can
+-				 * be checked later: 
++				 * be checked later:
+ 				 */
+ 				_thread_fd_setflags(ret,
+ 				    _thread_fd_getflags(fd));
+@@ -145,7 +145,7 @@ fcntl(int fd, int cmd,...)
+ {
+ 	int	ret;
+ 	va_list	ap;
+-	
++
+ 	_thread_enter_cancellation_point();
+ 
+ 	va_start(ap, cmd);
+diff --git a/lib/libc_r/uthread/uthread_fd.c b/lib/libc_r/uthread/uthread_fd.c
+index efb27e47a0..e33ff2fb23 100644
+--- a/lib/libc_r/uthread/uthread_fd.c
++++ b/lib/libc_r/uthread/uthread_fd.c
+@@ -89,7 +89,7 @@ _thread_fd_table_init(int fd)
+ 
+ 	/*
+ 	 * Check if memory has already been allocated for this file
+-	 * descriptor: 
++	 * descriptor:
+ 	 */
+ 	else if (_thread_fd_table[fd] != NULL) {
+ 		/* Memory has already been allocated. */
+@@ -210,7 +210,7 @@ _thread_fd_unlock(int fd, int lock_type)
+ 
+ 	/*
+ 	 * Check that the file descriptor table is initialised for this
+-	 * entry: 
++	 * entry:
+ 	 */
+ 	if ((ret = _thread_fd_table_init(fd)) == 0) {
+ 		/*
+@@ -232,19 +232,19 @@ _thread_fd_unlock(int fd, int lock_type)
+ 			if (lock_type == FD_READ || lock_type == FD_RDWR) {
+ 				/*
+ 				 * Decrement the read lock count for the
+-				 * running thread: 
++				 * running thread:
+ 				 */
+ 				_thread_fd_table[fd]->r_lockcount--;
+ 
+ 				/*
+ 				 * Check if the running thread still has read
+-				 * locks on this file descriptor: 
++				 * locks on this file descriptor:
+ 				 */
+ 				if (_thread_fd_table[fd]->r_lockcount != 0) {
+ 				}
+ 				/*
+ 				 * Get the next thread in the queue for a
+-				 * read lock on this file descriptor: 
++				 * read lock on this file descriptor:
+ 				 */
+ 				else if ((_thread_fd_table[fd]->r_owner = fd_next_reader(fd)) == NULL) {
+ 				} else {
+@@ -254,7 +254,7 @@ _thread_fd_unlock(int fd, int lock_type)
+ 
+ 					/*
+ 					 * Set the state of the new owner of
+-					 * the thread to running: 
++					 * the thread to running:
+ 					 */
+ 					PTHREAD_NEW_STATE(_thread_fd_table[fd]->r_owner,PS_RUNNING);
+ 
+@@ -262,7 +262,7 @@ _thread_fd_unlock(int fd, int lock_type)
+ 					 * Reset the number of read locks.
+ 					 * This will be incremented by the
+ 					 * new owner of the lock when it sees
+-					 * that it has the lock.                           
++					 * that it has the lock.
+ 					 */
+ 					_thread_fd_table[fd]->r_lockcount = 0;
+ 				}
+@@ -274,19 +274,19 @@ _thread_fd_unlock(int fd, int lock_type)
+ 			if (lock_type == FD_WRITE || lock_type == FD_RDWR) {
+ 				/*
+ 				 * Decrement the write lock count for the
+-				 * running thread: 
++				 * running thread:
+ 				 */
+ 				_thread_fd_table[fd]->w_lockcount--;
+ 
+ 				/*
+ 				 * Check if the running thread still has
+-				 * write locks on this file descriptor: 
++				 * write locks on this file descriptor:
+ 				 */
+ 				if (_thread_fd_table[fd]->w_lockcount != 0) {
+ 				}
+ 				/*
+ 				 * Get the next thread in the queue for a
+-				 * write lock on this file descriptor: 
++				 * write lock on this file descriptor:
+ 				 */
+ 				else if ((_thread_fd_table[fd]->w_owner = fd_next_writer(fd)) == NULL) {
+ 				} else {
+@@ -296,14 +296,14 @@ _thread_fd_unlock(int fd, int lock_type)
+ 
+ 					/*
+ 					 * Set the state of the new owner of
+-					 * the thread to running: 
++					 * the thread to running:
+ 					 */
+ 					PTHREAD_NEW_STATE(_thread_fd_table[fd]->w_owner,PS_RUNNING);
+ 
+ 					/*
+ 					 * Reset the number of write locks.
+ 					 * This will be incremented by the
+-					 * new owner of the lock when it  
++					 * new owner of the lock when it
+ 					 * sees that it has the lock.
+ 					 */
+ 					_thread_fd_table[fd]->w_lockcount = 0;
+@@ -336,7 +336,7 @@ _thread_fd_lock(int fd, int lock_type, struct timespec * timeout)
+ 
+ 	/*
+ 	 * Check that the file descriptor table is initialised for this
+-	 * entry: 
++	 * entry:
+ 	 */
+ 	if ((ret = _thread_fd_table_init(fd)) == 0) {
+ 		/* Clear the interrupted flag: */
+@@ -353,27 +353,27 @@ _thread_fd_lock(int fd, int lock_type, struct timespec * timeout)
+ 		if (lock_type == FD_READ || lock_type == FD_RDWR) {
+ 			/*
+ 			 * Wait for the file descriptor to be locked
+-			 * for read for the current thread: 
++			 * for read for the current thread:
+ 			 */
+ 			while ((_thread_fd_table[fd]->r_owner != curthread) &&
+ 			    (curthread->interrupted == 0)) {
+ 				/*
+ 				 * Check if the file descriptor is locked by
+-				 * another thread: 
++				 * another thread:
+ 				 */
+ 				if (_thread_fd_table[fd]->r_owner != NULL) {
+ 					/*
+ 					 * Another thread has locked the file
+ 					 * descriptor for read, so join the
+-					 * queue of threads waiting for a  
+-					 * read lock on this file descriptor: 
++					 * queue of threads waiting for a
++					 * read lock on this file descriptor:
+ 					 */
+ 					FDQ_INSERT(&_thread_fd_table[fd]->r_queue, curthread);
+ 
+ 					/*
+ 					 * Save the file descriptor details
+ 					 * in the thread structure for the
+-					 * running thread: 
++					 * running thread:
+ 					 */
+ 					curthread->data.fd.fd = fd;
+ 
+@@ -393,7 +393,7 @@ _thread_fd_lock(int fd, int lock_type, struct timespec * timeout)
+ 					 * the   queue and is granted access
+ 					 * to the lock by the       thread
+ 					 * that is unlocking the file
+-					 * descriptor.        
++					 * descriptor.
+ 					 */
+ 					_thread_kern_sched_state(PS_FDLR_WAIT, __FILE__, __LINE__);
+ 
+@@ -410,13 +410,13 @@ _thread_fd_lock(int fd, int lock_type, struct timespec * timeout)
+ 				} else {
+ 					/*
+ 					 * The running thread now owns the
+-					 * read lock on this file descriptor: 
++					 * read lock on this file descriptor:
+ 					 */
+ 					_thread_fd_table[fd]->r_owner = curthread;
+ 
+ 					/*
+ 					 * Reset the number of read locks for
+-					 * this file descriptor: 
++					 * this file descriptor:
+ 					 */
+ 					_thread_fd_table[fd]->r_lockcount = 0;
+ 				}
+@@ -432,28 +432,28 @@ _thread_fd_lock(int fd, int lock_type, struct timespec * timeout)
+ 		    (lock_type == FD_WRITE || lock_type == FD_RDWR)) {
+ 			/*
+ 			 * Wait for the file descriptor to be locked
+-			 * for write for the current thread: 
++			 * for write for the current thread:
+ 			 */
+ 			while ((_thread_fd_table[fd]->w_owner != curthread) &&
+ 			    (curthread->interrupted == 0)) {
+ 				/*
+ 				 * Check if the file descriptor is locked by
+-				 * another thread: 
++				 * another thread:
+ 				 */
+ 				if (_thread_fd_table[fd]->w_owner != NULL) {
+ 					/*
+ 					 * Another thread has locked the file
+ 					 * descriptor for write, so join the
+-					 * queue of threads waiting for a 
++					 * queue of threads waiting for a
+ 					 * write lock on this file
+-					 * descriptor: 
++					 * descriptor:
+ 					 */
+ 					FDQ_INSERT(&_thread_fd_table[fd]->w_queue, curthread);
+ 
+ 					/*
+ 					 * Save the file descriptor details
+ 					 * in the thread structure for the
+-					 * running thread: 
++					 * running thread:
+ 					 */
+ 					curthread->data.fd.fd = fd;
+ 
+@@ -472,7 +472,7 @@ _thread_fd_lock(int fd, int lock_type, struct timespec * timeout)
+ 					 * woken when it becomes the next in
+ 					 * the queue and is granted access to
+ 					 * the lock by the thread that is
+-					 * unlocking the file descriptor.        
++					 * unlocking the file descriptor.
+ 					 */
+ 					_thread_kern_sched_state(PS_FDLW_WAIT, __FILE__, __LINE__);
+ 
+@@ -490,13 +490,13 @@ _thread_fd_lock(int fd, int lock_type, struct timespec * timeout)
+ 					/*
+ 					 * The running thread now owns the
+ 					 * write lock on this   file
+-					 * descriptor: 
++					 * descriptor:
+ 					 */
+ 					_thread_fd_table[fd]->w_owner = curthread;
+ 
+ 					/*
+ 					 * Reset the number of write locks
+-					 * for this file descriptor: 
++					 * for this file descriptor:
+ 					 */
+ 					_thread_fd_table[fd]->w_lockcount = 0;
+ 				}
+@@ -536,7 +536,7 @@ _thread_fd_unlock_debug(int fd, int lock_type, char *fname, int lineno)
+ 
+ 	/*
+ 	 * Check that the file descriptor table is initialised for this
+-	 * entry: 
++	 * entry:
+ 	 */
+ 	if ((ret = _thread_fd_table_init(fd)) == 0) {
+ 		/*
+@@ -558,19 +558,19 @@ _thread_fd_unlock_debug(int fd, int lock_type, char *fname, int lineno)
+ 			if (lock_type == FD_READ || lock_type == FD_RDWR) {
+ 				/*
+ 				 * Decrement the read lock count for the
+-				 * running thread: 
++				 * running thread:
+ 				 */
+ 				_thread_fd_table[fd]->r_lockcount--;
+ 
+ 				/*
+ 				 * Check if the running thread still has read
+-				 * locks on this file descriptor: 
++				 * locks on this file descriptor:
+ 				 */
+ 				if (_thread_fd_table[fd]->r_lockcount != 0) {
+ 				}
+ 				/*
+ 				 * Get the next thread in the queue for a
+-				 * read lock on this file descriptor: 
++				 * read lock on this file descriptor:
+ 				 */
+ 				else if ((_thread_fd_table[fd]->r_owner = fd_next_reader(fd)) == NULL) {
+ 				} else {
+@@ -580,7 +580,7 @@ _thread_fd_unlock_debug(int fd, int lock_type, char *fname, int lineno)
+ 
+ 					/*
+ 					 * Set the state of the new owner of
+-					 * the thread to  running: 
++					 * the thread to  running:
+ 					 */
+ 					PTHREAD_NEW_STATE(_thread_fd_table[fd]->r_owner,PS_RUNNING);
+ 
+@@ -588,7 +588,7 @@ _thread_fd_unlock_debug(int fd, int lock_type, char *fname, int lineno)
+ 					 * Reset the number of read locks.
+ 					 * This will be incremented by the
+ 					 * new owner of the lock when it sees
+-					 * that it has the lock.                           
++					 * that it has the lock.
+ 					 */
+ 					_thread_fd_table[fd]->r_lockcount = 0;
+ 				}
+@@ -600,19 +600,19 @@ _thread_fd_unlock_debug(int fd, int lock_type, char *fname, int lineno)
+ 			if (lock_type == FD_WRITE || lock_type == FD_RDWR) {
+ 				/*
+ 				 * Decrement the write lock count for the
+-				 * running thread: 
++				 * running thread:
+ 				 */
+ 				_thread_fd_table[fd]->w_lockcount--;
+ 
+ 				/*
+ 				 * Check if the running thread still has
+-				 * write locks on this file descriptor: 
++				 * write locks on this file descriptor:
+ 				 */
+ 				if (_thread_fd_table[fd]->w_lockcount != 0) {
+ 				}
+ 				/*
+ 				 * Get the next thread in the queue for a
+-				 * write lock on this file descriptor: 
++				 * write lock on this file descriptor:
+ 				 */
+ 				else if ((_thread_fd_table[fd]->w_owner = fd_next_writer(fd)) == NULL) {
+ 				} else {
+@@ -622,14 +622,14 @@ _thread_fd_unlock_debug(int fd, int lock_type, char *fname, int lineno)
+ 
+ 					/*
+ 					 * Set the state of the new owner of
+-					 * the thread to running: 
++					 * the thread to running:
+ 					 */
+ 					PTHREAD_NEW_STATE(_thread_fd_table[fd]->w_owner,PS_RUNNING);
+ 
+ 					/*
+ 					 * Reset the number of write locks.
+ 					 * This will be incremented by the
+-					 * new owner of the lock when it  
++					 * new owner of the lock when it
+ 					 * sees that it has the lock.
+ 					 */
+ 					_thread_fd_table[fd]->w_lockcount = 0;
+@@ -663,7 +663,7 @@ _thread_fd_lock_debug(int fd, int lock_type, struct timespec * timeout,
+ 
+ 	/*
+ 	 * Check that the file descriptor table is initialised for this
+-	 * entry: 
++	 * entry:
+ 	 */
+ 	if ((ret = _thread_fd_table_init(fd)) == 0) {
+ 		/* Clear the interrupted flag: */
+@@ -680,27 +680,27 @@ _thread_fd_lock_debug(int fd, int lock_type, struct timespec * timeout,
+ 		if (lock_type == FD_READ || lock_type == FD_RDWR) {
+ 			/*
+ 			 * Wait for the file descriptor to be locked
+-			 * for read for the current thread: 
++			 * for read for the current thread:
+ 			 */
+ 			while ((_thread_fd_table[fd]->r_owner != curthread) &&
+ 			    (curthread->interrupted == 0)) {
+ 				/*
+ 				 * Check if the file descriptor is locked by
+-				 * another thread: 
++				 * another thread:
+ 				 */
+ 				if (_thread_fd_table[fd]->r_owner != NULL) {
+ 					/*
+ 					 * Another thread has locked the file
+ 					 * descriptor for read, so join the
+-					 * queue of threads waiting for a  
+-					 * read lock on this file descriptor: 
++					 * queue of threads waiting for a
++					 * read lock on this file descriptor:
+ 					 */
+ 					FDQ_INSERT(&_thread_fd_table[fd]->r_queue, curthread);
+ 
+ 					/*
+ 					 * Save the file descriptor details
+ 					 * in the thread structure for the
+-					 * running thread: 
++					 * running thread:
+ 					 */
+ 					curthread->data.fd.fd = fd;
+ 					curthread->data.fd.branch = lineno;
+@@ -722,7 +722,7 @@ _thread_fd_lock_debug(int fd, int lock_type, struct timespec * timeout,
+ 					 * the   queue and is granted access
+ 					 * to the lock by the       thread
+ 					 * that is unlocking the file
+-					 * descriptor.        
++					 * descriptor.
+ 					 */
+ 					_thread_kern_sched_state(PS_FDLR_WAIT, __FILE__, __LINE__);
+ 
+@@ -739,19 +739,19 @@ _thread_fd_lock_debug(int fd, int lock_type, struct timespec * timeout,
+ 				} else {
+ 					/*
+ 					 * The running thread now owns the
+-					 * read lock on this file descriptor: 
++					 * read lock on this file descriptor:
+ 					 */
+ 					_thread_fd_table[fd]->r_owner = curthread;
+ 
+ 					/*
+ 					 * Reset the number of read locks for
+-					 * this file descriptor: 
++					 * this file descriptor:
+ 					 */
+ 					_thread_fd_table[fd]->r_lockcount = 0;
+ 
+ 					/*
+ 					 * Save the source file details for
+-					 * debugging: 
++					 * debugging:
+ 					 */
+ 					_thread_fd_table[fd]->r_fname = fname;
+ 					_thread_fd_table[fd]->r_lineno = lineno;
+@@ -768,28 +768,28 @@ _thread_fd_lock_debug(int fd, int lock_type, struct timespec * timeout,
+ 		    (lock_type == FD_WRITE || lock_type == FD_RDWR)) {
+ 			/*
+ 			 * Wait for the file descriptor to be locked
+-			 * for write for the current thread: 
++			 * for write for the current thread:
+ 			 */
+ 			while ((_thread_fd_table[fd]->w_owner != curthread) &&
+ 			    (curthread->interrupted == 0)) {
+ 				/*
+ 				 * Check if the file descriptor is locked by
+-				 * another thread: 
++				 * another thread:
+ 				 */
+ 				if (_thread_fd_table[fd]->w_owner != NULL) {
+ 					/*
+ 					 * Another thread has locked the file
+ 					 * descriptor for write, so join the
+-					 * queue of threads waiting for a 
++					 * queue of threads waiting for a
+ 					 * write lock on this file
+-					 * descriptor: 
++					 * descriptor:
+ 					 */
+ 					FDQ_INSERT(&_thread_fd_table[fd]->w_queue, curthread);
+ 
+ 					/*
+ 					 * Save the file descriptor details
+ 					 * in the thread structure for the
+-					 * running thread: 
++					 * running thread:
+ 					 */
+ 					curthread->data.fd.fd = fd;
+ 					curthread->data.fd.branch = lineno;
+@@ -810,7 +810,7 @@ _thread_fd_lock_debug(int fd, int lock_type, struct timespec * timeout,
+ 					 * woken when it becomes the next in
+ 					 * the queue and is granted access to
+ 					 * the lock by the thread that is
+-					 * unlocking the file descriptor.        
++					 * unlocking the file descriptor.
+ 					 */
+ 					_thread_kern_sched_state(PS_FDLW_WAIT, __FILE__, __LINE__);
+ 
+@@ -828,19 +828,19 @@ _thread_fd_lock_debug(int fd, int lock_type, struct timespec * timeout,
+ 					/*
+ 					 * The running thread now owns the
+ 					 * write lock on this   file
+-					 * descriptor: 
++					 * descriptor:
+ 					 */
+ 					_thread_fd_table[fd]->w_owner = curthread;
+ 
+ 					/*
+ 					 * Reset the number of write locks
+-					 * for this file descriptor: 
++					 * for this file descriptor:
+ 					 */
+ 					_thread_fd_table[fd]->w_lockcount = 0;
+ 
+ 					/*
+ 					 * Save the source file details for
+-					 * debugging: 
++					 * debugging:
+ 					 */
+ 					_thread_fd_table[fd]->w_fname = fname;
+ 					_thread_fd_table[fd]->w_lineno = lineno;
+@@ -896,7 +896,7 @@ _thread_fd_unlock_owned(pthread_t pthread)
+ 
+ 				/*
+ 				 * Get the next thread in the queue for a
+-				 * read lock on this file descriptor: 
++				 * read lock on this file descriptor:
+ 				 */
+ 				if ((_thread_fd_table[fd]->r_owner = fd_next_reader(fd)) != NULL) {
+ 					/* Remove this thread from the queue: */
+@@ -905,7 +905,7 @@ _thread_fd_unlock_owned(pthread_t pthread)
+ 
+ 					/*
+ 					 * Set the state of the new owner of
+-					 * the thread to running: 
++					 * the thread to running:
+ 					 */
+ 					PTHREAD_NEW_STATE(_thread_fd_table[fd]->r_owner,PS_RUNNING);
+ 				}
+@@ -918,7 +918,7 @@ _thread_fd_unlock_owned(pthread_t pthread)
+ 
+ 				/*
+ 				 * Get the next thread in the queue for a
+-				 * write lock on this file descriptor: 
++				 * write lock on this file descriptor:
+ 				 */
+ 				if ((_thread_fd_table[fd]->w_owner = fd_next_writer(fd)) != NULL) {
+ 					/* Remove this thread from the queue: */
+@@ -927,7 +927,7 @@ _thread_fd_unlock_owned(pthread_t pthread)
+ 
+ 					/*
+ 					 * Set the state of the new owner of
+-					 * the thread to running: 
++					 * the thread to running:
+ 					 */
+ 					PTHREAD_NEW_STATE(_thread_fd_table[fd]->w_owner,PS_RUNNING);
+ 
+diff --git a/lib/libc_r/uthread/uthread_file.c b/lib/libc_r/uthread/uthread_file.c
+index 631f4956d6..e3f6193f76 100644
+--- a/lib/libc_r/uthread/uthread_file.c
++++ b/lib/libc_r/uthread/uthread_file.c
+@@ -43,7 +43,7 @@ void
+ _flockfile_debug(FILE * fp, char * fname, int lineno)
+ {
+ 	struct pthread *curthread = _get_curthread();
+-		
++
+ 	curthread->fname = fname;
+ 	curthread->lineno = lineno;
+ 	__flockfile(fp);
+diff --git a/lib/libc_r/uthread/uthread_fork.c b/lib/libc_r/uthread/uthread_fork.c
+index 7188a05d49..638dee0e52 100644
+--- a/lib/libc_r/uthread/uthread_fork.c
++++ b/lib/libc_r/uthread/uthread_fork.c
+@@ -58,7 +58,7 @@ _fork(void)
+ 	_thread_kern_sig_defer();
+ 
+ 	_pthread_mutex_lock(&_atfork_mutex);
+-	
++
+ 	/* Run down atfork prepare handlers. */
+ 	TAILQ_FOREACH_REVERSE(af, &_atfork_list, atfork_head, qe) {
+ 		if (af->prepare != NULL)
+diff --git a/lib/libc_r/uthread/uthread_fstatat.c b/lib/libc_r/uthread/uthread_fstatat.c
+index 81aecaf811..87fb67597a 100644
+--- a/lib/libc_r/uthread/uthread_fstatat.c
++++ b/lib/libc_r/uthread/uthread_fstatat.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2009 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Nicolas Thery <nthery@gmail.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/lib/libc_r/uthread/uthread_gc.c b/lib/libc_r/uthread/uthread_gc.c
+index a89c7efd90..3f70689668 100644
+--- a/lib/libc_r/uthread/uthread_gc.c
++++ b/lib/libc_r/uthread/uthread_gc.c
+@@ -129,7 +129,7 @@ _thread_gc(pthread_addr_t arg)
+ 				/*
+ 				 * Check if the stack was not specified by
+ 				 * the caller to pthread_create() and has not
+-				 * been destroyed yet: 
++				 * been destroyed yet:
+ 				 */
+ 				if (pthread->attr.stackaddr_attr == NULL &&
+ 				    pthread->stack != NULL) {
+@@ -170,7 +170,7 @@ _thread_gc(pthread_addr_t arg)
+ 				 *
+ 				 * Check if the stack was not specified by
+ 				 * the caller to pthread_create() and has not
+-				 * been destroyed yet: 
++				 * been destroyed yet:
+ 				 */
+ 				if (pthread->attr.stackaddr_attr == NULL &&
+ 				    pthread->stack != NULL) {
+@@ -196,10 +196,10 @@ _thread_gc(pthread_addr_t arg)
+ 						 */
+ 						p_stack = pthread->stack;
+ 					}
+-					
++
+ 					/*
+ 					 * NULL the stack pointer now
+-					 * that the memory has been freed: 
++					 * that the memory has been freed:
+ 					 */
+ 					pthread->stack = NULL;
+ 				}
+diff --git a/lib/libc_r/uthread/uthread_init.c b/lib/libc_r/uthread/uthread_init.c
+index da3994d80c..712f765d6b 100644
+--- a/lib/libc_r/uthread/uthread_init.c
++++ b/lib/libc_r/uthread/uthread_init.c
+@@ -424,7 +424,7 @@ _thread_mksigpipe(void)
+ 	/*
+ 	 * Create a pipe that is written to by the signal handler to
+ 	 * prevent signals being missed in calls to
+-	 * __sys_select: 
++	 * __sys_select:
+ 	 */
+ 	if (__sys_pipe(_thread_kern_pipe) != 0) {
+ 		/* Cannot create pipe, so abort: */
+diff --git a/lib/libc_r/uthread/uthread_jmp.c b/lib/libc_r/uthread/uthread_jmp.c
+index 2c5222a686..ec7a741390 100644
+--- a/lib/libc_r/uthread/uthread_jmp.c
++++ b/lib/libc_r/uthread/uthread_jmp.c
+@@ -3,7 +3,7 @@
+  * All rights reserved.
+  * Copyright (C) 2000 Daniel M. Eischen <eischen@vigrid.com>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -15,7 +15,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+diff --git a/lib/libc_r/uthread/uthread_join.c b/lib/libc_r/uthread/uthread_join.c
+index 4643233bd6..143c050aa1 100644
+--- a/lib/libc_r/uthread/uthread_join.c
++++ b/lib/libc_r/uthread/uthread_join.c
+@@ -41,7 +41,7 @@ _pthread_join(pthread_t pthread, void **thread_return)
+ 	struct pthread	*curthread = _get_curthread();
+ 	int ret = 0;
+ 	pthread_t thread;
+- 
++
+ 	_thread_enter_cancellation_point();
+ 
+ 	/* Check if the caller has specified an invalid thread: */
+diff --git a/lib/libc_r/uthread/uthread_kern.c b/lib/libc_r/uthread/uthread_kern.c
+index 015825796a..9b979455a0 100644
+--- a/lib/libc_r/uthread/uthread_kern.c
++++ b/lib/libc_r/uthread/uthread_kern.c
+@@ -233,7 +233,7 @@ _thread_kern_scheduler(void)
+ 			 * This thread no longer needs to yield the CPU.
+ 			 */
+ 			curthread->yield_on_sig_undefer = 0;
+-	
++
+ 			if (curthread->state != PS_RUNNING) {
+ 				/*
+ 				 * Save the current time as the time that the
+@@ -305,7 +305,7 @@ _thread_kern_scheduler(void)
+ 				/* Insert into the waiting queue: */
+ 				PTHREAD_WAITQ_INSERT(curthread);
+ 				break;
+-	
++
+ 			/* States that require periodic work: */
+ 			case PS_SPINBLOCK:
+ 				/* No timeouts for this state: */
+@@ -322,10 +322,10 @@ _thread_kern_scheduler(void)
+ 			case PS_SELECT_WAIT:
+ 				/* Restart the time slice: */
+ 				curthread->slice_usec = -1;
+-	
++
+ 				/* Insert into the waiting queue: */
+ 				PTHREAD_WAITQ_INSERT(curthread);
+-	
++
+ 				/* Insert into the work queue: */
+ 				PTHREAD_WORKQ_INSERT(curthread);
+ 				break;
+@@ -499,7 +499,7 @@ _thread_kern_scheduler(void)
+ 			 * get the time of day after polling with a timeout.
+ 			 */
+ 			gettimeofday((struct timeval *) &_sched_tod, NULL);
+-			
++
+ 			/* Check once more for a runnable thread: */
+ 			_queue_signals = 1;
+ 			pthread_h = PTHREAD_PRIOQ_FIRST();
+@@ -704,7 +704,7 @@ thread_kern_poll(int wait_reqd)
+ 				timeout_ms = 0;
+ 		}
+ 	}
+-			
++
+ 	/* Protect the scheduling queues: */
+ 	_queue_signals = 1;
+ 
+diff --git a/lib/libc_r/uthread/uthread_kevent.c b/lib/libc_r/uthread/uthread_kevent.c
+index bb78f4be0b..53636fcbc7 100644
+--- a/lib/libc_r/uthread/uthread_kevent.c
++++ b/lib/libc_r/uthread/uthread_kevent.c
+@@ -35,7 +35,7 @@
+ #include <pthread.h>
+ #include "pthread_private.h"
+ 
+-int 
++int
+ _kevent(int kq, const struct kevent *changelist, int nchanges,
+     struct kevent *eventlist, int nevents, const struct timespec *timeout)
+ {
+diff --git a/lib/libc_r/uthread/uthread_mutex.c b/lib/libc_r/uthread/uthread_mutex.c
+index b42c927393..54d24c55c6 100644
+--- a/lib/libc_r/uthread/uthread_mutex.c
++++ b/lib/libc_r/uthread/uthread_mutex.c
+@@ -294,7 +294,7 @@ _pthread_mutex_trylock(pthread_mutex_t * mutex)
+ 		/* Process according to mutex type: */
+ 		switch ((*mutex)->m_protocol) {
+ 		/* Default POSIX mutex: */
+-		case PTHREAD_PRIO_NONE:	
++		case PTHREAD_PRIO_NONE:
+ 			/* Check if this mutex is not locked: */
+ 			if ((*mutex)->m_owner == NULL) {
+ 				/* Lock the mutex for the running thread: */
+@@ -466,7 +466,7 @@ _pthread_mutex_lock(pthread_mutex_t * mutex)
+ 			else {
+ 				/*
+ 				 * Join the queue of threads waiting to lock
+-				 * the mutex: 
++				 * the mutex:
+ 				 */
+ 				mutex_queue_enq(*mutex, curthread);
+ 
+@@ -518,7 +518,7 @@ _pthread_mutex_lock(pthread_mutex_t * mutex)
+ 			else {
+ 				/*
+ 				 * Join the queue of threads waiting to lock
+-				 * the mutex: 
++				 * the mutex:
+ 				 */
+ 				mutex_queue_enq(*mutex, curthread);
+ 
+@@ -582,7 +582,7 @@ _pthread_mutex_lock(pthread_mutex_t * mutex)
+ 			else {
+ 				/*
+ 				 * Join the queue of threads waiting to lock
+-				 * the mutex: 
++				 * the mutex:
+ 				 */
+ 				mutex_queue_enq(*mutex, curthread);
+ 
+@@ -683,7 +683,7 @@ mutex_self_trylock(pthread_mutex_t mutex)
+ 		 * POSIX specifies that mutexes should return EDEADLK if a
+ 		 * recursive lock is detected.
+ 		 */
+-		ret = EBUSY; 
++		ret = EBUSY;
+ 		break;
+ 
+ 	case PTHREAD_MUTEX_RECURSIVE:
+@@ -711,7 +711,7 @@ mutex_self_lock(pthread_mutex_t mutex)
+ 		 * POSIX specifies that mutexes should return EDEADLK if a
+ 		 * recursive lock is detected.
+ 		 */
+-		ret = EDEADLK; 
++		ret = EDEADLK;
+ 		break;
+ 
+ 	case PTHREAD_MUTEX_NORMAL:
+@@ -788,7 +788,7 @@ mutex_unlock_common(pthread_mutex_t * mutex, int add_reference)
+ 
+ 				/*
+ 				 * Get the next thread from the queue of
+-				 * threads waiting on the mutex: 
++				 * threads waiting on the mutex:
+ 				 */
+ 				if (((*mutex)->m_owner =
+ 			  	    mutex_queue_deq(*mutex)) != NULL) {
+@@ -861,9 +861,9 @@ mutex_unlock_common(pthread_mutex_t * mutex, int add_reference)
+ 
+ 				/*
+ 				 * Get the next thread from the queue of threads
+-				 * waiting on the mutex: 
++				 * waiting on the mutex:
+ 				 */
+-				if (((*mutex)->m_owner = 
++				if (((*mutex)->m_owner =
+ 				    mutex_queue_deq(*mutex)) == NULL)
+ 					/* This mutex has no priority. */
+ 					(*mutex)->m_prio = 0;
+diff --git a/lib/libc_r/uthread/uthread_open.c b/lib/libc_r/uthread/uthread_open.c
+index a095f28afb..8cdada9a70 100644
+--- a/lib/libc_r/uthread/uthread_open.c
++++ b/lib/libc_r/uthread/uthread_open.c
+@@ -79,7 +79,7 @@ open(const char *path, int flags,...)
+ 	va_list	ap;
+ 
+ 	_thread_enter_cancellation_point();
+-	
++
+ 	/* Check if the file is being created: */
+ 	if (flags & O_CREAT) {
+ 		/* Get the creation mode: */
+@@ -87,7 +87,7 @@ open(const char *path, int flags,...)
+ 		mode = va_arg(ap, int);
+ 		va_end(ap);
+ 	}
+-	
++
+ 	ret = _open(path, flags, mode);
+ 	_thread_leave_cancellation_point();
+ 
+@@ -138,7 +138,7 @@ openat(int fd, const char *path, int flags,...)
+ 	va_list	ap;
+ 
+ 	_thread_enter_cancellation_point();
+-	
++
+ 	/* Check if the file is being created: */
+ 	if (flags & O_CREAT) {
+ 		/* Get the creation mode: */
+@@ -146,7 +146,7 @@ openat(int fd, const char *path, int flags,...)
+ 		mode = va_arg(ap, int);
+ 		va_end(ap);
+ 	}
+-	
++
+ 	ret = _openat(fd, path, flags, mode);
+ 	_thread_leave_cancellation_point();
+ 
+diff --git a/lib/libc_r/uthread/uthread_pause.c b/lib/libc_r/uthread/uthread_pause.c
+index edba217adc..9fd599fdfa 100644
+--- a/lib/libc_r/uthread/uthread_pause.c
++++ b/lib/libc_r/uthread/uthread_pause.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2000 Jason Evans <jasone@freebsd.org>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -13,7 +13,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+@@ -43,6 +43,6 @@ pause(void)
+ 	_thread_enter_cancellation_point();
+ 	ret = __pause();
+ 	_thread_leave_cancellation_point();
+-	
++
+ 	return ret;
+ }
+diff --git a/lib/libc_r/uthread/uthread_poll.c b/lib/libc_r/uthread/uthread_poll.c
+index b39fb19f60..70c0c24d85 100644
+--- a/lib/libc_r/uthread/uthread_poll.c
++++ b/lib/libc_r/uthread/uthread_poll.c
+@@ -43,7 +43,7 @@
+ #include "pthread_private.h"
+ 
+ 
+-int 
++int
+ _poll(struct pollfd *fds, unsigned int nfds, int timeout)
+ {
+ 	struct pthread	*curthread = _get_curthread();
+diff --git a/lib/libc_r/uthread/uthread_priority_queue.c b/lib/libc_r/uthread/uthread_priority_queue.c
+index 7437cf18a5..e1dba1089b 100644
+--- a/lib/libc_r/uthread/uthread_priority_queue.c
++++ b/lib/libc_r/uthread/uthread_priority_queue.c
+@@ -361,7 +361,7 @@ _waitq_setactive(void)
+ {
+ 	_PQ_ASSERT_INACTIVE("_waitq_setactive: pq_active");
+ 	_PQ_SET_ACTIVE();
+-} 
++}
+ 
+ void
+ _waitq_clearactive(void)
+diff --git a/lib/libc_r/uthread/uthread_select.c b/lib/libc_r/uthread/uthread_select.c
+index 29286a9dbc..9db7c92712 100644
+--- a/lib/libc_r/uthread/uthread_select.c
++++ b/lib/libc_r/uthread/uthread_select.c
+@@ -44,7 +44,7 @@
+ #include <pthread.h>
+ #include "pthread_private.h"
+ 
+-int 
++int
+ _select(int numfds, fd_set * readfds, fd_set * writefds, fd_set * exceptfds,
+     struct timeval * timeout)
+ {
+@@ -216,7 +216,7 @@ _select(int numfds, fd_set * readfds, fd_set * writefds, fd_set * exceptfds,
+ 	return (ret);
+ }
+ 
+-int 
++int
+ select(int numfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+ 	struct timeval *timeout)
+ {
+diff --git a/lib/libc_r/uthread/uthread_sem.c b/lib/libc_r/uthread/uthread_sem.c
+index f32350460f..1a269625a9 100644
+--- a/lib/libc_r/uthread/uthread_sem.c
++++ b/lib/libc_r/uthread/uthread_sem.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2000 Jason Evans <jasone@freebsd.org>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -13,7 +13,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+@@ -93,7 +93,7 @@ _sem_init(sem_t *sem, int pshared, unsigned int value)
+ 		retval = -1;
+ 		goto RETURN;
+ 	}
+-	
++
+ 	(*sem)->count = (u_int32_t)value;
+ 	(*sem)->nwaiters = 0;
+ 	(*sem)->magic = SEM_MAGIC;
+@@ -158,7 +158,7 @@ _sem_wait(sem_t *sem)
+ 	int	retval;
+ 
+ 	_thread_enter_cancellation_point();
+-	
++
+ 	_SEM_CHECK_VALIDITY(sem);
+ 
+ 	pthread_mutex_lock(&(*sem)->lock);
+diff --git a/lib/libc_r/uthread/uthread_sendfile.c b/lib/libc_r/uthread/uthread_sendfile.c
+index 3d5d9ab8b6..22602a6487 100644
+--- a/lib/libc_r/uthread/uthread_sendfile.c
++++ b/lib/libc_r/uthread/uthread_sendfile.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2000 Jason Evans <jasone@freebsd.org>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -13,7 +13,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+@@ -68,7 +68,7 @@ sendfile(int fd, int s, off_t offset, size_t nbytes, struct sf_hdtr *hdtr,
+ 				goto SHORT_WRITE;
+ 		}
+ 	}
+-	
++
+ 	/* Lock the descriptors. */
+ 	if ((ret = _FD_LOCK(fd, FD_READ, NULL)) != 0) {
+ 		ret = -1;
+@@ -80,7 +80,7 @@ sendfile(int fd, int s, off_t offset, size_t nbytes, struct sf_hdtr *hdtr,
+ 		errno = EBADF;
+ 		goto ERROR_1;
+ 	}
+-	
++
+ 	/* Check the descriptor access modes. */
+ 	type = _thread_fd_getflags(fd) & O_ACCMODE;
+ 	if (type != O_RDONLY && type != O_RDWR) {
+diff --git a/lib/libc_r/uthread/uthread_setschedparam.c b/lib/libc_r/uthread/uthread_setschedparam.c
+index 065b3886b7..9d1ecf932e 100644
+--- a/lib/libc_r/uthread/uthread_setschedparam.c
++++ b/lib/libc_r/uthread/uthread_setschedparam.c
+@@ -37,7 +37,7 @@
+ #include "pthread_private.h"
+ 
+ int
+-_pthread_setschedparam(pthread_t pthread, int policy, 
++_pthread_setschedparam(pthread_t pthread, int policy,
+ 	const struct sched_param *param)
+ {
+ 	int old_prio, in_readyq = 0, ret = 0;
+diff --git a/lib/libc_r/uthread/uthread_sig.c b/lib/libc_r/uthread/uthread_sig.c
+index 9596b62380..324675e993 100644
+--- a/lib/libc_r/uthread/uthread_sig.c
++++ b/lib/libc_r/uthread/uthread_sig.c
+@@ -215,7 +215,7 @@ _thread_sig_handler(int sig, siginfo_t *info, ucontext_t *ucp)
+ 			 * could have changed by the handler.
+  			 */
+ 			ucp->uc_sigmask = _process_sigmask;
+- 
++
+ 			/* Resume the interrupted thread: */
+ 			sigreturn(ucp);
+ 		} else {
+@@ -267,11 +267,11 @@ thread_sig_invoke_handler(int sig, siginfo_t *info, ucontext_t *ucp)
+ 	/* Save the threads signal mask: */
+ 	saved_sigmask = curthread->sigmask;
+ 	saved_seqno = curthread->sigmask_seqno;
+- 
++
+ 	/* Setup the threads signal mask: */
+ 	SIGSETOR(curthread->sigmask, _thread_sigact[sig - 1].sa_mask);
+ 	sigaddset(&curthread->sigmask, sig);
+- 
++
+ 	/*
+ 	 * Check that a custom handler is installed and if
+ 	 * the signal is not blocked:
+@@ -928,7 +928,7 @@ _thread_sig_send(struct pthread *pthread, int sig)
+ 		    sigismember(pthread->data.sigwait, sig)) {
+ 			/* Change the state of the thread to run: */
+ 			PTHREAD_NEW_STATE(pthread, PS_RUNNING);
+-	
++
+ 			/* Return the signal number: */
+ 			pthread->signo = sig;
+ 		} else if (sigismember(&pthread->sigmask, sig))
+diff --git a/lib/libc_r/uthread/uthread_sigaction.c b/lib/libc_r/uthread/uthread_sigaction.c
+index ee4f360e96..6edb7dcc69 100644
+--- a/lib/libc_r/uthread/uthread_sigaction.c
++++ b/lib/libc_r/uthread/uthread_sigaction.c
+@@ -54,7 +54,7 @@ _sigaction(int sig, const struct sigaction * act, struct sigaction * oact)
+ 
+ 		/*
+ 		 * Check if the existing signal action structure contents are
+-		 * to be returned: 
++		 * to be returned:
+ 		 */
+ 		if (oact != NULL) {
+ 			/* Return the existing signal action contents: */
+diff --git a/lib/libc_r/uthread/uthread_sigwait.c b/lib/libc_r/uthread/uthread_sigwait.c
+index e5b0f20643..2ce9230788 100644
+--- a/lib/libc_r/uthread/uthread_sigwait.c
++++ b/lib/libc_r/uthread/uthread_sigwait.c
+@@ -47,7 +47,7 @@ sigwait(const sigset_t *set, int *sig)
+ 	int		i;
+ 	sigset_t	tempset, waitset;
+ 	struct sigaction act;
+-	
++
+ 	_thread_enter_cancellation_point();
+ 	/*
+ 	 * Specify the thread kernel signal handler.
+@@ -167,7 +167,7 @@ sigwait(const sigset_t *set, int *sig)
+ 	_thread_kern_sig_undefer();
+ 
+ 	_thread_leave_cancellation_point();
+-	
++
+ 	/* Return the completion status: */
+ 	return (ret);
+ }
+diff --git a/lib/libc_r/uthread/uthread_sleep.c b/lib/libc_r/uthread/uthread_sleep.c
+index 4df602454d..db79cbb32b 100644
+--- a/lib/libc_r/uthread/uthread_sleep.c
++++ b/lib/libc_r/uthread/uthread_sleep.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2000 Jason Evans <jasone@freebsd.org>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -13,7 +13,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+@@ -43,6 +43,6 @@ sleep(unsigned int seconds)
+ 	_thread_enter_cancellation_point();
+ 	ret = __sleep(seconds);
+ 	_thread_leave_cancellation_point();
+-	
++
+ 	return ret;
+ }
+diff --git a/lib/libc_r/uthread/uthread_spec.c b/lib/libc_r/uthread/uthread_spec.c
+index 2b6f8baace..d619c8d88a 100644
+--- a/lib/libc_r/uthread/uthread_spec.c
++++ b/lib/libc_r/uthread/uthread_spec.c
+@@ -85,7 +85,7 @@ _pthread_key_delete(pthread_key_t key)
+ 	return (ret);
+ }
+ 
+-void 
++void
+ _thread_cleanupspecific(void)
+ {
+ 	struct pthread	*curthread = _get_curthread();
+@@ -140,7 +140,7 @@ pthread_key_allocate_data(void)
+ 	return (new_data);
+ }
+ 
+-int 
++int
+ _pthread_setspecific(pthread_key_t key, const void *value)
+ {
+ 	struct pthread	*pthread;
+@@ -189,7 +189,7 @@ _pthread_getspecific(pthread_key_t key)
+ 		} else {
+ 			/*
+ 			 * This key has not been used before, so return NULL
+-			 * instead: 
++			 * instead:
+ 			 */
+ 			data = NULL;
+ 		}
+diff --git a/lib/libc_r/uthread/uthread_stubs.c b/lib/libc_r/uthread/uthread_stubs.c
+index d1c9edd1e3..4a86431067 100644
+--- a/lib/libc_r/uthread/uthread_stubs.c
++++ b/lib/libc_r/uthread/uthread_stubs.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2009 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Hasso Tepper <hasso@estpak.ee>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/lib/libc_r/uthread/uthread_system.c b/lib/libc_r/uthread/uthread_system.c
+index f2d6eaec0c..f4e886a9f6 100644
+--- a/lib/libc_r/uthread/uthread_system.c
++++ b/lib/libc_r/uthread/uthread_system.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2000 Jason Evans <jasone@freebsd.org>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -13,7 +13,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+@@ -43,6 +43,6 @@ system(const char *string)
+ 	_thread_enter_cancellation_point();
+ 	ret = __system(string);
+ 	_thread_leave_cancellation_point();
+-	
++
+ 	return ret;
+ }
+diff --git a/lib/libc_r/uthread/uthread_tcdrain.c b/lib/libc_r/uthread/uthread_tcdrain.c
+index 7c43c70c80..881764d29d 100644
+--- a/lib/libc_r/uthread/uthread_tcdrain.c
++++ b/lib/libc_r/uthread/uthread_tcdrain.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2000 Jason Evans <jasone@freebsd.org>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -13,7 +13,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+@@ -39,7 +39,7 @@ int
+ tcdrain(int fd)
+ {
+ 	int	ret;
+-	
++
+ 	_thread_enter_cancellation_point();
+ 	ret = __tcdrain(fd);
+ 	_thread_leave_cancellation_point();
+diff --git a/lib/libc_r/uthread/uthread_unlinkat.c b/lib/libc_r/uthread/uthread_unlinkat.c
+index 75f84db67b..614cff0153 100644
+--- a/lib/libc_r/uthread/uthread_unlinkat.c
++++ b/lib/libc_r/uthread/uthread_unlinkat.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2009 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Nicolas Thery <nthery@gmail.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/lib/libc_r/uthread/uthread_wait.c b/lib/libc_r/uthread/uthread_wait.c
+index d1abbabc38..8f9e26fda3 100644
+--- a/lib/libc_r/uthread/uthread_wait.c
++++ b/lib/libc_r/uthread/uthread_wait.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2000 Jason Evans <jasone@freebsd.org>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -13,7 +13,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+diff --git a/lib/libc_r/uthread/uthread_waitpid.c b/lib/libc_r/uthread/uthread_waitpid.c
+index 2b8bbb5363..0bc1db0585 100644
+--- a/lib/libc_r/uthread/uthread_waitpid.c
++++ b/lib/libc_r/uthread/uthread_waitpid.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2000 Jason Evans <jasone@freebsd.org>.
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -13,7 +13,7 @@
+  *    notice(s), this list of conditions and the following disclaimer in
+  *    the documentation and/or other materials provided with the
+  *    distribution.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER(S) ``AS IS'' AND ANY
+  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+@@ -43,6 +43,6 @@ waitpid(pid_t wpid, int *status, int options)
+ 	_thread_enter_cancellation_point();
+ 	ret = __waitpid(wpid, status, options);
+ 	_thread_leave_cancellation_point();
+-	
++
+ 	return ret;
+ }
+diff --git a/lib/libc_r/uthread/uthread_writev.c b/lib/libc_r/uthread/uthread_writev.c
+index 712479ccd2..d19f2699f5 100644
+--- a/lib/libc_r/uthread/uthread_writev.c
++++ b/lib/libc_r/uthread/uthread_writev.c
+@@ -150,7 +150,7 @@ _writev(int fd, const struct iovec * iov, int iovcnt)
+ 					break;
+ 				}
+ 			}
+-                       
++
+ 			/*
+ 			 * If performing a blocking write, check if the
+ 			 * write would have blocked or if some bytes
+-- 
+2.22.0
+

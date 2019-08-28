@@ -1,0 +1,47 @@
+From 62f518c662da15a3b075051e3df12dcd3df749be Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 28 Aug 2019 09:47:44 +0300
+Subject: [PATCH 64/66] <unistd.h>: Declare intptr_t as per X/Open.
+
+ No functional change yet, for future reference.
+---
+ include/stdint.h | 3 +++
+ include/unistd.h | 7 +++++++
+ 2 files changed, 10 insertions(+)
+
+diff --git a/include/stdint.h b/include/stdint.h
+index b07e6fab4f..2fdbaaa6f0 100644
+--- a/include/stdint.h
++++ b/include/stdint.h
+@@ -39,7 +39,10 @@ typedef __uint16_t	uint16_t;
+ typedef __uint32_t	uint32_t;
+ typedef __uint64_t	uint64_t;
+ 
++#ifndef _INTPTR_T_DECLARED
++#define _INTPTR_T_DECLARED
+ typedef __intptr_t	intptr_t;
++#endif
+ typedef __uintptr_t	uintptr_t;
+ 
+ typedef __intmax_t	intmax_t;
+diff --git a/include/unistd.h b/include/unistd.h
+index 1496da32cf..bc0814041d 100644
+--- a/include/unistd.h
++++ b/include/unistd.h
+@@ -38,6 +38,13 @@
+ #include <sys/unistd.h>
+ #include <sys/_null.h>
+ 
++#if __XSI_VISIBLE
++#ifndef _INTPTR_T_DECLARED
++typedef	__intptr_t	intptr_t;
++#define	_INTPTR_T_DECLARED
++#endif
++#endif /* __XSI_VISIBLE */
++
+ #ifndef _GID_T_DECLARED
+ typedef	__uint32_t	gid_t;		/* XXX __gid_t */
+ #define	_GID_T_DECLARED
+-- 
+2.22.0
+

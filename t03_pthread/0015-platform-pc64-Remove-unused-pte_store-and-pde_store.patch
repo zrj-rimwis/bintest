@@ -1,0 +1,33 @@
+From e9b5cf1e872b99b4ade9ac7692d104fe2c638ccc Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 15 Aug 2019 10:44:13 +0300
+Subject: [PATCH 15/66] platform/pc64: Remove unused pte_store() and
+ pde_store().
+
+ Never used since introduced in 48ffc2362a11e481bf0398dc7ce5e4815acd2190
+---
+ sys/platform/pc64/include/pmap.h | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/sys/platform/pc64/include/pmap.h b/sys/platform/pc64/include/pmap.h
+index d6e7b5c7f8..c4f4c8e035 100644
+--- a/sys/platform/pc64/include/pmap.h
++++ b/sys/platform/pc64/include/pmap.h
+@@ -204,14 +204,6 @@ extern int pmap_fast_kernel_cpusync;
+ 
+ #define	pte_load_clear(pte)	atomic_readandclear_long(pte)
+ 
+-static __inline void
+-pte_store(pt_entry_t *ptep, pt_entry_t pte)
+-{
+-	*ptep = pte;
+-}
+-
+-#define	pde_store(pdep, pde)	pte_store((pdep), (pde))
+-
+ /*
+  * Pmap stuff
+  */
+-- 
+2.22.0
+

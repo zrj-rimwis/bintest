@@ -1,0 +1,194 @@
+From 1f07007ee7620f74800f20812b5a9d358e8fcd67 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 23 Aug 2019 21:09:50 +0300
+Subject: [PATCH 42/66] <sys/malloc.h>: Change high/low argument types for
+ contigmalloc().
+
+ This change does not have any impact on LP64 platforms.  Affected would
+ be only i686 where PAE was introduced, so simplify the wrapper around
+ contigmalloc_map() which is more flexible for cases where vm_paddr_t is
+ wider than vm_offset_t.
+
+ While there, adjust contigmalloc_map() types in declaration to match
+ the prototype ones and move it to more suitable <vm/vm_map.h> header.
+
+ No functional change on X86_64 or any LP64 platform.
+---
+ share/man/man9/contigmalloc.9 | 18 ++++++++++++++----
+ sys/sys/malloc.h              | 12 ++++++------
+ sys/vm/vm_contig.c            | 16 +++++-----------
+ sys/vm/vm_kern.h              |  7 +------
+ sys/vm/vm_map.h               |  8 ++++++--
+ 5 files changed, 32 insertions(+), 29 deletions(-)
+
+diff --git a/share/man/man9/contigmalloc.9 b/share/man/man9/contigmalloc.9
+index 844a3e003b..615fec741e 100644
+--- a/share/man/man9/contigmalloc.9
++++ b/share/man/man9/contigmalloc.9
+@@ -24,9 +24,8 @@
+ .\" POSSIBILITY OF SUCH DAMAGE.
+ .\"
+ .\" $FreeBSD: src/share/man/man9/contigmalloc.9,v 1.5 2005/01/21 08:36:40 ru Exp $
+-.\" $DragonFly: src/share/man/man9/contigmalloc.9,v 1.1 2008/01/19 08:23:17 swildner Exp $
+ .\"
+-.Dd January 19, 2008
++.Dd August 23, 2019
+ .Dt CONTIGMALLOC 9
+ .Os
+ .Sh NAME
+@@ -41,8 +40,8 @@
+ .Fa "unsigned long size"
+ .Fa "struct malloc_type *type"
+ .Fa "int flags"
+-.Fa "vm_paddr_t low"
+-.Fa "vm_paddr_t high"
++.Fa "unsigned long low"
++.Fa "unsigned long high"
+ .Fa "unsigned long alignment"
+ .Fa "unsigned long boundary"
+ .Fc
+@@ -70,6 +69,17 @@ The returned pointer points to a wired kernel virtual
+ address range of
+ .Fa size
+ bytes allocated from the kernel virtual address (KVA) map.
++On platforms where
++.Vt vm_paddr_t
++is wider than
++.Vt vm_offset_t
++type and
++.Fa high
++does not fit into
++.Ft unsigned long
++the
++.Fn contigmalloc_map
++should be used.
+ The
+ .Fa type
+ argument is ignored.
+diff --git a/sys/sys/malloc.h b/sys/sys/malloc.h
+index 30d8166b51..cf0961e808 100644
+--- a/sys/sys/malloc.h
++++ b/sys/sys/malloc.h
+@@ -37,7 +37,7 @@
+ #include <sys/types.h>
+ #endif
+ #ifndef _MACHINE_TYPES_H_
+-#include <machine/types.h>	/* vm_paddr_t and __* types */
++#include <machine/types.h>	/* for __* types */
+ #endif
+ 
+ #ifndef _MACHINE_PARAM_H_
+@@ -59,7 +59,7 @@
+ #define	M_CACHEALIGN	0x4000	/* force CPU cache line alignment */
+ 
+ /*
+- * M_NOWAIT has to be a set of flags for equivalence to prior use. 
++ * M_NOWAIT has to be a set of flags for equivalence to prior use.
+  *
+  * M_SYSALLOC should be used for any critical infrastructure allocations
+  * made by the kernel proper.
+@@ -70,7 +70,7 @@
+  *
+  * NOTE ON DRAGONFLY USE OF M_NOWAIT.  In FreeBSD M_NOWAIT allocations
+  * almost always succeed.  In DragonFly, however, there is a good chance
+- * that an allocation will fail.  M_NOWAIT should only be used when 
++ * that an allocation will fail.  M_NOWAIT should only be used when
+  * allocations can fail without any serious detriment to the system.
+  *
+  * Note that allocations made from (preempted) interrupts will attempt to
+@@ -172,9 +172,9 @@ size_t  kmem_lim_size(void);
+ void	contigfree(void *addr, unsigned long size, struct malloc_type *type)
+ 	    __nonnull(1);
+ void	*contigmalloc(unsigned long size, struct malloc_type *type, int flags,
+-		      vm_paddr_t low, vm_paddr_t high, unsigned long alignment,
+-		      unsigned long boundary) __malloclike __heedresult
+-		      __alloc_size(1) __alloc_align(6);
++	    unsigned long low, unsigned long high,  unsigned long alignment,
++	    unsigned long boundary) __malloclike __heedresult
++	    __alloc_size(1) __alloc_align(6);
+ void	malloc_init(void *);
+ void	malloc_uninit(void *);
+ void	kmalloc_raise_limit(struct malloc_type *type, size_t bytes);
+diff --git a/sys/vm/vm_contig.c b/sys/vm/vm_contig.c
+index ec7d6c9d96..fc1b200bb9 100644
+--- a/sys/vm/vm_contig.c
++++ b/sys/vm/vm_contig.c
+@@ -536,14 +536,9 @@ vm_contig_pg_kmap(vm_pindex_t start, u_long size, vm_map_t map, int flags)
+  * No requirements.
+  */
+ void *
+-contigmalloc(
+-	unsigned long size,	/* should be size_t here and for malloc() */
+-	struct malloc_type *type,
+-	int flags,
+-	vm_paddr_t low,
+-	vm_paddr_t high,
+-	unsigned long alignment,
+-	unsigned long boundary)
++contigmalloc(unsigned long size, struct malloc_type *type, int flags,
++	     unsigned long low, unsigned long high,
++	     unsigned long alignment, unsigned long boundary)
+ {
+ 	return contigmalloc_map(size, type, flags, low, high, alignment,
+ 			boundary, &kernel_map);
+@@ -553,10 +548,9 @@ contigmalloc(
+  * No requirements.
+  */
+ void *
+-contigmalloc_map(unsigned long size, struct malloc_type *type,
++contigmalloc_map(u_long size, struct malloc_type *type,
+ 		 int flags, vm_paddr_t low, vm_paddr_t high,
+-		 unsigned long alignment, unsigned long boundary,
+-		 vm_map_t map)
++		 u_long alignment, ulong boundary, vm_map_t map)
+ {
+ 	vm_pindex_t index;
+ 	void *rv;
+diff --git a/sys/vm/vm_kern.h b/sys/vm/vm_kern.h
+index 11a3c973aa..7c572c09d8 100644
+--- a/sys/vm/vm_kern.h
++++ b/sys/vm/vm_kern.h
+@@ -58,7 +58,6 @@
+  * rights to redistribute these changes.
+  *
+  * $FreeBSD: src/sys/vm/vm_kern.h,v 1.22 2000/02/16 21:11:31 dillon Exp $
+- * $DragonFly: src/sys/vm/vm_kern.h,v 1.12 2007/06/07 23:14:29 dillon Exp $
+  */
+ 
+ #ifndef _VM_VM_KERN_H_
+@@ -105,9 +104,5 @@ extern struct vm_map clean_map;
+ extern u_int vm_kmem_size;
+ 
+ extern vm_offset_t kernel_vm_end;
+-/* XXX - elsewhere? */
+-struct malloc_type;
+-extern void *contigmalloc_map(u_long, struct malloc_type *, int,
+-		vm_paddr_t, vm_paddr_t, u_long, u_long, struct vm_map *);
+ 
+-#endif				/* _VM_VM_KERN_H_ */
++#endif	/* _VM_VM_KERN_H_ */
+diff --git a/sys/vm/vm_map.h b/sys/vm/vm_map.h
+index 1a68fc2c10..94e23df1d0 100644
+--- a/sys/vm/vm_map.h
++++ b/sys/vm/vm_map.h
+@@ -631,11 +631,15 @@ void vm_map_interlock(vm_map_t map, struct vm_map_ilock *ilock,
+ 			vm_offset_t ran_beg, vm_offset_t ran_end);
+ void vm_map_deinterlock(vm_map_t map, struct vm_map_ilock *ilock);
+ 
++/* contigmalloc() variant that could take arguments high/low > vm_offset_t */
++struct malloc_type;
++void *contigmalloc_map(u_long, struct malloc_type *, int,
++		       vm_paddr_t, vm_paddr_t, u_long, u_long, struct vm_map *);
+ 
+ #if defined(__x86_64__) && defined(_KERNEL_VIRTUAL)
+ int vkernel_module_memory_alloc(vm_offset_t *, size_t);
+ void vkernel_module_memory_free(vm_offset_t, size_t);
+ #endif
+ 
+-#endif
+-#endif				/* _VM_VM_MAP_H_ */
++#endif	/* _KERNEL */
++#endif	/* _VM_VM_MAP_H_ */
+-- 
+2.22.0
+

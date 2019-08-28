@@ -1,0 +1,142 @@
+From cc6dcbd48679125eef533300786bfd4035ee0b24 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 22 Aug 2019 19:30:29 +0300
+Subject: [PATCH 39/66] <sys/types.h>: Eliminate non standard segsz_t type.
+
+ There is little point to keep this type global.  Currently on our LP64
+ it was of type long, while OpenBSD/NetBSD have it fixed at constant at
+ int32_t.  On DragonFly we could do the same but that would change struct
+ sizes etc.  Using long type will match previous behaviour on LP32 too.
+
+ While there, use u_long type in sys/kinfo.h for easier userspace access.
+
+ No functional change and no differences in generated asm listings.
+---
+ bin/ps/ps.c                    |  2 +-
+ sys/cpu/x86_64/include/types.h |  2 --
+ sys/sys/ckpt.h                 |  6 +++---
+ sys/sys/kinfo.h                | 14 +++++++-------
+ sys/sys/types.h                |  1 -
+ sys/vm/vm_glue.c               |  2 +-
+ sys/vm/vm_map.h                | 10 +++++-----
+ 7 files changed, 17 insertions(+), 20 deletions(-)
+
+diff --git a/bin/ps/ps.c b/bin/ps/ps.c
+index 4bc6dd0bc8..b79e41a665 100644
+--- a/bin/ps/ps.c
++++ b/bin/ps/ps.c
+@@ -602,7 +602,7 @@ pscomp(const void *arg_a, const void *arg_b)
+ 	const KINFO *a = *(KINFO * const *)arg_a;
+ 	const KINFO *b = *(KINFO * const *)arg_b;
+ 	double di;
+-	segsz_t si;
++	long si;
+ 	int i;
+ 
+ #define VSIZE(k) (KI_PROC(k, vm_dsize) + KI_PROC(k, vm_ssize) + \
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index faaf20e1e6..ca75796d37 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -37,10 +37,8 @@
+ #include <machine/stdint.h>
+ 
+ #if defined(__x86_64__)
+-typedef	__int64_t	__segsz_t;	/* segment size */
+ typedef	__int64_t	register_t;
+ #elif defined(__i386__)
+-typedef	__int32_t	__segsz_t;	/* segment size */
+ typedef	__int32_t	register_t;
+ #endif
+ 
+diff --git a/sys/sys/ckpt.h b/sys/sys/ckpt.h
+index 4129e4fc43..97e6796a93 100644
+--- a/sys/sys/ckpt.h
++++ b/sys/sys/ckpt.h
+@@ -52,9 +52,9 @@ struct ckpt_filehdr {
+ };
+ 
+ struct ckpt_vminfo {
+-	segsz_t		cvm_dsize;	/* in pages */
+-	segsz_t		cvm_tsize;	/* in pages */
+-	segsz_t		cvm_reserved1[4];
++	long		cvm_dsize;	/* in pages */
++	long		cvm_tsize;	/* in pages */
++	long		cvm_reserved1[4];
+ 	caddr_t		cvm_daddr;
+ 	caddr_t		cvm_taddr;
+ 	caddr_t		cvm_reserved2[4];
+diff --git a/sys/sys/kinfo.h b/sys/sys/kinfo.h
+index a1cf53ea0d..2bcd1fbacb 100644
+--- a/sys/sys/kinfo.h
++++ b/sys/sys/kinfo.h
+@@ -192,13 +192,13 @@ struct kinfo_proc {
+ 	int		kp_nice;
+ 	unsigned int	kp_swtime;
+ 
+-	vm_size_t	kp_vm_map_size;	/* vmmap virtual size in bytes */
+-	segsz_t		kp_vm_rssize;		/* resident set size in pages */
+-	segsz_t		kp_vm_swrss;		/* rss before last swap in pages */
+-	segsz_t		kp_vm_tsize;		/* text size in pages */
+-	segsz_t		kp_vm_dsize;		/* data size in pages */
+-	segsz_t		kp_vm_ssize;		/* stack size in pages */
+-        u_int		kp_vm_prssize;		/* proportional rss in pages */
++	u_long		kp_vm_map_size;	/* vmmap virtual size in bytes */
++	long		kp_vm_rssize;	/* resident set size in pages */
++	long		kp_vm_swrss;	/* rss before last swap in pages */
++	long		kp_vm_tsize;	/* text size in pages */
++	long		kp_vm_dsize;	/* data size in pages */
++	long		kp_vm_ssize;	/* stack size in pages */
++	u_int		kp_vm_prssize;	/* proportional rss in pages */
+ 
+ 	int		kp_jailid;
+ 
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index d62106b2e6..4d8f3f490b 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -126,7 +126,6 @@ typedef	__pid_t		pid_t;		/* process id */
+ typedef	__rlim_t	rlim_t;		/* resource limit */
+ #define	_RLIM_T_DECLARED
+ #endif
+-typedef	__segsz_t	segsz_t;	/* segment size */
+ #ifndef _SUSECONDS_T_DECLARED
+ typedef	__suseconds_t	suseconds_t;	/* microseconds (signed) */
+ #define	_SUSECONDS_T_DECLARED
+diff --git a/sys/vm/vm_glue.c b/sys/vm/vm_glue.c
+index f86e47ea4e..6ccc46a11a 100644
+--- a/sys/vm/vm_glue.c
++++ b/sys/vm/vm_glue.c
+@@ -391,7 +391,7 @@ scheduler_callback(struct proc *p, void *data)
+ 	struct scheduler_info *info = data;
+ 	struct vmspace *vm;
+ 	struct lwp *lp;
+-	segsz_t pgs;
++	long pgs;
+ 	int pri;
+ 
+ 	/*
+diff --git a/sys/vm/vm_map.h b/sys/vm/vm_map.h
+index 7b5c84f3f0..1a68fc2c10 100644
+--- a/sys/vm/vm_map.h
++++ b/sys/vm/vm_map.h
+@@ -365,11 +365,11 @@ struct vmspace {
+ 	caddr_t vm_shm;		/* SYS5 shared memory private data XXX */
+ /* we copy from vm_startcopy to the end of the structure on fork */
+ #define vm_startcopy vm_rssize
+-	segsz_t vm_rssize;	/* current resident set size in pages */
+-	segsz_t vm_swrss;	/* resident set size before last swap */
+-	segsz_t vm_tsize;	/* text size (bytes) */
+-	segsz_t vm_dsize;	/* data size (bytes) */
+-	segsz_t vm_ssize;	/* stack size (bytes) */
++	long vm_rssize;		/* current resident set size in pages */
++	long vm_swrss;		/* resident set size before last swap */
++	long vm_tsize;		/* text size (bytes) */
++	long vm_dsize;		/* data size (bytes) */
++	long vm_ssize;		/* stack size (bytes) */
+ 	caddr_t vm_taddr;	/* user virtual address of text XXX */
+ 	caddr_t vm_daddr;	/* user virtual address of data XXX */
+ 	caddr_t vm_maxsaddr;	/* user VA at max stack growth */
+-- 
+2.22.0
+

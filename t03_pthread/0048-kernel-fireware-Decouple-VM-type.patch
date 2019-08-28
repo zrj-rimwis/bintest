@@ -1,0 +1,29 @@
+From 337c7595e19edddd413c98794125706671637092 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 24 Aug 2019 20:48:46 +0300
+Subject: [PATCH 48/66] kernel/fireware: Decouple VM type.
+
+ The fwcrom.c is built as part of fwcontrol(8) too and is the last use
+ case where userland is using vm_* types.  The fwcrom source code could be
+ adjusted to use proper void* types like it was done at NetBSD.
+---
+ sys/bus/firewire/fwcrom.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/sys/bus/firewire/fwcrom.c b/sys/bus/firewire/fwcrom.c
+index fcf9e8d505..01e89847a7 100644
+--- a/sys/bus/firewire/fwcrom.c
++++ b/sys/bus/firewire/fwcrom.c
+@@ -55,6 +55,9 @@
+ #include <bus/firewire/firewire.h>
+ #include <bus/firewire/iec13213.h>
+ 
++/* XXX re-port from NetBSD that has proper (void *) types */
++#define vm_offset_t	u_long
++
+ #define MAX_ROM (1024 - sizeof(u_int32_t) * 5)
+ #define CROM_END(cc) ((vm_offset_t)(cc)->stack[0].dir + MAX_ROM - 1)
+ 
+-- 
+2.22.0
+

@@ -1,0 +1,627 @@
+From a0e2312cd8943fa48eb0d9bf27ce6ce18227ae09 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 19 Aug 2019 12:02:51 +0300
+Subject: [PATCH 21/66] kernel: Extract cpufunc type functions into their own
+ header.
+
+ This reduces namespace pollution in both kernel, loaders and userland.
+ Importantly this makes use of <machine/smp.h> only where it is needed.
+
+ * Add sys/cpusync.h where there are no MD headers user, otherwise add
+   machine/smp.h directly for smp_active_mask visibility.
+ * Move out usched_global_cpumask to sys/thread2.h.
+ * Move out lwkt_send_ipiq3*() prototypes taking cpumask_t arguments into
+   sys/thread2.h where they are actually used for inline functions.
+ * Cleanup sys/thread.h to futher reduce userspace namespace pollution.
+
+ This also finally allows to test system headers using:
+   echo "#include <sys/socket.h>" | cc -D_KERNEL -xc -c -o test.o -
+ because <machine/cpufunc.h> no longer includes <machine/smp.h> that
+ requires <machine_base/apic/apicreg.h> in constructed @/ tree.
+
+ The dependency on <sys/globaldata.h> could be further reduced, but that
+ is currently too complicated because of how <machine/thread.h> macros
+ like mycpu/mycpuid/curthread/curproc are dereferencing struct globaldata
+ structure to access members and have to be visible in certain places.
+ We could add shortcuts to avoid this, but it would become fragile for
+ quickkernel when struct globaldata/thread/proc would change.
+
+ No functional diffs in asm intermediates.
+---
+ sys/cpu/x86_64/include/cpufunc.h       |  18 +----
+ sys/dev/drm/drm_cache.c                |   1 +
+ sys/dev/powermng/corepower/corepower.c |   1 +
+ sys/dev/powermng/coretemp/coretemp.c   |   1 +
+ sys/dev/virtual/hyperv/vmbus/vmbus.c   |   1 +
+ sys/kern/kern_fork.c                   |   1 +
+ sys/kern/kern_ktr.c                    |   1 +
+ sys/kern/lwkt_ipiq.c                   |   1 +
+ sys/kern/vfs_bio.c                     |   1 +
+ sys/netinet/in_rmx.c                   |   1 +
+ sys/netinet/ip_input.c                 |   1 +
+ sys/platform/pc64/acpica/acpi_srat.c   |   1 +
+ sys/platform/pc64/isa/clock.c          |   1 +
+ sys/platform/pc64/vmm/vmx.c            |   1 +
+ sys/platform/pc64/x86_64/mp_machdep.c  |   1 +
+ sys/platform/pc64/x86_64/pmap.c        |   1 +
+ sys/sys/buf.h                          |   7 +-
+ sys/sys/cpusync.h                      | 102 +++++++++++++++++++++++++
+ sys/sys/globaldata.h                   |   3 +
+ sys/sys/systm.h                        |   2 -
+ sys/sys/thread.h                       |  34 +--------
+ sys/sys/thread2.h                      |  25 +++---
+ sys/vm/vm_page.c                       |   1 +
+ sys/vm/vm_pager.c                      |   1 +
+ 24 files changed, 143 insertions(+), 65 deletions(-)
+ create mode 100644 sys/sys/cpusync.h
+
+diff --git a/sys/cpu/x86_64/include/cpufunc.h b/sys/cpu/x86_64/include/cpufunc.h
+index a379bbcc46..229aed49c7 100644
+--- a/sys/cpu/x86_64/include/cpufunc.h
++++ b/sys/cpu/x86_64/include/cpufunc.h
+@@ -32,7 +32,7 @@
+  */
+ 
+ /*
+- * Functions to provide access to special i386 instructions.
++ * Functions to provide access to special x86 instructions.
+  * This in included in sys/systm.h, and that file should be
+  * used in preference to this.
+  */
+@@ -41,14 +41,10 @@
+ #define	_CPU_CPUFUNC_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/thread.h>
+ #include <machine/clock.h>
+ #include <machine/psl.h>
+-#include <machine/smp.h>
+ 
+-struct thread;
+ struct region_descriptor;
+-struct pmap;
+ 
+ __BEGIN_DECLS
+ #define readb(va)	(*(volatile u_int8_t *) (va))
+@@ -321,7 +317,7 @@ halt(void)
+  * constraint because "i" isn't a valid constraint when the port
+  * isn't constant.  This only matters for -O0 because otherwise
+  * the non-working version gets optimized away.
+- * 
++ *
+  * Use an expression-statement instead of a conditional expression
+  * because gcc-2.6.0 would promote the operands of the conditional
+  * and produce poor code for "if ((inb(var) & const1) == const2)".
+@@ -580,16 +576,6 @@ wbinvd(void)
+ 	__asm __volatile("wbinvd");
+ }
+ 
+-#if defined(_KERNEL)
+-void cpu_wbinvd_on_all_cpus_callback(void *arg);
+-
+-static __inline void
+-cpu_wbinvd_on_all_cpus(void)
+-{
+-	lwkt_cpusync_simple(smp_active_mask, cpu_wbinvd_on_all_cpus_callback, NULL);
+-}
+-#endif
+-
+ static __inline void
+ write_rflags(u_long rf)
+ {
+diff --git a/sys/dev/drm/drm_cache.c b/sys/dev/drm/drm_cache.c
+index 6dea7c2eb5..71a559ed09 100644
+--- a/sys/dev/drm/drm_cache.c
++++ b/sys/dev/drm/drm_cache.c
+@@ -31,6 +31,7 @@
+ #include <linux/export.h>
+ #include <drm/drmP.h>
+ #include <asm/cpufeature.h>
++#include <sys/cpusync.h>	/* for cpu_wbinvd_on_all_cpus() */
+ 
+ /*
+  * clflushopt is an unordered instruction which needs fencing with mfence or
+diff --git a/sys/dev/powermng/corepower/corepower.c b/sys/dev/powermng/corepower/corepower.c
+index 4e869daa40..3d07655b9e 100644
+--- a/sys/dev/powermng/corepower/corepower.c
++++ b/sys/dev/powermng/corepower/corepower.c
+@@ -44,6 +44,7 @@
+ #include <machine/cpufunc.h>
+ #include <machine/cputypes.h>
+ #include <machine/md_var.h>
++#include <machine/smp.h>
+ 
+ #include "cpu_if.h"
+ 
+diff --git a/sys/dev/powermng/coretemp/coretemp.c b/sys/dev/powermng/coretemp/coretemp.c
+index cc89ce3e65..e8d73d38b7 100644
+--- a/sys/dev/powermng/coretemp/coretemp.c
++++ b/sys/dev/powermng/coretemp/coretemp.c
+@@ -48,6 +48,7 @@
+ #include <machine/cpufunc.h>
+ #include <machine/cputypes.h>
+ #include <machine/md_var.h>
++#include <machine/smp.h>
+ 
+ #include "cpu_if.h"
+ 
+diff --git a/sys/dev/virtual/hyperv/vmbus/vmbus.c b/sys/dev/virtual/hyperv/vmbus/vmbus.c
+index 2cfcbbf1f8..7470618f1d 100644
+--- a/sys/dev/virtual/hyperv/vmbus/vmbus.c
++++ b/sys/dev/virtual/hyperv/vmbus/vmbus.c
+@@ -34,6 +34,7 @@
+ #include <sys/module.h>
+ #include <sys/rman.h>
+ #include <sys/systimer.h>
++#include <sys/cpusync.h>
+ #include <sys/thread.h>
+ #include <sys/thread2.h>
+ 
+diff --git a/sys/kern/kern_fork.c b/sys/kern/kern_fork.c
+index d66070c9f2..8b679e0e41 100644
+--- a/sys/kern/kern_fork.c
++++ b/sys/kern/kern_fork.c
+@@ -61,6 +61,7 @@
+ 
+ #include <sys/vmmeter.h>
+ #include <sys/refcount.h>
++#include <sys/cpusync.h>	/* for smp_active_mask */
+ #include <sys/thread2.h>
+ #include <sys/signal2.h>
+ #include <sys/spinlock2.h>
+diff --git a/sys/kern/kern_ktr.c b/sys/kern/kern_ktr.c
+index a2698dfb43..3970852a0b 100644
+--- a/sys/kern/kern_ktr.c
++++ b/sys/kern/kern_ktr.c
+@@ -84,6 +84,7 @@
+ #include <sys/ctype.h>
+ #include <sys/limits.h>
+ 
++#include <sys/cpusync.h>
+ #include <sys/thread2.h>
+ #include <sys/spinlock2.h>
+ 
+diff --git a/sys/kern/lwkt_ipiq.c b/sys/kern/lwkt_ipiq.c
+index 1d91fd3577..ec474696c0 100644
+--- a/sys/kern/lwkt_ipiq.c
++++ b/sys/kern/lwkt_ipiq.c
+@@ -45,6 +45,7 @@
+ #include <sys/proc.h>
+ #include <sys/rtprio.h>
+ #include <sys/queue.h>
++#include <sys/cpusync.h>
+ #include <sys/thread2.h>
+ #include <sys/sysctl.h>
+ #include <sys/ktr.h>
+diff --git a/sys/kern/vfs_bio.c b/sys/kern/vfs_bio.c
+index 64d6e24278..fc816ba94d 100644
+--- a/sys/kern/vfs_bio.c
++++ b/sys/kern/vfs_bio.c
+@@ -39,6 +39,7 @@
+ #include <sys/mount.h>
+ #include <sys/kernel.h>
+ #include <sys/kthread.h>
++#include <sys/cpusync.h>	/* for smp_active_mask */
+ #include <sys/proc.h>
+ #include <sys/reboot.h>
+ #include <sys/resourcevar.h>
+diff --git a/sys/netinet/in_rmx.c b/sys/netinet/in_rmx.c
+index 21d42c7d80..a3a6afafc2 100644
+--- a/sys/netinet/in_rmx.c
++++ b/sys/netinet/in_rmx.c
+@@ -53,6 +53,7 @@
+ #include <sys/mbuf.h>
+ #include <sys/syslog.h>
+ #include <sys/globaldata.h>
++#include <sys/cpusync.h>	/* for smp_active_mask */
+ #include <sys/thread2.h>
+ 
+ #include <net/if.h>
+diff --git a/sys/netinet/ip_input.c b/sys/netinet/ip_input.c
+index eb79636728..749bc07e30 100644
+--- a/sys/netinet/ip_input.c
++++ b/sys/netinet/ip_input.c
+@@ -110,6 +110,7 @@
+ #include <netinet/ip_divert.h>
+ #include <netinet/ip_flow.h>
+ 
++#include <sys/cpusync.h>	/* for smp_active_mask */
+ #include <sys/thread2.h>
+ #include <sys/msgport2.h>
+ #include <net/netmsg2.h>
+diff --git a/sys/platform/pc64/acpica/acpi_srat.c b/sys/platform/pc64/acpica/acpi_srat.c
+index 12d4ec5870..53b3593086 100644
+--- a/sys/platform/pc64/acpica/acpi_srat.c
++++ b/sys/platform/pc64/acpica/acpi_srat.c
+@@ -37,6 +37,7 @@
+ #include <sys/kernel.h>
+ #include <sys/systm.h>
+ #include <vm/vm_page.h>
++#include <machine/smp.h>
+ 
+ #include "acpi.h"
+ #include "acpi_sdt_var.h"
+diff --git a/sys/platform/pc64/isa/clock.c b/sys/platform/pc64/isa/clock.c
+index 7553787a06..a4ca5a3303 100644
+--- a/sys/platform/pc64/isa/clock.c
++++ b/sys/platform/pc64/isa/clock.c
+@@ -1393,6 +1393,7 @@ struct tsc_mpsync_info {
+ } __cachealign;
+ 
+ #if 0
++#include <sys/cpusync.h>
+ static void
+ tsc_mpsync_test_loop(struct tsc_mpsync_thr *info)
+ {
+diff --git a/sys/platform/pc64/vmm/vmx.c b/sys/platform/pc64/vmm/vmx.c
+index ffa8558c61..4fbff9611f 100644
+--- a/sys/platform/pc64/vmm/vmx.c
++++ b/sys/platform/pc64/vmm/vmx.c
+@@ -37,6 +37,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/types.h>
++#include <sys/cpusync.h>
+ #include <sys/thread.h>
+ #include <sys/thread2.h>
+ #include <sys/sysctl.h>
+diff --git a/sys/platform/pc64/x86_64/mp_machdep.c b/sys/platform/pc64/x86_64/mp_machdep.c
+index af7d4eb4a4..e211e47fd6 100644
+--- a/sys/platform/pc64/x86_64/mp_machdep.c
++++ b/sys/platform/pc64/x86_64/mp_machdep.c
+@@ -37,6 +37,7 @@
+ #include <sys/machintr.h>
+ #include <sys/cpu_topology.h>
+ 
++#include <sys/cpusync.h>
+ #include <sys/mplock2.h>
+ 
+ #include <vm/vm.h>
+diff --git a/sys/platform/pc64/x86_64/pmap.c b/sys/platform/pc64/x86_64/pmap.c
+index b086759889..5ebae028fe 100644
+--- a/sys/platform/pc64/x86_64/pmap.c
++++ b/sys/platform/pc64/x86_64/pmap.c
+@@ -78,6 +78,7 @@
+ #include <vm/vm_pager.h>
+ #include <vm/vm_zone.h>
+ 
++#include <sys/cpusync.h>	/* for cpu_wbinvd_on_all_cpus() */
+ #include <sys/thread2.h>
+ #include <sys/spinlock2.h>
+ #include <vm/vm_page2.h>
+diff --git a/sys/sys/buf.h b/sys/sys/buf.h
+index 41b894989f..ac049d19f9 100644
+--- a/sys/sys/buf.h
++++ b/sys/sys/buf.h
+@@ -33,7 +33,6 @@
+  *
+  *	@(#)buf.h	8.9 (Berkeley) 3/30/95
+  * $FreeBSD: src/sys/sys/buf.h,v 1.88.2.10 2003/01/25 19:02:23 dillon Exp $
+- * $DragonFly: src/sys/sys/buf.h,v 1.54 2008/08/29 20:08:37 dillon Exp $
+  */
+ 
+ #ifndef _SYS_BUF_H_
+@@ -50,7 +49,9 @@
+ #ifndef _SYS_DEVICE_H_
+ #include <sys/device.h>
+ #endif
+-
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
++#endif
+ #ifndef _SYS_XIO_H_
+ #include <sys/xio.h>
+ #endif
+@@ -82,7 +83,7 @@ RB_PROTOTYPE2(buf_rb_hash, buf, b_rbhash, rb_buf_compare, off_t);
+  */   
+ LIST_HEAD(workhead, worklist);
+ 
+-#endif
++#endif /* defined(_KERNEL) || defined(_KERNEL_STRUCTURES) */
+ 
+ typedef enum buf_cmd {
+ 	BUF_CMD_DONE = 0,
+diff --git a/sys/sys/cpusync.h b/sys/sys/cpusync.h
+new file mode 100644
+index 0000000000..44d0167f6c
+--- /dev/null
++++ b/sys/sys/cpusync.h
+@@ -0,0 +1,102 @@
++/*
++ * Copyright (c) 2010-2019 The DragonFly Project.  All rights reserved.
++ *
++ * This code is derived from software contributed to The DragonFly Project
++ * by Matthew Dillon <dillon@backplane.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name of The DragonFly Project nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific, prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#ifndef _SYS_CPUSYNC_H_
++#define _SYS_CPUSYNC_H_
++
++/*
++ * SYS/SMP.H
++ *
++ * Implements cpusync support for the LWKT subsystem.
++ *
++ * Generally speaking these routines work on cpumask_t.
++ */
++
++#ifndef _SYS_SYSTM_H_
++#include <sys/systm.h>
++#endif
++#ifndef _SYS_GLOBALDATA_H_
++#include <sys/globaldata.h>
++#endif
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
++#endif
++#include <machine/smp.h>
++
++#ifndef _KERNEL
++#error "This file should not be included by userland programs."
++#endif
++
++struct lwkt_cpusync;
++typedef struct lwkt_cpusync	*lwkt_cpusync_t;
++
++/*
++ * CPU Synchronization structure.  See lwkt_cpusync_start() and
++ * lwkt_cpusync_finish() for more information.
++ */
++typedef void (*cpusync_func_t)(void *arg);
++
++struct lwkt_cpusync {
++	cpumask_t	cs_mask;	/* cpus running the sync */
++	cpumask_t	cs_mack;	/* mask acknowledge */
++	cpusync_func_t	cs_func;	/* function to execute */
++	void		*cs_data;	/* function data */
++};
++
++static __inline void
++lwkt_cpusync_init(lwkt_cpusync_t cs, cpumask_t mask,
++		  cpusync_func_t func, void *data)
++{
++	cs->cs_mask = mask;
++	/* cs->cs_mack = 0; handled by _interlock */
++	cs->cs_func = func;
++	cs->cs_data = data;
++}
++
++extern void lwkt_cpusync_simple(cpumask_t, cpusync_func_t, void *);
++extern void lwkt_cpusync_interlock(lwkt_cpusync_t);
++extern void lwkt_cpusync_deinterlock(lwkt_cpusync_t);
++extern void lwkt_cpusync_quick(lwkt_cpusync_t);
++
++/* XXX: better MI name ? */
++void cpu_wbinvd_on_all_cpus_callback(void *arg);
++
++static __inline void
++cpu_wbinvd_on_all_cpus(void)
++{
++	lwkt_cpusync_simple(smp_active_mask, cpu_wbinvd_on_all_cpus_callback,
++			    NULL);
++}
++
++#endif /* !_SYS_CPUSYNC_H_ */
+diff --git a/sys/sys/globaldata.h b/sys/sys/globaldata.h
+index 704daa6fd2..e81faf153d 100644
+--- a/sys/sys/globaldata.h
++++ b/sys/sys/globaldata.h
+@@ -63,6 +63,9 @@
+ #ifndef _SYS_STDINT_H_
+ #include <sys/stdint.h>		/* __int types */
+ #endif
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>	/* struct cpumask */
++#endif
+ #ifndef _SYS_TIME_H_
+ #include <sys/time.h>		/* struct timeval */
+ #endif
+diff --git a/sys/sys/systm.h b/sys/sys/systm.h
+index 51f0635557..fd8ce55c2c 100644
+--- a/sys/sys/systm.h
++++ b/sys/sys/systm.h
+@@ -90,7 +90,6 @@ extern int clocks_running;	/* timing/timeout subsystem is operational */
+ extern u_int cpu_feature;	/* CPUID_* features */
+ extern u_int cpu_feature2;	/* CPUID2_* features */
+ extern u_int cpu_mi_feature;	/* CPU_MI_XXX machine-nonspecific features */
+-extern cpumask_t usched_global_cpumask;
+ 
+ extern int nfs_diskless_valid;	/* NFS diskless params were obtained */
+ extern vm_paddr_t Maxmem;	/* Highest physical memory address in system */
+@@ -213,7 +212,6 @@ int	kvsprintf (char *buf, const char *,
+ 			__va_list) __printflike(2, 0);
+ int	ttyprintf (struct tty *, const char *, ...) __printflike(2, 3);
+ void	hexdump (const void *ptr, int length, const char *hdr, int flags);
+-void	kprint_cpuset(cpumask_t *mask);
+ #define	HD_COLUMN_MASK	0xff
+ #define	HD_DELIM_MASK	0xff00
+ #define	HD_OMIT_COUNT	(1 << 16)
+diff --git a/sys/sys/thread.h b/sys/sys/thread.h
+index d67a196d50..7602c5a224 100644
+--- a/sys/sys/thread.h
++++ b/sys/sys/thread.h
+@@ -26,9 +26,6 @@
+ #ifndef _SYS_TIME_H_
+ #include <sys/time.h>   	/* struct timeval */
+ #endif
+-#ifndef _SYS_CPUMASK_H_
+-#include <sys/cpumask.h>	/* cpumask_t */
+-#endif
+ #ifndef _SYS_LOCK_H
+ #include <sys/lock.h>
+ #endif
+@@ -50,7 +47,6 @@ struct lwkt_tokref;
+ struct lwkt_ipiq;
+ struct lwkt_cpu_msg;
+ struct lwkt_cpu_port;
+-struct lwkt_cpusync;
+ struct fdnode;
+ union sysunion;
+ 
+@@ -60,7 +56,6 @@ typedef struct lwkt_tokref	*lwkt_tokref_t;
+ typedef struct lwkt_cpu_msg	*lwkt_cpu_msg_t;
+ typedef struct lwkt_cpu_port	*lwkt_cpu_port_t;
+ typedef struct lwkt_ipiq	*lwkt_ipiq_t;
+-typedef struct lwkt_cpusync	*lwkt_cpusync_t;
+ typedef struct thread 		*thread_t;
+ 
+ typedef TAILQ_HEAD(lwkt_queue, thread) lwkt_queue;
+@@ -194,19 +189,6 @@ struct lwkt_ipiq {
+     } ip_info[MAXCPUFIFO];
+ };
+ 
+-/*
+- * CPU Synchronization structure.  See lwkt_cpusync_start() and
+- * lwkt_cpusync_finish() for more information.
+- */
+-typedef void (*cpusync_func_t)(void *arg);
+-
+-struct lwkt_cpusync {
+-    cpumask_t	cs_mask;		/* cpus running the sync */
+-    cpumask_t	cs_mack;		/* mask acknowledge */
+-    cpusync_func_t cs_func;		/* function to execute */
+-    void	*cs_data;		/* function data */
+-};
+-
+ /*
+  * The standard message and queue structure used for communications between
+  * cpus.  Messages are typically queued via a machine-specific non-linked
+@@ -490,23 +472,13 @@ extern void lwkt_migratecpu(int);
+ 
+ extern void lwkt_giveaway(struct thread *);
+ extern void lwkt_acquire(struct thread *);
+-extern int  lwkt_send_ipiq3(struct globaldata *, ipifunc3_t, void *, int);
+-extern int  lwkt_send_ipiq3_passive(struct globaldata *, ipifunc3_t,
+-				    void *, int);
+-extern int  lwkt_send_ipiq3_bycpu(int, ipifunc3_t, void *, int);
+-extern int  lwkt_send_ipiq3_mask(cpumask_t, ipifunc3_t, void *, int);
++/* lwkt_send_ipiq3() functions prototyped in sys/thread2.h */
+ extern void lwkt_wait_ipiq(struct globaldata *, int);
+ extern void lwkt_process_ipiq(void);
+ extern void lwkt_process_ipiq_frame(struct intrframe *);
+ extern void lwkt_smp_stopped(void);
+ extern void lwkt_synchronize_ipiqs(const char *);
+ 
+-/* lwkt_cpusync_init() - inline function in sys/thread2.h */
+-extern void lwkt_cpusync_simple(cpumask_t, cpusync_func_t, void *);
+-extern void lwkt_cpusync_interlock(lwkt_cpusync_t);
+-extern void lwkt_cpusync_deinterlock(lwkt_cpusync_t);
+-extern void lwkt_cpusync_quick(lwkt_cpusync_t);
+-
+ extern void crit_panic(void) __dead2;
+ extern struct lwp *lwkt_preempted_proc(void);
+ 
+@@ -516,7 +488,7 @@ extern int  lwkt_create (void (*func)(void *), void *, struct thread **,
+ extern void lwkt_exit (void) __dead2;
+ extern void lwkt_remove_tdallq (struct thread *);
+ 
+-#endif
++#endif /* _KERNEL */
+ 
+-#endif
++#endif /* !_SYS_THREAD_H_ */
+ 
+diff --git a/sys/sys/thread2.h b/sys/sys/thread2.h
+index 7a7db68ff6..73e574abff 100644
+--- a/sys/sys/thread2.h
++++ b/sys/sys/thread2.h
+@@ -251,6 +251,12 @@ crit_test(thread_t td)
+     return(td->td_critcount);
+ }
+ 
++/*
++ * The mask used by usched bsd4/dfly and print function.
++ */
++extern cpumask_t usched_global_cpumask;
++void kprint_cpuset(cpumask_t *mask);
++
+ /*
+  * Return whether any threads are runnable.
+  */
+@@ -289,19 +295,6 @@ lwkt_passive_recover(thread_t td)
+ #endif
+ }
+ 
+-/*
+- * cpusync support
+- */
+-static __inline void
+-lwkt_cpusync_init(lwkt_cpusync_t cs, cpumask_t mask,
+-		  cpusync_func_t func, void *data)
+-{
+-	cs->cs_mask = mask;
+-	/* cs->cs_mack = 0; handled by _interlock */
+-	cs->cs_func = func;
+-	cs->cs_data = data;
+-}
+-
+ /*
+  * IPIQ messaging wrappers.  IPIQ remote functions are passed three arguments:
+  * a void * pointer, an integer, and a pointer to the trap frame (or NULL if
+@@ -309,6 +302,12 @@ lwkt_cpusync_init(lwkt_cpusync_t cs, cpumask_t mask,
+  * interfaces for simpler callbacks... the basic IPI messaging function as
+  * used by the kernel takes a single argument.
+  */
++extern int  lwkt_send_ipiq3(struct globaldata *, ipifunc3_t, void *, int);
++extern int  lwkt_send_ipiq3_passive(struct globaldata *, ipifunc3_t,
++				    void *, int);
++extern int  lwkt_send_ipiq3_bycpu(int, ipifunc3_t, void *, int);
++extern int  lwkt_send_ipiq3_mask(cpumask_t, ipifunc3_t, void *, int);
++
+ static __inline int
+ lwkt_send_ipiq(globaldata_t target, ipifunc1_t func, void *arg)
+ {
+diff --git a/sys/vm/vm_page.c b/sys/vm/vm_page.c
+index b5f7a9073a..97b9617e46 100644
+--- a/sys/vm/vm_page.c
++++ b/sys/vm/vm_page.c
+@@ -94,6 +94,7 @@
+ 
+ #include <machine/inttypes.h>
+ #include <machine/md_var.h>
++#include <machine/smp.h>
+ #include <machine/specialreg.h>
+ #include <machine/bus_dma.h>
+ 
+diff --git a/sys/vm/vm_pager.c b/sys/vm/vm_pager.c
+index bf25e280f2..019b774a46 100644
+--- a/sys/vm/vm_pager.c
++++ b/sys/vm/vm_pager.c
+@@ -74,6 +74,7 @@
+ #include <sys/buf.h>
+ #include <sys/ucred.h>
+ #include <sys/dsched.h>
++#include <sys/cpusync.h>	/* for smp_active_mask */
+ #include <sys/proc.h>
+ #include <sys/sysctl.h>
+ 
+-- 
+2.22.0
+

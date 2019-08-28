@@ -1,0 +1,94 @@
+From 49f9fe1d3122bcd03b8aadcc1a3f83e8e98045e2 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 28 Aug 2019 14:21:19 +0300
+Subject: [PATCH 66/66] <sys/types.h>: Make boolean_t kernel only type.
+
+ This effectively eliminates boolean_t from use in userland.
+ Injecting this type into userland codes has often issues in DPorts where
+ ports are defining their own boolean_t type.  Kernel headers now do not
+ make references to this type even under _KERNEL_STRUCTURES.
+ If visibility is desired kernel headers can use __boolean_t that will
+ not conflict with 3rd-party software codes.
+
+ While there, make "struct pagerops" in vm/vm_pager.h kernel only, it is
+ only used below for pagertab that is already under _KERNEL.
+---
+ sys/sys/types.h   |  8 +++-----
+ sys/vm/vm_pager.h | 10 ++++++----
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index d03a78c40c..3116b20bcd 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -135,15 +135,15 @@ typedef	__uint32_t	useconds_t;	/* microseconds (unsigned) */
+ typedef	int		mqd_t;		/* message queue descriptor */
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++typedef	u_int64_t	uoff_t;
++#endif
+ 
++#ifdef _KERNEL
+ #ifndef __BOOLEAN_T_DEFINED__
+ #define	__BOOLEAN_T_DEFINED__
+ typedef	__boolean_t	boolean_t;
+ #endif
+ 
+-typedef	u_int64_t	uoff_t;
+-
+-#ifdef _KERNEL
+ #if !defined(__bool_true_false_are_defined) && !defined(__cplusplus)
+ #define	__bool_true_false_are_defined	1
+ #define	false	0
+@@ -155,8 +155,6 @@ typedef	_Bool	bool;
+ #endif /* !__bool_true_false_are_defined && !__cplusplus */
+ #endif /* _KERNEL */
+ 
+-#endif /* _KERNEL || _KERNEL_STRUCTURES */
+-
+ /*
+  * XXX cdev_t has different meanings for userland vs kernel compiles.  What
+  * do we do for _KERNEL_STRUCTURES ?  For the moment stick with the userland
+diff --git a/sys/vm/vm_pager.h b/sys/vm/vm_pager.h
+index 8113cd5ec9..8990291fc1 100644
+--- a/sys/vm/vm_pager.h
++++ b/sys/vm/vm_pager.h
+@@ -52,6 +52,7 @@
+ #include <vm/vm_object.h>
+ #endif
+ 
++#ifdef _KERNEL
+ TAILQ_HEAD(pagerlst, vm_object);
+ 
+ struct buf;
+@@ -63,6 +64,7 @@ struct pagerops {
+ 	void (*pgo_putpages) (vm_object_t, vm_page_t *, int, int, int *);
+ 	boolean_t (*pgo_haspage) (vm_object_t, vm_pindex_t);
+ };
++#endif	/* _KERNEL */
+ 
+ /*
+  * get/put return values
+@@ -162,8 +164,8 @@ vm_pager_put_pages(
+ static __inline boolean_t
+ vm_pager_has_page(vm_object_t object, vm_pindex_t offset)
+ {
+-        return ((*pagertab[object->type]->pgo_haspage)(object, offset));
+-} 
++	return ((*pagertab[object->type]->pgo_haspage)(object, offset));
++}
+ 
+ struct cdev_pager_ops {
+ 	int (*cdev_pg_fault)(vm_object_t vm_obj, vm_ooffset_t offset,
+@@ -179,6 +181,6 @@ vm_object_t cdev_pager_allocate(void *handle, enum obj_type tp,
+ vm_object_t cdev_pager_lookup(void *handle);
+ void cdev_pager_free_page(vm_object_t object, vm_page_t m);
+ 
+-#endif
++#endif	/* _KERNEL */
+ 
+-#endif				/* _VM_VM_PAGER_H_ */
++#endif	/* _VM_VM_PAGER_H_ */
+-- 
+2.22.0
+

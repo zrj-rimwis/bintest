@@ -1,0 +1,46 @@
+From 4ac92180deab2e78a50459cedb80fbd1cd20d5ea Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 24 Aug 2019 23:51:48 +0300
+Subject: [PATCH 52/66] <sys/types.h>: Remove no longer needed vm_offset_t
+ handling.
+
+ All types are now properly handled by VM headers.  This will allow safe
+ usage of VM related _KERNEL_STRUCTURES without visibility caviats.
+ All default KERNCONF variants pass the buildkernel tests.
+---
+ sys/cpu/x86_64/include/types.h | 5 -----
+ sys/vm/vm.h                    | 3 ---
+ 2 files changed, 8 deletions(-)
+
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index 142883fbeb..17e32e5919 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -42,9 +42,4 @@ typedef	__int64_t	register_t;
+ typedef	__int32_t	register_t;
+ #endif
+ 
+-#ifndef _VM_OFFSET_T_DECLARED
+-#define _VM_OFFSET_T_DECLARED
+-typedef unsigned long	vm_offset_t;    /* depreciated */
+-#endif
+-
+ #endif /* !_CPU_TYPES_H_ */
+diff --git a/sys/vm/vm.h b/sys/vm/vm.h
+index 8e109462f2..95ba027788 100644
+--- a/sys/vm/vm.h
++++ b/sys/vm/vm.h
+@@ -111,10 +111,7 @@ typedef struct vm_page *vm_page_t;
+ 
+ typedef char vm_memattr_t;
+ 
+-#ifndef _VM_OFFSET_T_DECLARED
+-#define _VM_OFFSET_T_DECLARED
+ typedef unsigned long	vm_offset_t;	/* address space bounded offset */
+-#endif
+ typedef unsigned long	vm_size_t;	/* address space bounded size */
+ 
+ typedef __vm_pindex_t	vm_pindex_t;	/* physical page index */
+-- 
+2.22.0
+

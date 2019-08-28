@@ -1,0 +1,182 @@
+From 682e84b2e6b65ceb209f1ca6d8fd952b3fe7c33d Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 22 Aug 2019 14:18:33 +0300
+Subject: [PATCH 35/66] <sys/device.h>: Adjust userland visibility.
+
+ While there, do the same to sys/devfs.h and sys/vfsops.h.
+
+ No functional change for base.
+---
+ sys/sys/devfs.h  | 11 +++++++++++
+ sys/sys/device.h |  6 ++++++
+ sys/sys/vfsops.h |  8 ++++++--
+ 3 files changed, 23 insertions(+), 2 deletions(-)
+
+diff --git a/sys/sys/devfs.h b/sys/sys/devfs.h
+index 02b56a1123..5a01792407 100644
+--- a/sys/sys/devfs.h
++++ b/sys/sys/devfs.h
+@@ -36,9 +36,13 @@
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
++#ifndef _SYS_TYPES_H_
++#include <sys/types.h>
++#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
++#ifdef _KERNEL
+ #ifndef _SYS_LOCK_H_
+ #include <sys/lock.h>
+ #endif
+@@ -48,15 +52,18 @@
+ #ifndef _SYS_MSGPORT_H_
+ #include <sys/msgport.h>
+ #endif
++#endif	/* _KERNEL */
+ #ifndef _SYS_DIRENT_H_
+ #include <sys/dirent.h>
+ #endif
+ #ifndef _SYS_DEVICE_H_
+ #include <sys/device.h>
+ #endif
++#ifdef _KERNEL
+ #ifndef _SYS_UCRED_H_
+ #include <sys/ucred.h>
+ #endif
++#endif	/* _KERNEL */
+ 
+ 
+ typedef enum {
+@@ -114,6 +121,7 @@ struct devfs_node {
+ 	TAILQ_HEAD(, devfs_node) list;	/* linked list of children */
+ };
+ 
++#ifdef _KERNEL
+ struct devfs_orphan {
+ 	struct devfs_node *node;
+ 	TAILQ_ENTRY(devfs_orphan) link;
+@@ -329,6 +337,7 @@ struct devfs_bitmap {
+ 	int		chunks;
+ 	unsigned long	*bitmap;
+ };
++#endif /* _KERNEL */
+ 
+ #if 0
+ struct devfs_unit_hash {
+@@ -338,6 +347,7 @@ struct devfs_unit_hash {
+ };
+ #endif
+ 
++#ifdef _KERNEL
+ void devfs_clone_bitmap_init(struct devfs_bitmap *);
+ void devfs_clone_bitmap_uninit(struct devfs_bitmap *);
+ int devfs_clone_bitmap_set(struct devfs_bitmap *, int);
+@@ -443,6 +453,7 @@ void devfs_clear_cdevpriv(struct file *file);
+ 
+ int devfs_WildCmp(const char *w, const char *s);
+ int devfs_WildCaseCmp(const char *w, const char *s);
++#endif	/* _KERNEL */
+ 
+ #endif /* KERNEL || _KERNEL_STRUCTURES */
+ 
+diff --git a/sys/sys/device.h b/sys/sys/device.h
+index 9540562a5f..af159cc0b5 100644
+--- a/sys/sys/device.h
++++ b/sys/sys/device.h
+@@ -35,6 +35,7 @@
+ #ifndef _SYS_DEVICE_H_
+ #define _SYS_DEVICE_H_
+ 
++#ifdef _KERNEL
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
+@@ -251,6 +252,7 @@ struct dev_ops {
+ 	int (*d_uksmap)(struct cdev *dev, struct vm_page *fake);
+ #define dev_ops_last_field	d_uksmap
+ };
++#endif /* _KERNEL */
+ 
+ /*
+  * Types for d_flags.
+@@ -269,6 +271,7 @@ struct dev_ops {
+  * D_NOEMERGPGR		Indicates complex layering, the emergency pager
+  *			should skip buffers related to such devices.
+  */
++#ifdef _KERNEL
+ #define D_MEMDISK	0x00010000	/* memory type disk */
+ #define D_UNUSED17	0x00020000	/* was: nagged about missing make_dev() */
+ #define D_CANFREE	0x00040000	/* can free blocks */
+@@ -278,6 +281,7 @@ struct dev_ops {
+ #define D_MPSAFE	0x00400000	/* all dev_d*() calls are MPSAFE */
+ #define D_KVABIO	0x00800000	/* device support KVABIO API */
+ #define D_QUICK		0x01000000	/* no fancy open/close support needed*/
++#endif
+ 
+ /*
+  * A union of all possible argument structures.
+@@ -299,6 +303,7 @@ union dev_args_union {
+ };
+ #endif
+ 
++#ifdef _KERNEL
+ /*
+  * Linking structure for mask/match registration
+  */
+@@ -317,6 +322,7 @@ struct dev_ops_maj {
+ 
+ RB_HEAD(dev_ops_rb_tree, dev_ops_maj);
+ RB_PROTOTYPE2(dev_ops_rb_tree, dev_ops_maj, rbnode, rb_dev_ops_compare, int);
++#endif /* _KERNEL */
+ 
+ #ifdef _KERNEL
+ 
+diff --git a/sys/sys/vfsops.h b/sys/sys/vfsops.h
+index 56923d7139..d42be5ccb1 100644
+--- a/sys/sys/vfsops.h
++++ b/sys/sys/vfsops.h
+@@ -62,6 +62,7 @@
+ #ifndef _SYS_VFSOPS_H_
+ #define	_SYS_VFSOPS_H_
+ 
++#ifdef _KERNEL
+ #ifndef _SYS_ACL_H_
+ #include <sys/acl.h>
+ #endif
+@@ -652,6 +653,7 @@ struct vop_ops {
+ 	int	(*vop_nrename)(struct vop_nrename_args *);
+ #define vop_ops_last_field	vop_nrename
+ };
++#endif	/* _KERNEL */
+ 
+ /*
+  * vop_mountctl() operations
+@@ -983,12 +985,13 @@ extern struct syslink_desc vop_nremove_desc;
+ extern struct syslink_desc vop_nrmdir_desc;
+ extern struct syslink_desc vop_nrename_desc;
+ 
+-#endif
++#endif	/* _KERNEL */
+ 
+ /*
+  * VOP_*() convenience macros extract the operations vector and make the
+  * vop_*() call.
+  */
++#ifdef _KERNEL
+ #define VOP_OPEN(vp, mode, cred, fp)			\
+ 	vop_open(*(vp)->v_ops, vp, mode, cred, fp)
+ #define VOP_CLOSE(vp, fflag, fp)			\
+@@ -1127,6 +1130,7 @@ extern struct syslink_desc vop_nrename_desc;
+ 	vop_nrmdir((nch)->mount->mnt_vn_use_ops, nch, dvp, cred)
+ #define VOP_NREMOVE(nch, dvp, cred)			\
+ 	vop_nremove((nch)->mount->mnt_vn_use_ops, nch, dvp, cred)
++#endif	/* _KERNEL */
+ 
+-#endif
++#endif	/* !_SYS_VFSOPS_H_ */
+ 
+-- 
+2.22.0
+

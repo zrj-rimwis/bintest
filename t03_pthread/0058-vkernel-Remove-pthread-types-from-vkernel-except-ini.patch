@@ -1,0 +1,53 @@
+From 16e0ba73e7109bf3df884162fa87e686ef8a39cc Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 27 Aug 2019 13:26:52 +0300
+Subject: [PATCH 58/66] vkernel: Remove pthread types from vkernel except
+ init.c.
+
+ This makes kernel codes fully pthread clean.
+---
+ include/signal.h                       | 1 +
+ sys/platform/vkernel64/platform/init.c | 1 +
+ sys/sys/signal.h                       | 2 +-
+ 3 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/include/signal.h b/include/signal.h
+index e9448e877b..51793abc36 100644
+--- a/include/signal.h
++++ b/include/signal.h
+@@ -50,6 +50,7 @@ int	raise(int);
+ #if __POSIX_VISIBLE || __XSI_VISIBLE
+ int	kill(pid_t, int);
+ #if __POSIX_VISIBLE >= 199506 || __XSI_VISIBLE >= 500
++#include <sys/_pthreadtypes.h>	/* XXX */
+ int	pthread_kill(pthread_t, int);
+ int	pthread_sigmask(int, const sigset_t * __restrict,
+ 	    sigset_t * __restrict);
+diff --git a/sys/platform/vkernel64/platform/init.c b/sys/platform/vkernel64/platform/init.c
+index 3cd685de10..8dbe9b72e5 100644
+--- a/sys/platform/vkernel64/platform/init.c
++++ b/sys/platform/vkernel64/platform/init.c
+@@ -71,6 +71,7 @@
+ #include <arpa/inet.h>
+ #include <net/if_var.h>
+ 
++#include <sys/_pthreadtypes.h>		/* for pthread_t */
+ #include <signal.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+diff --git a/sys/sys/signal.h b/sys/sys/signal.h
+index 1c5168451b..630b922333 100644
+--- a/sys/sys/signal.h
++++ b/sys/sys/signal.h
+@@ -237,7 +237,7 @@ union sigval {
+ #endif
+ 
+ #if __POSIX_VISIBLE >= 199309 || __XSI_VISIBLE >= 500
+-#if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
++#if !defined(_KERNEL)
+ #include <sys/_pthreadtypes.h>
+ #endif
+ 
+-- 
+2.22.0
+

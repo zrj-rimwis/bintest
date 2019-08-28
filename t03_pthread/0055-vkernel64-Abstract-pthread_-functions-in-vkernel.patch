@@ -1,0 +1,838 @@
+From 2e8a385690862588e07bf55dba9732f95d7e9e32 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 26 Aug 2019 14:29:33 +0300
+Subject: [PATCH 55/66] vkernel64: Abstract pthread_*() functions in vkernel.
+
+ In preparations for <pthread.h> visibility changes.
+ This efectively removes <pthread.h> use in generic kernel sources and
+ allows to more easily to grep through sys/ tree.  The only kernel source
+ using this header now is vkernel/init.c that contains main() and can be
+ handled explicitly with compile_with directive.
+ Cost of indirection per each wrapper is literally just a single jump.
+ Also this provides an oportunity to instrument these functions with ease
+ or even implemenent symplified threading library version without having
+ to adjust generic kernel or other vkernel sources.
+---
+ sys/kern/kern_spinlock.c                     |   4 -
+ sys/kern/lwkt_ipiq.c                         |  16 ++-
+ sys/kern/lwkt_thread.c                       |   6 +-
+ sys/platform/vkernel64/include/cothread.h    |  12 +--
+ sys/platform/vkernel64/include/cpufunc.h     |   2 -
+ sys/platform/vkernel64/include/md_var.h      |   2 +-
+ sys/platform/vkernel64/include/thread.h      |   5 +
+ sys/platform/vkernel64/include/vk_pthread.h  |  68 +++++++++++++
+ sys/platform/vkernel64/platform/console.c    |   1 +
+ sys/platform/vkernel64/platform/cothread.c   |  42 ++++----
+ sys/platform/vkernel64/platform/init.c       | 102 ++++++++++++++++++-
+ sys/platform/vkernel64/platform/kqueue.c     |   1 -
+ sys/platform/vkernel64/platform/pmap.c       |   3 +-
+ sys/platform/vkernel64/platform/pmap_inval.c |   5 +-
+ sys/platform/vkernel64/platform/systimer.c   |   4 +-
+ sys/platform/vkernel64/x86_64/cpu_regs.c     |   3 +-
+ sys/platform/vkernel64/x86_64/mp.c           |  30 +++---
+ sys/platform/vkernel64/x86_64/trap.c         |   2 +
+ sys/sys/indefinite2.h                        |   5 +-
+ 19 files changed, 230 insertions(+), 83 deletions(-)
+ create mode 100644 sys/platform/vkernel64/include/vk_pthread.h
+
+diff --git a/sys/kern/kern_spinlock.c b/sys/kern/kern_spinlock.c
+index b78a196c4d..b706ded17d 100644
+--- a/sys/kern/kern_spinlock.c
++++ b/sys/kern/kern_spinlock.c
+@@ -67,10 +67,6 @@
+ #include <sys/spinlock2.h>
+ #include <sys/ktr.h>
+ 
+-#ifdef _KERNEL_VIRTUAL
+-#include <pthread.h>
+-#endif
+-
+ struct spinlock pmap_spin = SPINLOCK_INITIALIZER(pmap_spin, "pmap_spin");
+ 
+ /*
+diff --git a/sys/kern/lwkt_ipiq.c b/sys/kern/lwkt_ipiq.c
+index ec474696c0..a62e5bd1cb 100644
+--- a/sys/kern/lwkt_ipiq.c
++++ b/sys/kern/lwkt_ipiq.c
+@@ -68,10 +68,6 @@
+ #include <machine/clock.h>
+ #include <machine/atomic.h>
+ 
+-#ifdef _KERNEL_VIRTUAL
+-#include <pthread.h>
+-#endif
+-
+ struct ipiq_stats {
+     int64_t ipiq_count;		/* total calls to lwkt_send_ipiq*() */
+     int64_t ipiq_fifofull;	/* number of fifo full conditions detected */
+@@ -258,7 +254,7 @@ lwkt_send_ipiq3(globaldata_t target, ipifunc3_t func, void *arg1, int arg2)
+ 	     */
+ #ifdef _KERNEL_VIRTUAL
+ 	    if (repeating++ > 10)
+-		    pthread_yield();
++		    vk_pthread_yield();
+ #else
+ 	    if (rdtsc() - tsc_base > tsc_frequency) {
+ 		++repeating;
+@@ -489,7 +485,7 @@ lwkt_wait_ipiq(globaldata_t target, int seq)
+ 		crit_exit();
+ #ifdef _KERNEL_VIRTUAL
+ 		if (repeating++ > 10)
+-			pthread_yield();
++			vk_pthread_yield();
+ #endif
+ 
+ 		/*
+@@ -872,7 +868,7 @@ lwkt_cpusync_interlock(lwkt_cpusync_t cs)
+ 	    lwkt_process_ipiq();
+ 	    cpu_pause();
+ #ifdef _KERNEL_VIRTUAL
+-	    pthread_yield();
++	    vk_pthread_yield();
+ #endif
+ 	}
+ 	DEBUG_POP_INFO();
+@@ -912,7 +908,7 @@ lwkt_cpusync_deinterlock(lwkt_cpusync_t cs)
+ 	    lwkt_process_ipiq();
+ 	    cpu_pause();
+ #ifdef _KERNEL_VIRTUAL
+-	    pthread_yield();
++	    vk_pthread_yield();
+ #endif
+ 	}
+ 	DEBUG_POP_INFO();
+@@ -961,7 +957,7 @@ lwkt_cpusync_quick(lwkt_cpusync_t cs)
+ 	    lwkt_process_ipiq();
+ 	    cpu_pause();
+ #ifdef _KERNEL_VIRTUAL
+-	    pthread_yield();
++	    vk_pthread_yield();
+ #endif
+ 	}
+ 
+@@ -1017,7 +1013,7 @@ lwkt_cpusync_remote2(lwkt_cpusync_t cs)
+ 
+ 	cpu_pause();
+ #ifdef _KERNEL_VIRTUAL
+-	pthread_yield();
++	vk_pthread_yield();
+ #endif
+ 	cpu_lfence();
+ 
+diff --git a/sys/kern/lwkt_thread.c b/sys/kern/lwkt_thread.c
+index 8df2c9fbcf..74d583a991 100644
+--- a/sys/kern/lwkt_thread.c
++++ b/sys/kern/lwkt_thread.c
+@@ -73,10 +73,6 @@
+ #include <machine/smp.h>
+ #include <machine/clock.h>
+ 
+-#ifdef _KERNEL_VIRTUAL
+-#include <pthread.h>
+-#endif
+-
+ #define LOOPMASK
+ 
+ #if !defined(KTR_CTXSW)
+@@ -1384,7 +1380,7 @@ lwkt_acquire(thread_t td)
+ 	    lwkt_process_ipiq();
+ 	    cpu_lfence();
+ #ifdef _KERNEL_VIRTUAL
+-	    pthread_yield();
++	    vk_pthread_yield();
+ #endif
+ #ifdef LOOPMASK
+ 	    if (tsc_frequency && rdtsc() - tsc_base > tsc_frequency) {
+diff --git a/sys/platform/vkernel64/include/cothread.h b/sys/platform/vkernel64/include/cothread.h
+index 203774cad8..10599f87f3 100644
+--- a/sys/platform/vkernel64/include/cothread.h
++++ b/sys/platform/vkernel64/include/cothread.h
+@@ -30,24 +30,22 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- *
+- * $DragonFly: src/sys/platform/vkernel/include/cothread.h,v 1.2 2008/03/27 04:28:07 dillon Exp $
+  */
+ 
+ #ifndef _MACHINE_COTHREAD_H_
+ #define _MACHINE_COTHREAD_H_
+ 
+-#include <pthread.h>
++#include <machine/vk_pthread.h>
+ 
+ struct cothread {
+-	pthread_t	pthr;
+-	pthread_t	pintr;
++	vk_pthread_t	pthr;
++	vk_pthread_t	pintr;
+ 	void		*arg;
+ 	void		(*thr_func)(struct cothread *);
+ 	void		(*thr_intr)(struct cothread *);
+ 	void		*intr_id;
+-	pthread_mutex_t	mutex;
+-	pthread_cond_t	cond;
++	vk_pthread_mutex_t	mutex;
++	vk_pthread_cond_t	cond;
+ };
+ 
+ typedef struct cothread *cothread_t;
+diff --git a/sys/platform/vkernel64/include/cpufunc.h b/sys/platform/vkernel64/include/cpufunc.h
+index 44182450a9..c3d68050ee 100644
+--- a/sys/platform/vkernel64/include/cpufunc.h
++++ b/sys/platform/vkernel64/include/cpufunc.h
+@@ -71,8 +71,6 @@ void cpu_invltlb(void);
+ #include <vm/pmap.h>
+ 
+ #include <sys/mman.h>
+-#include <signal.h>
+-
+ #endif /* _KERNEL */
+ 
+ #endif /* !_MACHINE_CPUFUNC_H_ */
+diff --git a/sys/platform/vkernel64/include/md_var.h b/sys/platform/vkernel64/include/md_var.h
+index f859f866b4..b0e81f6d9e 100644
+--- a/sys/platform/vkernel64/include/md_var.h
++++ b/sys/platform/vkernel64/include/md_var.h
+@@ -74,7 +74,7 @@ extern	int	szsigcode;
+ extern	vpte_t	*KernelPTA;	/* NOTE: Offset for direct VA translation */
+ extern	vpte_t	*KernelPTD;
+ extern  int	cpu_fxsr;
+-extern  pthread_t ap_tids[MAXCPU];
++extern  vk_pthread_t ap_tids[MAXCPU];
+ 
+ extern  char    cpu_vendor[];	/* XXX belongs in pc64 */
+ extern  u_int   cpu_vendor_id;	/* XXX belongs in pc64 */
+diff --git a/sys/platform/vkernel64/include/thread.h b/sys/platform/vkernel64/include/thread.h
+index ac7b995ddc..2a4f0f4096 100644
+--- a/sys/platform/vkernel64/include/thread.h
++++ b/sys/platform/vkernel64/include/thread.h
+@@ -92,4 +92,9 @@ _get_mycpu(void)
+ 
+ #endif	/* _KERNEL */
+ 
++#ifdef _KERNEL_VIRTUAL
++/* Mostly to inject vk_pthread_yield() prototype */
++#include <machine/vk_pthread.h>
++#endif
++
+ #endif	/* !_MACHINE_THREAD_H_ */
+diff --git a/sys/platform/vkernel64/include/vk_pthread.h b/sys/platform/vkernel64/include/vk_pthread.h
+new file mode 100644
+index 0000000000..2ee56fef25
+--- /dev/null
++++ b/sys/platform/vkernel64/include/vk_pthread.h
+@@ -0,0 +1,68 @@
++/*
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#ifndef _MACHINE_VK_PTHREAD_H_
++#define _MACHINE_VK_PTHREAD_H_
++
++/*
++ * VKERNEL64 vk_pthread implementation.
++ */
++struct vk_pthread;
++struct vk_pthread_attr;
++struct vk_pthread_cond;
++struct vk_pthread_cond_attr;
++struct vk_pthread_mutex;
++struct vk_pthread_mutex_attr;
++
++typedef struct	vk_pthread		*vk_pthread_t;
++typedef struct	vk_pthread_attr		*vk_pthread_attr_t;
++typedef struct	vk_pthread_mutex	*vk_pthread_mutex_t;
++typedef struct	vk_pthread_mutex_attr	*vk_pthread_mutexattr_t;
++typedef struct	vk_pthread_cond		*vk_pthread_cond_t;
++typedef struct	vk_pthread_cond_attr	*vk_pthread_condattr_t;
++
++int	vk_pthread_attr_destroy(vk_pthread_attr_t *);
++int	vk_pthread_attr_init(vk_pthread_attr_t *) __nonnull(1);
++int	vk_pthread_attr_setstack(vk_pthread_attr_t *, void *, size_t);
++int	vk_pthread_create(vk_pthread_t * __restrict,
++	    const vk_pthread_attr_t * __restrict, void *(*) (void *),
++	    void * __restrict) __nonnull(1, 3);
++int	vk_pthread_cond_init(vk_pthread_cond_t * __restrict,
++	    const vk_pthread_condattr_t * __restrict) __nonnull(1);
++int	vk_pthread_cond_signal(vk_pthread_cond_t *) __nonnull(1);
++int	vk_pthread_cond_wait(vk_pthread_cond_t * __restrict,
++	    vk_pthread_mutex_t * __restrict) __nonnull(1, 2);
++int	vk_pthread_join(vk_pthread_t, void **);
++int	vk_pthread_mutex_init(vk_pthread_mutex_t * __restrict,
++	    const vk_pthread_mutexattr_t * __restrict) __nonnull(1);
++int	vk_pthread_mutex_lock(vk_pthread_mutex_t *);
++int	vk_pthread_mutex_unlock(vk_pthread_mutex_t *);
++
++vk_pthread_t vk_pthread_self(void);
++void	vk_pthread_yield(void);
++int	vk_pthread_kill(vk_pthread_t, int);
++
++#endif /* !_MACHINE_VK_PTHREAD_H_ */
+diff --git a/sys/platform/vkernel64/platform/console.c b/sys/platform/vkernel64/platform/console.c
+index 5c72e5b456..52727b1b5b 100644
+--- a/sys/platform/vkernel64/platform/console.c
++++ b/sys/platform/vkernel64/platform/console.c
+@@ -46,6 +46,7 @@
+ #include <sys/interrupt.h>
+ #include <sys/bus.h>
+ #include <machine/md_var.h>
++#include <signal.h>
+ #include <unistd.h>
+ #include <termios.h>
+ #include <stdlib.h>
+diff --git a/sys/platform/vkernel64/platform/cothread.c b/sys/platform/vkernel64/platform/cothread.c
+index 9c4a6c9e9a..f28bc17b37 100644
+--- a/sys/platform/vkernel64/platform/cothread.c
++++ b/sys/platform/vkernel64/platform/cothread.c
+@@ -32,7 +32,7 @@
+  * SUCH DAMAGE.
+  */
+ /*
+- * Provides the vkernel with an asynchronous I/O mechanism using pthreads
++ * Provides the vkernel with an asynchronous I/O mechanism using vk_pthreads
+  * which operates outside the cpu abstraction.  Cothreads are intended to
+  * operate like DMA engines and may ONLY make libc and cothread_*() calls.
+  * The cothread may NOT call into the vkernel since abstractions like
+@@ -63,8 +63,6 @@
+ #include <machine/cothread.h>
+ 
+ #include <unistd.h>
+-#include <pthread.h>
+-#include <signal.h>
+ #include <stdio.h>
+ 
+ static void cothread_thread(void *arg);
+@@ -82,18 +80,18 @@ cothread_create(void (*thr_func)(cothread_t cotd),
+ {
+ 	cothread_t cotd;
+ 	void *stack;
+-	pthread_attr_t attr;
++	vk_pthread_attr_t attr;
+ 
+ 	cotd = kmalloc(sizeof(*cotd), M_DEVBUF, M_WAITOK|M_ZERO);
+ 	cotd->thr_intr = thr_intr;
+ 	cotd->thr_func = thr_func;
+ 	cotd->arg = arg;
+ 	crit_enter();
+-	pthread_mutex_init(&cotd->mutex, NULL);
+-	pthread_cond_init(&cotd->cond, NULL);
++	vk_pthread_mutex_init(&cotd->mutex, NULL);
++	vk_pthread_cond_init(&cotd->cond, NULL);
+ 	crit_exit();
+ 
+-	cotd->pintr = pthread_self();
++	cotd->pintr = vk_pthread_self();
+ 
+ 	if (thr_intr) {
+ 		cotd->intr_id = register_int_virtual(1, (void *)thr_intr,
+@@ -105,7 +103,7 @@ cothread_create(void (*thr_func)(cothread_t cotd),
+ 	 * The vkernel's cpu_disable_intr() masks signals.  We don't want
+ 	 * our coprocessor thread taking any unix signals :-)
+ 	 */
+-	pthread_attr_init(&attr);
++	vk_pthread_attr_init(&attr);
+ 	if (vmm_enabled) {
+ 		stack = mmap(NULL, KERNEL_STACK_SIZE,
+ 			     PROT_READ|PROT_WRITE|PROT_EXEC,
+@@ -113,14 +111,14 @@ cothread_create(void (*thr_func)(cothread_t cotd),
+ 		if (stack == MAP_FAILED) {
+ 			panic("Unable to allocate stack for cothread\n");
+ 		}
+-		pthread_attr_setstack(&attr, stack, KERNEL_STACK_SIZE);
++		vk_pthread_attr_setstack(&attr, stack, KERNEL_STACK_SIZE);
+ 	}
+ 	crit_enter();
+ 	cpu_mask_all_signals();
+-	pthread_create(&cotd->pthr, &attr, (void *)cothread_thread, cotd);
++	vk_pthread_create(&cotd->pthr, &attr, (void *)cothread_thread, cotd);
+ 	cpu_unmask_all_signals();
+ 	crit_exit();
+-	pthread_attr_destroy(&attr);
++	vk_pthread_attr_destroy(&attr);
+ 
+ 	return(cotd);
+ }
+@@ -138,7 +136,7 @@ cothread_delete(cothread_t *cotdp)
+ 		if (cotd->thr_intr)
+ 			unregister_int_virtual(cotd->intr_id);
+ 		crit_enter();
+-		pthread_join(cotd->pthr, NULL);
++		vk_pthread_join(cotd->pthr, NULL);
+ 		crit_exit();
+ 		kfree(cotd, M_DEVBUF);
+ 		*cotdp = NULL;
+@@ -153,7 +151,7 @@ cothread_thread(void *arg)
+ 	cpu_mask_all_signals(); /* XXX remove me? should already be masked */
+ 	/*
+ 	 * %gs (aka mycpu) is illegal in cothreads.   Note that %fs is used
+-	 * by pthreads.
++	 * by vk_pthreads.
+ 	 */
+ 	/* JG try another approach? */
+ 	tls_set_gs(0, sizeof(struct privatespace));
+@@ -166,7 +164,7 @@ cothread_thread(void *arg)
+ void
+ cothread_intr(cothread_t cotd)
+ {
+-	pthread_kill(cotd->pintr, SIGALRM);
++	vk_pthread_kill(cotd->pintr, SIGALRM);
+ }
+ 
+ /*
+@@ -176,7 +174,7 @@ cothread_intr(cothread_t cotd)
+ void
+ cothread_signal(cothread_t cotd)
+ {
+-	pthread_cond_signal(&cotd->cond);
++	vk_pthread_cond_signal(&cotd->cond);
+ }
+ 
+ /*
+@@ -186,7 +184,7 @@ cothread_signal(cothread_t cotd)
+ void
+ cothread_wait(cothread_t cotd)
+ {
+-	pthread_cond_wait(&cotd->cond, &cotd->mutex);
++	vk_pthread_cond_wait(&cotd->cond, &cotd->mutex);
+ }
+ 
+ /*
+@@ -203,7 +201,7 @@ cothread_wakeup(cothread_t cotd, struct timespec *ts)
+ {
+ 	ts->tv_sec = 0;
+ 	ts->tv_nsec = 0;
+-	pthread_kill(cotd->pthr, SIGINT);
++	vk_pthread_kill(cotd->pthr, SIGINT);
+ }
+ 
+ /*
+@@ -214,16 +212,16 @@ cothread_wakeup(cothread_t cotd, struct timespec *ts)
+  *
+  * We do this to simplify cothread operation to prevent an
+  * interrupt (e.g. vkd_io_intr()) from preempting a vkd_strategy()
+- * call and creating a recursion in the pthread.
++ * call and creating a recursion in the vk_pthread.
+  */
+ void
+ cothread_lock(cothread_t cotd, int is_cotd)
+ {
+ 	if (is_cotd) {
+-		pthread_mutex_lock(&cotd->mutex);
++		vk_pthread_mutex_lock(&cotd->mutex);
+ 	} else {
+ 		crit_enter_id("cothread");
+-		pthread_mutex_lock(&cotd->mutex);
++		vk_pthread_mutex_lock(&cotd->mutex);
+ 	}
+ }
+ 
+@@ -231,9 +229,9 @@ void
+ cothread_unlock(cothread_t cotd, int is_cotd)
+ {
+ 	if (is_cotd) {
+-		pthread_mutex_unlock(&cotd->mutex);
++		vk_pthread_mutex_unlock(&cotd->mutex);
+ 	} else {
+-		pthread_mutex_unlock(&cotd->mutex);
++		vk_pthread_mutex_unlock(&cotd->mutex);
+ 		crit_exit_id("cothread");
+ 	}
+ }
+diff --git a/sys/platform/vkernel64/platform/init.c b/sys/platform/vkernel64/platform/init.c
+index 6cf8c60cb3..38b93e9547 100644
+--- a/sys/platform/vkernel64/platform/init.c
++++ b/sys/platform/vkernel64/platform/init.c
+@@ -71,6 +71,7 @@
+ #include <arpa/inet.h>
+ #include <net/if_var.h>
+ 
++#include <signal.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdarg.h>
+@@ -895,7 +896,7 @@ init_globaldata(void)
+ 
+ 	/*
+ 	 * Setup the %gs for cpu #0.  The mycpu macro works after this
+-	 * point.  Note that %fs is used by pthreads.
++	 * point.  Note that %fs is used by vk_pthreads.
+ 	 */
+ 	tls_set_gs(&CPU_prvspace[0], sizeof(struct privatespace));
+ }
+@@ -1692,3 +1693,102 @@ vkernel_module_memory_free(vm_offset_t base, size_t bytes)
+ #endif
+ #endif
+ }
++
++/*
++ * VKERNEL64 vk_pthreads implementation functions using pthreads.
++ */
++#include <machine/vk_pthread.h>
++#include <pthread.h>
++
++void
++vk_pthread_yield(void)
++{
++	pthread_yield();
++}
++
++vk_pthread_t
++vk_pthread_self(void)
++{
++	return (vk_pthread_t)pthread_self();
++}
++
++int
++vk_pthread_kill(vk_pthread_t pthread, int sig)
++{
++	return pthread_kill((pthread_t)pthread, sig);
++}
++
++int
++vk_pthread_create(vk_pthread_t * __restrict thread,
++		  const vk_pthread_attr_t * __restrict attr,
++		  void *(*start_routine) (void *),   void * __restrict arg)
++{
++	return pthread_create((pthread_t *)thread, (const pthread_attr_t *)attr,
++				start_routine, arg);
++}
++
++int
++vk_pthread_join(vk_pthread_t pthread, void **thread_return)
++{
++	return pthread_join((pthread_t)pthread, thread_return);
++}
++
++int
++vk_pthread_attr_destroy(vk_pthread_attr_t * attr)
++{
++	return pthread_attr_destroy((pthread_attr_t *)attr);
++}
++
++int
++vk_pthread_attr_init(vk_pthread_attr_t * attr)
++{
++	return pthread_attr_init((pthread_attr_t *)attr);
++}
++
++int
++vk_pthread_attr_setstack(vk_pthread_attr_t * attr, void * stackp, size_t size)
++{
++	return pthread_attr_setstack((pthread_attr_t *)attr, stackp, size);
++}
++
++int
++vk_pthread_cond_init(vk_pthread_cond_t * __restrict cond,
++		     const vk_pthread_condattr_t * __restrict cond_attr)
++{
++	return pthread_cond_init((pthread_cond_t *)cond,
++				 (const pthread_condattr_t *)cond_attr);
++}
++
++int
++vk_pthread_cond_signal(vk_pthread_cond_t *cond)
++{
++	return pthread_cond_signal((pthread_cond_t *)cond);
++}
++
++int
++vk_pthread_cond_wait(vk_pthread_cond_t * __restrict cond,
++		     vk_pthread_mutex_t * __restrict mutex)
++{
++	return pthread_cond_wait((pthread_cond_t *)cond,
++				 (pthread_mutex_t *)mutex);
++}
++
++int
++vk_pthread_mutex_init(vk_pthread_mutex_t * __restrict mutex,
++		      const vk_pthread_mutexattr_t * __restrict mutex_attr)
++{
++	return pthread_mutex_init((pthread_mutex_t *) mutex,
++				  (const pthread_mutexattr_t *)mutex_attr);
++}
++
++int
++vk_pthread_mutex_lock(vk_pthread_mutex_t *m)
++{
++	return pthread_mutex_lock((pthread_mutex_t *)m);
++}
++
++int
++vk_pthread_mutex_unlock(vk_pthread_mutex_t *m)
++{
++	return pthread_mutex_unlock((pthread_mutex_t *)m);
++}
+diff --git a/sys/platform/vkernel64/platform/kqueue.c b/sys/platform/vkernel64/platform/kqueue.c
+index fc6e04a747..094b2cbaf8 100644
+--- a/sys/platform/vkernel64/platform/kqueue.c
++++ b/sys/platform/vkernel64/platform/kqueue.c
+@@ -47,7 +47,6 @@
+ #include <machine/md_var.h>
+ 
+ #include <unistd.h>
+-#include <signal.h>
+ #include <stdlib.h>
+ #include <fcntl.h>
+ 
+diff --git a/sys/platform/vkernel64/platform/pmap.c b/sys/platform/vkernel64/platform/pmap.c
+index 697891f0bd..b947b2d434 100644
+--- a/sys/platform/vkernel64/platform/pmap.c
++++ b/sys/platform/vkernel64/platform/pmap.c
+@@ -90,7 +90,6 @@
+ #include <stdio.h>
+ #include <assert.h>
+ #include <stdlib.h>
+-#include <pthread.h>
+ 
+ #define PMAP_KEEP_PDIRS
+ #ifndef PMAP_SHPGPERPROC
+@@ -3331,7 +3330,7 @@ pmap_interlock_wait (struct vmspace *vm)
+ 		crit_enter();
+ 		while (pmap->pm_active_lock & CPULOCK_EXCL) {
+ 			cpu_ccfence();
+-			pthread_yield();
++			vk_pthread_yield();
+ 		}
+ 		crit_exit();
+ 	}
+diff --git a/sys/platform/vkernel64/platform/pmap_inval.c b/sys/platform/vkernel64/platform/pmap_inval.c
+index 27fbe7e70b..8435f246d0 100644
+--- a/sys/platform/vkernel64/platform/pmap_inval.c
++++ b/sys/platform/vkernel64/platform/pmap_inval.c
+@@ -30,8 +30,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- *
+- * $DragonFly: src/sys/platform/vkernel/platform/pmap_inval.c,v 1.4 2007/07/02 02:22:58 dillon Exp $
+  */
+ 
+ /*
+@@ -74,7 +72,6 @@
+ #include <machine/pmap_inval.h>
+ 
+ #include <unistd.h>
+-#include <pthread.h>
+ 
+ #include <vm/vm_page2.h>
+ 
+@@ -166,7 +163,7 @@ guest_sync_addr(struct pmap *pmap, volatile vpte_t *ptep, vpte_t *srcv)
+ 		}
+ 		cpu_pause();
+ 		lwkt_process_ipiq();
+-		pthread_yield();
++		vk_pthread_yield();
+ 	}
+ 
+ 	/*
+diff --git a/sys/platform/vkernel64/platform/systimer.c b/sys/platform/vkernel64/platform/systimer.c
+index c9a40d739a..84a276943b 100644
+--- a/sys/platform/vkernel64/platform/systimer.c
++++ b/sys/platform/vkernel64/platform/systimer.c
+@@ -255,7 +255,7 @@ vktimer_thread(cothread_t cotd)
+ 			gscan = globaldata_find(n);
+ 			delta = vktimer_reload[n] - curtime;
+ 			if (delta <= 0 && TAILQ_FIRST(&gscan->gd_systimerq))
+-				pthread_kill(ap_tids[n], SIGURG);
++				vk_pthread_kill(ap_tids[n], SIGURG);
+ 			if (delta > 0 && reload > delta)
+ 				reload = delta;
+ 		}
+@@ -343,7 +343,7 @@ resettodr(void)
+ 
+ /*
+  * We need to enter a critical section to prevent signals from recursing
+- * into pthreads.
++ * into vk_pthreads.
+  */
+ void
+ DELAY(int usec)
+diff --git a/sys/platform/vkernel64/x86_64/cpu_regs.c b/sys/platform/vkernel64/x86_64/cpu_regs.c
+index 03136405fa..64253577e5 100644
+--- a/sys/platform/vkernel64/x86_64/cpu_regs.c
++++ b/sys/platform/vkernel64/x86_64/cpu_regs.c
+@@ -96,7 +96,6 @@
+ #include <sys/ptrace.h>
+ #include <machine/sigframe.h>
+ #include <unistd.h>		/* umtx_* functions */
+-#include <pthread.h>		/* pthread_yield() */
+ 
+ extern void dblfault_handler (void);
+ 
+@@ -532,7 +531,7 @@ cpu_idle(void)
+  * when a spinlock is found to be seriously constested.
+  *
+  * We need to enter a critical section to prevent signals from recursing
+- * into pthreads.
++ * into vk_pthreads.
+  */
+ void
+ cpu_spinlock_contested(void)
+diff --git a/sys/platform/vkernel64/x86_64/mp.c b/sys/platform/vkernel64/x86_64/mp.c
+index 4845131791..ca6ca3b46b 100644
+--- a/sys/platform/vkernel64/x86_64/mp.c
++++ b/sys/platform/vkernel64/x86_64/mp.c
+@@ -58,8 +58,6 @@
+ #include <machine/param.h>
+ 
+ #include <unistd.h>
+-#include <pthread.h>
+-#include <signal.h>
+ #include <stdio.h>
+ 
+ extern pt_entry_t *KPTphys;
+@@ -143,7 +141,7 @@ start_ap(void *arg __unused)
+ }
+ 
+ /* storage for AP thread IDs */
+-pthread_t ap_tids[MAXCPU];
++vk_pthread_t ap_tids[MAXCPU];
+ 
+ int naps;
+ 
+@@ -200,8 +198,8 @@ void
+ cpu_send_ipiq(int dcpu)
+ {
+ 	if (CPUMASK_TESTBIT(smp_active_mask, dcpu)) {
+-		if (pthread_kill(ap_tids[dcpu], SIGUSR1) != 0)
+-			panic("pthread_kill failed in cpu_send_ipiq");
++		if (vk_pthread_kill(ap_tids[dcpu], SIGUSR1) != 0)
++			panic("vk_pthread_kill failed in cpu_send_ipiq");
+ 	}
+ #if 0
+ 	panic("XXX cpu_send_ipiq()");
+@@ -236,8 +234,8 @@ stop_cpus(cpumask_t map)
+ 		int n = BSFCPUMASK(map);
+ 		CPUMASK_NANDBIT(map, n);
+ 		ATOMIC_CPUMASK_ORBIT(stopped_cpus, n);
+-		if (pthread_kill(ap_tids[n], SIGXCPU) != 0)
+-			panic("stop_cpus: pthread_kill failed");
++		if (vk_pthread_kill(ap_tids[n], SIGXCPU) != 0)
++			panic("stop_cpus: vk_pthread_kill failed");
+ 	}
+ 	crit_exit();
+ #if 0
+@@ -257,8 +255,8 @@ restart_cpus(cpumask_t map)
+ 		int n = BSFCPUMASK(map);
+ 		CPUMASK_NANDBIT(map, n);
+ 		ATOMIC_CPUMASK_NANDBIT(stopped_cpus, n);
+-		if (pthread_kill(ap_tids[n], SIGXCPU) != 0)
+-			panic("restart_cpus: pthread_kill failed");
++		if (vk_pthread_kill(ap_tids[n], SIGXCPU) != 0)
++			panic("restart_cpus: vk_pthread_kill failed");
+ 	}
+ 	crit_exit();
+ #if 0
+@@ -364,7 +362,7 @@ init_secondary(void)
+ 
+ 	/*
+ 	 * Setup the %gs for cpu #n.  The mycpu macro works after this
+-	 * point.  Note that %fs is used by pthreads.
++	 * point.  Note that %fs is used by vk_pthreads.
+ 	 */
+ 	tls_set_gs(&CPU_prvspace[myid], sizeof(struct privatespace));
+ 
+@@ -391,7 +389,7 @@ start_all_aps(u_int boot_addr)
+ 	vm_page_t m;
+ 	vm_offset_t va;
+ 	void *stack;
+-	pthread_attr_t attr;
++	vk_pthread_attr_t attr;
+ 	size_t ipiq_size;
+ #if 0
+ 	struct lwp_params params;
+@@ -401,8 +399,8 @@ start_all_aps(u_int boot_addr)
+ 	 * needed for ipis to initial thread
+ 	 * FIXME: rename ap_tids?
+ 	 */
+-	ap_tids[0] = pthread_self();
+-	pthread_attr_init(&attr);
++	ap_tids[0] = vk_pthread_self();
++	vk_pthread_attr_init(&attr);
+ 
+ 	vm_object_hold(&kernel_object);
+ 	for (x = 1; x <= naps; ++x) {
+@@ -469,10 +467,10 @@ start_all_aps(u_int boot_addr)
+ 			if (stack == MAP_FAILED) {
+ 				panic("Unable to allocate stack for thread %d\n", x);
+ 			}
+-			pthread_attr_setstack(&attr, stack, KERNEL_STACK_SIZE);
++			vk_pthread_attr_setstack(&attr, stack, KERNEL_STACK_SIZE);
+ 		}
+ 
+-		pthread_create(&ap_tids[x], &attr, start_ap, NULL);
++		vk_pthread_create(&ap_tids[x], &attr, start_ap, NULL);
+ 		cpu_enable_intr();
+ 
+ 		while (CPUMASK_TESTBIT(smp_startup_mask, x) == 0) {
+@@ -481,7 +479,7 @@ start_all_aps(u_int boot_addr)
+ 		}
+ 	}
+ 	vm_object_drop(&kernel_object);
+-	pthread_attr_destroy(&attr);
++	vk_pthread_attr_destroy(&attr);
+ 
+ 	return(ncpus - 1);
+ }
+diff --git a/sys/platform/vkernel64/x86_64/trap.c b/sys/platform/vkernel64/x86_64/trap.c
+index df3babab9e..9d54fd30c1 100644
+--- a/sys/platform/vkernel64/x86_64/trap.c
++++ b/sys/platform/vkernel64/x86_64/trap.c
+@@ -92,6 +92,8 @@
+ #include <sys/thread2.h>
+ #include <sys/mplock2.h>
+ 
++#include <signal.h>	/* for sigsetmask() */
++
+ int (*pmath_emulate) (struct trapframe *);
+ 
+ static int trap_pfault (struct trapframe *, int, vm_offset_t);
+diff --git a/sys/sys/indefinite2.h b/sys/sys/indefinite2.h
+index ad03b84f58..d579abd25e 100644
+--- a/sys/sys/indefinite2.h
++++ b/sys/sys/indefinite2.h
+@@ -43,9 +43,6 @@
+ #ifndef _SYS_GLOBALDATA_H_
+ #include <sys/globaldata.h>
+ #endif
+-#ifdef _KERNEL_VIRTUAL
+-#include <pthread.h>
+-#endif
+ 
+ /*
+  * Initialize the indefinite state (only if the TSC is supported)
+@@ -82,7 +79,7 @@ indefinite_check(indefinite_info_t *info)
+ 	const char *str;
+ 
+ #ifdef _KERNEL_VIRTUAL
+-	pthread_yield();
++	vk_pthread_yield();
+ #else
+ 	cpu_pause();
+ #endif
+-- 
+2.22.0
+

@@ -1,0 +1,187 @@
+From f23d36c1c1a4ac6790f484c22ff318390de5b5a7 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 24 Aug 2019 22:55:27 +0300
+Subject: [PATCH 50/66] kernel/ddb: Use u_long types instead of vm_offset_t.
+
+ The ddb code is already hardcoded to unsigned long so and does not deal
+ with VM directly.  Use plain u_long type.
+
+ No functional change.
+---
+ sys/cpu/x86_64/include/db_machdep.h  |  2 +-
+ sys/cpu/x86_64/misc/x86_64-gdbstub.c | 26 +++++++++++++-------------
+ sys/ddb/db_kld.c                     |  2 +-
+ sys/ddb/ddb.h                        |  6 +++---
+ 4 files changed, 18 insertions(+), 18 deletions(-)
+
+diff --git a/sys/cpu/x86_64/include/db_machdep.h b/sys/cpu/x86_64/include/db_machdep.h
+index 8643079bd9..837a9ae846 100644
+--- a/sys/cpu/x86_64/include/db_machdep.h
++++ b/sys/cpu/x86_64/include/db_machdep.h
+@@ -34,7 +34,7 @@
+ 
+ #define x86_64_saved_state	trapframe
+ 
+-typedef	vm_offset_t	db_addr_t;	/* address - unsigned */
++typedef	unsigned long	db_addr_t;	/* address - unsigned */
+ typedef	long		db_expr_t;	/* expression - signed */
+ 
+ typedef struct x86_64_saved_state db_regs_t;
+diff --git a/sys/cpu/x86_64/misc/x86_64-gdbstub.c b/sys/cpu/x86_64/misc/x86_64-gdbstub.c
+index d3c6975e10..a093274a68 100644
+--- a/sys/cpu/x86_64/misc/x86_64-gdbstub.c
++++ b/sys/cpu/x86_64/misc/x86_64-gdbstub.c
+@@ -281,7 +281,7 @@ static char  remcomInBuffer[BUFMAX];
+ static char  remcomOutBuffer[BUFMAX];
+ 
+ static int
+-get_char (vm_offset_t addr)
++get_char (u_long addr)
+ {
+   char data;
+ 
+@@ -294,7 +294,7 @@ get_char (vm_offset_t addr)
+ }
+ 
+ static int
+-set_char (vm_offset_t addr, int val)
++set_char (u_long addr, int val)
+ {
+   char data;
+ 
+@@ -311,7 +311,7 @@ set_char (vm_offset_t addr, int val)
+ /* return a pointer to the last char put in buf (null) */
+ 
+ static char *
+-mem2hex (vm_offset_t mem, char *buf, int count)
++mem2hex (u_long mem, char *buf, int count)
+ {
+       int i;
+       int ch;
+@@ -330,7 +330,7 @@ mem2hex (vm_offset_t mem, char *buf, int count)
+ /* convert the hex array pointed to by buf into binary to be placed in mem */
+ /* return a pointer to the character AFTER the last byte written */
+ static char *
+-hex2mem (char *buf, vm_offset_t mem, int count)
++hex2mem (char *buf, u_long mem, int count)
+ {
+       int i;
+       int ch;
+@@ -511,19 +511,19 @@ gdb_handle_exception (db_regs_t *raw_regs, int type, int code)
+   *ptr++ = hexchars[PC >> 4];
+   *ptr++ = hexchars[PC & 0xf];
+   *ptr++ = ':';
+-  ptr = mem2hex ((vm_offset_t)&registers.rip, ptr, 8);
++  ptr = mem2hex ((u_long)&registers.rip, ptr, 8);
+   *ptr++ = ';';
+ 
+   *ptr++ = hexchars[FP >> 4];
+   *ptr++ = hexchars[FP & 0xf];
+   *ptr++ = ':';
+-  ptr = mem2hex ((vm_offset_t)&registers.rbp, ptr, 8);
++  ptr = mem2hex ((u_long)&registers.rbp, ptr, 8);
+   *ptr++ = ';';
+ 
+   *ptr++ = hexchars[SP >> 4];
+   *ptr++ = hexchars[SP & 0xf];
+   *ptr++ = ':';
+-  ptr = mem2hex ((vm_offset_t)&registers.rsp, ptr, 8);
++  ptr = mem2hex ((u_long)&registers.rsp, ptr, 8);
+   *ptr++ = ';';
+ 
+   *ptr++ = 0;
+@@ -535,7 +535,7 @@ gdb_handle_exception (db_regs_t *raw_regs, int type, int code)
+       remcomOutBuffer[0] = 0;
+ 
+       getpacket (remcomInBuffer);
+-      switch (remcomInBuffer[0]) 
++      switch (remcomInBuffer[0])
+ 	{
+ 	case '?':
+ 	  remcomOutBuffer[0] = 'S';
+@@ -550,11 +550,11 @@ gdb_handle_exception (db_regs_t *raw_regs, int type, int code)
+ 	  return;
+ 
+ 	case 'g':		/* return the value of the CPU registers */
+-	  mem2hex ((vm_offset_t)&registers, remcomOutBuffer, NUMREGBYTES);
++	  mem2hex ((u_long)&registers, remcomOutBuffer, NUMREGBYTES);
+ 	  break;
+ 
+ 	case 'G':		/* set the value of the CPU registers - return OK */
+-	  hex2mem (&remcomInBuffer[1], (vm_offset_t)&registers, NUMREGBYTES);
++	  hex2mem (&remcomInBuffer[1], (u_long)&registers, NUMREGBYTES);
+ 	  strcpy (remcomOutBuffer, "OK");
+ 	  break;
+ 
+@@ -569,7 +569,7 @@ gdb_handle_exception (db_regs_t *raw_regs, int type, int code)
+ 		&& regno < NUM_REGS)
+ 	      {
+ 		/* JG */
+-		hex2mem (ptr, (vm_offset_t)&registers + regno * 8, 8);
++		hex2mem (ptr, (u_long)&registers + regno * 8, 8);
+ 		strcpy(remcomOutBuffer,"OK");
+ 	      }
+ 	    else
+@@ -585,7 +585,7 @@ gdb_handle_exception (db_regs_t *raw_regs, int type, int code)
+ 	      && *(ptr++) == ','
+ 	      && hexToInt (&ptr, &length))
+ 	    {
+-	      if (mem2hex((vm_offset_t) addr, remcomOutBuffer, length) == NULL)
++	      if (mem2hex((u_long) addr, remcomOutBuffer, length) == NULL)
+ 		strcpy (remcomOutBuffer, "E03");
+ 	      break;
+ 	    }
+@@ -604,7 +604,7 @@ gdb_handle_exception (db_regs_t *raw_regs, int type, int code)
+ 	      && hexToInt(&ptr, &length)
+ 	      && *(ptr++) == ':')
+ 	    {
+-	      if (hex2mem(ptr, (vm_offset_t) addr, length) == NULL)
++	      if (hex2mem(ptr, (u_long) addr, length) == NULL)
+ 		strcpy (remcomOutBuffer, "E03");
+ 	      else
+ 		strcpy (remcomOutBuffer, "OK");
+diff --git a/sys/ddb/db_kld.c b/sys/ddb/db_kld.c
+index 65a2659198..8ac07fa273 100644
+--- a/sys/ddb/db_kld.c
++++ b/sys/ddb/db_kld.c
+@@ -43,7 +43,7 @@
+ #include <ddb/db_sym.h>
+ 
+ #if defined(__x86_64__)
+-vm_offset_t    ksym_start, ksym_end;
++u_long	ksym_start, ksym_end;
+ #endif
+ 
+ c_db_sym_t
+diff --git a/sys/ddb/ddb.h b/sys/ddb/ddb.h
+index d7d4b881ea..12299e4e21 100644
+--- a/sys/ddb/ddb.h
++++ b/sys/ddb/ddb.h
+@@ -96,13 +96,13 @@ void		db_error (char *s);
+ int		db_expression (db_expr_t *valuep);
+ int		db_get_variable (db_expr_t *valuep);
+ void		db_iprintf (const char *,...) __printflike(1, 2);
+-struct vm_map	*db_map_addr (vm_offset_t);
++struct vm_map	*db_map_addr (u_long);
+ boolean_t	db_map_current (struct vm_map *);
+ boolean_t	db_map_equal (struct vm_map *, struct vm_map *);
+ void		db_print_loc_and_inst (db_addr_t loc, db_regs_t *regs);
+ void		db_printf (const char *fmt, ...) __printflike(1, 2);
+ void		db_vprintf (const char *fmt, __va_list va) __printflike(1, 0);
+-void		db_read_bytes (vm_offset_t addr, size_t size, char *data);
++void		db_read_bytes (u_long addr, size_t size, char *data);
+ 				/* machine-dependent */
+ int		db_readline (char *lstart, int lsize);
+ void		db_restart_at_pc (boolean_t watchpt);
+@@ -112,7 +112,7 @@ boolean_t	db_stop_at_pc (boolean_t *is_breakpoint);
+ #define		db_strcpy	strcpy
+ void		db_trap (int type, int code);
+ boolean_t	db_value_of_name (const char *name, db_expr_t *valuep);
+-void		db_write_bytes (vm_offset_t addr, size_t size, char *data);
++void		db_write_bytes (u_long addr, size_t size, char *data);
+ 				/* machine-dependent */
+ void		kdb_init (void);
+ 
+-- 
+2.22.0
+

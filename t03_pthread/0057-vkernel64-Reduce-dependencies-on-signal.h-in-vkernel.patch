@@ -1,0 +1,526 @@
+From c4aea909c1b5f385c785b8284f1ec1615ae54312 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 27 Aug 2019 11:40:19 +0300
+Subject: [PATCH 57/66] vkernel64: Reduce dependencies on <signal.h> in
+ vkernel.
+
+ Abstract calls into vk_signal.h to fully remove dependencies on
+ pthread types (similary like vk_pthread.h).  The <signal.h> uses
+ pthread_t type for pthread_kill().  Collect all sig* related routines
+ and make them visible in init.c only.  Cost for indirection is only
+ a single jump instruction per every wrapper.
+---
+ sys/platform/vkernel64/include/vk_signal.h  | 52 +++++++++++++++
+ sys/platform/vkernel64/platform/console.c   | 30 ++++-----
+ sys/platform/vkernel64/platform/init.c      | 73 +++++++++++++++++++++
+ sys/platform/vkernel64/platform/ipl_funcs.c |  5 +-
+ sys/platform/vkernel64/platform/machintr.c  | 13 ++--
+ sys/platform/vkernel64/platform/shutdown.c  | 10 ++-
+ sys/platform/vkernel64/platform/systimer.c  |  8 +--
+ sys/platform/vkernel64/x86_64/cpu_regs.c    |  5 +-
+ sys/platform/vkernel64/x86_64/exception.c   | 48 +++++++-------
+ sys/platform/vkernel64/x86_64/trap.c        |  4 +-
+ 10 files changed, 185 insertions(+), 63 deletions(-)
+ create mode 100644 sys/platform/vkernel64/include/vk_signal.h
+
+diff --git a/sys/platform/vkernel64/include/vk_signal.h b/sys/platform/vkernel64/include/vk_signal.h
+new file mode 100644
+index 0000000000..6e5b2e100d
+--- /dev/null
++++ b/sys/platform/vkernel64/include/vk_signal.h
+@@ -0,0 +1,52 @@
++/*
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#ifndef _MACHINE_VK_SIGNAL_H_
++#define _MACHINE_VK_SIGNAL_H_
++
++#include <sys/signal.h>
++
++/*
++ * VKERNEL64 vk_signal implementation.
++ */
++struct sigaction;
++
++int	vk_raise(int);
++int	vk_sigaction(int, const struct sigaction * __restrict,
++	    struct sigaction * __restrict);
++int	vk_sigaddset(sigset_t *, int);
++int	vk_sigblock(int);
++int	vk_sigemptyset(sigset_t *);
++int	vk_sigprocmask(int, const sigset_t * __restrict, sigset_t * __restrict);
++int	vk_sigsetmask(int);
++int	vk_sigsuspend(const sigset_t *);
++
++/* from unistd.h */
++int	vk_reboot(int);
++int	vk_umtx_sleep(volatile const int *, int, int);
++int	vk_umtx_wakeup(volatile const int *, int);
++
++#endif /* !_MACHINE_VK_SIGNAL_H_ */
+diff --git a/sys/platform/vkernel64/platform/console.c b/sys/platform/vkernel64/platform/console.c
+index 52727b1b5b..d78e41b9f1 100644
+--- a/sys/platform/vkernel64/platform/console.c
++++ b/sys/platform/vkernel64/platform/console.c
+@@ -46,7 +46,7 @@
+ #include <sys/interrupt.h>
+ #include <sys/bus.h>
+ #include <machine/md_var.h>
+-#include <signal.h>
++#include <machine/vk_signal.h>
+ #include <unistd.h>
+ #include <termios.h>
+ #include <stdlib.h>
+@@ -251,15 +251,15 @@ vconssignal(int sig)
+ 	tcgetattr(0, &curtio);
+ 	tcsetattr(0, TCSAFLUSH, &init_tio);
+ 	bzero(&sa, sizeof(sa));
+-	sigemptyset(&sa.sa_mask);
++	vk_sigemptyset(&sa.sa_mask);
+ 	sa.sa_handler = SIG_DFL;
+-	sigaction(sig, &sa, &osa);
+-	sigemptyset(&ss);
+-	sigaddset(&ss, sig);
+-	sigprocmask(SIG_UNBLOCK, &ss, &oss);
+-	raise(sig);	/* now hand down the sig */
+-	sigprocmask(SIG_SETMASK, &oss, NULL);
+-	sigaction(sig, &osa, NULL);
++	vk_sigaction(sig, &sa, &osa);
++	vk_sigemptyset(&ss);
++	vk_sigaddset(&ss, sig);
++	vk_sigprocmask(SIG_UNBLOCK, &ss, &oss);
++	vk_raise(sig);	/* now hand down the sig */
++	vk_sigprocmask(SIG_SETMASK, &oss, NULL);
++	vk_sigaction(sig, &osa, NULL);
+ 	tcsetattr(0, TCSAFLUSH, &curtio);
+ }
+ 
+@@ -352,11 +352,11 @@ vconsinit(struct consdev *cp)
+ 
+ 	tcgetattr(0, &init_tio);
+ 	bzero(&sa, sizeof(sa));
+-	sigemptyset(&sa.sa_mask);
++	vk_sigemptyset(&sa.sa_mask);
+ 	sa.sa_handler = vconssignal;
+-	sigaction(SIGTSTP, &sa, NULL);
+-	sigaction(SIGINT, &sa, NULL);
+-	sigaction(SIGTERM, &sa, NULL);
++	vk_sigaction(SIGTSTP, &sa, NULL);
++	vk_sigaction(SIGINT, &sa, NULL);
++	vk_sigaction(SIGTERM, &sa, NULL);
+ 	atexit(vconscleanup);
+ 	vcons_set_mode(0);
+ }
+@@ -377,9 +377,9 @@ vconsinit_fini(struct consdev *cp)
+ 	register_int_virtual(4, vconsvirt_intr, NULL, "vintr", NULL,
+ 			     INTR_MPSAFE);
+ 	bzero(&sa, sizeof(sa));
+-	sigemptyset(&sa.sa_mask);
++	vk_sigemptyset(&sa.sa_mask);
+ 	sa.sa_handler = vconswinchsig;
+-	sigaction(SIGWINCH, &sa, NULL);
++	vk_sigaction(SIGWINCH, &sa, NULL);
+ 
+ 	/*
+ 	 * Implement ttyv0-ttyv7.  At the moment ttyv1-7 are sink nulls.
+diff --git a/sys/platform/vkernel64/platform/init.c b/sys/platform/vkernel64/platform/init.c
+index 38b93e9547..3cd685de10 100644
+--- a/sys/platform/vkernel64/platform/init.c
++++ b/sys/platform/vkernel64/platform/init.c
+@@ -1694,6 +1694,79 @@ vkernel_module_memory_free(vm_offset_t base, size_t bytes)
+ #endif
+ }
+ 
++/*
++ * VKERNEL64 vk_signal implementation using libc functions.
++ */
++#include <machine/vk_signal.h>
++
++int
++vk_raise(int sig)
++{
++	return raise(sig);
++}
++
++int
++vk_sigaction(int sig, const struct sigaction * __restrict act,
++	     struct sigaction * __restrict oact)
++{
++	return sigaction(sig, act, oact);
++}
++
++int
++vk_sigaddset(sigset_t *set, int signo)
++{
++	return sigaddset(set, signo);
++}
++
++int
++vk_sigblock(int mask)
++{
++	return sigblock(mask);
++}
++
++int
++vk_sigemptyset(sigset_t *set)
++{
++	return sigemptyset(set);
++}
++
++int
++vk_sigprocmask(int how, const sigset_t * __restrict set,
++	       sigset_t * __restrict oset)
++{
++	return sigprocmask(how, set, oset);
++}
++
++int
++vk_sigsetmask(int mask)
++{
++	return sigsetmask(mask);
++}
++
++int
++vk_sigsuspend(const sigset_t *sigmask)
++{
++	return sigsuspend(sigmask);
++}
++
++int
++vk_reboot(int howto)
++{
++	return reboot(howto);
++}
++
++int
++vk_umtx_sleep(volatile const int *ptr, int value, int timeout)
++{
++	return umtx_sleep(ptr, value, timeout);
++}
++
++int
++vk_umtx_wakeup(volatile const int *ptr, int count)
++{
++	return umtx_wakeup(ptr, count);
++}
++
+ /*
+  * VKERNEL64 vk_pthreads implementation functions using pthreads.
+  */
+diff --git a/sys/platform/vkernel64/platform/ipl_funcs.c b/sys/platform/vkernel64/platform/ipl_funcs.c
+index eab4dfa70c..e807f7dddd 100644
+--- a/sys/platform/vkernel64/platform/ipl_funcs.c
++++ b/sys/platform/vkernel64/platform/ipl_funcs.c
+@@ -24,7 +24,6 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/i386/isa/ipl_funcs.c,v 1.32.2.5 2002/12/17 18:04:02 sam Exp $
+- * $DragonFly: src/sys/platform/vkernel/platform/ipl_funcs.c,v 1.2 2007/01/11 23:23:56 dillon Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -35,7 +34,7 @@
+ #include <sys/interrupt.h>
+ #include <machine/globaldata.h>
+ 
+-#include <unistd.h>
++#include <machine/vk_signal.h>		/* vk_umtx_* functions */
+ 
+ /*
+  * Bits in the ipending bitmap variable must be set atomically because
+@@ -51,7 +50,7 @@ name(void)								\
+ 	struct mdglobaldata *gd = mdcpu;				\
+ 	atomic_set_int_nonlocked(var, bits);				\
+ 	atomic_set_int(&gd->mi.gd_reqflags, RQF_INTPEND);		\
+-	umtx_wakeup(&gd->mi.gd_reqflags, 0);				\
++	vk_umtx_wakeup(&gd->mi.gd_reqflags, 0);				\
+ }									\
+ 
+ DO_SETBITS(setdelayed,   &gd->gd_spending, loadandclear(&gd->gd_sdelayed))
+diff --git a/sys/platform/vkernel64/platform/machintr.c b/sys/platform/vkernel64/platform/machintr.c
+index ee9c59498a..087fa6c77d 100644
+--- a/sys/platform/vkernel64/platform/machintr.c
++++ b/sys/platform/vkernel64/platform/machintr.c
+@@ -41,12 +41,11 @@
+ #include <sys/globaldata.h>
+ #include <sys/interrupt.h>
+ #include <stdio.h>
+-#include <signal.h>
+ #include <machine/globaldata.h>
+ #include <machine/md_var.h>
+ #include <sys/thread2.h>
+ 
+-#include <unistd.h>
++#include <machine/vk_signal.h>
+ 
+ /*
+  * Interrupt Subsystem ABI
+@@ -174,7 +173,7 @@ signalintr(int intr)
+ 	if (td->td_critcount || td->td_nest_count) {
+ 		atomic_set_int_nonlocked(&gd->gd_fpending, 1 << intr);
+ 		atomic_set_int(&gd->mi.gd_reqflags, RQF_INTPEND);
+-		umtx_wakeup(&gd->mi.gd_reqflags, 0);
++		vk_umtx_wakeup(&gd->mi.gd_reqflags, 0);
+ 	} else {
+ 		++td->td_nest_count;
+ 		cpu_ccfence();
+@@ -191,20 +190,20 @@ signalintr(int intr)
+ void
+ cpu_disable_intr(void)
+ {
+-	sigblock(sigmask(SIGALRM)|sigmask(SIGIO)|sigmask(SIGUSR1)|
++	vk_sigblock(sigmask(SIGALRM)|sigmask(SIGIO)|sigmask(SIGUSR1)|
+ 		 sigmask(SIGURG));
+ }
+ 
+ void
+ cpu_enable_intr(void)
+ {
+-	sigsetmask(0);
++	vk_sigsetmask(0);
+ }
+ 
+ void
+ cpu_mask_all_signals(void)
+ {
+-	sigblock(sigmask(SIGALRM)|sigmask(SIGIO)|sigmask(SIGQUIT)|
++	vk_sigblock(sigmask(SIGALRM)|sigmask(SIGIO)|sigmask(SIGQUIT)|
+ 		 sigmask(SIGUSR1)|sigmask(SIGTERM)|sigmask(SIGWINCH)|
+ 		 sigmask(SIGUSR2)|sigmask(SIGURG));
+ }
+@@ -212,5 +211,5 @@ cpu_mask_all_signals(void)
+ void
+ cpu_unmask_all_signals(void)
+ {
+-	sigsetmask(0);
++	vk_sigsetmask(0);
+ }
+diff --git a/sys/platform/vkernel64/platform/shutdown.c b/sys/platform/vkernel64/platform/shutdown.c
+index 38b9509d77..e463eafbc8 100644
+--- a/sys/platform/vkernel64/platform/shutdown.c
++++ b/sys/platform/vkernel64/platform/shutdown.c
+@@ -49,9 +49,7 @@
+ #include <machine/segments.h>
+ #include <machine/cpu.h>
+ 
+-#include <err.h>
+-#include <signal.h>
+-#include <unistd.h>
++#include <machine/vk_signal.h>
+ 
+ static void shutdownsig(int signo);
+ static void shutdown_intr(void *arg __unused, void *frame __unused);
+@@ -63,10 +61,10 @@ initshutdown(void *arg __unused)
+ 	struct sigaction sa;
+ 
+ 	bzero(&sa, sizeof(sa));
+-	sigemptyset(&sa.sa_mask);
++	vk_sigemptyset(&sa.sa_mask);
+ 	sa.sa_flags |= SA_NODEFER;
+ 	sa.sa_handler = shutdownsig;
+-	sigaction(SIGTERM, &sa, NULL);
++	vk_sigaction(SIGTERM, &sa, NULL);
+ 
+ 	register_int_virtual(2, shutdown_intr, NULL, "shutdown", NULL,
+ 	    INTR_MPSAFE);
+@@ -94,6 +92,6 @@ shutdown_intr(void *arg __unused, void *frame __unused)
+ 	if (initproc != NULL) {
+ 		ksignal(initproc, SIGUSR2);
+ 	} else {
+-		reboot(RB_POWEROFF);
++		vk_reboot(RB_POWEROFF);
+ 	}
+ }
+diff --git a/sys/platform/vkernel64/platform/systimer.c b/sys/platform/vkernel64/platform/systimer.c
+index 84a276943b..e0f2897f1d 100644
+--- a/sys/platform/vkernel64/platform/systimer.c
++++ b/sys/platform/vkernel64/platform/systimer.c
+@@ -50,10 +50,10 @@
+ 
+ #include <sys/thread2.h>
+ 
++#include <machine/vk_signal.h>
++
+ #include <unistd.h>
+-#include <signal.h>
+ #include <time.h>
+-#include <stdio.h>
+ 
+ int disable_rtc_set;
+ SYSCTL_INT(_machdep, CPU_DISRTCSET, disable_rtc_set,
+@@ -223,8 +223,8 @@ vktimer_thread(cothread_t cotd)
+ 	bzero(&sa, sizeof(sa));
+ 	sa.sa_handler = vktimer_sigint;
+ 	sa.sa_flags |= SA_NODEFER;
+-	sigemptyset(&sa.sa_mask);
+-	sigaction(SIGINT, &sa, NULL);
++	vk_sigemptyset(&sa.sa_mask);
++	vk_sigaction(SIGINT, &sa, NULL);
+ 
+ 	ticklength_us = vktimer_gettick_us();
+ 	vktimer_running = 1;
+diff --git a/sys/platform/vkernel64/x86_64/cpu_regs.c b/sys/platform/vkernel64/x86_64/cpu_regs.c
+index 64253577e5..20875c6b59 100644
+--- a/sys/platform/vkernel64/x86_64/cpu_regs.c
++++ b/sys/platform/vkernel64/x86_64/cpu_regs.c
+@@ -95,7 +95,8 @@
+ #include <sys/random.h>
+ #include <sys/ptrace.h>
+ #include <machine/sigframe.h>
+-#include <unistd.h>		/* umtx_* functions */
++
++#include <machine/vk_signal.h>		/* vk_umtx_* functions */
+ 
+ extern void dblfault_handler (void);
+ 
+@@ -505,7 +506,7 @@ cpu_idle(void)
+ 				reqflags = gd->mi.gd_reqflags &
+ 					   ~RQF_IDLECHECK_WK_MASK;
+ 				KKASSERT(gd->mi.gd_processing_ipiq == 0);
+-				umtx_sleep(&gd->mi.gd_reqflags, reqflags,
++				vk_umtx_sleep(&gd->mi.gd_reqflags, reqflags,
+ 					   1000000);
+ #ifdef DEBUGIDLE
+ 				gettimeofday(&tv2, NULL);
+diff --git a/sys/platform/vkernel64/x86_64/exception.c b/sys/platform/vkernel64/x86_64/exception.c
+index 67e539c7ac..045595863e 100644
+--- a/sys/platform/vkernel64/x86_64/exception.c
++++ b/sys/platform/vkernel64/x86_64/exception.c
+@@ -50,8 +50,8 @@
+ #include <machine/cpu.h>
+ #include <machine/smp.h>
+ 
+-#include <err.h>
+-#include <signal.h>
++#include <machine/vk_signal.h>
++
+ #include <stdio.h>
+ #include <unistd.h>
+ 
+@@ -115,20 +115,20 @@ stopsig(int nada, siginfo_t *info, void *ctxp)
+ 	int save;
+ 
+ 	save = errno;
+-	sigemptyset(&ss);
+-	sigaddset(&ss, SIGALRM);
+-	sigaddset(&ss, SIGIO);
+-	sigaddset(&ss, SIGURG);
+-	sigaddset(&ss, SIGQUIT);
+-	sigaddset(&ss, SIGUSR1);
+-	sigaddset(&ss, SIGUSR2);
+-	sigaddset(&ss, SIGTERM);
+-	sigaddset(&ss, SIGWINCH);
++	vk_sigemptyset(&ss);
++	vk_sigaddset(&ss, SIGALRM);
++	vk_sigaddset(&ss, SIGIO);
++	vk_sigaddset(&ss, SIGURG);
++	vk_sigaddset(&ss, SIGQUIT);
++	vk_sigaddset(&ss, SIGUSR1);
++	vk_sigaddset(&ss, SIGUSR2);
++	vk_sigaddset(&ss, SIGTERM);
++	vk_sigaddset(&ss, SIGWINCH);
+ 
+ 	crit_enter_raw(td);
+ 	++gd->gd_intr_nesting_level;
+ 	while (CPUMASK_TESTMASK(stopped_cpus, gd->gd_cpumask)) {
+-		sigsuspend(&ss);
++		vk_sigsuspend(&ss);
+ 	}
+ 	--gd->gd_intr_nesting_level;
+ 	crit_exit_raw(td);
+@@ -222,35 +222,35 @@ init_exceptions(void)
+ 	bzero(&sa, sizeof(sa));
+ 	sa.sa_sigaction = exc_segfault;
+ 	sa.sa_flags |= SA_SIGINFO | SA_NODEFER;
+-	sigemptyset(&sa.sa_mask);
+-	sigaction(SIGBUS, &sa, NULL);
+-	sigaction(SIGSEGV, &sa, NULL);
+-	sigaction(SIGTRAP, &sa, NULL);
+-	sigaction(SIGFPE, &sa, NULL);
++	vk_sigemptyset(&sa.sa_mask);
++	vk_sigaction(SIGBUS, &sa, NULL);
++	vk_sigaction(SIGSEGV, &sa, NULL);
++	vk_sigaction(SIGTRAP, &sa, NULL);
++	vk_sigaction(SIGFPE, &sa, NULL);
+ 
+ 	sa.sa_flags &= ~SA_NODEFER;
+ 
+ #ifdef DDB
+ 	sa.sa_sigaction = exc_debugger;
+-	sigaction(SIGQUIT, &sa, NULL);
++	vk_sigaction(SIGQUIT, &sa, NULL);
+ #endif
+ 	sa.sa_sigaction = ipisig;
+-	sigaction(SIGUSR1, &sa, NULL);
++	vk_sigaction(SIGUSR1, &sa, NULL);
+ 
+ 	sa.sa_sigaction = stopsig;
+-	sigaction(SIGXCPU, &sa, NULL);
++	vk_sigaction(SIGXCPU, &sa, NULL);
+ 
+ 	sa.sa_sigaction = kqueuesig;
+-	sigaction(SIGIO, &sa, NULL);
++	vk_sigaction(SIGIO, &sa, NULL);
+ 
+ 	sa.sa_sigaction = timersig;
+-	sigaction(SIGURG, &sa, NULL);
++	vk_sigaction(SIGURG, &sa, NULL);
+ 
+ 	sa.sa_sigaction = cosig;
+-	sigaction(SIGALRM, &sa, NULL);
++	vk_sigaction(SIGALRM, &sa, NULL);
+ 
+ 	sa.sa_sigaction = infosig;
+-	sigaction(SIGINFO, &sa, NULL);
++	vk_sigaction(SIGINFO, &sa, NULL);
+ }
+ 
+ /*
+diff --git a/sys/platform/vkernel64/x86_64/trap.c b/sys/platform/vkernel64/x86_64/trap.c
+index 9d54fd30c1..23b732a295 100644
+--- a/sys/platform/vkernel64/x86_64/trap.c
++++ b/sys/platform/vkernel64/x86_64/trap.c
+@@ -92,7 +92,7 @@
+ #include <sys/thread2.h>
+ #include <sys/mplock2.h>
+ 
+-#include <signal.h>	/* for sigsetmask() */
++#include <machine/vk_signal.h>
+ 
+ int (*pmath_emulate) (struct trapframe *);
+ 
+@@ -1347,7 +1347,7 @@ go_user(struct intrframe *frame)
+ 	 * Interrupts may be disabled on entry, make sure all signals
+ 	 * can be received before beginning our loop.
+ 	 */
+-	sigsetmask(0);
++	vk_sigsetmask(0);
+ 
+ 	/*
+ 	 * Switch to the current simulated user process, then call
+-- 
+2.22.0
+

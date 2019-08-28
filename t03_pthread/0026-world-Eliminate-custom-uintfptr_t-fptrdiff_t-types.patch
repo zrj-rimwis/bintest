@@ -1,0 +1,181 @@
+From ae6f865d6824972f195df4811c97e76745055c20 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 20 Aug 2019 14:17:40 +0300
+Subject: [PATCH 26/66] world: Eliminate custom uintfptr_t/fptrdiff_t types.
+
+ These were not used consistently and have visibility limitations,
+ types.h - #indef _KERNEL while profile.h - publicly.  Use cases like:
+  "uintfptr_t selfpcdiff;" and "fptrdiff_t frompci;" only confuse.
+ Given that underlying structs uprof, rawarc already use plain u_long
+ types, there are plenty (u_long) casts elsewhere in the kernel code,
+ follow OpenBSD and use use (u_long) casts that are clear what they do.
+ The unused intfptr_t type does not make much sense anyway.
+---
+ lib/libc/gmon/mcount.c           | 24 +++++++++++-------------
+ sys/cpu/x86_64/include/profile.h | 10 +---------
+ sys/cpu/x86_64/include/types.h   |  5 -----
+ sys/kern/kern_module.c           |  2 +-
+ sys/kern/sys_process.c           |  3 +--
+ sys/sys/gmon.h                   |  4 ++--
+ 6 files changed, 16 insertions(+), 32 deletions(-)
+
+diff --git a/lib/libc/gmon/mcount.c b/lib/libc/gmon/mcount.c
+index d7ee33e9fa..4e3fcddf67 100644
+--- a/lib/libc/gmon/mcount.c
++++ b/lib/libc/gmon/mcount.c
+@@ -28,7 +28,6 @@
+  *
+  * @(#)mcount.c	8.1 (Berkeley) 6/4/93
+  * $FreeBSD: src/lib/libc/gmon/mcount.c,v 1.20 2004/10/16 06:32:43 obrien Exp $
+- * $DragonFly: src/lib/libc/gmon/mcount.c,v 1.5 2005/11/13 01:18:20 swildner Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -60,12 +59,12 @@ void	user(void);
+  * perform this optimization.
+  */
+ /* _mcount; may be static, inline, etc */
+-_MCOUNT_DECL(uintfptr_t frompc, uintfptr_t selfpc)
++_MCOUNT_DECL(u_long frompc, u_long selfpc)
+ {
+ #ifdef GUPROF
+ 	u_int delta;
+ #endif
+-	fptrdiff_t frompci;
++	u_long frompci;
+ 	u_short *frompcindex;
+ 	struct tostruct *top, *prevtop;
+ 	struct gmonparam *p;
+@@ -98,9 +97,9 @@ _MCOUNT_DECL(uintfptr_t frompc, uintfptr_t selfpc)
+ 	 */
+ 	if (frompci >= p->textsize) {
+ 		if (frompci + p->lowpc
+-		    >= (uintfptr_t)(VM_MAXUSER_ADDRESS + UPAGES * PAGE_SIZE))
++		    >= (u_long)(VM_MAXUSER_ADDRESS + UPAGES * PAGE_SIZE))
+ 			goto done;
+-		frompci = (uintfptr_t)user - p->lowpc;
++		frompci = (u_long)user - p->lowpc;
+ 		if (frompci >= p->textsize)
+ 		    goto done;
+ 	}
+@@ -162,12 +161,11 @@ _MCOUNT_DECL(uintfptr_t frompc, uintfptr_t selfpc)
+ 	 * exceptions appear in the call graph as calls from btrap() and
+ 	 * bintr() instead of calls from all over.
+ 	 */
+-	if ((uintfptr_t)selfpc >= (uintfptr_t)btrap
+-	    && (uintfptr_t)selfpc < (uintfptr_t)eintr) {
+-		if ((uintfptr_t)selfpc >= (uintfptr_t)bintr)
+-			frompci = (uintfptr_t)bintr - p->lowpc;
++	if ((selfpc >= (u_long)btrap) && (selfpc < (u_long)eintr)) {
++		if (selfpc >= (u_long)bintr)
++			frompci = (u_long)bintr - p->lowpc;
+ 		else
+-			frompci = (uintfptr_t)btrap - p->lowpc;
++			frompci = (u_long)btrap - p->lowpc;
+ 	}
+ #endif
+ 
+@@ -273,13 +271,13 @@ MCOUNT
+ 
+ #ifdef GUPROF
+ void
+-mexitcount(uintfptr_t selfpc)
++mexitcount(u_long selfpc)
+ {
+ 	struct gmonparam *p;
+-	uintfptr_t selfpcdiff;
++	u_long selfpcdiff;
+ 
+ 	p = &_gmonparam;
+-	selfpcdiff = selfpc - (uintfptr_t)p->lowpc;
++	selfpcdiff = selfpc - p->lowpc;
+ 	if (selfpcdiff < p->textsize) {
+ 		u_int delta;
+ 
+diff --git a/sys/cpu/x86_64/include/profile.h b/sys/cpu/x86_64/include/profile.h
+index d1df5f7ab6..18fb46f381 100644
+--- a/sys/cpu/x86_64/include/profile.h
++++ b/sys/cpu/x86_64/include/profile.h
+@@ -38,7 +38,7 @@
+ #define	FUNCTION_ALIGNMENT	4
+ 
+ #define	_MCOUNT_DECL \
+-static void _mcount(uintfptr_t frompc, uintfptr_t selfpc) __used; \
++static void _mcount(u_long frompc, u_long selfpc) __used; \
+ static void _mcount
+ 
+ #ifdef	__GNUC__
+@@ -75,14 +75,6 @@ mcount()		\
+ }
+ #endif	/* __GNUC__ */
+ 
+-typedef	unsigned long	uintfptr_t;
+-
+-/*
+- * An unsigned integral type that can hold non-negative difference between
+- * function pointers.
+- */
+-typedef	unsigned long	fptrdiff_t;
+-
+ __BEGIN_DECLS
+ #ifdef __GNUC__
+ void	mcount(void) __asm(".mcount");
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index a875dafbdd..a6aaf41b35 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -55,9 +55,4 @@ typedef	__int64_t	vm_ooffset_t;	/* VM object bounded offset */
+ typedef __uint64_t	vm_poff_t;	/* physical offset */
+ typedef __uint64_t	vm_paddr_t;	/* physical addr (same as vm_poff_t) */
+ 
+-#ifdef _KERNEL
+-typedef	__int64_t	intfptr_t;
+-typedef	__uint64_t	uintfptr_t;
+-#endif
+-
+ #endif /* !_CPU_TYPES_H_ */
+diff --git a/sys/kern/kern_module.c b/sys/kern/kern_module.c
+index 868b6b0af0..659d84915c 100644
+--- a/sys/kern/kern_module.c
++++ b/sys/kern/kern_module.c
+@@ -112,7 +112,7 @@ module_register_init(const void *arg)
+ 	module_unload(mod);	/* ignore error */
+ 	module_release(mod);
+ 	kprintf("module_register_init: MOD_LOAD (%s, %lx, %p) error %d\n",
+-	       data->name, (u_long)(uintfptr_t)data->evhand, data->priv, error);
++	       data->name, (u_long)data->evhand, data->priv, error);
+     }
+ }
+ 
+diff --git a/sys/kern/sys_process.c b/sys/kern/sys_process.c
+index 50ed105a5c..625aef1acf 100644
+--- a/sys/kern/sys_process.c
++++ b/sys/kern/sys_process.c
+@@ -482,8 +482,7 @@ kern_ptrace(struct proc *curp, int req, pid_t pid, void *addr,
+ 		}
+ 
+ 		if (addr != (void *)1) {
+-			if ((error = ptrace_set_pc (lp,
+-			    (u_long)(uintfptr_t)addr))) {
++			if ((error = ptrace_set_pc (lp, (u_long)addr))) {
+ 				LWPRELE(lp);
+ 				lwkt_reltoken(&p->p_token);
+ 				PRELE(p);
+diff --git a/sys/sys/gmon.h b/sys/sys/gmon.h
+index c240d0f702..e2a1f7a750 100644
+--- a/sys/sys/gmon.h
++++ b/sys/sys/gmon.h
+@@ -156,8 +156,8 @@ struct gmonparam {
+ 	struct tostruct	*tos;
+ 	u_long		tossize;
+ 	long		tolimit;
+-	uintfptr_t	lowpc;
+-	uintfptr_t	highpc;
++	u_long		lowpc;
++	u_long		highpc;
+ 	u_long		textsize;
+ 	u_long		hashfraction;
+ 	int		profrate;	/* XXX wrong type to match gmonhdr */
+-- 
+2.22.0
+

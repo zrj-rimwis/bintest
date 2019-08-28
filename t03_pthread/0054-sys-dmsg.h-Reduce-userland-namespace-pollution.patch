@@ -1,0 +1,68 @@
+From 3f3d7cdf4b64b74700d197d467cb0888b1ac2478 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 25 Aug 2019 21:03:36 +0300
+Subject: [PATCH 54/66] <sys/dmsg.h>: Reduce userland namespace pollution.
+
+ Don't include not needed <sys/malloc.h> and <sys/thread.h> for userland.
+ This removes dependencies on thses headers for all dmsg consumers like:
+  fstyp(8), hammer2(8), mount_hammer2(8), newfs_hammer2 and libstand
+ which is desired in standalone boot environment.
+ Add missing <machine/param.h> for libstand/hammer2.c that needs the
+ DEV_BSHIFT definition, previously it was visible through <sys/malloc.h>
+ namespace pollution.
+
+ While there, mark some guards for clarity too.
+
+ Noticed while investigating .depend violiations.
+---
+ lib/libstand/hammer2.c | 1 +
+ sys/sys/dmsg.h         | 9 +++++++--
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/lib/libstand/hammer2.c b/lib/libstand/hammer2.c
+index c11226b661..a2a763e862 100644
+--- a/lib/libstand/hammer2.c
++++ b/lib/libstand/hammer2.c
+@@ -60,6 +60,7 @@
+ #include "stand.h"
+ #endif
+ 
++#include <machine/param.h>	/* for DEV_BSHIFT */
+ #include <vfs/hammer2/hammer2_disk.h>
+ 
+ uint32_t iscsi_crc32(const void *buf, size_t size);
+diff --git a/sys/sys/dmsg.h b/sys/sys/dmsg.h
+index dc69ba226b..6a76b1d5bc 100644
+--- a/sys/sys/dmsg.h
++++ b/sys/sys/dmsg.h
+@@ -35,6 +35,10 @@
+ #ifndef _SYS_DMSG_H_
+ #define _SYS_DMSG_H_
+ 
++#ifndef _SYS_TYPES_H_
++#include <sys/types.h>
++#endif
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ #ifndef _SYS_MALLOC_H_
+ #include <sys/malloc.h>
+ #endif
+@@ -44,6 +48,7 @@
+ #ifndef _SYS_THREAD_H_
+ #include <sys/thread.h>
+ #endif
++#endif
+ #ifndef _SYS_UUID_H_
+ #include <sys/uuid.h>
+ #endif
+@@ -861,6 +866,6 @@ void kdmsg_state_result(kdmsg_state_t *state, uint32_t error);
+ void kdmsg_detach_aux_data(kdmsg_msg_t *msg, kdmsg_data_t *data);
+ void kdmsg_free_aux_data(kdmsg_data_t *data);
+ 
+-#endif
++#endif	/* defined(_KERNEL) || defined(_KERNEL_STRUCTURES) */
+ 
+-#endif
++#endif	/* !_SYS_DMSG_H_ */
+-- 
+2.22.0
+

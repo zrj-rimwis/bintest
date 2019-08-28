@@ -1,0 +1,169 @@
+From 8d5e928fce6900191ec2d7b7603ed00be62d725f Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 27 Aug 2019 18:55:38 +0300
+Subject: [PATCH 60/66] libc_r: Prevent compiler optimising out internal
+ checks.
+
+ These subroutines are part of pthread implementation and thefore shall
+ test parameters for correct values.  Compiler can only decide base on
+ information available at compile time and nonnull attribute provided,
+ but cannot take into consideration state changes due to assembly codes
+ or threading or language binding.  For now only disable at case-by-case
+ basis at pthread library implementation level, however we should
+ consider putting these macros at "namespace.h" level for whole libc and
+ threading libraries (certain kernel parts too) to prevent compiler
+ silently adjusting developers legitimate argument handling logic.
+
+ Noticed while testing vkernel threading abstraction.
+
+ While there, add few __dead2 attributes and add brackets for style(9).
+---
+ lib/libc_r/uthread/uthread_cond.c          | 12 ++++++++----
+ lib/libc_r/uthread/uthread_create.c        |  4 ++++
+ lib/libc_r/uthread/uthread_mutex.c         | 12 ++++++++----
+ lib/libc_r/uthread/uthread_rwlock.c        |  5 ++++-
+ lib/libc_r/uthread/uthread_setschedparam.c |  4 ++++
+ 5 files changed, 28 insertions(+), 9 deletions(-)
+
+diff --git a/lib/libc_r/uthread/uthread_cond.c b/lib/libc_r/uthread/uthread_cond.c
+index b3481ca7d4..99244b9b6c 100644
+--- a/lib/libc_r/uthread/uthread_cond.c
++++ b/lib/libc_r/uthread/uthread_cond.c
+@@ -34,6 +34,10 @@
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <string.h>
++#ifndef _PTHREAD_ENABLE_NONNULL
++#undef __nonnull
++#define __nonnull(...)
++#endif
+ #include <pthread.h>
+ #include "pthread_private.h"
+ 
+@@ -494,13 +498,13 @@ _pthread_cond_signal(pthread_cond_t * cond)
+ 	int             rval = 0;
+ 	pthread_t       pthread;
+ 
+-	if (cond == NULL)
++	if (cond == NULL) {
+ 		rval = EINVAL;
+        /*
+         * If the condition variable is statically initialized, perform dynamic
+         * initialization.
+         */
+-	else if (*cond != NULL || (rval = pthread_cond_init(cond, NULL)) == 0) {
++	} else if (*cond != NULL || (rval = pthread_cond_init(cond, NULL)) == 0) {
+ 		/*
+ 		 * Defer signals to protect the scheduling queues
+ 		 * from access by the signal handler:
+@@ -556,13 +560,13 @@ _pthread_cond_broadcast(pthread_cond_t * cond)
+ 	int             rval = 0;
+ 	pthread_t       pthread;
+ 
+-	if (cond == NULL)
++	if (cond == NULL) {
+ 		rval = EINVAL;
+        /*
+         * If the condition variable is statically initialized, perform dynamic
+         * initialization.
+         */
+-	else if (*cond != NULL || (rval = pthread_cond_init(cond, NULL)) == 0) {
++	} else	if (*cond != NULL || (rval = pthread_cond_init(cond, NULL)) == 0) {
+ 		/*
+ 		 * Defer signals to protect the scheduling queues
+ 		 * from access by the signal handler:
+diff --git a/lib/libc_r/uthread/uthread_create.c b/lib/libc_r/uthread/uthread_create.c
+index 1ce0ce5ce9..84a05823fa 100644
+--- a/lib/libc_r/uthread/uthread_create.c
++++ b/lib/libc_r/uthread/uthread_create.c
+@@ -41,6 +41,10 @@
+ #include <sys/param.h>
+ #include <sys/mman.h>
+ #include <machine/reg.h>
++#ifndef _PTHREAD_ENABLE_NONNULL
++#undef __nonnull
++#define __nonnull(...)
++#endif
+ #include <pthread.h>
+ #include "pthread_private.h"
+ #include "libc_private.h"
+diff --git a/lib/libc_r/uthread/uthread_mutex.c b/lib/libc_r/uthread/uthread_mutex.c
+index 54d24c55c6..9943f25e67 100644
+--- a/lib/libc_r/uthread/uthread_mutex.c
++++ b/lib/libc_r/uthread/uthread_mutex.c
+@@ -36,6 +36,10 @@
+ #include <string.h>
+ #include <sys/param.h>
+ #include <sys/queue.h>
++#ifndef _PTHREAD_ENABLE_NONNULL
++#undef __nonnull
++#define __nonnull(...)
++#endif
+ #include <pthread.h>
+ #include "pthread_private.h"
+ 
+@@ -114,11 +118,11 @@ _pthread_mutex_init(pthread_mutex_t * __restrict mutex,
+ 	pthread_mutex_t	pmutex;
+ 	int		ret = 0;
+ 
+-	if (mutex == NULL)
++	if (mutex == NULL) {
+ 		ret = EINVAL;
+ 
+ 	/* Check if default mutex attributes: */
+-	else if (mutex_attr == NULL || *mutex_attr == NULL) {
++	} else if (mutex_attr == NULL || *mutex_attr == NULL) {
+ 		/* Default to a (error checking) POSIX mutex: */
+ 		type = PTHREAD_MUTEX_ERRORCHECK;
+ 		protocol = PTHREAD_PRIO_NONE;
+@@ -264,14 +268,14 @@ _pthread_mutex_trylock(pthread_mutex_t * mutex)
+ 	struct pthread	*curthread = _get_curthread();
+ 	int	ret = 0;
+ 
+-	if (mutex == NULL)
++	if (mutex == NULL) {
+ 		ret = EINVAL;
+ 
+ 	/*
+ 	 * If the mutex is statically initialized, perform the dynamic
+ 	 * initialization:
+ 	 */
+-	else if (*mutex != NULL || (ret = init_static(mutex)) == 0) {
++	} else if (*mutex != NULL || (ret = init_static(mutex)) == 0) {
+ 		/*
+ 		 * Defer signals to protect the scheduling queues from
+ 		 * access by the signal handler:
+diff --git a/lib/libc_r/uthread/uthread_rwlock.c b/lib/libc_r/uthread/uthread_rwlock.c
+index 5bf5f4a41b..2670fc127c 100644
+--- a/lib/libc_r/uthread/uthread_rwlock.c
++++ b/lib/libc_r/uthread/uthread_rwlock.c
+@@ -29,7 +29,10 @@
+ #include <errno.h>
+ #include <limits.h>
+ #include <stdlib.h>
+-
++#ifndef _PTHREAD_ENABLE_NONNULL
++#undef __nonnull
++#define __nonnull(...)
++#endif
+ #include <pthread.h>
+ #include "pthread_private.h"
+ 
+diff --git a/lib/libc_r/uthread/uthread_setschedparam.c b/lib/libc_r/uthread/uthread_setschedparam.c
+index 9d1ecf932e..6dae40271f 100644
+--- a/lib/libc_r/uthread/uthread_setschedparam.c
++++ b/lib/libc_r/uthread/uthread_setschedparam.c
+@@ -33,6 +33,10 @@
+  */
+ #include <errno.h>
+ #include <sys/param.h>
++#ifndef _PTHREAD_ENABLE_NONNULL
++#undef __nonnull
++#define __nonnull(...)
++#endif
+ #include <pthread.h>
+ #include "pthread_private.h"
+ 
+-- 
+2.22.0
+

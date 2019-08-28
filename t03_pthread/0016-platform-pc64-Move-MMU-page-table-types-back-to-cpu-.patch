@@ -1,0 +1,216 @@
+From 49451a1f9bc43c3dd6cc3d5738d8e74fdc8eba48 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 15 Aug 2019 10:46:28 +0300
+Subject: [PATCH 16/66] platform/pc64: Move MMU page table types back to
+ <cpu/pmap.h>.
+
+ Reduce namespace pollution.  These types are common for both
+ pc64/vkernel64 and are used in pmap context only.
+ All userland cases need just VM_MAX_USER_ADDRESS, PS_STRINGS constants
+ through <machine/vmparam.h> with huge cpp expansion that requires
+ <machine/pmap.h> header inclusion anyway.  Simplify it.
+
+ * Hardcode NPTEPG/NPDEPG/NPDPEPG/NPML4EPG constants to properly solve
+   header inclusion ordering.  The SHIFT constants are hardcoded already
+   (log2() values) so there are no reasons to pretend everything will
+   adjust automatically.
+ * Use LU suffixes, debug printf() in vkernel64 use %ld types.
+ * Optionally reorder includes in libc setproctitle.c.
+ * Optionally add explicit includes in libkvm where pmap.h is only
+   comming from <sys/user.h>.  The kvm_*_x86_64.c use X86_PG_* constants.
+
+ For now keep PDESIZE/PTESIZE (used in pc64 genassym.c).
+
+ No intermediates differences observed.
+---
+ lib/libc/gen/setproctitle.c       |  3 +--
+ lib/libkvm/kvm_minidump_x86_64.c  |  1 +
+ lib/libkvm/kvm_proc.c             |  1 +
+ lib/libkvm/kvm_x86_64.c           |  1 +
+ sys/cpu/x86_64/include/param.h    | 10 +++++-----
+ sys/cpu/x86_64/include/pmap.h     | 23 +++++++++++++++++++++++
+ sys/cpu/x86_64/include/types.h    | 12 ------------
+ sys/platform/pc64/vmm/vmm_utils.c |  1 +
+ 8 files changed, 33 insertions(+), 19 deletions(-)
+
+diff --git a/lib/libc/gen/setproctitle.c b/lib/libc/gen/setproctitle.c
+index 46723b756d..d6438dfc26 100644
+--- a/lib/libc/gen/setproctitle.c
++++ b/lib/libc/gen/setproctitle.c
+@@ -15,7 +15,6 @@
+  *    Peter Wemm.
+  *
+  * $FreeBSD: src/lib/libc/gen/setproctitle.c,v 1.18 2003/07/01 09:45:35 alfred Exp $
+- * $DragonFly: src/lib/libc/gen/setproctitle.c,v 1.5 2005/11/13 00:07:42 swildner Exp $
+  */
+ 
+ #include "namespace.h"
+@@ -24,9 +23,9 @@
+ #include <sys/exec.h>
+ #include <sys/sysctl.h>
+ 
++#include <vm/pmap.h>
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+-#include <vm/pmap.h>
+ 
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/lib/libkvm/kvm_minidump_x86_64.c b/lib/libkvm/kvm_minidump_x86_64.c
+index 753d9eaddc..1d8e959579 100644
+--- a/lib/libkvm/kvm_minidump_x86_64.c
++++ b/lib/libkvm/kvm_minidump_x86_64.c
+@@ -39,6 +39,7 @@
+ #include <unistd.h>
+ #include <nlist.h>
+ 
++#include <cpu/pmap.h>
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+ 
+diff --git a/lib/libkvm/kvm_proc.c b/lib/libkvm/kvm_proc.c
+index be1529ed46..28a21232b4 100644
+--- a/lib/libkvm/kvm_proc.c
++++ b/lib/libkvm/kvm_proc.c
+@@ -59,6 +59,7 @@
+ #include <unistd.h>
+ #include <nlist.h>
+ 
++#include <cpu/pmap.h>
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+ #include <vm/swap_pager.h>
+diff --git a/lib/libkvm/kvm_x86_64.c b/lib/libkvm/kvm_x86_64.c
+index 7f40752e5b..e88b24a738 100644
+--- a/lib/libkvm/kvm_x86_64.c
++++ b/lib/libkvm/kvm_x86_64.c
+@@ -50,6 +50,7 @@
+ #include <unistd.h>
+ #include <nlist.h>
+ 
++#include <cpu/pmap.h>
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+ 
+diff --git a/sys/cpu/x86_64/include/param.h b/sys/cpu/x86_64/include/param.h
+index 70526b4a3f..e7b4c6dbc7 100644
+--- a/sys/cpu/x86_64/include/param.h
++++ b/sys/cpu/x86_64/include/param.h
+@@ -86,27 +86,27 @@
+ #define ALIGNBYTES	_ALIGNBYTES
+ #define ALIGN(p)	_ALIGN(p)
+ 
+-/* JG license? from fbsd/src/sys/amd64/include/param.h */
++/* Constants derived from sizeof() that need recalculation. */
+ /* level 1 == page table */
+ #define	NPTEPGSHIFT	9		/* LOG2(NPTEPG) */
+ #define PAGE_SHIFT	12		/* LOG2(PAGE_SIZE) */
+ #define PAGE_SIZE	(1<<PAGE_SHIFT)	/* bytes/page */
+ #define PAGE_MASK	(PAGE_SIZE-1)
+-#define NPTEPG		(PAGE_SIZE/(sizeof (pt_entry_t)))
++#define NPTEPG		(PAGE_SIZE/8LU)	/* PAGE_SIZE/sizeof(pt_entry_t) */
+ 
+ /* level 2 == page directory */
+ #define	NPDEPGSHIFT	9		/* LOG2(NPDEPG) */
+ #define PDRSHIFT	21		/* LOG2(NBPDR) */
+ #define NBPDR		(1<<PDRSHIFT)	/* bytes/page dir */
+ #define PDRMASK		(NBPDR-1)
+-#define NPDEPG		(PAGE_SIZE/(sizeof (pd_entry_t)))
++#define NPDEPG		(PAGE_SIZE/8LU)	/* PAGE_SIZE/sizeof(pd_entry_t) */
+ 
+ /* level 3 == page directory pointer table */
+ #define	NPDPEPGSHIFT	9		/* LOG2(NPDPEPG) */
+ #define PDPSHIFT	30		/* LOG2(NBPDP) */
+ #define NBPDP		(1<<PDPSHIFT)	/* bytes/page dir ptr table */
+ #define PDPMASK		(NBPDP-1)
+-#define NPDPEPG		(PAGE_SIZE/(sizeof (pdp_entry_t)))
++#define NPDPEPG		(PAGE_SIZE/8LU)	/* PAGE_SIZE/sizeof(pdp_entry_t) */
+ 
+ /* level 4 */
+ #define	NPML4EPGSHIFT	9		/* LOG2(NPML4EPG) */
+@@ -114,7 +114,7 @@
+ #define NPML4		(1UL<<PML4SHIFT)/* bytes/page map level4 table */
+ #define	NBPML4		(1ul<<PML4SHIFT)/* bytes/page map lev4 table */
+ #define PML4MASK	(NPML4-1)
+-#define NPML4EPG	(PAGE_SIZE/(sizeof (pml4_entry_t)))
++#define NPML4EPG	(PAGE_SIZE/8LU)	/* PAGE_SIZE/sizeof(pml4_entry_t) */
+ 
+ /*
+  * Virtual address sign-extension and mask.  If bit 47 is set then
+diff --git a/sys/cpu/x86_64/include/pmap.h b/sys/cpu/x86_64/include/pmap.h
+index ba19fc4367..ffc78bd57c 100644
+--- a/sys/cpu/x86_64/include/pmap.h
++++ b/sys/cpu/x86_64/include/pmap.h
+@@ -45,6 +45,29 @@
+ #ifndef _CPU_PMAP_H_
+ #define _CPU_PMAP_H_
+ 
++#ifndef LOCORE
++
++#include <machine/stdint.h>
++
++/*
++ * MMU page tables, keep public for VM_MAX_USER_ADDRESS/PS_STRINGS.
++ */
++typedef	__uint64_t	pml4_entry_t;
++typedef	__uint64_t	pdp_entry_t;
++typedef	__uint64_t	pd_entry_t;
++typedef	__uint64_t	pt_entry_t;
++
++#ifdef _KERNEL
++#if 0 /* unused */
++#define	PML4SIZE	sizeof(pml4_entry_t) /* for assembly files */
++#define	PDPSIZE		sizeof(pdp_entry_t) /* for assembly files */
++#endif
++#define	PDESIZE		sizeof(pd_entry_t) /* for assembly files */
++#define	PTESIZE		sizeof(pt_entry_t) /* for assembly files */
++#endif
++
++#endif /* !LOCORE */
++
+ /*
+  * Page-directory and page-table entries follow this format, with a few
+  * of the fields not present here and there, depending on a lot of things.
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index c107d93dd6..f6193423b5 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -60,13 +60,6 @@ typedef	__int64_t	intfptr_t;
+ typedef	__uint64_t	uintfptr_t;
+ #endif
+ 
+-/*
+- * MMU page tables
+- */
+-typedef __uint64_t	pml4_entry_t;
+-typedef __uint64_t	pdp_entry_t;
+-typedef __uint64_t	pd_entry_t;
+-typedef __uint64_t	pt_entry_t;
+ typedef __uint32_t      cpulock_t;      /* count and exclusive lock */
+ 
+ /*
+@@ -89,9 +82,4 @@ typedef struct {
+ #define CPULOCK_INCR	0x00000002	/* auxillary counter add/sub */
+ #define CPULOCK_CNTMASK	0x7FFFFFFE
+ 
+-#define PML4SIZE	sizeof(pml4_entry_t) /* for assembly files */
+-#define PDPSIZE		sizeof(pdp_entry_t) /* for assembly files */
+-#define PDESIZE         sizeof(pd_entry_t) /* for assembly files */
+-#define PTESIZE         sizeof(pt_entry_t) /* for assembly files */
+-
+ #endif /* !_CPU_TYPES_H_ */
+diff --git a/sys/platform/pc64/vmm/vmm_utils.c b/sys/platform/pc64/vmm/vmm_utils.c
+index 332eb32f9b..f571535d29 100644
+--- a/sys/platform/pc64/vmm/vmm_utils.c
++++ b/sys/platform/pc64/vmm/vmm_utils.c
+@@ -36,6 +36,7 @@
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+ #include <cpu/lwbuf.h>
++#include <cpu/pmap.h>
+ #include <vm/vm_page.h>
+ #include <vm/vm_extern.h>
+ 
+-- 
+2.22.0
+

@@ -1,0 +1,115 @@
+From c8f4e0350c3c579debe48e4b198baaaafb38324f Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 22 Aug 2019 10:07:06 +0300
+Subject: [PATCH 29/66] sys/boot: Wrap around vm_offset_t type in boot2 too.
+
+ Use easy to read parseconfig() function prototype to avoid conflict
+ against parse(...) used in loaders, but mangle it so save few bytes
+ in boot2_32.o and boot2_64.o to keep same size.
+
+ While there, nuke some trailing whitespace too.
+---
+ sys/boot/pc32/boot2/boot2.c | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
+
+diff --git a/sys/boot/pc32/boot2/boot2.c b/sys/boot/pc32/boot2/boot2.c
+index 00a9503d36..37f445650e 100644
+--- a/sys/boot/pc32/boot2/boot2.c
++++ b/sys/boot/pc32/boot2/boot2.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,7 +30,7 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
++ *
+  * Copyright (c) 1998 Robert Nordier
+  * All rights reserved.
+  *
+@@ -66,6 +66,7 @@
+ 
+ #include <a.out.h>
+ 
++#include "bootstrap.h"
+ #include <btxv86.h>
+ 
+ #ifdef DISKLABEL64
+@@ -126,6 +127,9 @@
+ 
+ #define INVALID_S	"Bad %s\n"
+ 
++/* save few bytes in boot2.o */
++#define parseconfig parsc
++
+ extern uint32_t _end;
+ 
+ static const char optstr[NOPT] = { "VhaCgmnPprsv" };
+@@ -174,7 +178,7 @@ struct boot2_dmadat *boot2_dmadat;
+ 
+ void exit(int);
+ static void load(void);
+-static int parse(void);
++static int parseconfig(void);
+ static int dskprobe(void);
+ static int xfsread(boot2_ino_t, void *, size_t);
+ static int drvread(void *, unsigned, unsigned);
+@@ -294,11 +298,11 @@ main(void)
+     }
+ 
+     /*
+-     * Parse config file if present.  parse() will re-probe if necessary.
++     * Parse config file if present.  parseconfig() will re-probe if necessary.
+      */
+     if (cmd[0]) {
+ 	printf("%s: %s", PATH_CONFIG, cmd);
+-	if (parse())
++	if (parseconfig())
+ 	    autoboot = 0;
+ 	/* Do not process this command twice */
+ 	*cmd = 0;
+@@ -346,7 +350,7 @@ main(void)
+ 	else
+ 	    putchar('\n');
+ 	autoboot = 0;
+-	if (parse())
++	if (parseconfig())
+ 	    putchar('\a');
+ 	else
+ 	    load();
+@@ -435,7 +439,7 @@ load(void)
+ }
+ 
+ static int
+-parse(void)
++parseconfig(void)
+ {
+     char *arg = cmd;
+     char *p, *q;
+-- 
+2.22.0
+

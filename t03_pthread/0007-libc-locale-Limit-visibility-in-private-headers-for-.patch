@@ -1,0 +1,212 @@
+From eacae7c6784370c032ad91f2b09f90c673a09d20 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 11 Aug 2019 13:43:04 +0300
+Subject: [PATCH 07/66] libc/locale: Limit visibility in private headers for
+ tools.
+
+ The localedef(1) requires just a few struct lc_LC_t layouts from
+ internal lib/libc/locale/ headers in order to convert source defintions.
+ It is desired that it uses as minimal as possible amount of private
+ header information, since localedef(1) is also in BTOOLS group.
+
+ * Use _LOCALE_TOOLS guard to limit visibility in internal headers.
+ * Poison xlocale_private.h to warn early that internals were used.
+
+ No function change.
+---
+ lib/libc/locale/collate.h         | 4 ++++
+ lib/libc/locale/lmessages.h       | 4 ++++
+ lib/libc/locale/lmonetary.h       | 6 ++++++
+ lib/libc/locale/lnumeric.h        | 6 ++++++
+ lib/libc/locale/xlocale_private.h | 8 ++++++--
+ lib/libc/stdtime/timelocal.h      | 5 +++++
+ usr.bin/localedef/Makefile        | 1 +
+ 7 files changed, 32 insertions(+), 2 deletions(-)
+
+diff --git a/lib/libc/locale/collate.h b/lib/libc/locale/collate.h
+index 463841e672..d434c8019d 100644
+--- a/lib/libc/locale/collate.h
++++ b/lib/libc/locale/collate.h
+@@ -39,7 +39,9 @@
+ #include <sys/cdefs.h>
+ #include <sys/types.h>
+ #include <limits.h>
++#ifndef _LOCALE_TOOLS
+ #include "xlocale_private.h"
++#endif
+ 
+ /*
+  * Work around buildworld bootstrapping from older systems whose limits.h
+@@ -110,6 +112,7 @@ typedef struct collate_subst {
+ 	int32_t pri[COLLATE_STR_LEN];
+ } collate_subst_t;
+ 
++#ifndef _LOCALE_TOOLS
+ struct xlocale_collate {
+ 	struct xlocale_component header;
+ 	int __collate_load_error;
+@@ -135,5 +138,6 @@ size_t	_collate_wxfrm(struct xlocale_collate *, const wchar_t *, wchar_t *,
+ size_t	_collate_sxfrm(struct xlocale_collate *, const wchar_t *, char *,
+ 	size_t);
+ __END_DECLS
++#endif
+ 
+ #endif /* !_COLLATE_H_ */
+diff --git a/lib/libc/locale/lmessages.h b/lib/libc/locale/lmessages.h
+index 2e9f23528b..7fe2b3e629 100644
+--- a/lib/libc/locale/lmessages.h
++++ b/lib/libc/locale/lmessages.h
+@@ -34,7 +34,9 @@
+ #ifndef _LMESSAGES_H_
+ #define	_LMESSAGES_H_
+ 
++#ifndef _LOCALE_TOOLS
+ #include "xlocale_private.h"
++#endif
+ 
+ struct	lc_messages_T {
+ 	const char	*yesexpr;
+@@ -43,7 +45,9 @@ struct	lc_messages_T {
+ 	const char	*nostr;
+ };
+ 
++#ifndef _LOCALE_TOOLS
+ struct lc_messages_T *__get_current_messages_locale(locale_t);
+ int	__messages_load_locale(const char *);
++#endif
+ 
+ #endif /* !_LMESSAGES_H_ */
+diff --git a/lib/libc/locale/lmonetary.h b/lib/libc/locale/lmonetary.h
+index 06cd8a407c..cd45bd7ca3 100644
+--- a/lib/libc/locale/lmonetary.h
++++ b/lib/libc/locale/lmonetary.h
+@@ -33,7 +33,10 @@
+ 
+ #ifndef _LMONETARY_H_
+ #define	_LMONETARY_H_
++
++#ifndef _LOCALE_TOOLS
+ #include "xlocale_private.h"
++#endif
+ 
+ struct lc_monetary_T {
+ 	const char	*int_curr_symbol;
+@@ -58,6 +61,8 @@ struct lc_monetary_T {
+ 	const char	*int_p_sign_posn;
+ 	const char	*int_n_sign_posn;
+ };
++
++#ifndef _LOCALE_TOOLS
+ struct xlocale_monetary {
+ 	struct xlocale_component header;
+ 	char *buffer;
+@@ -66,5 +71,6 @@ struct xlocale_monetary {
+ 
+ struct lc_monetary_T *__get_current_monetary_locale(locale_t loc);
+ int	__monetary_load_locale(const char *);
++#endif
+ 
+ #endif /* !_LMONETARY_H_ */
+diff --git a/lib/libc/locale/lnumeric.h b/lib/libc/locale/lnumeric.h
+index 9f5bc34737..25bd87dffb 100644
+--- a/lib/libc/locale/lnumeric.h
++++ b/lib/libc/locale/lnumeric.h
+@@ -33,13 +33,18 @@
+ 
+ #ifndef _LNUMERIC_H_
+ #define	_LNUMERIC_H_
++
++#ifndef _LOCALE_TOOLS
+ #include "xlocale_private.h"
++#endif
+ 
+ struct lc_numeric_T {
+ 	const char	*decimal_point;
+ 	const char	*thousands_sep;
+ 	const char	*grouping;
+ };
++
++#ifndef _LOCALE_TOOLS
+ struct xlocale_numeric {
+ 	struct xlocale_component header;
+ 	char *buffer;
+@@ -48,5 +53,6 @@ struct xlocale_numeric {
+ 
+ struct lc_numeric_T *__get_current_numeric_locale(locale_t loc);
+ int	__numeric_load_locale(const char *);
++#endif
+ 
+ #endif /* !_LNUMERIC_H_ */
+diff --git a/lib/libc/locale/xlocale_private.h b/lib/libc/locale/xlocale_private.h
+index c805c4381f..85c4c2df3c 100644
+--- a/lib/libc/locale/xlocale_private.h
++++ b/lib/libc/locale/xlocale_private.h
+@@ -29,6 +29,10 @@
+  * $FreeBSD: head/lib/libc/locale/xlocale_private.h 326193 2017-11-25 17:12:48Z pfg $
+  */
+ 
++#ifdef _LOCALE_TOOLS
++#error "Userland tools should not use this private header."
++#endif
++
+ #ifndef _XLOCALE_PRIVATE__H_
+ #define _XLOCALE_PRIVATE__H_
+ 
+@@ -100,7 +104,7 @@ struct xlocale_component {
+ };
+ 
+ /**
+- * xlocale structure, stores per-thread locale information.  
++ * xlocale structure, stores per-thread locale information.
+  */
+ struct _xlocale {
+ 	struct xlocale_refcounted header;
+@@ -185,7 +189,7 @@ xlocale_release(void *val)
+ 
+ /**
+  * Load functions.  Each takes the name of a locale and a pointer to the data
+- * to be initialised as arguments.  Two special values are allowed for the 
++ * to be initialised as arguments.  Two special values are allowed for the
+  */
+ extern void* __collate_load(const char*, locale_t);
+ extern void* __ctype_load(const char*, locale_t);
+diff --git a/lib/libc/stdtime/timelocal.h b/lib/libc/stdtime/timelocal.h
+index cc4c568136..5a9a7e11df 100644
+--- a/lib/libc/stdtime/timelocal.h
++++ b/lib/libc/stdtime/timelocal.h
+@@ -33,7 +33,10 @@
+ 
+ #ifndef _TIMELOCAL_H_
+ #define	_TIMELOCAL_H_
++
++#ifndef _LOCALE_TOOLS
+ #include "xlocale_private.h"
++#endif
+ 
+ /*
+  * Private header file for the strftime and strptime localization
+@@ -55,7 +58,9 @@ struct lc_time_T {
+ 	const char	*ampm_fmt;
+ };
+ 
++#ifndef _LOCALE_TOOLS
+ struct lc_time_T *__get_current_time_locale(locale_t);
+ int	__time_load_locale(const char *);
++#endif
+ 
+ #endif /* !_TIMELOCAL_H_ */
+diff --git a/usr.bin/localedef/Makefile b/usr.bin/localedef/Makefile
+index 9a888c8c50..c36928eaa4 100644
+--- a/usr.bin/localedef/Makefile
++++ b/usr.bin/localedef/Makefile
+@@ -16,6 +16,7 @@ SRCS=	charmap.c \
+ ${SRCS:M*.c}: parser.h
+ parser.h: parser.y
+ 
++CFLAGS+=	-D_LOCALE_TOOLS
+ CFLAGS+=	-I. -I${.CURDIR}
+ CFLAGS+=	-I${.CURDIR}/../../lib/libc/locale
+ CFLAGS+=	-I${.CURDIR}/../../lib/libc/stdtime
+-- 
+2.22.0
+

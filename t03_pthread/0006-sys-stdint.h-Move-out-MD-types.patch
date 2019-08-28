@@ -1,0 +1,48 @@
+From e494ef0e2899c1fb33e0df96fd609d28b9dbfeba Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 9 Aug 2019 19:49:27 +0300
+Subject: [PATCH 06/66] <sys/stdint.h>: Move out MD types.
+
+ The <cpu/types.h> would be a better place for these, however it needs
+ proper cleanup first and would only complicate visibility on other
+ standard headers at the moment.
+---
+ sys/cpu/x86_64/include/stdint.h | 3 +++
+ sys/sys/stdint.h                | 3 ---
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
+index d22509e26e..fc310e14b0 100644
+--- a/sys/cpu/x86_64/include/stdint.h
++++ b/sys/cpu/x86_64/include/stdint.h
+@@ -119,6 +119,7 @@ typedef __int32_t	__ssize_t;
+ typedef __int32_t	__register_t;
+ typedef __uint32_t	__u_register_t;
+ #endif
++
+ typedef long		__suseconds_t;
+ typedef long		__time_t;
+ typedef int		__timer_t;
+@@ -128,5 +129,7 @@ typedef unsigned long	__clockid_t;
+ typedef __uint32_t	__socklen_t;
+ typedef volatile int	__atomic_intr_t;
+ typedef __int64_t	__rlim_t;
++typedef __int64_t	__off_t;
++typedef __int32_t	__pid_t;
+ 
+ #endif /* _CPU_STDINT_H_ */
+diff --git a/sys/sys/stdint.h b/sys/sys/stdint.h
+index 540802379f..706c7505e5 100644
+--- a/sys/sys/stdint.h
++++ b/sys/sys/stdint.h
+@@ -47,7 +47,4 @@ typedef union {
+ 	__int64_t __mbstateL;	/* for alignment */
+ } __mbstate_t;
+ 
+-typedef __int64_t	__off_t;
+-typedef __int32_t	__pid_t;
+-
+ #endif	/* SYS_STDINT_H */
+-- 
+2.22.0
+

@@ -1,0 +1,3489 @@
+From 2cd6f8bbdf34eb315662735d27e1ec6f85c1f01b Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 27 Aug 2019 22:02:16 +0300
+Subject: [PATCH 61/66] libc_r: Start using namespace.h/un-namespace.h
+
+ Fix missing _ in function calls.  There is an issue with struct pthread_once
+ mangling by namespace.h but it will be addressed in separate commit.
+---
+ lib/libc_r/uthread/Makefile.inc               |  1 -
+ lib/libc_r/uthread/uthread_accept.c           |  4 +-
+ lib/libc_r/uthread/uthread_affinity.c         |  4 +-
+ lib/libc_r/uthread/uthread_aio_suspend.c      |  5 +-
+ lib/libc_r/uthread/uthread_atfork.c           |  4 +-
+ lib/libc_r/uthread/uthread_attr_destroy.c     |  4 +-
+ lib/libc_r/uthread/uthread_attr_get_np.c      |  4 +-
+ .../uthread/uthread_attr_getaffinity_np.c     |  5 +-
+ .../uthread/uthread_attr_getdetachstate.c     |  4 +-
+ .../uthread/uthread_attr_getinheritsched.c    |  3 +
+ .../uthread/uthread_attr_getschedparam.c      |  3 +
+ .../uthread/uthread_attr_getschedpolicy.c     |  3 +
+ lib/libc_r/uthread/uthread_attr_getscope.c    |  3 +
+ lib/libc_r/uthread/uthread_attr_getstack.c    |  4 +-
+ .../uthread/uthread_attr_getstackaddr.c       |  4 +-
+ .../uthread/uthread_attr_getstacksize.c       |  3 +
+ lib/libc_r/uthread/uthread_attr_init.c        |  4 +-
+ .../uthread/uthread_attr_setaffinity_np.c     |  4 +-
+ .../uthread_attr_setcreatesuspend_np.c        |  4 +-
+ .../uthread/uthread_attr_setdetachstate.c     |  4 +-
+ .../uthread/uthread_attr_setinheritsched.c    |  3 +
+ .../uthread/uthread_attr_setschedparam.c      |  3 +
+ .../uthread/uthread_attr_setschedpolicy.c     |  4 +-
+ lib/libc_r/uthread/uthread_attr_setscope.c    |  4 +-
+ lib/libc_r/uthread/uthread_attr_setstack.c    |  4 +-
+ .../uthread/uthread_attr_setstackaddr.c       |  4 +-
+ .../uthread/uthread_attr_setstacksize.c       |  4 +-
+ lib/libc_r/uthread/uthread_bind.c             |  4 +-
+ lib/libc_r/uthread/uthread_cancel.c           | 16 ++---
+ lib/libc_r/uthread/uthread_clean.c            |  4 +-
+ lib/libc_r/uthread/uthread_close.c            |  4 +-
+ lib/libc_r/uthread/uthread_closefrom.c        |  6 +-
+ lib/libc_r/uthread/uthread_concurrency.c      |  4 +-
+ lib/libc_r/uthread/uthread_cond.c             | 13 +++--
+ lib/libc_r/uthread/uthread_condattr_destroy.c |  4 +-
+ lib/libc_r/uthread/uthread_condattr_init.c    |  4 +-
+ lib/libc_r/uthread/uthread_connect.c          |  4 +-
+ lib/libc_r/uthread/uthread_creat.c            |  4 +-
+ lib/libc_r/uthread/uthread_create.c           | 13 +++--
+ lib/libc_r/uthread/uthread_detach.c           |  4 +-
+ lib/libc_r/uthread/uthread_dup.c              |  4 +-
+ lib/libc_r/uthread/uthread_dup2.c             |  4 +-
+ lib/libc_r/uthread/uthread_equal.c            |  4 +-
+ lib/libc_r/uthread/uthread_execve.c           |  4 +-
+ lib/libc_r/uthread/uthread_exit.c             | 11 ++--
+ lib/libc_r/uthread/uthread_faccessat.c        |  4 +-
+ lib/libc_r/uthread/uthread_fchflags.c         |  5 +-
+ lib/libc_r/uthread/uthread_fchmod.c           |  4 +-
+ lib/libc_r/uthread/uthread_fchmodat.c         |  4 +-
+ lib/libc_r/uthread/uthread_fchown.c           |  4 +-
+ lib/libc_r/uthread/uthread_fchownat.c         |  4 +-
+ lib/libc_r/uthread/uthread_fcntl.c            |  4 +-
+ lib/libc_r/uthread/uthread_fd.c               |  4 +-
+ lib/libc_r/uthread/uthread_file.c             |  5 +-
+ lib/libc_r/uthread/uthread_find_thread.c      |  4 +-
+ lib/libc_r/uthread/uthread_flock.c            |  4 +-
+ lib/libc_r/uthread/uthread_fork.c             |  4 +-
+ lib/libc_r/uthread/uthread_fpathconf.c        |  4 +-
+ lib/libc_r/uthread/uthread_fstat.c            |  4 +-
+ lib/libc_r/uthread/uthread_fstatat.c          |  4 +-
+ lib/libc_r/uthread/uthread_fstatfs.c          |  4 +-
+ lib/libc_r/uthread/uthread_fsync.c            |  4 +-
+ lib/libc_r/uthread/uthread_gc.c               |  9 ++-
+ lib/libc_r/uthread/uthread_getdirentries.c    |  4 +-
+ lib/libc_r/uthread/uthread_getpeername.c      |  4 +-
+ lib/libc_r/uthread/uthread_getprio.c          |  6 +-
+ lib/libc_r/uthread/uthread_getschedparam.c    |  3 +
+ lib/libc_r/uthread/uthread_getsockname.c      |  4 +-
+ lib/libc_r/uthread/uthread_getsockopt.c       |  4 +-
+ lib/libc_r/uthread/uthread_getthreadid_np.c   |  4 +-
+ lib/libc_r/uthread/uthread_info.c             |  3 +
+ lib/libc_r/uthread/uthread_init.c             |  7 ++-
+ lib/libc_r/uthread/uthread_ioctl.c            |  4 +-
+ lib/libc_r/uthread/uthread_jmp.c              |  5 +-
+ lib/libc_r/uthread/uthread_join.c             |  7 ++-
+ lib/libc_r/uthread/uthread_kern.c             |  9 +--
+ lib/libc_r/uthread/uthread_kevent.c           |  5 +-
+ lib/libc_r/uthread/uthread_kill.c             |  4 +-
+ lib/libc_r/uthread/uthread_kqueue.c           |  5 +-
+ lib/libc_r/uthread/uthread_listen.c           |  4 +-
+ lib/libc_r/uthread/uthread_main_np.c          |  7 ++-
+ lib/libc_r/uthread/uthread_mattr_init.c       |  4 +-
+ lib/libc_r/uthread/uthread_mattr_kind_np.c    |  3 +
+ lib/libc_r/uthread/uthread_msync.c            |  5 +-
+ lib/libc_r/uthread/uthread_multi_np.c         |  5 +-
+ lib/libc_r/uthread/uthread_mutex.c            | 11 ++--
+ .../uthread/uthread_mutex_prioceiling.c       |  7 ++-
+ lib/libc_r/uthread/uthread_mutex_protocol.c   |  3 +
+ .../uthread/uthread_mutexattr_destroy.c       |  4 +-
+ lib/libc_r/uthread/uthread_nanosleep.c        |  4 +-
+ lib/libc_r/uthread/uthread_once.c             |  8 ++-
+ lib/libc_r/uthread/uthread_open.c             |  5 +-
+ lib/libc_r/uthread/uthread_pause.c            |  4 +-
+ lib/libc_r/uthread/uthread_pipe.c             |  4 +-
+ lib/libc_r/uthread/uthread_poll.c             |  4 +-
+ lib/libc_r/uthread/uthread_priority_queue.c   |  4 +-
+ lib/libc_r/uthread/uthread_read.c             |  5 +-
+ lib/libc_r/uthread/uthread_readv.c            |  5 +-
+ lib/libc_r/uthread/uthread_recvfrom.c         |  4 +-
+ lib/libc_r/uthread/uthread_recvmsg.c          |  4 +-
+ lib/libc_r/uthread/uthread_resume_np.c        |  4 +-
+ lib/libc_r/uthread/uthread_rwlock.c           | 58 ++++++++++---------
+ lib/libc_r/uthread/uthread_rwlockattr.c       |  5 +-
+ lib/libc_r/uthread/uthread_select.c           |  4 +-
+ lib/libc_r/uthread/uthread_self.c             |  4 +-
+ lib/libc_r/uthread/uthread_sem.c              | 45 +++++++-------
+ lib/libc_r/uthread/uthread_sendfile.c         |  9 +--
+ lib/libc_r/uthread/uthread_sendmsg.c          |  4 +-
+ lib/libc_r/uthread/uthread_sendto.c           |  4 +-
+ lib/libc_r/uthread/uthread_setprio.c          |  8 ++-
+ lib/libc_r/uthread/uthread_setschedparam.c    |  3 +
+ lib/libc_r/uthread/uthread_setsockopt.c       |  4 +-
+ lib/libc_r/uthread/uthread_shutdown.c         |  4 +-
+ lib/libc_r/uthread/uthread_sig.c              |  4 +-
+ lib/libc_r/uthread/uthread_sigaction.c        |  4 +-
+ lib/libc_r/uthread/uthread_sigmask.c          |  4 +-
+ lib/libc_r/uthread/uthread_sigpending.c       |  4 +-
+ lib/libc_r/uthread/uthread_sigprocmask.c      |  6 +-
+ lib/libc_r/uthread/uthread_sigsuspend.c       |  4 +-
+ lib/libc_r/uthread/uthread_sigwait.c          |  4 +-
+ lib/libc_r/uthread/uthread_single_np.c        |  5 +-
+ lib/libc_r/uthread/uthread_sleep.c            |  4 +-
+ lib/libc_r/uthread/uthread_socket.c           |  4 +-
+ lib/libc_r/uthread/uthread_socketpair.c       |  5 +-
+ lib/libc_r/uthread/uthread_spec.c             |  4 +-
+ lib/libc_r/uthread/uthread_stubs.c            |  2 +
+ lib/libc_r/uthread/uthread_suspend_np.c       |  4 +-
+ lib/libc_r/uthread/uthread_switch_np.c        |  4 +-
+ lib/libc_r/uthread/uthread_system.c           |  4 +-
+ lib/libc_r/uthread/uthread_tcdrain.c          |  4 +-
+ lib/libc_r/uthread/uthread_unlinkat.c         |  4 +-
+ lib/libc_r/uthread/uthread_vfork.c            |  3 +-
+ lib/libc_r/uthread/uthread_wait.c             |  3 +-
+ lib/libc_r/uthread/uthread_wait4.c            |  5 +-
+ lib/libc_r/uthread/uthread_waitpid.c          |  4 +-
+ lib/libc_r/uthread/uthread_write.c            |  5 +-
+ lib/libc_r/uthread/uthread_writev.c           |  5 +-
+ lib/libc_r/uthread/uthread_yield.c            |  4 +-
+ 138 files changed, 498 insertions(+), 233 deletions(-)
+
+diff --git a/lib/libc_r/uthread/Makefile.inc b/lib/libc_r/uthread/Makefile.inc
+index 565ac856eb..0eddaac19e 100644
+--- a/lib/libc_r/uthread/Makefile.inc
++++ b/lib/libc_r/uthread/Makefile.inc
+@@ -1,5 +1,4 @@
+ # $FreeBSD: src/lib/libc_r/uthread/Makefile.inc,v 1.23.2.8 2003/05/27 18:18:01 jdp Exp $
+-# $DragonFly: src/lib/libc_r/uthread/Makefile.inc,v 1.10 2008/05/25 21:34:49 hasso Exp $
+ 
+ # uthread sources
+ .PATH: ${.CURDIR}/uthread
+diff --git a/lib/libc_r/uthread/uthread_accept.c b/lib/libc_r/uthread/uthread_accept.c
+index a1be0b0508..ec7ea95094 100644
+--- a/lib/libc_r/uthread/uthread_accept.c
++++ b/lib/libc_r/uthread/uthread_accept.c
+@@ -30,14 +30,16 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_accept.c,v 1.13.2.5 2003/01/17 07:56:43 ru Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_accept.c,v 1.4 2007/01/08 21:41:53 dillon Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <unistd.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_affinity.c b/lib/libc_r/uthread/uthread_affinity.c
+index 65e22ffaa6..25e5a35d29 100644
+--- a/lib/libc_r/uthread/uthread_affinity.c
++++ b/lib/libc_r/uthread/uthread_affinity.c
+@@ -29,12 +29,14 @@
+  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
+-
++#include "namespace.h"
+ #include <sys/lwp.h>
+ #include <errno.h>
+ #include <string.h>
+ #include <pthread.h>
+ #include <pthread_np.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_aio_suspend.c b/lib/libc_r/uthread/uthread_aio_suspend.c
+index 18d421b67c..a9ff790cf3 100644
+--- a/lib/libc_r/uthread/uthread_aio_suspend.c
++++ b/lib/libc_r/uthread/uthread_aio_suspend.c
+@@ -27,11 +27,12 @@
+  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_aio_suspend.c,v 1.2.2.5 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_aio_suspend.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
+-
++#include "namespace.h"
+ #include <aio.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_atfork.c b/lib/libc_r/uthread/uthread_atfork.c
+index de987e71b9..889e0ddd67 100644
+--- a/lib/libc_r/uthread/uthread_atfork.c
++++ b/lib/libc_r/uthread/uthread_atfork.c
+@@ -24,12 +24,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libpthread/thread/thr_atfork.c,v 1.1 2003/11/05 03:42:10 davidxu Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_atfork.c,v 1.1 2008/05/25 21:34:49 hasso Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <pthread.h>
+ #include <sys/queue.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_destroy.c b/lib/libc_r/uthread/uthread_attr_destroy.c
+index 828c3d28f5..7900228d84 100644
+--- a/lib/libc_r/uthread/uthread_attr_destroy.c
++++ b/lib/libc_r/uthread/uthread_attr_destroy.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_destroy.c,v 1.4.2.1 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_destroy.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_get_np.c b/lib/libc_r/uthread/uthread_attr_get_np.c
+index fa9a20ac2f..d3941ed383 100644
+--- a/lib/libc_r/uthread/uthread_attr_get_np.c
++++ b/lib/libc_r/uthread/uthread_attr_get_np.c
+@@ -24,12 +24,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_get_np.c,v 1.2.2.2 2003/02/03 10:13:28 phantom Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_get_np.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <string.h>
+ #include <pthread.h>
+ #include <pthread_np.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_getaffinity_np.c b/lib/libc_r/uthread/uthread_attr_getaffinity_np.c
+index 7352c6f577..8d46489f3b 100644
+--- a/lib/libc_r/uthread/uthread_attr_getaffinity_np.c
++++ b/lib/libc_r/uthread/uthread_attr_getaffinity_np.c
+@@ -29,14 +29,15 @@
+  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
+-
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/sysctl.h>
+-
+ #include <errno.h>
+ #include <pthread.h>
+ #include <pthread_np.h>
+ #include <string.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_getdetachstate.c b/lib/libc_r/uthread/uthread_attr_getdetachstate.c
+index eba7ceb59e..b765e3fd10 100644
+--- a/lib/libc_r/uthread/uthread_attr_getdetachstate.c
++++ b/lib/libc_r/uthread/uthread_attr_getdetachstate.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_getdetachstate.c,v 1.3.2.2 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_getdetachstate.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_getinheritsched.c b/lib/libc_r/uthread/uthread_attr_getinheritsched.c
+index 98243595bc..77f92a2985 100644
+--- a/lib/libc_r/uthread/uthread_attr_getinheritsched.c
++++ b/lib/libc_r/uthread/uthread_attr_getinheritsched.c
+@@ -31,8 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_getinheritsched.c,v 1.4.2.1 2002/10/22 14:44:02 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_getschedparam.c b/lib/libc_r/uthread/uthread_attr_getschedparam.c
+index 5f764a12b7..ebcc7d9c49 100644
+--- a/lib/libc_r/uthread/uthread_attr_getschedparam.c
++++ b/lib/libc_r/uthread/uthread_attr_getschedparam.c
+@@ -31,8 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_getschedparam.c,v 1.4.2.1 2002/10/22 14:44:02 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_getschedpolicy.c b/lib/libc_r/uthread/uthread_attr_getschedpolicy.c
+index df7340454e..3d4a16d82c 100644
+--- a/lib/libc_r/uthread/uthread_attr_getschedpolicy.c
++++ b/lib/libc_r/uthread/uthread_attr_getschedpolicy.c
+@@ -31,8 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_getschedpolicy.c,v 1.4.2.1 2002/10/22 14:44:02 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_getscope.c b/lib/libc_r/uthread/uthread_attr_getscope.c
+index 1eafafb756..777f4713c4 100644
+--- a/lib/libc_r/uthread/uthread_attr_getscope.c
++++ b/lib/libc_r/uthread/uthread_attr_getscope.c
+@@ -31,8 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_getscope.c,v 1.4.2.1 2002/10/22 14:44:02 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_getstack.c b/lib/libc_r/uthread/uthread_attr_getstack.c
+index c7a78f00f5..070dde0a58 100644
+--- a/lib/libc_r/uthread/uthread_attr_getstack.c
++++ b/lib/libc_r/uthread/uthread_attr_getstack.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_getstack.c,v 1.1.2.1 2003/03/04 16:49:54 phantom Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_getstack.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_getstackaddr.c b/lib/libc_r/uthread/uthread_attr_getstackaddr.c
+index 3195097293..395b13b4bd 100644
+--- a/lib/libc_r/uthread/uthread_attr_getstackaddr.c
++++ b/lib/libc_r/uthread/uthread_attr_getstackaddr.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_getstackaddr.c,v 1.3.2.2 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_getstackaddr.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_getstacksize.c b/lib/libc_r/uthread/uthread_attr_getstacksize.c
+index 2b1693584c..2a205d80ec 100644
+--- a/lib/libc_r/uthread/uthread_attr_getstacksize.c
++++ b/lib/libc_r/uthread/uthread_attr_getstacksize.c
+@@ -31,8 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_getstacksize.c,v 1.3.2.2 2002/10/22 14:44:02 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_init.c b/lib/libc_r/uthread/uthread_attr_init.c
+index 86a717e6a3..eaf68caec5 100644
+--- a/lib/libc_r/uthread/uthread_attr_init.c
++++ b/lib/libc_r/uthread/uthread_attr_init.c
+@@ -30,12 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_init.c,v 1.4.2.1 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_init.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <string.h>
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_setaffinity_np.c b/lib/libc_r/uthread/uthread_attr_setaffinity_np.c
+index d46e4f2cc3..9630a76991 100644
+--- a/lib/libc_r/uthread/uthread_attr_setaffinity_np.c
++++ b/lib/libc_r/uthread/uthread_attr_setaffinity_np.c
+@@ -29,10 +29,12 @@
+  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
+-
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
+ #include <pthread_np.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_setcreatesuspend_np.c b/lib/libc_r/uthread/uthread_attr_setcreatesuspend_np.c
+index be4cd25530..d27558326c 100644
+--- a/lib/libc_r/uthread/uthread_attr_setcreatesuspend_np.c
++++ b/lib/libc_r/uthread/uthread_attr_setcreatesuspend_np.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_setcreatesuspend_np.c,v 1.3.2.1 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_setcreatesuspend_np.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_setdetachstate.c b/lib/libc_r/uthread/uthread_attr_setdetachstate.c
+index ede5757134..1b76052b21 100644
+--- a/lib/libc_r/uthread/uthread_attr_setdetachstate.c
++++ b/lib/libc_r/uthread/uthread_attr_setdetachstate.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_setdetachstate.c,v 1.4.2.1 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_setdetachstate.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_setinheritsched.c b/lib/libc_r/uthread/uthread_attr_setinheritsched.c
+index 3f42fce066..69e1ff99e4 100644
+--- a/lib/libc_r/uthread/uthread_attr_setinheritsched.c
++++ b/lib/libc_r/uthread/uthread_attr_setinheritsched.c
+@@ -31,8 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_setinheritsched.c,v 1.3.2.1 2002/10/22 14:44:02 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_setschedparam.c b/lib/libc_r/uthread/uthread_attr_setschedparam.c
+index e5382f28ed..64da596cf9 100644
+--- a/lib/libc_r/uthread/uthread_attr_setschedparam.c
++++ b/lib/libc_r/uthread/uthread_attr_setschedparam.c
+@@ -31,8 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_setschedparam.c,v 1.4.2.3 2002/10/22 14:44:02 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_setschedpolicy.c b/lib/libc_r/uthread/uthread_attr_setschedpolicy.c
+index ac78bbee9a..73038363e0 100644
+--- a/lib/libc_r/uthread/uthread_attr_setschedpolicy.c
++++ b/lib/libc_r/uthread/uthread_attr_setschedpolicy.c
+@@ -31,9 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_setschedpolicy.c,v 1.3.2.2 2002/10/22 14:44:02 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_setscope.c b/lib/libc_r/uthread/uthread_attr_setscope.c
+index a3441fb77a..c814a574d2 100644
+--- a/lib/libc_r/uthread/uthread_attr_setscope.c
++++ b/lib/libc_r/uthread/uthread_attr_setscope.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_setscope.c,v 1.3.2.3 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_setscope.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_setstack.c b/lib/libc_r/uthread/uthread_attr_setstack.c
+index b8111bba52..e6b841b0a9 100644
+--- a/lib/libc_r/uthread/uthread_attr_setstack.c
++++ b/lib/libc_r/uthread/uthread_attr_setstack.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_setstack.c,v 1.1.2.1 2003/03/04 16:49:54 phantom Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_setstack.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_setstackaddr.c b/lib/libc_r/uthread/uthread_attr_setstackaddr.c
+index fe9a78fce6..a2e0910739 100644
+--- a/lib/libc_r/uthread/uthread_attr_setstackaddr.c
++++ b/lib/libc_r/uthread/uthread_attr_setstackaddr.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_setstackaddr.c,v 1.4.2.1 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_setstackaddr.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_attr_setstacksize.c b/lib/libc_r/uthread/uthread_attr_setstacksize.c
+index 0566b0b71d..c2d702edbc 100644
+--- a/lib/libc_r/uthread/uthread_attr_setstacksize.c
++++ b/lib/libc_r/uthread/uthread_attr_setstacksize.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_attr_setstacksize.c,v 1.5.2.1 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_attr_setstacksize.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_bind.c b/lib/libc_r/uthread/uthread_bind.c
+index a05399890a..a757de72a2 100644
+--- a/lib/libc_r/uthread/uthread_bind.c
++++ b/lib/libc_r/uthread/uthread_bind.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_bind.c,v 1.9.2.2 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_bind.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_cancel.c b/lib/libc_r/uthread/uthread_cancel.c
+index ec663a2dab..2ff7440ab8 100644
+--- a/lib/libc_r/uthread/uthread_cancel.c
++++ b/lib/libc_r/uthread/uthread_cancel.c
+@@ -1,10 +1,12 @@
+ /*
+  * David Leonard <d@openbsd.org>, 1999. Public domain.
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_cancel.c,v 1.3.2.9 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_cancel.c,v 1.4 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <sys/errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ static void	finish_cancellation(void *arg);
+@@ -125,7 +127,7 @@ _pthread_setcancelstate(int state, int *oldstate)
+ 			*oldstate = ostate;
+ 		curthread->cancelflags &= ~PTHREAD_CANCEL_DISABLE;
+ 		if ((curthread->cancelflags & PTHREAD_CANCEL_ASYNCHRONOUS) != 0)
+-			pthread_testcancel();
++			_pthread_testcancel();
+ 		ret = 0;
+ 		break;
+ 	case PTHREAD_CANCEL_DISABLE:
+@@ -154,7 +156,7 @@ _pthread_setcanceltype(int type, int *oldtype)
+ 		if (oldtype != NULL)
+ 			*oldtype = otype;
+ 		curthread->cancelflags |= PTHREAD_CANCEL_ASYNCHRONOUS;
+-		pthread_testcancel();
++		_pthread_testcancel();
+ 		ret = 0;
+ 		break;
+ 	case PTHREAD_CANCEL_DEFERRED:
+@@ -185,7 +187,7 @@ _pthread_testcancel(void)
+ 		 */
+ 		curthread->cancelflags &= ~PTHREAD_CANCELLING;
+ 		_thread_exit_cleanup();
+-		pthread_exit(PTHREAD_CANCELED);
++		_pthread_exit(PTHREAD_CANCELED);
+ 		PANIC("cancel");
+ 	}
+ }
+@@ -196,7 +198,7 @@ _thread_enter_cancellation_point(void)
+ 	struct pthread	*curthread = _get_curthread();
+ 
+ 	/* Look for a cancellation before we block: */
+-	pthread_testcancel();
++	_pthread_testcancel();
+ 	curthread->cancelflags |= PTHREAD_AT_CANCEL_POINT;
+ }
+ 
+@@ -207,7 +209,7 @@ _thread_leave_cancellation_point(void)
+ 
+ 	curthread->cancelflags &= ~PTHREAD_AT_CANCEL_POINT;
+ 	/* Look for a cancellation after we unblock: */
+-	pthread_testcancel();
++	_pthread_testcancel();
+ }
+ 
+ static void
+@@ -221,7 +223,7 @@ finish_cancellation(void *arg)
+ 	if ((curthread->cancelflags & PTHREAD_CANCEL_NEEDED) != 0) {
+ 		curthread->cancelflags &= ~PTHREAD_CANCEL_NEEDED;
+ 		_thread_exit_cleanup();
+-		pthread_exit(PTHREAD_CANCELED);
++		_pthread_exit(PTHREAD_CANCELED);
+ 	}
+ }
+ 
+diff --git a/lib/libc_r/uthread/uthread_clean.c b/lib/libc_r/uthread/uthread_clean.c
+index 3c484955b2..6c7e0918a7 100644
+--- a/lib/libc_r/uthread/uthread_clean.c
++++ b/lib/libc_r/uthread/uthread_clean.c
+@@ -30,12 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_clean.c,v 1.4.2.2 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_clean.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <signal.h>
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ void
+diff --git a/lib/libc_r/uthread/uthread_close.c b/lib/libc_r/uthread/uthread_close.c
+index 687ff7212f..7944be20bd 100644
+--- a/lib/libc_r/uthread/uthread_close.c
++++ b/lib/libc_r/uthread/uthread_close.c
+@@ -30,14 +30,16 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_close.c,v 1.10.2.5 2003/06/13 16:04:59 ru Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_close.c,v 1.3 2006/08/01 08:25:58 corecode Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <sys/stat.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_closefrom.c b/lib/libc_r/uthread/uthread_closefrom.c
+index 9a0750f2b6..5c3b6a1c6b 100644
+--- a/lib/libc_r/uthread/uthread_closefrom.c
++++ b/lib/libc_r/uthread/uthread_closefrom.c
+@@ -30,13 +30,13 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- *
+- * $DragonFly: src/lib/libc_r/uthread/uthread_closefrom.c,v 1.2 2005/05/02 20:40:50 joerg Exp $
+  */
+-
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
+ #include <unistd.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_concurrency.c b/lib/libc_r/uthread/uthread_concurrency.c
+index 5b7624b178..07b49bf43a 100644
+--- a/lib/libc_r/uthread/uthread_concurrency.c
++++ b/lib/libc_r/uthread/uthread_concurrency.c
+@@ -30,10 +30,10 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_concurrency.c,v 1.1.2.1 2003/05/27 18:18:01 jdp Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_concurrency.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
+-
++#include "namespace.h"
+ #include <errno.h>
++#include "un-namespace.h"
+ 
+ static int current_concurrency = 0;
+ 
+diff --git a/lib/libc_r/uthread/uthread_cond.c b/lib/libc_r/uthread/uthread_cond.c
+index 99244b9b6c..978be64e98 100644
+--- a/lib/libc_r/uthread/uthread_cond.c
++++ b/lib/libc_r/uthread/uthread_cond.c
+@@ -31,6 +31,7 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_cond.c,v 1.22.2.8 2002/10/22 14:44:02 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <string.h>
+@@ -39,6 +40,8 @@
+ #define __nonnull(...)
+ #endif
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ /*
+@@ -58,7 +61,7 @@ _cond_reinit(pthread_cond_t *cond)
+ 	if (cond == NULL)
+ 		ret = EINVAL;
+ 	else if (*cond == NULL)
+-		ret = pthread_cond_init(cond, NULL);
++		ret = _pthread_cond_init(cond, NULL);
+ 	else {
+ 		/*
+ 		 * Initialize the condition variable structure:
+@@ -181,7 +184,7 @@ _pthread_cond_wait(pthread_cond_t * __restrict cond,
+ 	 * perform the dynamic initialization:
+ 	 */
+ 	if (*cond == NULL &&
+-	    (rval = pthread_cond_init(cond, NULL)) != 0)
++	    (rval = _pthread_cond_init(cond, NULL)) != 0)
+ 		return (rval);
+ 
+ 	/*
+@@ -341,7 +344,7 @@ _pthread_cond_timedwait(pthread_cond_t * __restrict cond,
+ 	 * If the condition variable is statically initialized, perform dynamic
+ 	 * initialization.
+ 	 */
+-	if (*cond == NULL && (rval = pthread_cond_init(cond, NULL)) != 0)
++	if (*cond == NULL && (rval = _pthread_cond_init(cond, NULL)) != 0)
+ 		return (rval);
+ 
+ 	/*
+@@ -504,7 +507,7 @@ _pthread_cond_signal(pthread_cond_t * cond)
+         * If the condition variable is statically initialized, perform dynamic
+         * initialization.
+         */
+-	} else if (*cond != NULL || (rval = pthread_cond_init(cond, NULL)) == 0) {
++	} else if (*cond != NULL || (rval = _pthread_cond_init(cond, NULL)) == 0) {
+ 		/*
+ 		 * Defer signals to protect the scheduling queues
+ 		 * from access by the signal handler:
+@@ -566,7 +569,7 @@ _pthread_cond_broadcast(pthread_cond_t * cond)
+         * If the condition variable is statically initialized, perform dynamic
+         * initialization.
+         */
+-	} else	if (*cond != NULL || (rval = pthread_cond_init(cond, NULL)) == 0) {
++	} else	if (*cond != NULL || (rval = _pthread_cond_init(cond, NULL)) == 0) {
+ 		/*
+ 		 * Defer signals to protect the scheduling queues
+ 		 * from access by the signal handler:
+diff --git a/lib/libc_r/uthread/uthread_condattr_destroy.c b/lib/libc_r/uthread/uthread_condattr_destroy.c
+index 51dd44179f..3409673ae5 100644
+--- a/lib/libc_r/uthread/uthread_condattr_destroy.c
++++ b/lib/libc_r/uthread/uthread_condattr_destroy.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_condattr_destroy.c,v 1.4.2.1 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_condattr_destroy.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_condattr_init.c b/lib/libc_r/uthread/uthread_condattr_init.c
+index 65146fd174..16fd605de2 100644
+--- a/lib/libc_r/uthread/uthread_condattr_init.c
++++ b/lib/libc_r/uthread/uthread_condattr_init.c
+@@ -30,12 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_condattr_init.c,v 1.4.2.1 2002/10/22 14:44:02 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_condattr_init.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <string.h>
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_connect.c b/lib/libc_r/uthread/uthread_connect.c
+index f2dcbad128..52f14c236e 100644
+--- a/lib/libc_r/uthread/uthread_connect.c
++++ b/lib/libc_r/uthread/uthread_connect.c
+@@ -30,13 +30,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_connect.c,v 1.10.2.5 2003/01/17 07:56:43 ru Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_connect.c,v 1.4 2007/01/08 21:41:53 dillon Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_creat.c b/lib/libc_r/uthread/uthread_creat.c
+index 1ef02dbdd4..e4eea2c7ad 100644
+--- a/lib/libc_r/uthread/uthread_creat.c
++++ b/lib/libc_r/uthread/uthread_creat.c
+@@ -28,9 +28,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_creat.c,v 1.1.2.2 2002/10/22 14:44:02 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ extern int	__creat(const char *, mode_t);
+diff --git a/lib/libc_r/uthread/uthread_create.c b/lib/libc_r/uthread/uthread_create.c
+index 84a05823fa..39cc5e37f8 100644
+--- a/lib/libc_r/uthread/uthread_create.c
++++ b/lib/libc_r/uthread/uthread_create.c
+@@ -31,6 +31,7 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_create.c,v 1.24.2.6 2003/01/08 05:04:26 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -46,6 +47,8 @@
+ #define __nonnull(...)
+ #endif
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ #include "libc_private.h"
+ 
+@@ -110,7 +113,7 @@ _pthread_create(pthread_t * __restrict thread,
+ 			 * Use the garbage collector mutex for synchronization
+ 			 * of the spare stack list.
+ 			 */
+-			if (pthread_mutex_lock(&_gc_mutex) != 0)
++			if (_pthread_mutex_lock(&_gc_mutex) != 0)
+ 				PANIC("Cannot lock gc mutex");
+ 
+ 			if ((spare_stack = SLIST_FIRST(&_stackq)) != NULL) {
+@@ -118,7 +121,7 @@ _pthread_create(pthread_t * __restrict thread,
+ 				SLIST_REMOVE_HEAD(&_stackq, qe);
+ 
+ 				/* Unlock the garbage collector mutex. */
+-				if (pthread_mutex_unlock(&_gc_mutex) != 0)
++				if (_pthread_mutex_unlock(&_gc_mutex) != 0)
+ 					PANIC("Cannot unlock gc mutex");
+ 
+ 				stack = sizeof(struct stack)
+@@ -140,7 +143,7 @@ _pthread_create(pthread_t * __restrict thread,
+ 				    + PTHREAD_STACK_GUARD);
+ 
+ 				/* Unlock the garbage collector mutex. */
+-				if (pthread_mutex_unlock(&_gc_mutex) != 0)
++				if (_pthread_mutex_unlock(&_gc_mutex) != 0)
+ 					PANIC("Cannot unlock gc mutex");
+ 
+ 				/* Stack: */
+@@ -305,7 +308,7 @@ _pthread_create(pthread_t * __restrict thread,
+ 			 * Start a garbage collector thread
+ 			 * if necessary.
+ 			 */
+-			if (f_gc && pthread_create(&gc_thread,NULL,
++			if (f_gc && _pthread_create(&gc_thread,NULL,
+ 				    _thread_gc,NULL) != 0)
+ 				PANIC("Can't create gc thread");
+ 
+@@ -325,7 +328,7 @@ _thread_start(void)
+ 	_thread_kern_in_sched = 0;
+ 
+ 	/* Run the current thread's start routine with argument: */
+-	pthread_exit(curthread->start_routine(curthread->arg));
++	_pthread_exit(curthread->start_routine(curthread->arg));
+ 
+ 	/* This point should never be reached. */
+ 	PANIC("Thread has resumed after exit");
+diff --git a/lib/libc_r/uthread/uthread_detach.c b/lib/libc_r/uthread/uthread_detach.c
+index 9488e194bf..eb0547181a 100644
+--- a/lib/libc_r/uthread/uthread_detach.c
++++ b/lib/libc_r/uthread/uthread_detach.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_detach.c,v 1.11.2.4 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_detach.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_dup.c b/lib/libc_r/uthread/uthread_dup.c
+index d8dca7cead..4d12ce7f45 100644
+--- a/lib/libc_r/uthread/uthread_dup.c
++++ b/lib/libc_r/uthread/uthread_dup.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_dup.c,v 1.8.2.3 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_dup.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_dup2.c b/lib/libc_r/uthread/uthread_dup2.c
+index 0abee4d509..5ab2b76fce 100644
+--- a/lib/libc_r/uthread/uthread_dup2.c
++++ b/lib/libc_r/uthread/uthread_dup2.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_dup2.c,v 1.9.2.7 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_dup2.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_equal.c b/lib/libc_r/uthread/uthread_equal.c
+index f0ecc9779b..71873661f3 100644
+--- a/lib/libc_r/uthread/uthread_equal.c
++++ b/lib/libc_r/uthread/uthread_equal.c
+@@ -30,9 +30,11 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_equal.c,v 1.3.2.1 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_equal.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_execve.c b/lib/libc_r/uthread/uthread_execve.c
+index c9dd671bd4..b4bce682af 100644
+--- a/lib/libc_r/uthread/uthread_execve.c
++++ b/lib/libc_r/uthread/uthread_execve.c
+@@ -30,12 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_execve.c,v 1.11.2.6 2002/11/21 21:53:06 archie Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_execve.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_exit.c b/lib/libc_r/uthread/uthread_exit.c
+index 0319b7c305..a6c41b6c96 100644
+--- a/lib/libc_r/uthread/uthread_exit.c
++++ b/lib/libc_r/uthread/uthread_exit.c
+@@ -31,6 +31,7 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_exit.c,v 1.16.2.8 2002/10/22 14:44:03 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+@@ -38,6 +39,8 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "libc_private.h"
+ #include "pthread_private.h"
+ 
+@@ -158,7 +161,7 @@ _pthread_exit(void *status)
+ 	curthread->ret = status;
+ 
+ 	while (curthread->cleanup != NULL) {
+-		pthread_cleanup_pop(1);
++		_pthread_cleanup_pop(1);
+ 	}
+ 	if (curthread->attr.cleanup_attr != NULL) {
+ 		curthread->attr.cleanup_attr(curthread->attr.arg_attr);
+@@ -182,7 +185,7 @@ _pthread_exit(void *status)
+ 	 * Lock the garbage collector mutex to ensure that the garbage
+ 	 * collector is not using the dead thread list.
+ 	 */
+-	if (pthread_mutex_lock(&_gc_mutex) != 0)
++	if (_pthread_mutex_lock(&_gc_mutex) != 0)
+ 		PANIC("Cannot lock gc mutex");
+ 
+ 	/* Add this thread to the list of dead threads. */
+@@ -192,7 +195,7 @@ _pthread_exit(void *status)
+ 	 * Signal the garbage collector thread that there is something
+ 	 * to clean up.
+ 	 */
+-	if (pthread_cond_signal(&_gc_cond) != 0)
++	if (_pthread_cond_signal(&_gc_cond) != 0)
+ 		PANIC("Cannot signal gc cond");
+ 
+ 	/*
+@@ -203,7 +206,7 @@ _pthread_exit(void *status)
+ 	_thread_kern_sig_defer();
+ 
+ 	/* Unlock the garbage collector mutex: */
+-	if (pthread_mutex_unlock(&_gc_mutex) != 0)
++	if (_pthread_mutex_unlock(&_gc_mutex) != 0)
+ 		PANIC("Cannot unlock gc mutex");
+ 
+ 	/* Check if there is a thread joining this one: */
+diff --git a/lib/libc_r/uthread/uthread_faccessat.c b/lib/libc_r/uthread/uthread_faccessat.c
+index 3f0cfd618b..11359ca6bc 100644
+--- a/lib/libc_r/uthread/uthread_faccessat.c
++++ b/lib/libc_r/uthread/uthread_faccessat.c
+@@ -31,9 +31,11 @@
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
+-
++#include "namespace.h"
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fchflags.c b/lib/libc_r/uthread/uthread_fchflags.c
+index b8a11ef42c..37ff9385a5 100644
+--- a/lib/libc_r/uthread/uthread_fchflags.c
++++ b/lib/libc_r/uthread/uthread_fchflags.c
+@@ -3,12 +3,13 @@
+  *
+  * $OpenBSD: uthread_fchflags.c,v 1.1 1999/01/08 05:42:18 d Exp $
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_fchflags.c,v 1.4.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_fchflags.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
+-
++#include "namespace.h"
+ #include <sys/stat.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fchmod.c b/lib/libc_r/uthread/uthread_fchmod.c
+index 931c4f8175..1b31a6fd64 100644
+--- a/lib/libc_r/uthread/uthread_fchmod.c
++++ b/lib/libc_r/uthread/uthread_fchmod.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_fchmod.c,v 1.8.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_fchmod.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fchmodat.c b/lib/libc_r/uthread/uthread_fchmodat.c
+index 3847f0ff3d..7ebe926e10 100644
+--- a/lib/libc_r/uthread/uthread_fchmodat.c
++++ b/lib/libc_r/uthread/uthread_fchmodat.c
+@@ -31,10 +31,12 @@
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
+-
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fchown.c b/lib/libc_r/uthread/uthread_fchown.c
+index 1c244a359c..b1080a9136 100644
+--- a/lib/libc_r/uthread/uthread_fchown.c
++++ b/lib/libc_r/uthread/uthread_fchown.c
+@@ -30,12 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_fchown.c,v 1.8.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_fchown.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <unistd.h>
+ #include <dirent.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fchownat.c b/lib/libc_r/uthread/uthread_fchownat.c
+index 87294256e3..3b418323db 100644
+--- a/lib/libc_r/uthread/uthread_fchownat.c
++++ b/lib/libc_r/uthread/uthread_fchownat.c
+@@ -31,9 +31,11 @@
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
+-
++#include "namespace.h"
+ #include <pthread.h>
+ #include <unistd.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fcntl.c b/lib/libc_r/uthread/uthread_fcntl.c
+index cfae04594a..be32aec4c9 100644
+--- a/lib/libc_r/uthread/uthread_fcntl.c
++++ b/lib/libc_r/uthread/uthread_fcntl.c
+@@ -30,12 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_fcntl.c,v 1.12.2.3 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_fcntl.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <stdarg.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fd.c b/lib/libc_r/uthread/uthread_fd.c
+index e33ff2fb23..239fd5de62 100644
+--- a/lib/libc_r/uthread/uthread_fd.c
++++ b/lib/libc_r/uthread/uthread_fd.c
+@@ -31,12 +31,14 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_fd.c,v 1.16.2.7 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ #define FDQ_INSERT(q,p)					\
+diff --git a/lib/libc_r/uthread/uthread_file.c b/lib/libc_r/uthread/uthread_file.c
+index e3f6193f76..0a7275307a 100644
+--- a/lib/libc_r/uthread/uthread_file.c
++++ b/lib/libc_r/uthread/uthread_file.c
+@@ -30,11 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_file.c,v 1.12.2.3 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_file.c,v 1.4 2005/05/11 12:50:09 davidxu Exp $
+- *
+  */
++#include "namespace.h"
+ #include <stdio.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ extern void	__flockfile(FILE *);
+diff --git a/lib/libc_r/uthread/uthread_find_thread.c b/lib/libc_r/uthread/uthread_find_thread.c
+index 203bf05865..c84c6ad3c1 100644
+--- a/lib/libc_r/uthread/uthread_find_thread.c
++++ b/lib/libc_r/uthread/uthread_find_thread.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_find_thread.c,v 1.5.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_find_thread.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ /* Find a thread in the linked list of active threads: */
+diff --git a/lib/libc_r/uthread/uthread_flock.c b/lib/libc_r/uthread/uthread_flock.c
+index 9e37db7d02..5e5ee645fa 100644
+--- a/lib/libc_r/uthread/uthread_flock.c
++++ b/lib/libc_r/uthread/uthread_flock.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_flock.c,v 1.8.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_flock.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/file.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fork.c b/lib/libc_r/uthread/uthread_fork.c
+index 638dee0e52..30e1cb1d25 100644
+--- a/lib/libc_r/uthread/uthread_fork.c
++++ b/lib/libc_r/uthread/uthread_fork.c
+@@ -31,7 +31,7 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_fork.c,v 1.19.2.7 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <sys/syscall.h>
+ #include <errno.h>
+ #include <string.h>
+@@ -39,6 +39,8 @@
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ pid_t
+diff --git a/lib/libc_r/uthread/uthread_fpathconf.c b/lib/libc_r/uthread/uthread_fpathconf.c
+index bfa4dc911f..d900011603 100644
+--- a/lib/libc_r/uthread/uthread_fpathconf.c
++++ b/lib/libc_r/uthread/uthread_fpathconf.c
+@@ -24,10 +24,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_fpathconf.c,v 1.1.2.3 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_fpathconf.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ long
+diff --git a/lib/libc_r/uthread/uthread_fstat.c b/lib/libc_r/uthread/uthread_fstat.c
+index 16616cebe1..1159298d7f 100644
+--- a/lib/libc_r/uthread/uthread_fstat.c
++++ b/lib/libc_r/uthread/uthread_fstat.c
+@@ -30,8 +30,8 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_fstat.c,v 1.8.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_fstat.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <signal.h>
+ #include <errno.h>
+ #include <sys/types.h>
+@@ -39,6 +39,8 @@
+ #include <sys/mount.h>
+ #include <sys/stat.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fstatat.c b/lib/libc_r/uthread/uthread_fstatat.c
+index 87fb67597a..09eb236ddf 100644
+--- a/lib/libc_r/uthread/uthread_fstatat.c
++++ b/lib/libc_r/uthread/uthread_fstatat.c
+@@ -31,7 +31,7 @@
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
+-
++#include "namespace.h"
+ #include <signal.h>
+ #include <errno.h>
+ #include <sys/types.h>
+@@ -39,6 +39,8 @@
+ #include <sys/mount.h>
+ #include <sys/stat.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fstatfs.c b/lib/libc_r/uthread/uthread_fstatfs.c
+index 5d65da1e79..803cbf718d 100644
+--- a/lib/libc_r/uthread/uthread_fstatfs.c
++++ b/lib/libc_r/uthread/uthread_fstatfs.c
+@@ -30,8 +30,8 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_fstatfs.c,v 1.8.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_fstatfs.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <signal.h>
+ #include <errno.h>
+ #include <sys/types.h>
+@@ -39,6 +39,8 @@
+ #include <sys/mount.h>
+ #include <sys/stat.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_fsync.c b/lib/libc_r/uthread/uthread_fsync.c
+index 8a2003d6f5..f48ac387af 100644
+--- a/lib/libc_r/uthread/uthread_fsync.c
++++ b/lib/libc_r/uthread/uthread_fsync.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_fsync.c,v 1.8.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_fsync.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_gc.c b/lib/libc_r/uthread/uthread_gc.c
+index 3f70689668..9d38942eca 100644
+--- a/lib/libc_r/uthread/uthread_gc.c
++++ b/lib/libc_r/uthread/uthread_gc.c
+@@ -34,6 +34,7 @@
+  * Garbage collector thread. Frees memory allocated for dead threads.
+  *
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <time.h>
+ #include <stdlib.h>
+@@ -41,6 +42,8 @@
+ #include <sys/types.h>
+ #include <sys/mman.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ pthread_addr_t
+@@ -100,7 +103,7 @@ _thread_gc(pthread_addr_t arg)
+ 		 * Lock the garbage collector mutex which ensures that
+ 		 * this thread sees another thread exit:
+ 		 */
+-		if (pthread_mutex_lock(&_gc_mutex) != 0)
++		if (_pthread_mutex_lock(&_gc_mutex) != 0)
+ 			PANIC("Cannot lock gc mutex");
+ 
+ 		/* No stack of thread structure to free yet: */
+@@ -225,13 +228,13 @@ _thread_gc(pthread_addr_t arg)
+ 			 * Wait for a signal from a dying thread or a
+ 			 * timeout (for a backup poll).
+ 			 */
+-			if ((ret = pthread_cond_timedwait(&_gc_cond,
++			if ((ret = _pthread_cond_timedwait(&_gc_cond,
+ 			    &_gc_mutex, &abstime)) != 0 && ret != ETIMEDOUT)
+ 				PANIC("gc cannot wait for a signal");
+ 		}
+ 
+ 		/* Unlock the garbage collector mutex: */
+-		if (pthread_mutex_unlock(&_gc_mutex) != 0)
++		if (_pthread_mutex_unlock(&_gc_mutex) != 0)
+ 			PANIC("Cannot unlock gc mutex");
+ 
+ 		/*
+diff --git a/lib/libc_r/uthread/uthread_getdirentries.c b/lib/libc_r/uthread/uthread_getdirentries.c
+index 49ec9e8497..71bb383874 100644
+--- a/lib/libc_r/uthread/uthread_getdirentries.c
++++ b/lib/libc_r/uthread/uthread_getdirentries.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_getdirentries.c,v 1.8.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_getdirentries.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <dirent.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_getpeername.c b/lib/libc_r/uthread/uthread_getpeername.c
+index 32e9c3f80a..a2214c12d6 100644
+--- a/lib/libc_r/uthread/uthread_getpeername.c
++++ b/lib/libc_r/uthread/uthread_getpeername.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_getpeername.c,v 1.9.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_getpeername.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_getprio.c b/lib/libc_r/uthread/uthread_getprio.c
+index a552992396..20b6564a75 100644
+--- a/lib/libc_r/uthread/uthread_getprio.c
++++ b/lib/libc_r/uthread/uthread_getprio.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_getprio.c,v 1.6.2.1 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_getprio.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+@@ -42,7 +44,7 @@ _pthread_getprio(pthread_t pthread)
+ 	int policy, ret;
+ 	struct sched_param param;
+ 
+-	if ((ret = pthread_getschedparam(pthread, &policy, &param)) == 0)
++	if ((ret = _pthread_getschedparam(pthread, &policy, &param)) == 0)
+ 		ret = param.sched_priority;
+ 	else {
+ 		/* Invalid thread: */
+diff --git a/lib/libc_r/uthread/uthread_getschedparam.c b/lib/libc_r/uthread/uthread_getschedparam.c
+index bd56a05a23..d0262baf30 100644
+--- a/lib/libc_r/uthread/uthread_getschedparam.c
++++ b/lib/libc_r/uthread/uthread_getschedparam.c
+@@ -31,8 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_getschedparam.c,v 1.4.2.2 2002/10/22 14:44:03 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_getsockname.c b/lib/libc_r/uthread/uthread_getsockname.c
+index 9e4dd654ff..6b7ff3c9e4 100644
+--- a/lib/libc_r/uthread/uthread_getsockname.c
++++ b/lib/libc_r/uthread/uthread_getsockname.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_getsockname.c,v 1.9.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_getsockname.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_getsockopt.c b/lib/libc_r/uthread/uthread_getsockopt.c
+index 1027b6cf53..42af9604a4 100644
+--- a/lib/libc_r/uthread/uthread_getsockopt.c
++++ b/lib/libc_r/uthread/uthread_getsockopt.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_getsockopt.c,v 1.9.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_getsockopt.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_getthreadid_np.c b/lib/libc_r/uthread/uthread_getthreadid_np.c
+index a5904cf00f..3d9382f935 100644
+--- a/lib/libc_r/uthread/uthread_getthreadid_np.c
++++ b/lib/libc_r/uthread/uthread_getthreadid_np.c
+@@ -24,9 +24,11 @@
+  * SUCH DAMAGE.
+  *
+  */
+-
++#include "namespace.h"
+ #include <pthread.h>
+ #include <pthread_np.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_info.c b/lib/libc_r/uthread/uthread_info.c
+index 77961f53dd..a1f139917a 100644
+--- a/lib/libc_r/uthread/uthread_info.c
++++ b/lib/libc_r/uthread/uthread_info.c
+@@ -31,6 +31,7 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_info.c,v 1.14.2.9 2003/02/15 05:35:31 kris Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <stdio.h>
+@@ -40,6 +41,8 @@
+ #include <pthread.h>
+ #include <unistd.h>
+ #include <limits.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ #ifndef NELEMENTS
+diff --git a/lib/libc_r/uthread/uthread_init.c b/lib/libc_r/uthread/uthread_init.c
+index 712f765d6b..51f3b8400e 100644
+--- a/lib/libc_r/uthread/uthread_init.c
++++ b/lib/libc_r/uthread/uthread_init.c
+@@ -35,6 +35,7 @@
+ /* Allocate space for global thread variables here: */
+ #define GLOBAL_PTHREAD_PRIVATE
+ 
++#include "namespace.h"
+ #include <sys/user.h>	/* MUST BE FIRST */
+ #include <errno.h>
+ #include <stdlib.h>
+@@ -51,6 +52,8 @@
+ #include <sys/mman.h>
+ #include <machine/reg.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ /*
+@@ -408,8 +411,8 @@ _thread_init(void)
+ #endif /* GCC_2_8_MADE_THREAD_AWARE */
+ 
+ 	/* Initialise the garbage collector mutex and condition variable. */
+-	if (pthread_mutex_init(&_gc_mutex,NULL) != 0 ||
+-	    pthread_cond_init(&_gc_cond,NULL) != 0)
++	if (_pthread_mutex_init(&_gc_mutex,NULL) != 0 ||
++	    _pthread_cond_init(&_gc_cond,NULL) != 0)
+ 		PANIC("Failed to initialise garbage collector mutex or condvar");
+ }
+ 
+diff --git a/lib/libc_r/uthread/uthread_ioctl.c b/lib/libc_r/uthread/uthread_ioctl.c
+index ffc32004e4..9e52aaf165 100644
+--- a/lib/libc_r/uthread/uthread_ioctl.c
++++ b/lib/libc_r/uthread/uthread_ioctl.c
+@@ -30,12 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_ioctl.c,v 1.9.2.3 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_ioctl.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <stdarg.h>
+ #include <sys/ioctl.h>
+ #include <sys/fcntl.h>	/* O_NONBLOCK*/
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_jmp.c b/lib/libc_r/uthread/uthread_jmp.c
+index ec7a741390..4ebcb66f25 100644
+--- a/lib/libc_r/uthread/uthread_jmp.c
++++ b/lib/libc_r/uthread/uthread_jmp.c
+@@ -29,15 +29,16 @@
+  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_jmp.c,v 1.2.2.4 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_jmp.c,v 1.3 2007/04/29 01:10:33 dillon Exp $
+  */
+-
++#include "namespace.h"
+ #include <sys/user.h>	/* MUST BE FIRST */
+ #include <unistd.h>
+ #include <setjmp.h>
+ #include <sys/param.h>
+ #include <machine/reg.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ /* Prototypes: */
+diff --git a/lib/libc_r/uthread/uthread_join.c b/lib/libc_r/uthread/uthread_join.c
+index 143c050aa1..601aed207e 100644
+--- a/lib/libc_r/uthread/uthread_join.c
++++ b/lib/libc_r/uthread/uthread_join.c
+@@ -31,8 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_join.c,v 1.12.2.8 2002/10/22 14:44:03 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+@@ -62,7 +65,7 @@ _pthread_join(pthread_t pthread, void **thread_return)
+ 	 * Lock the garbage collector mutex to ensure that the garbage
+ 	 * collector is not using the dead thread list.
+ 	 */
+-	if (pthread_mutex_lock(&_gc_mutex) != 0)
++	if (_pthread_mutex_lock(&_gc_mutex) != 0)
+ 		PANIC("Cannot lock gc mutex");
+ 
+ 	/*
+@@ -75,7 +78,7 @@ _pthread_join(pthread_t pthread, void **thread_return)
+ 	 * Unlock the garbage collector mutex, now that the garbage collector
+ 	 * can't be run:
+ 	 */
+-	if (pthread_mutex_unlock(&_gc_mutex) != 0)
++	if (_pthread_mutex_unlock(&_gc_mutex) != 0)
+ 		PANIC("Cannot lock gc mutex");
+ 
+ 	/*
+diff --git a/lib/libc_r/uthread/uthread_kern.c b/lib/libc_r/uthread/uthread_kern.c
+index 9b979455a0..9cbed85b2f 100644
+--- a/lib/libc_r/uthread/uthread_kern.c
++++ b/lib/libc_r/uthread/uthread_kern.c
+@@ -30,9 +30,8 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_kern.c,v 1.28.2.13 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_kern.c,v 1.7 2007/12/14 20:07:59 dillon Exp $
+- *
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <poll.h>
+ #include <stdlib.h>
+@@ -50,6 +49,8 @@
+ #include <sys/syscall.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ /* #define DEBUG_THREAD_KERN */
+@@ -146,7 +147,7 @@ _thread_kern_sched(ucontext_t *ucp)
+ 				 * We allow threads woken at cancel
+ 				 * points to do their own checks.
+ 				 */
+-				pthread_testcancel();
++				_pthread_testcancel();
+ 		}
+ 
+ 		if (_sched_switch_hook != NULL) {
+@@ -1067,7 +1068,7 @@ _thread_kern_sig_undefer(void)
+ 		 */
+ 		if (((curthread->cancelflags & PTHREAD_AT_CANCEL_POINT) == 0) &&
+ 		    ((curthread->cancelflags & PTHREAD_CANCEL_ASYNCHRONOUS) != 0))
+-			pthread_testcancel();
++			_pthread_testcancel();
+ 
+ 		/*
+ 		 * If there are pending signals or this thread has
+diff --git a/lib/libc_r/uthread/uthread_kevent.c b/lib/libc_r/uthread/uthread_kevent.c
+index 53636fcbc7..94d09b15e8 100644
+--- a/lib/libc_r/uthread/uthread_kevent.c
++++ b/lib/libc_r/uthread/uthread_kevent.c
+@@ -24,15 +24,16 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_kevent.c,v 1.2.2.6 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_kevent.c,v 1.4 2005/05/30 20:50:53 joerg Exp $
+  */
+-
++#include "namespace.h"
+ #include <unistd.h>
+ #include <errno.h>
+ #include <sys/types.h>
+ #include <sys/time.h>
+ #include <sys/event.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_kill.c b/lib/libc_r/uthread/uthread_kill.c
+index 0fcdd7c888..7b00ac40ec 100644
+--- a/lib/libc_r/uthread/uthread_kill.c
++++ b/lib/libc_r/uthread/uthread_kill.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_kill.c,v 1.10.2.1 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_kill.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <signal.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_kqueue.c b/lib/libc_r/uthread/uthread_kqueue.c
+index 937db04fcb..a50cb0ed8d 100644
+--- a/lib/libc_r/uthread/uthread_kqueue.c
++++ b/lib/libc_r/uthread/uthread_kqueue.c
+@@ -24,14 +24,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_kqueue.c,v 1.1 2003/07/25 17:02:33 mp Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_kqueue.c,v 1.2 2005/05/30 20:50:53 joerg Exp $
+  */
+-
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/event.h>
+ #include <fcntl.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_listen.c b/lib/libc_r/uthread/uthread_listen.c
+index ff39bf1b4f..615a8569a2 100644
+--- a/lib/libc_r/uthread/uthread_listen.c
++++ b/lib/libc_r/uthread/uthread_listen.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_listen.c,v 1.8.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_listen.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_main_np.c b/lib/libc_r/uthread/uthread_main_np.c
+index 68fb09a5b8..16b35f8dbc 100644
+--- a/lib/libc_r/uthread/uthread_main_np.c
++++ b/lib/libc_r/uthread/uthread_main_np.c
+@@ -25,11 +25,12 @@
+  * SUCH DAMAGE.
+  *
+  *	$FreeBSD: src/lib/libc_r/uthread/uthread_main_np.c,v 1.4.2.2 2002/10/22 14:44:03 fjoe Exp $
+- *	$DragonFly: src/lib/libc_r/uthread/uthread_main_np.c,v 1.4 2008/09/30 16:57:04 swildner Exp $
+  */
+-
++#include "namespace.h"
+ #include <pthread.h>
+ #include <pthread_np.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ /*
+@@ -42,7 +43,7 @@ _pthread_main_np(void)
+ 	if (!_thread_initial)
+ 		return (-1);
+ 	else
+-		return (pthread_equal(pthread_self(), _thread_initial) ? 1 : 0);
++		return (_pthread_equal(_pthread_self(), _thread_initial) ? 1 : 0);
+ }
+ 
+ __strong_reference(_pthread_main_np, pthread_main_np);
+diff --git a/lib/libc_r/uthread/uthread_mattr_init.c b/lib/libc_r/uthread/uthread_mattr_init.c
+index a54703740e..097975e847 100644
+--- a/lib/libc_r/uthread/uthread_mattr_init.c
++++ b/lib/libc_r/uthread/uthread_mattr_init.c
+@@ -30,12 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_mattr_init.c,v 1.5.2.1 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_mattr_init.c,v 1.4 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <string.h>
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_mattr_kind_np.c b/lib/libc_r/uthread/uthread_mattr_kind_np.c
+index 45d12dd505..11084b4cde 100644
+--- a/lib/libc_r/uthread/uthread_mattr_kind_np.c
++++ b/lib/libc_r/uthread/uthread_mattr_kind_np.c
+@@ -31,8 +31,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_mattr_kind_np.c,v 1.4.2.2 2002/10/22 14:44:03 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_msync.c b/lib/libc_r/uthread/uthread_msync.c
+index 56684e2dd4..7f173f351c 100644
+--- a/lib/libc_r/uthread/uthread_msync.c
++++ b/lib/libc_r/uthread/uthread_msync.c
+@@ -4,12 +4,13 @@
+  * $OpenBSD: uthread_msync.c,v 1.2 1999/06/09 07:16:17 d Exp $
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_msync.c,v 1.3.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_msync.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
+-
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/mman.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_multi_np.c b/lib/libc_r/uthread/uthread_multi_np.c
+index d6f354226c..29f273a28e 100644
+--- a/lib/libc_r/uthread/uthread_multi_np.c
++++ b/lib/libc_r/uthread/uthread_multi_np.c
+@@ -30,10 +30,11 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_multi_np.c,v 1.4.2.1 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_multi_np.c,v 1.4 2008/09/30 16:57:04 swildner Exp $
+  */
++#include "namespace.h"
+ #include <pthread.h>
+ #include <pthread_np.h>
++#include "un-namespace.h"
+ 
+ int
+ _pthread_multi_np(void)
+@@ -44,7 +45,7 @@ _pthread_multi_np(void)
+ 	 * XXX - Do we want to do this?
+ 	 * __is_threaded = 1;
+ 	 */
+-	pthread_resume_all_np();
++	_pthread_resume_all_np();
+ 	return (0);
+ }
+ 
+diff --git a/lib/libc_r/uthread/uthread_mutex.c b/lib/libc_r/uthread/uthread_mutex.c
+index 9943f25e67..539b6a71e3 100644
+--- a/lib/libc_r/uthread/uthread_mutex.c
++++ b/lib/libc_r/uthread/uthread_mutex.c
+@@ -31,6 +31,7 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_mutex.c,v 1.20.2.8 2002/10/22 14:44:03 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <string.h>
+@@ -41,6 +42,8 @@
+ #define __nonnull(...)
+ #endif
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ #if defined(_PTHREADS_INVARIANTS)
+@@ -87,7 +90,7 @@ _mutex_reinit(pthread_mutex_t * mutex)
+ 	if (mutex == NULL)
+ 		ret = EINVAL;
+ 	else if (*mutex == NULL)
+-		ret = pthread_mutex_init(mutex, NULL);
++		ret = _pthread_mutex_init(mutex, NULL);
+ 	else {
+ 		/*
+ 		 * Initialize the mutex structure:
+@@ -253,7 +256,7 @@ init_static(pthread_mutex_t *mutex)
+ 	_SPINLOCK(&static_init_lock);
+ 
+ 	if (*mutex == NULL)
+-		ret = pthread_mutex_init(mutex, NULL);
++		ret = _pthread_mutex_init(mutex, NULL);
+ 	else
+ 		ret = 0;
+ 
+@@ -668,7 +671,7 @@ int
+ _mutex_cv_lock(pthread_mutex_t * mutex)
+ {
+ 	int	ret;
+-	if ((ret = pthread_mutex_lock(mutex)) == 0)
++	if ((ret = _pthread_mutex_lock(mutex)) == 0)
+ 		(*mutex)->m_refcount--;
+ 	return (ret);
+ }
+@@ -1356,7 +1359,7 @@ _mutex_unlock_private(pthread_t pthread)
+ 	for (m = TAILQ_FIRST(&pthread->mutexq); m != NULL; m = m_next) {
+ 		m_next = TAILQ_NEXT(m, m_qe);
+ 		if ((m->m_flags & MUTEX_FLAGS_PRIVATE) != 0)
+-			pthread_mutex_unlock(&m);
++			_pthread_mutex_unlock(&m);
+ 	}
+ }
+ 
+diff --git a/lib/libc_r/uthread/uthread_mutex_prioceiling.c b/lib/libc_r/uthread/uthread_mutex_prioceiling.c
+index c60d09d002..c849560ca4 100644
+--- a/lib/libc_r/uthread/uthread_mutex_prioceiling.c
++++ b/lib/libc_r/uthread/uthread_mutex_prioceiling.c
+@@ -31,10 +31,13 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_mutex_prioceiling.c,v 1.3.2.1 2002/10/22 14:44:03 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <string.h>
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+@@ -96,13 +99,13 @@ _pthread_mutex_setprioceiling(pthread_mutex_t * __restrict mutex,
+ 		ret = EINVAL;
+ 	else {
+ 		/* Lock the mutex: */
+-		if ((ret = pthread_mutex_lock(mutex)) == 0) {
++		if ((ret = _pthread_mutex_lock(mutex)) == 0) {
+ 			/* Return the old ceiling and set the new ceiling: */
+ 			*old_ceiling = (*mutex)->m_prio;
+ 			(*mutex)->m_prio = prioceiling;
+ 
+ 			/* Unlock the mutex: */
+-			ret = pthread_mutex_unlock(mutex);
++			ret = _pthread_mutex_unlock(mutex);
+ 		}
+ 	}
+ 	return(ret);
+diff --git a/lib/libc_r/uthread/uthread_mutex_protocol.c b/lib/libc_r/uthread/uthread_mutex_protocol.c
+index 34a337193a..4cfa640826 100644
+--- a/lib/libc_r/uthread/uthread_mutex_protocol.c
++++ b/lib/libc_r/uthread/uthread_mutex_protocol.c
+@@ -31,10 +31,13 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_mutex_protocol.c,v 1.3.2.1 2002/10/22 14:44:03 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <string.h>
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_mutexattr_destroy.c b/lib/libc_r/uthread/uthread_mutexattr_destroy.c
+index 1009249e9a..e92ce0ccac 100644
+--- a/lib/libc_r/uthread/uthread_mutexattr_destroy.c
++++ b/lib/libc_r/uthread/uthread_mutexattr_destroy.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_mutexattr_destroy.c,v 1.5.2.1 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_mutexattr_destroy.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_nanosleep.c b/lib/libc_r/uthread/uthread_nanosleep.c
+index a16c697a5e..66bd98256c 100644
+--- a/lib/libc_r/uthread/uthread_nanosleep.c
++++ b/lib/libc_r/uthread/uthread_nanosleep.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_nanosleep.c,v 1.13.2.3 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_nanosleep.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <stdio.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_once.c b/lib/libc_r/uthread/uthread_once.c
+index 846d3e8142..3e85da3f52 100644
+--- a/lib/libc_r/uthread/uthread_once.c
++++ b/lib/libc_r/uthread/uthread_once.c
+@@ -30,9 +30,11 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_once.c,v 1.3.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_once.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+@@ -41,12 +43,12 @@ _pthread_once(pthread_once_t * once_control, void (*init_routine) (void))
+ 	if (once_control->state == PTHREAD_NEEDS_INIT) {
+ 		if (_thread_initial == NULL)
+ 			_thread_init();
+-		pthread_mutex_lock(&(once_control->mutex));
++		_pthread_mutex_lock(&(once_control->mutex));
+ 		if (once_control->state == PTHREAD_NEEDS_INIT) {
+ 			init_routine();
+ 			once_control->state = PTHREAD_DONE_INIT;
+ 		}
+-		pthread_mutex_unlock(&(once_control->mutex));
++		_pthread_mutex_unlock(&(once_control->mutex));
+ 	}
+ 	return (0);
+ }
+diff --git a/lib/libc_r/uthread/uthread_open.c b/lib/libc_r/uthread/uthread_open.c
+index 8cdada9a70..d70a47fca5 100644
+--- a/lib/libc_r/uthread/uthread_open.c
++++ b/lib/libc_r/uthread/uthread_open.c
+@@ -30,15 +30,16 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_open.c,v 1.9.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_open.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+- *
+  */
++#include "namespace.h"
+ #include <stdarg.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <dirent.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_pause.c b/lib/libc_r/uthread/uthread_pause.c
+index 9fd599fdfa..81a52b2fea 100644
+--- a/lib/libc_r/uthread/uthread_pause.c
++++ b/lib/libc_r/uthread/uthread_pause.c
+@@ -28,9 +28,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_pause.c,v 1.1.2.2 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ extern int	__pause(void);
+diff --git a/lib/libc_r/uthread/uthread_pipe.c b/lib/libc_r/uthread/uthread_pipe.c
+index 2fa11f51e0..d923d3a102 100644
+--- a/lib/libc_r/uthread/uthread_pipe.c
++++ b/lib/libc_r/uthread/uthread_pipe.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_pipe.c,v 1.8.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_pipe.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_poll.c b/lib/libc_r/uthread/uthread_poll.c
+index 70c0c24d85..3683c0c981 100644
+--- a/lib/libc_r/uthread/uthread_poll.c
++++ b/lib/libc_r/uthread/uthread_poll.c
+@@ -30,8 +30,8 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_poll.c,v 1.9.2.4 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_poll.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <unistd.h>
+ #include <errno.h>
+ #include <string.h>
+@@ -40,6 +40,8 @@
+ #include <sys/time.h>
+ #include <sys/fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ 
+diff --git a/lib/libc_r/uthread/uthread_priority_queue.c b/lib/libc_r/uthread/uthread_priority_queue.c
+index e1dba1089b..ec802be0b1 100644
+--- a/lib/libc_r/uthread/uthread_priority_queue.c
++++ b/lib/libc_r/uthread/uthread_priority_queue.c
+@@ -30,12 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_priority_queue.c,v 1.5.2.3 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_priority_queue.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <stdlib.h>
+ #include <sys/queue.h>
+ #include <string.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ /* Prototypes: */
+diff --git a/lib/libc_r/uthread/uthread_read.c b/lib/libc_r/uthread/uthread_read.c
+index 3786ebc47f..e71590dae0 100644
+--- a/lib/libc_r/uthread/uthread_read.c
++++ b/lib/libc_r/uthread/uthread_read.c
+@@ -30,15 +30,16 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_read.c,v 1.11.2.4 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_read.c,v 1.4 2007/01/08 21:41:53 dillon Exp $
+- *
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/fcntl.h>
+ #include <sys/uio.h>
+ #include <errno.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ ssize_t
+diff --git a/lib/libc_r/uthread/uthread_readv.c b/lib/libc_r/uthread/uthread_readv.c
+index 704b4d914f..0f39f257a6 100644
+--- a/lib/libc_r/uthread/uthread_readv.c
++++ b/lib/libc_r/uthread/uthread_readv.c
+@@ -30,15 +30,16 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_readv.c,v 1.11.2.5 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_readv.c,v 1.4 2007/01/08 21:41:53 dillon Exp $
+- *
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/fcntl.h>
+ #include <sys/uio.h>
+ #include <errno.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ ssize_t
+diff --git a/lib/libc_r/uthread/uthread_recvfrom.c b/lib/libc_r/uthread/uthread_recvfrom.c
+index b812b1ce67..dfed961d56 100644
+--- a/lib/libc_r/uthread/uthread_recvfrom.c
++++ b/lib/libc_r/uthread/uthread_recvfrom.c
+@@ -30,13 +30,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_recvfrom.c,v 1.9.2.5 2003/01/17 07:56:43 ru Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_recvfrom.c,v 1.3 2006/06/27 13:30:24 corecode Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ ssize_t
+diff --git a/lib/libc_r/uthread/uthread_recvmsg.c b/lib/libc_r/uthread/uthread_recvmsg.c
+index 9178d17ed4..9f9da1c70b 100644
+--- a/lib/libc_r/uthread/uthread_recvmsg.c
++++ b/lib/libc_r/uthread/uthread_recvmsg.c
+@@ -30,13 +30,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_recvmsg.c,v 1.7.2.5 2003/01/17 07:56:43 ru Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_recvmsg.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ ssize_t
+diff --git a/lib/libc_r/uthread/uthread_resume_np.c b/lib/libc_r/uthread/uthread_resume_np.c
+index 27634ee5e8..2bdfeba5f2 100644
+--- a/lib/libc_r/uthread/uthread_resume_np.c
++++ b/lib/libc_r/uthread/uthread_resume_np.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_resume_np.c,v 1.7.2.4 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_resume_np.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ static void	resume_common(struct pthread *);
+diff --git a/lib/libc_r/uthread/uthread_rwlock.c b/lib/libc_r/uthread/uthread_rwlock.c
+index 2670fc127c..c1a0017579 100644
+--- a/lib/libc_r/uthread/uthread_rwlock.c
++++ b/lib/libc_r/uthread/uthread_rwlock.c
+@@ -25,7 +25,7 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_rwlock.c,v 1.4.2.2 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <errno.h>
+ #include <limits.h>
+ #include <stdlib.h>
+@@ -34,6 +34,8 @@
+ #define __nonnull(...)
+ #endif
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ /* maximum number of times a read lock may be obtained */
+@@ -51,7 +53,7 @@ init_static (pthread_rwlock_t *rwlock)
+ 	_SPINLOCK(&static_init_lock);
+ 
+ 	if (*rwlock == NULL)
+-		ret = pthread_rwlock_init(rwlock, NULL);
++		ret = _pthread_rwlock_init(rwlock, NULL);
+ 	else
+ 		ret = 0;
+ 
+@@ -72,9 +74,9 @@ _pthread_rwlock_destroy (pthread_rwlock_t *rwlock)
+ 
+ 		prwlock = *rwlock;
+ 
+-		pthread_mutex_destroy(&prwlock->lock);
+-		pthread_cond_destroy(&prwlock->read_signal);
+-		pthread_cond_destroy(&prwlock->write_signal);
++		_pthread_mutex_destroy(&prwlock->lock);
++		_pthread_cond_destroy(&prwlock->read_signal);
++		_pthread_cond_destroy(&prwlock->write_signal);
+ 		free(prwlock);
+ 
+ 		*rwlock = NULL;
+@@ -99,22 +101,22 @@ _pthread_rwlock_init (pthread_rwlock_t * __restrict rwlock,
+ 		return(ENOMEM);
+ 
+ 	/* initialize the lock */
+-	if ((ret = pthread_mutex_init(&prwlock->lock, NULL)) != 0)
++	if ((ret = _pthread_mutex_init(&prwlock->lock, NULL)) != 0)
+ 		free(prwlock);
+ 	else {
+ 		/* initialize the read condition signal */
+-		ret = pthread_cond_init(&prwlock->read_signal, NULL);
++		ret = _pthread_cond_init(&prwlock->read_signal, NULL);
+ 
+ 		if (ret != 0) {
+-			pthread_mutex_destroy(&prwlock->lock);
++			_pthread_mutex_destroy(&prwlock->lock);
+ 			free(prwlock);
+ 		} else {
+ 			/* initialize the write condition signal */
+-			ret = pthread_cond_init(&prwlock->write_signal, NULL);
++			ret = _pthread_cond_init(&prwlock->write_signal, NULL);
+ 
+ 			if (ret != 0) {
+-				pthread_cond_destroy(&prwlock->read_signal);
+-				pthread_mutex_destroy(&prwlock->lock);
++				_pthread_cond_destroy(&prwlock->read_signal);
++				_pthread_mutex_destroy(&prwlock->lock);
+ 				free(prwlock);
+ 			} else {
+ 				/* success */
+@@ -149,16 +151,16 @@ _pthread_rwlock_rdlock (pthread_rwlock_t *rwlock)
+ 	}
+ 
+ 	/* grab the monitor lock */
+-	if ((ret = pthread_mutex_lock(&prwlock->lock)) != 0)
++	if ((ret = _pthread_mutex_lock(&prwlock->lock)) != 0)
+ 		return(ret);
+ 
+ 	/* give writers priority over readers */
+ 	while (prwlock->blocked_writers || prwlock->state < 0) {
+-		ret = pthread_cond_wait(&prwlock->read_signal, &prwlock->lock);
++		ret = _pthread_cond_wait(&prwlock->read_signal, &prwlock->lock);
+ 
+ 		if (ret != 0) {
+ 			/* can't do a whole lot if this fails */
+-			pthread_mutex_unlock(&prwlock->lock);
++			_pthread_mutex_unlock(&prwlock->lock);
+ 			return(ret);
+ 		}
+ 	}
+@@ -175,7 +177,7 @@ _pthread_rwlock_rdlock (pthread_rwlock_t *rwlock)
+ 	 * lock.  Decrementing 'state' is no good because we probably
+ 	 * don't have the monitor lock.
+ 	 */
+-	pthread_mutex_unlock(&prwlock->lock);
++	_pthread_mutex_unlock(&prwlock->lock);
+ 
+ 	return(ret);
+ }
+@@ -200,7 +202,7 @@ _pthread_rwlock_tryrdlock (pthread_rwlock_t *rwlock)
+ 	}
+ 
+ 	/* grab the monitor lock */
+-	if ((ret = pthread_mutex_lock(&prwlock->lock)) != 0)
++	if ((ret = _pthread_mutex_lock(&prwlock->lock)) != 0)
+ 		return(ret);
+ 
+ 	/* give writers priority over readers */
+@@ -212,7 +214,7 @@ _pthread_rwlock_tryrdlock (pthread_rwlock_t *rwlock)
+ 		++prwlock->state; /* indicate we are locked for reading */
+ 
+ 	/* see the comment on this in pthread_rwlock_rdlock */
+-	pthread_mutex_unlock(&prwlock->lock);
++	_pthread_mutex_unlock(&prwlock->lock);
+ 
+ 	return(ret);
+ }
+@@ -237,7 +239,7 @@ _pthread_rwlock_trywrlock (pthread_rwlock_t *rwlock)
+ 	}
+ 
+ 	/* grab the monitor lock */
+-	if ((ret = pthread_mutex_lock(&prwlock->lock)) != 0)
++	if ((ret = _pthread_mutex_lock(&prwlock->lock)) != 0)
+ 		return(ret);
+ 
+ 	if (prwlock->state != 0)
+@@ -247,7 +249,7 @@ _pthread_rwlock_trywrlock (pthread_rwlock_t *rwlock)
+ 		prwlock->state = -1;
+ 
+ 	/* see the comment on this in pthread_rwlock_rdlock */
+-	pthread_mutex_unlock(&prwlock->lock);
++	_pthread_mutex_unlock(&prwlock->lock);
+ 
+ 	return(ret);
+ }
+@@ -267,24 +269,24 @@ _pthread_rwlock_unlock (pthread_rwlock_t *rwlock)
+ 		return(EINVAL);
+ 
+ 	/* grab the monitor lock */
+-	if ((ret = pthread_mutex_lock(&prwlock->lock)) != 0)
++	if ((ret = _pthread_mutex_lock(&prwlock->lock)) != 0)
+ 		return(ret);
+ 
+ 	if (prwlock->state > 0) {
+ 		if (--prwlock->state == 0 && prwlock->blocked_writers)
+-			ret = pthread_cond_signal(&prwlock->write_signal);
++			ret = _pthread_cond_signal(&prwlock->write_signal);
+ 	} else if (prwlock->state < 0) {
+ 		prwlock->state = 0;
+ 
+ 		if (prwlock->blocked_writers)
+-			ret = pthread_cond_signal(&prwlock->write_signal);
++			ret = _pthread_cond_signal(&prwlock->write_signal);
+ 		else
+-			ret = pthread_cond_broadcast(&prwlock->read_signal);
++			ret = _pthread_cond_broadcast(&prwlock->read_signal);
+ 	} else
+ 		ret = EINVAL;
+ 
+ 	/* see the comment on this in pthread_rwlock_rdlock */
+-	pthread_mutex_unlock(&prwlock->lock);
++	_pthread_mutex_unlock(&prwlock->lock);
+ 
+ 	return(ret);
+ }
+@@ -309,17 +311,17 @@ _pthread_rwlock_wrlock (pthread_rwlock_t *rwlock)
+ 	}
+ 
+ 	/* grab the monitor lock */
+-	if ((ret = pthread_mutex_lock(&prwlock->lock)) != 0)
++	if ((ret = _pthread_mutex_lock(&prwlock->lock)) != 0)
+ 		return(ret);
+ 
+ 	while (prwlock->state != 0) {
+ 		++prwlock->blocked_writers;
+ 
+-		ret = pthread_cond_wait(&prwlock->write_signal, &prwlock->lock);
++		ret = _pthread_cond_wait(&prwlock->write_signal, &prwlock->lock);
+ 
+ 		if (ret != 0) {
+ 			--prwlock->blocked_writers;
+-			pthread_mutex_unlock(&prwlock->lock);
++			_pthread_mutex_unlock(&prwlock->lock);
+ 			return(ret);
+ 		}
+ 
+@@ -330,7 +332,7 @@ _pthread_rwlock_wrlock (pthread_rwlock_t *rwlock)
+ 	prwlock->state = -1;
+ 
+ 	/* see the comment on this in pthread_rwlock_rdlock */
+-	pthread_mutex_unlock(&prwlock->lock);
++	_pthread_mutex_unlock(&prwlock->lock);
+ 
+ 	return(ret);
+ }
+diff --git a/lib/libc_r/uthread/uthread_rwlockattr.c b/lib/libc_r/uthread/uthread_rwlockattr.c
+index 99d472e3a3..b5f014711c 100644
+--- a/lib/libc_r/uthread/uthread_rwlockattr.c
++++ b/lib/libc_r/uthread/uthread_rwlockattr.c
+@@ -25,11 +25,12 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_rwlockattr.c,v 1.5.2.1 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <errno.h>
+ #include <stdlib.h>
+-
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_select.c b/lib/libc_r/uthread/uthread_select.c
+index 9db7c92712..7c4b2030fc 100644
+--- a/lib/libc_r/uthread/uthread_select.c
++++ b/lib/libc_r/uthread/uthread_select.c
+@@ -30,8 +30,8 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_select.c,v 1.16.2.5 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_select.c,v 1.3 2008/01/10 22:30:27 nth Exp $
+  */
++#include "namespace.h"
+ #include <unistd.h>
+ #include <errno.h>
+ #include <poll.h>
+@@ -42,6 +42,8 @@
+ #include <sys/time.h>
+ #include <sys/fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_self.c b/lib/libc_r/uthread/uthread_self.c
+index d0072bb10d..ab343458ae 100644
+--- a/lib/libc_r/uthread/uthread_self.c
++++ b/lib/libc_r/uthread/uthread_self.c
+@@ -30,9 +30,11 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_self.c,v 1.3.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_self.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ pthread_t
+diff --git a/lib/libc_r/uthread/uthread_sem.c b/lib/libc_r/uthread/uthread_sem.c
+index 1a269625a9..64487af6ce 100644
+--- a/lib/libc_r/uthread/uthread_sem.c
++++ b/lib/libc_r/uthread/uthread_sem.c
+@@ -28,11 +28,12 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sem.c,v 1.3.2.5 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <pthread.h>
+ #include <semaphore.h>
++#include "un-namespace.h"
+ 
+ #include "pthread_private.h"
+ 
+@@ -79,15 +80,15 @@ _sem_init(sem_t *sem, int pshared, unsigned int value)
+ 	/*
+ 	 * Initialize the semaphore.
+ 	 */
+-	if (pthread_mutex_init(&(*sem)->lock, NULL) != 0) {
++	if (_pthread_mutex_init(&(*sem)->lock, NULL) != 0) {
+ 		free(*sem);
+ 		errno = ENOSPC;
+ 		retval = -1;
+ 		goto RETURN;
+ 	}
+ 
+-	if (pthread_cond_init(&(*sem)->gtzero, NULL) != 0) {
+-		pthread_mutex_destroy(&(*sem)->lock);
++	if (_pthread_cond_init(&(*sem)->gtzero, NULL) != 0) {
++		_pthread_mutex_destroy(&(*sem)->lock);
+ 		free(*sem);
+ 		errno = ENOSPC;
+ 		retval = -1;
+@@ -107,21 +108,21 @@ int
+ _sem_destroy(sem_t *sem)
+ {
+ 	int	retval;
+-	
++
+ 	_SEM_CHECK_VALIDITY(sem);
+ 
+ 	/* Make sure there are no waiters. */
+-	pthread_mutex_lock(&(*sem)->lock);
++	_pthread_mutex_lock(&(*sem)->lock);
+ 	if ((*sem)->nwaiters > 0) {
+-		pthread_mutex_unlock(&(*sem)->lock);
++		_pthread_mutex_unlock(&(*sem)->lock);
+ 		errno = EBUSY;
+ 		retval = -1;
+ 		goto RETURN;
+ 	}
+-	pthread_mutex_unlock(&(*sem)->lock);
+-	
+-	pthread_mutex_destroy(&(*sem)->lock);
+-	pthread_cond_destroy(&(*sem)->gtzero);
++	_pthread_mutex_unlock(&(*sem)->lock);
++
++	_pthread_mutex_destroy(&(*sem)->lock);
++	_pthread_cond_destroy(&(*sem)->gtzero);
+ 	(*sem)->magic = 0;
+ 
+ 	free(*sem);
+@@ -161,16 +162,16 @@ _sem_wait(sem_t *sem)
+ 
+ 	_SEM_CHECK_VALIDITY(sem);
+ 
+-	pthread_mutex_lock(&(*sem)->lock);
++	_pthread_mutex_lock(&(*sem)->lock);
+ 
+ 	while ((*sem)->count == 0) {
+ 		(*sem)->nwaiters++;
+-		pthread_cond_wait(&(*sem)->gtzero, &(*sem)->lock);
++		_pthread_cond_wait(&(*sem)->gtzero, &(*sem)->lock);
+ 		(*sem)->nwaiters--;
+ 	}
+ 	(*sem)->count--;
+ 
+-	pthread_mutex_unlock(&(*sem)->lock);
++	_pthread_mutex_unlock(&(*sem)->lock);
+ 
+ 	retval = 0;
+   RETURN:
+@@ -185,7 +186,7 @@ _sem_trywait(sem_t *sem)
+ 
+ 	_SEM_CHECK_VALIDITY(sem);
+ 
+-	pthread_mutex_lock(&(*sem)->lock);
++	_pthread_mutex_lock(&(*sem)->lock);
+ 
+ 	if ((*sem)->count > 0) {
+ 		(*sem)->count--;
+@@ -194,8 +195,8 @@ _sem_trywait(sem_t *sem)
+ 		errno = EAGAIN;
+ 		retval = -1;
+ 	}
+-	
+-	pthread_mutex_unlock(&(*sem)->lock);
++
++	_pthread_mutex_unlock(&(*sem)->lock);
+ 
+   RETURN:
+ 	return retval;
+@@ -214,13 +215,13 @@ _sem_post(sem_t *sem)
+ 	 */
+ 	_thread_kern_sig_defer();
+ 
+-	pthread_mutex_lock(&(*sem)->lock);
++	_pthread_mutex_lock(&(*sem)->lock);
+ 
+ 	(*sem)->count++;
+ 	if ((*sem)->nwaiters > 0)
+-		pthread_cond_signal(&(*sem)->gtzero);
++		_pthread_cond_signal(&(*sem)->gtzero);
+ 
+-	pthread_mutex_unlock(&(*sem)->lock);
++	_pthread_mutex_unlock(&(*sem)->lock);
+ 
+ 	_thread_kern_sig_undefer();
+ 	retval = 0;
+@@ -235,9 +236,9 @@ _sem_getvalue(sem_t * __restrict sem, int * __restrict sval)
+ 
+ 	_SEM_CHECK_VALIDITY(sem);
+ 
+-	pthread_mutex_lock(&(*sem)->lock);
++	_pthread_mutex_lock(&(*sem)->lock);
+ 	*sval = (int)(*sem)->count;
+-	pthread_mutex_unlock(&(*sem)->lock);
++	_pthread_mutex_unlock(&(*sem)->lock);
+ 
+ 	retval = 0;
+   RETURN:
+diff --git a/lib/libc_r/uthread/uthread_sendfile.c b/lib/libc_r/uthread/uthread_sendfile.c
+index 22602a6487..f533218cd6 100644
+--- a/lib/libc_r/uthread/uthread_sendfile.c
++++ b/lib/libc_r/uthread/uthread_sendfile.c
+@@ -27,15 +27,16 @@
+  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sendfile.c,v 1.2.2.10 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_sendfile.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
+-
++#include "namespace.h"
+ #include <sys/fcntl.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <sys/uio.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+@@ -53,7 +54,7 @@ sendfile(int fd, int s, off_t offset, size_t nbytes, struct sf_hdtr *hdtr,
+ 	 * If some data is written but not all we must return here.
+ 	 */
+ 	if ((hdtr != NULL) && (hdtr->headers != NULL)) {
+-		if ((wvret = writev(s, hdtr->headers, hdtr->hdr_cnt)) == -1) {
++		if ((wvret = _writev(s, hdtr->headers, hdtr->hdr_cnt)) == -1) {
+ 			ret = -1;
+ 			goto ERROR;
+ 		} else {
+@@ -174,7 +175,7 @@ sendfile(int fd, int s, off_t offset, size_t nbytes, struct sf_hdtr *hdtr,
+ 	if (ret == 0) {
+ 		/* Write the trailers, if any. */
+ 		if ((hdtr != NULL) && (hdtr->trailers != NULL)) {
+-			if ((wvret = writev(s, hdtr->trailers, hdtr->trl_cnt))
++			if ((wvret = _writev(s, hdtr->trailers, hdtr->trl_cnt))
+ 			    == -1)
+ 				ret = -1;
+ 			else
+diff --git a/lib/libc_r/uthread/uthread_sendmsg.c b/lib/libc_r/uthread/uthread_sendmsg.c
+index 084fb3cee7..44f72eae4d 100644
+--- a/lib/libc_r/uthread/uthread_sendmsg.c
++++ b/lib/libc_r/uthread/uthread_sendmsg.c
+@@ -30,13 +30,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sendmsg.c,v 1.7.2.5 2003/01/17 07:56:43 ru Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_sendmsg.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ ssize_t
+diff --git a/lib/libc_r/uthread/uthread_sendto.c b/lib/libc_r/uthread/uthread_sendto.c
+index 590498d63e..d005ae6368 100644
+--- a/lib/libc_r/uthread/uthread_sendto.c
++++ b/lib/libc_r/uthread/uthread_sendto.c
+@@ -30,13 +30,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sendto.c,v 1.9.2.5 2003/01/17 07:56:43 ru Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_sendto.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ ssize_t
+diff --git a/lib/libc_r/uthread/uthread_setprio.c b/lib/libc_r/uthread/uthread_setprio.c
+index ac10750f92..d5526da08c 100644
+--- a/lib/libc_r/uthread/uthread_setprio.c
++++ b/lib/libc_r/uthread/uthread_setprio.c
+@@ -30,9 +30,11 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_setprio.c,v 1.7.2.1 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_setprio.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+@@ -41,9 +43,9 @@ _pthread_setprio(pthread_t pthread, int prio)
+ 	int ret, policy;
+ 	struct sched_param param;
+ 
+-	if ((ret = pthread_getschedparam(pthread, &policy, &param)) == 0) {
++	if ((ret = _pthread_getschedparam(pthread, &policy, &param)) == 0) {
+ 		param.sched_priority = prio;
+-		ret = pthread_setschedparam(pthread, policy, &param);
++		ret = _pthread_setschedparam(pthread, policy, &param);
+ 	}
+ 
+ 	/* Return the error status: */
+diff --git a/lib/libc_r/uthread/uthread_setschedparam.c b/lib/libc_r/uthread/uthread_setschedparam.c
+index 6dae40271f..ff6100e390 100644
+--- a/lib/libc_r/uthread/uthread_setschedparam.c
++++ b/lib/libc_r/uthread/uthread_setschedparam.c
+@@ -31,6 +31,7 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_setschedparam.c,v 1.5.2.3 2002/10/22 14:44:03 fjoe Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <sys/param.h>
+ #ifndef _PTHREAD_ENABLE_NONNULL
+@@ -38,6 +39,8 @@
+ #define __nonnull(...)
+ #endif
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_setsockopt.c b/lib/libc_r/uthread/uthread_setsockopt.c
+index 80a5faa835..a574a084bf 100644
+--- a/lib/libc_r/uthread/uthread_setsockopt.c
++++ b/lib/libc_r/uthread/uthread_setsockopt.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_setsockopt.c,v 1.9.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_setsockopt.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_shutdown.c b/lib/libc_r/uthread/uthread_shutdown.c
+index 7f5c576605..d6b7fbae72 100644
+--- a/lib/libc_r/uthread/uthread_shutdown.c
++++ b/lib/libc_r/uthread/uthread_shutdown.c
+@@ -30,12 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_shutdown.c,v 1.9.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_shutdown.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_sig.c b/lib/libc_r/uthread/uthread_sig.c
+index 324675e993..5c5ad5e266 100644
+--- a/lib/libc_r/uthread/uthread_sig.c
++++ b/lib/libc_r/uthread/uthread_sig.c
+@@ -30,8 +30,8 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sig.c,v 1.25.2.13 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_sig.c,v 1.6 2007/11/25 01:28:23 swildner Exp $
+  */
++#include "namespace.h"
+ #include <sys/param.h>
+ #include <sys/types.h>
+ #include <sys/signalvar.h>
+@@ -42,6 +42,8 @@
+ #include <errno.h>
+ #include <pthread.h>
+ #include <string.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ /* Prototypes: */
+diff --git a/lib/libc_r/uthread/uthread_sigaction.c b/lib/libc_r/uthread/uthread_sigaction.c
+index 6edb7dcc69..a5945d4b5d 100644
+--- a/lib/libc_r/uthread/uthread_sigaction.c
++++ b/lib/libc_r/uthread/uthread_sigaction.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sigaction.c,v 1.11.2.3 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_sigaction.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <signal.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_sigmask.c b/lib/libc_r/uthread/uthread_sigmask.c
+index ad19cb1410..15391b288d 100644
+--- a/lib/libc_r/uthread/uthread_sigmask.c
++++ b/lib/libc_r/uthread/uthread_sigmask.c
+@@ -30,14 +30,16 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sigmask.c,v 1.5.2.3 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_sigmask.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <sys/param.h>
+ #include <sys/types.h>
+ #include <sys/signalvar.h>
+ #include <errno.h>
+ #include <signal.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_sigpending.c b/lib/libc_r/uthread/uthread_sigpending.c
+index 74e79b91df..8b3470f19f 100644
+--- a/lib/libc_r/uthread/uthread_sigpending.c
++++ b/lib/libc_r/uthread/uthread_sigpending.c
+@@ -30,14 +30,16 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sigpending.c,v 1.6.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_sigpending.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/param.h>
+ #include <sys/types.h>
+ #include <sys/signalvar.h>
+ #include <signal.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_sigprocmask.c b/lib/libc_r/uthread/uthread_sigprocmask.c
+index 6bc4724b99..f1312ef7b3 100644
+--- a/lib/libc_r/uthread/uthread_sigprocmask.c
++++ b/lib/libc_r/uthread/uthread_sigprocmask.c
+@@ -30,20 +30,22 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sigprocmask.c,v 1.9.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_sigprocmask.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/param.h>
+ #include <sys/types.h>
+ #include <sys/signalvar.h>
+ #include <signal.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+ _sigprocmask(int how, const sigset_t *set, sigset_t *oset)
+ {
+-	return (pthread_sigmask(how, set, oset));
++	return (_pthread_sigmask(how, set, oset));
+ }
+ 
+ __strong_reference(_sigprocmask, sigprocmask);
+diff --git a/lib/libc_r/uthread/uthread_sigsuspend.c b/lib/libc_r/uthread/uthread_sigsuspend.c
+index 5ec4285e4c..3c63906cb2 100644
+--- a/lib/libc_r/uthread/uthread_sigsuspend.c
++++ b/lib/libc_r/uthread/uthread_sigsuspend.c
+@@ -30,13 +30,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sigsuspend.c,v 1.9.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_sigsuspend.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <signal.h>
+ #include <sys/param.h>
+ #include <sys/signalvar.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_sigwait.c b/lib/libc_r/uthread/uthread_sigwait.c
+index 2ce9230788..c4a9db032a 100644
+--- a/lib/libc_r/uthread/uthread_sigwait.c
++++ b/lib/libc_r/uthread/uthread_sigwait.c
+@@ -30,13 +30,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sigwait.c,v 1.13.2.5 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_sigwait.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <signal.h>
+ #include <sys/param.h>
+ #include <sys/signalvar.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_single_np.c b/lib/libc_r/uthread/uthread_single_np.c
+index 3baea9e24b..7fc3d45ba7 100644
+--- a/lib/libc_r/uthread/uthread_single_np.c
++++ b/lib/libc_r/uthread/uthread_single_np.c
+@@ -30,17 +30,18 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_single_np.c,v 1.3.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_single_np.c,v 1.4 2008/09/30 16:57:04 swildner Exp $
+  */
++#include "namespace.h"
+ #include <pthread.h>
+ #include <pthread_np.h>
++#include "un-namespace.h"
+ 
+ int
+ _pthread_single_np(void)
+ {
+ 
+ 	/* Enter single-threaded (non-POSIX) scheduling mode: */
+-	pthread_suspend_all_np();
++	_pthread_suspend_all_np();
+ 	/*
+ 	 * XXX - Do we want to do this?
+ 	 * __is_threaded = 0;
+diff --git a/lib/libc_r/uthread/uthread_sleep.c b/lib/libc_r/uthread/uthread_sleep.c
+index db79cbb32b..8639dbd31b 100644
+--- a/lib/libc_r/uthread/uthread_sleep.c
++++ b/lib/libc_r/uthread/uthread_sleep.c
+@@ -28,9 +28,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_sleep.c,v 1.1.2.2 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ extern unsigned	int	__sleep(unsigned int);
+diff --git a/lib/libc_r/uthread/uthread_socket.c b/lib/libc_r/uthread/uthread_socket.c
+index 138a22f100..1e26e44044 100644
+--- a/lib/libc_r/uthread/uthread_socket.c
++++ b/lib/libc_r/uthread/uthread_socket.c
+@@ -30,13 +30,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_socket.c,v 1.8.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_socket.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <fcntl.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_socketpair.c b/lib/libc_r/uthread/uthread_socketpair.c
+index 3680919e4f..d23a2976a4 100644
+--- a/lib/libc_r/uthread/uthread_socketpair.c
++++ b/lib/libc_r/uthread/uthread_socketpair.c
+@@ -30,14 +30,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_socketpair.c,v 1.10.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_socketpair.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+- *
+  */
++#include "namespace.h"
+ #include <unistd.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <fcntl.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_spec.c b/lib/libc_r/uthread/uthread_spec.c
+index d619c8d88a..0014878c09 100644
+--- a/lib/libc_r/uthread/uthread_spec.c
++++ b/lib/libc_r/uthread/uthread_spec.c
+@@ -30,13 +30,15 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_spec.c,v 1.14.2.2 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_spec.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <signal.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ /* Static variables: */
+diff --git a/lib/libc_r/uthread/uthread_stubs.c b/lib/libc_r/uthread/uthread_stubs.c
+index 4a86431067..30af8c0069 100644
+--- a/lib/libc_r/uthread/uthread_stubs.c
++++ b/lib/libc_r/uthread/uthread_stubs.c
+@@ -32,7 +32,9 @@
+  * SUCH DAMAGE.
+  */
+ 
++#include "namespace.h"
+ #include <sys/cdefs.h>
++#include "un-namespace.h"
+ 
+ static int __used
+ _stub_return_error(void)
+diff --git a/lib/libc_r/uthread/uthread_suspend_np.c b/lib/libc_r/uthread/uthread_suspend_np.c
+index 8b6df5ad08..44f0e134d5 100644
+--- a/lib/libc_r/uthread/uthread_suspend_np.c
++++ b/lib/libc_r/uthread/uthread_suspend_np.c
+@@ -30,10 +30,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_suspend_np.c,v 1.7.2.6 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_suspend_np.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ static void	suspend_common(struct pthread *thread);
+diff --git a/lib/libc_r/uthread/uthread_switch_np.c b/lib/libc_r/uthread/uthread_switch_np.c
+index 9537e9f730..9da6bbc7a7 100644
+--- a/lib/libc_r/uthread/uthread_switch_np.c
++++ b/lib/libc_r/uthread/uthread_switch_np.c
+@@ -30,11 +30,13 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_switch_np.c,v 1.3.2.1 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_switch_np.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <errno.h>
+ #include <pthread.h>
+ #include <pthread_np.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ 
+diff --git a/lib/libc_r/uthread/uthread_system.c b/lib/libc_r/uthread/uthread_system.c
+index f4e886a9f6..9a16d8e9a3 100644
+--- a/lib/libc_r/uthread/uthread_system.c
++++ b/lib/libc_r/uthread/uthread_system.c
+@@ -28,9 +28,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_system.c,v 1.1.2.2 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <stdlib.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ extern int	__system(const char *);
+diff --git a/lib/libc_r/uthread/uthread_tcdrain.c b/lib/libc_r/uthread/uthread_tcdrain.c
+index 881764d29d..10a30df011 100644
+--- a/lib/libc_r/uthread/uthread_tcdrain.c
++++ b/lib/libc_r/uthread/uthread_tcdrain.c
+@@ -28,9 +28,11 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_tcdrain.c,v 1.1.2.2 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <termios.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ extern int	__tcdrain(int);
+diff --git a/lib/libc_r/uthread/uthread_unlinkat.c b/lib/libc_r/uthread/uthread_unlinkat.c
+index 614cff0153..2ebec59c79 100644
+--- a/lib/libc_r/uthread/uthread_unlinkat.c
++++ b/lib/libc_r/uthread/uthread_unlinkat.c
+@@ -31,9 +31,11 @@
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
+-
++#include "namespace.h"
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+diff --git a/lib/libc_r/uthread/uthread_vfork.c b/lib/libc_r/uthread/uthread_vfork.c
+index 3b5d20c6e6..b060bd7ac5 100644
+--- a/lib/libc_r/uthread/uthread_vfork.c
++++ b/lib/libc_r/uthread/uthread_vfork.c
+@@ -1,8 +1,9 @@
+ /*
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_vfork.c,v 1.1.8.1 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_vfork.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <unistd.h>
++#include "un-namespace.h"
+ 
+ int
+ vfork(void)
+diff --git a/lib/libc_r/uthread/uthread_wait.c b/lib/libc_r/uthread/uthread_wait.c
+index 8f9e26fda3..3e0e328736 100644
+--- a/lib/libc_r/uthread/uthread_wait.c
++++ b/lib/libc_r/uthread/uthread_wait.c
+@@ -28,8 +28,9 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_wait.c,v 1.1.2.2 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <pthread.h>
++#include "un-namespace.h"
+ #include "pthread_private.h"
+ 
+ extern pid_t	__wait(int *);
+diff --git a/lib/libc_r/uthread/uthread_wait4.c b/lib/libc_r/uthread/uthread_wait4.c
+index 2d1aabaa4e..0a82e735ca 100644
+--- a/lib/libc_r/uthread/uthread_wait4.c
++++ b/lib/libc_r/uthread/uthread_wait4.c
+@@ -30,13 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_wait4.c,v 1.10.2.5 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_wait4.c,v 1.2 2003/06/17 04:26:48 dillon Exp $
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+-
+ #include <errno.h>
+ #include <sys/wait.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ pid_t
+diff --git a/lib/libc_r/uthread/uthread_waitpid.c b/lib/libc_r/uthread/uthread_waitpid.c
+index 0bc1db0585..d32bdd1f48 100644
+--- a/lib/libc_r/uthread/uthread_waitpid.c
++++ b/lib/libc_r/uthread/uthread_waitpid.c
+@@ -28,10 +28,12 @@
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_waitpid.c,v 1.1.2.2 2002/10/22 14:44:03 fjoe Exp $
+  */
+-
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/wait.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ extern pid_t	__waitpid(pid_t, int *, int);
+diff --git a/lib/libc_r/uthread/uthread_write.c b/lib/libc_r/uthread/uthread_write.c
+index 859fa18475..2093e49168 100644
+--- a/lib/libc_r/uthread/uthread_write.c
++++ b/lib/libc_r/uthread/uthread_write.c
+@@ -30,15 +30,16 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_write.c,v 1.16.2.6 2002/11/12 20:46:53 archie Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_write.c,v 1.6 2007/01/08 21:41:53 dillon Exp $
+- *
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/fcntl.h>
+ #include <sys/uio.h>
+ #include <errno.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ ssize_t
+diff --git a/lib/libc_r/uthread/uthread_writev.c b/lib/libc_r/uthread/uthread_writev.c
+index d19f2699f5..ae42adc7cd 100644
+--- a/lib/libc_r/uthread/uthread_writev.c
++++ b/lib/libc_r/uthread/uthread_writev.c
+@@ -30,9 +30,8 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_writev.c,v 1.16.2.6 2002/11/15 18:39:21 archie Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_writev.c,v 1.4 2007/01/08 21:41:53 dillon Exp $
+- *
+  */
++#include "namespace.h"
+ #include <sys/types.h>
+ #include <sys/fcntl.h>
+ #include <sys/uio.h>
+@@ -41,6 +40,8 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ ssize_t
+diff --git a/lib/libc_r/uthread/uthread_yield.c b/lib/libc_r/uthread/uthread_yield.c
+index a43c83d982..984e3948d3 100644
+--- a/lib/libc_r/uthread/uthread_yield.c
++++ b/lib/libc_r/uthread/uthread_yield.c
+@@ -30,9 +30,11 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc_r/uthread/uthread_yield.c,v 1.4.2.3 2002/10/22 14:44:03 fjoe Exp $
+- * $DragonFly: src/lib/libc_r/uthread/uthread_yield.c,v 1.3 2005/05/30 20:50:53 joerg Exp $
+  */
++#include "namespace.h"
+ #include <pthread.h>
++#include "un-namespace.h"
++
+ #include "pthread_private.h"
+ 
+ int
+-- 
+2.22.0
+

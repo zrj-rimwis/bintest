@@ -1,0 +1,55 @@
+From ccdff2ffa66f7820df4acaf5623ee302772baa0c Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 9 Aug 2019 17:21:09 +0300
+Subject: [PATCH 05/66] <sys/types.h>: Eliminate __nl_item type.
+
+ It is MI type, so just use standard int type.
+---
+ include/langinfo.h | 2 +-
+ include/nl_types.h | 2 +-
+ sys/sys/types.h    | 5 -----
+ 3 files changed, 2 insertions(+), 7 deletions(-)
+
+diff --git a/include/langinfo.h b/include/langinfo.h
+index 2d41d327ea..7866932db6 100644
+--- a/include/langinfo.h
++++ b/include/langinfo.h
+@@ -33,7 +33,7 @@
+ #include <sys/types.h>
+ 
+ #ifndef _NL_ITEM_DECLARED
+-typedef	__nl_item	nl_item;
++typedef	int	nl_item;
+ #define	_NL_ITEM_DECLARED
+ #endif
+ 
+diff --git a/include/nl_types.h b/include/nl_types.h
+index 1b848bb4f5..f22325e01d 100644
+--- a/include/nl_types.h
++++ b/include/nl_types.h
+@@ -84,7 +84,7 @@ typedef struct __nl_cat_d {
+ } *nl_catd;
+ 
+ #ifndef _NL_ITEM_DECLARED
+-typedef	__nl_item	nl_item;
++typedef	int	nl_item;
+ #define	_NL_ITEM_DECLARED
+ #endif
+ 
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index 8d5f70927f..ce652cc6dd 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -273,9 +273,4 @@ typedef	__ct_rune_t	__wint_t;	/* wint_t (see above) */
+ #define	___WINT_T_DECLARED
+ #endif
+ 
+-/*
+- * Also required for locale support
+- */
+-typedef	int		__nl_item;
+-
+ #endif /* !_SYS_TYPES_H_ */
+-- 
+2.22.0
+
