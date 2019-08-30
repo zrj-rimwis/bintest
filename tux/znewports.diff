@@ -1,0 +1,1245 @@
+diff --git a/ports/net/libradius/STATUS b/ports/net/libradius/STATUS
+new file mode 100644
+index 00000000000..383507395b6
+--- /dev/null
++++ b/ports/net/libradius/STATUS
+@@ -0,0 +1 @@
++DPORT
+diff --git a/ports/net/libradius/newport/Makefile b/ports/net/libradius/newport/Makefile
+new file mode 100644
+index 00000000000..e0da286c39d
+--- /dev/null
++++ b/ports/net/libradius/newport/Makefile
+@@ -0,0 +1,32 @@
++PORTNAME=	libradius
++PORTVERSION=	4.0
++CATEGORIES=	net
++MASTER_SITES=	https://avalon.dragonflybsd.org/misc/distfiles/
++DISTNAME=	${PORTNAME}-${PORTVERSION}
++
++MAINTAINER=	dports@ef.irc
++COMMENT=	RADIUS Client Library
++
++LICENSE=	BSD2CLAUSE
++
++USES=		ssl
++
++CFLAGS+=	-I${OPENSSLINC}
++LDFLAGS+=	-L${OPENSSLLIB} -lcrypto
++
++SUB_FILES=	pkg-message
++
++PLIST_FILES=	include/radlib.h \
++		include/radlib_vs.h \
++		lib/libradius.a \
++		lib/libradius.so \
++		lib/libradius.so.4 \
++		man/man3/libradius.3.gz \
++		man/man5/radius.conf.5.gz
++
++post-patch:
++	${REINPLACE_CMD} -e "s@/etc/radius.conf@${LOCALBASE}&@g" \
++		${WRKSRC}/radlib_private.h \
++		${WRKSRC}/libradius.3 ${WRKSRC}/radius.conf.5
++
++.include <bsd.port.mk>
+diff --git a/ports/net/libradius/newport/distinfo b/ports/net/libradius/newport/distinfo
+new file mode 100644
+index 00000000000..b485738e382
+--- /dev/null
++++ b/ports/net/libradius/newport/distinfo
+@@ -0,0 +1,3 @@
++TIMESTAMP = 1564853052
++SHA256 (libradius-4.0.tar.gz) = e2ad39662843eefca56dc3406eae3151b21e9dcd1b13286f9800a4cc3c0f4e32
++SIZE (libradius-4.0.tar.gz) = 21219
+diff --git a/ports/net/libradius/newport/files/patch-openssl_v1.0.x_compat b/ports/net/libradius/newport/files/patch-openssl_v1.0.x_compat
+new file mode 100644
+index 00000000000..3841df4e9d8
+--- /dev/null
++++ b/ports/net/libradius/newport/files/patch-openssl_v1.0.x_compat
+@@ -0,0 +1,154 @@
++--- radlib.c.orig	2019-08-03 17:07:04 UTC
+++++ radlib.c
++@@ -158,6 +158,29 @@ static void
++ insert_message_authenticator(struct rad_handle *h, int resp)
++ {
++ #ifdef WITH_SSL
+++#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+++	u_char md[EVP_MAX_MD_SIZE];
+++	u_int md_len;
+++	const struct rad_server *srvp;
+++	HMAC_CTX ctx;
+++	srvp = &h->servers[h->srv];
+++
+++	if (h->authentic_pos != 0) {
+++		HMAC_CTX_init(&ctx);
+++		HMAC_Init(&ctx, srvp->secret, strlen(srvp->secret), EVP_md5());
+++		HMAC_Update(&ctx, &h->out[POS_CODE], POS_AUTH - POS_CODE);
+++		if (resp)
+++		    HMAC_Update(&ctx, &h->in[POS_AUTH], LEN_AUTH);
+++		else
+++		    HMAC_Update(&ctx, &h->out[POS_AUTH], LEN_AUTH);
+++		HMAC_Update(&ctx, &h->out[POS_ATTRS],
+++		    h->out_len - POS_ATTRS);
+++		HMAC_Final(&ctx, md, &md_len);
+++		HMAC_CTX_cleanup(&ctx);
+++		HMAC_cleanup(&ctx);
+++		memcpy(&h->out[h->authentic_pos + 2], md, md_len);
+++	}
+++#else
++ 	u_char md[EVP_MAX_MD_SIZE];
++ 	u_int md_len;
++ 	const struct rad_server *srvp;
++@@ -179,6 +202,7 @@ insert_message_authenticator(struct rad_
++ 		memcpy(&h->out[h->authentic_pos + 2], md, md_len);
++ 	}
++ #endif
+++#endif
++ }
++ 
++ /*
++@@ -194,7 +218,11 @@ is_valid_response(struct rad_handle *h,
++ 	const struct rad_server *srvp;
++ 	int len;
++ #ifdef WITH_SSL
+++#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+++	HMAC_CTX hctx;
+++#else
++ 	HMAC_CTX *hctx;
+++#endif
++ 	u_char resp[MSGSIZE], md[EVP_MAX_MD_SIZE];
++ 	u_int md_len;
++ 	int pos;
++@@ -230,6 +258,40 @@ is_valid_response(struct rad_handle *h,
++ 	 * For non accounting responses check the message authenticator,
++ 	 * if any.
++ 	 */
+++#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+++	if (h->in[POS_CODE] != RAD_ACCOUNTING_RESPONSE) {
+++
+++		memcpy(resp, h->in, MSGSIZE);
+++		pos = POS_ATTRS;
+++
+++		/* Search and verify the Message-Authenticator */
+++		while (pos < len - 2) {
+++
+++			if (h->in[pos] == RAD_MESSAGE_AUTHENTIC) {
+++				/* zero fill the Message-Authenticator */
+++				memset(&resp[pos + 2], 0, MD5_DIGEST_LENGTH);
+++
+++				HMAC_CTX_init(&hctx);
+++				HMAC_Init(&hctx, srvp->secret,
+++				    strlen(srvp->secret), EVP_md5());
+++				HMAC_Update(&hctx, &h->in[POS_CODE],
+++				    POS_AUTH - POS_CODE);
+++				HMAC_Update(&hctx, &h->out[POS_AUTH],
+++				    LEN_AUTH);
+++				HMAC_Update(&hctx, &resp[POS_ATTRS],
+++				    h->in_len - POS_ATTRS);
+++				HMAC_Final(&hctx, md, &md_len);
+++				HMAC_CTX_cleanup(&hctx);
+++				HMAC_cleanup(&hctx);
+++				if (memcmp(md, &h->in[pos + 2],
+++				    MD5_DIGEST_LENGTH) != 0)
+++					return 0;
+++				break;
+++			}
+++			pos += h->in[pos + 1];
+++		}
+++	}
+++#else
++ 	if (h->in[POS_CODE] != RAD_ACCOUNTING_RESPONSE) {
++ 
++ 		memcpy(resp, h->in, MSGSIZE);
++@@ -265,6 +327,7 @@ is_valid_response(struct rad_handle *h,
++ 		HMAC_CTX_free(hctx);
++ 	}
++ #endif
+++#endif
++ 	return 1;
++ }
++ 
++@@ -279,7 +342,11 @@ is_valid_request(struct rad_handle *h)
++ 	const struct rad_server *srvp;
++ 	int len;
++ #ifdef WITH_SSL
+++#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+++	HMAC_CTX hctx;
+++#else
++ 	HMAC_CTX *hctx;
+++#endif
++ 	u_char resp[MSGSIZE], md[EVP_MAX_MD_SIZE];
++ 	u_int md_len;
++ 	int pos;
++@@ -309,6 +376,32 @@ is_valid_request(struct rad_handle *h)
++ 
++ #ifdef WITH_SSL
++ 	/* Search and verify the Message-Authenticator */
+++#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+++	pos = POS_ATTRS;
+++	while (pos < len - 2) {
+++		if (h->in[pos] == RAD_MESSAGE_AUTHENTIC) {
+++			memcpy(resp, h->in, MSGSIZE);
+++			/* zero fill the Request-Authenticator */
+++			if (h->in[POS_CODE] != RAD_ACCESS_REQUEST)
+++				memset(&resp[POS_AUTH], 0, LEN_AUTH);
+++			/* zero fill the Message-Authenticator */
+++			memset(&resp[pos + 2], 0, MD5_DIGEST_LENGTH);
+++
+++			HMAC_CTX_init(&hctx);
+++			HMAC_Init(&hctx, srvp->secret,
+++			    strlen(srvp->secret), EVP_md5());
+++			HMAC_Update(&hctx, resp, h->in_len);
+++			HMAC_Final(&hctx, md, &md_len);
+++			HMAC_CTX_cleanup(&hctx);
+++			HMAC_cleanup(&hctx);
+++			if (memcmp(md, &h->in[pos + 2],
+++			    MD5_DIGEST_LENGTH) != 0)
+++				return (0);
+++			break;
+++		}
+++		pos += h->in[pos + 1];
+++	}
+++#else
++ 	pos = POS_ATTRS;
++ 	hctx = HMAC_CTX_new();
++ 	while (pos < len - 2) {
++@@ -336,6 +429,7 @@ is_valid_request(struct rad_handle *h)
++ 	}
++ 	HMAC_CTX_free(hctx);
++ #endif
+++#endif
++ 	return (1);
++ }
++ 
+diff --git a/ports/net/libradius/newport/files/pkg-message.in b/ports/net/libradius/newport/files/pkg-message.in
+new file mode 100644
+index 00000000000..d59b0a3b743
+--- /dev/null
++++ b/ports/net/libradius/newport/files/pkg-message.in
+@@ -0,0 +1,4 @@
++-------------------------------------------------------------------------
++The %%LOCALBASE%%/etc/radius.conf need to be configured,
++check radius.conf(5) for more information.
++-------------------------------------------------------------------------
+diff --git a/ports/net/libradius/newport/pkg-descr b/ports/net/libradius/newport/pkg-descr
+new file mode 100644
+index 00000000000..03f19741ddb
+--- /dev/null
++++ b/ports/net/libradius/newport/pkg-descr
+@@ -0,0 +1,4 @@
++The libradius library implements the Remote Authentication Dial In User
++Service (RADIUS). RADIUS, defined in RFCs 2865 and 2866, allows clients
++to perform authentication and accounting by means of network requests to
++remote servers.
+diff --git a/ports/net/libtacplus/STATUS b/ports/net/libtacplus/STATUS
+new file mode 100644
+index 00000000000..383507395b6
+--- /dev/null
++++ b/ports/net/libtacplus/STATUS
+@@ -0,0 +1 @@
++DPORT
+diff --git a/ports/net/libtacplus/newport/Makefile b/ports/net/libtacplus/newport/Makefile
+new file mode 100644
+index 00000000000..7ef9063c54d
+--- /dev/null
++++ b/ports/net/libtacplus/newport/Makefile
+@@ -0,0 +1,31 @@
++PORTNAME=	libtacplus
++PORTVERSION=	4.0
++CATEGORIES=	net
++MASTER_SITES=	https://avalon.dragonflybsd.org/misc/distfiles/
++DISTNAME=	${PORTNAME}-${PORTVERSION}
++
++MAINTAINER=	dports@ef.irc
++COMMENT=	TACACS+ client library
++
++LICENSE=	BSD2CLAUSE
++
++USES=		ssl
++
++CFLAGS+=	-I${OPENSSLINC}
++LDFLAGS+=	-L${OPENSSLLIB} -lcrypto
++
++SUB_FILES=	pkg-message
++
++PLIST_FILES=	include/taclib.h \
++		lib/libtacplus.a \
++		lib/libtacplus.so \
++		lib/libtacplus.so.4 \
++		man/man3/libtacplus.3.gz \
++		man/man5/tacplus.conf.5.gz
++
++post-patch:
++	${REINPLACE_CMD} -e "s@/etc/tacplus.conf@${LOCALBASE}&@g" \
++		${WRKSRC}/taclib_private.h \
++		${WRKSRC}/libtacplus.3 ${WRKSRC}/tacplus.conf.5
++
++.include <bsd.port.mk>
+diff --git a/ports/net/libtacplus/newport/distinfo b/ports/net/libtacplus/newport/distinfo
+new file mode 100644
+index 00000000000..f046bbfdb47
+--- /dev/null
++++ b/ports/net/libtacplus/newport/distinfo
+@@ -0,0 +1,3 @@
++TIMESTAMP = 1564843346
++SHA256 (libtacplus-4.0.tar.gz) = 800ba04cea4abf4db7c6816f3b880e7d1bb85c097a5c0114b789efaded71ad28
++SIZE (libtacplus-4.0.tar.gz) = 17853
+diff --git a/ports/net/libtacplus/newport/files/pkg-message.in b/ports/net/libtacplus/newport/files/pkg-message.in
+new file mode 100644
+index 00000000000..5409ce4c484
+--- /dev/null
++++ b/ports/net/libtacplus/newport/files/pkg-message.in
+@@ -0,0 +1,4 @@
++-------------------------------------------------------------------------
++The %%LOCALBASE%%/etc/tacplus.conf need to be configured,
++check tacplus.conf(5) for more information.
++-------------------------------------------------------------------------
+diff --git a/ports/net/libtacplus/newport/pkg-descr b/ports/net/libtacplus/newport/pkg-descr
+new file mode 100644
+index 00000000000..d45d5169840
+--- /dev/null
++++ b/ports/net/libtacplus/newport/pkg-descr
+@@ -0,0 +1,5 @@
++The libtacplus library implements the client side of the TACACS+ network
++access control protocol. TACACS+ allows clients to perform
++authentication, authorization, and accounting by means of network
++requests to remote servers. This library supports only the
++authentication and authorization portion of the protocol
+diff --git a/ports/security/pam_radius/STATUS b/ports/security/pam_radius/STATUS
+new file mode 100644
+index 00000000000..383507395b6
+--- /dev/null
++++ b/ports/security/pam_radius/STATUS
+@@ -0,0 +1 @@
++DPORT
+diff --git a/ports/security/pam_radius/newport/Makefile b/ports/security/pam_radius/newport/Makefile
+new file mode 100644
+index 00000000000..70a3b515e73
+--- /dev/null
++++ b/ports/security/pam_radius/newport/Makefile
+@@ -0,0 +1,29 @@
++PORTNAME=	pam_radius
++PORTVERSION=	4.0
++CATEGORIES=	security
++MASTER_SITES=	https://avalon.dragonflybsd.org/misc/distfiles/
++DISTNAME=	${PORTNAME}-${PORTVERSION}
++
++MAINTAINER=	dports@ef.irc
++COMMENT=	TACACS+ authentication PAM module
++
++LICENSE=	BSD3CLAUSE
++
++USES+=		localbase:ldflags
++
++LIB_DEPENDS=	libradius.so.4:net/libradius
++
++PLIST_FILES=	lib/pam_radius.so \
++		man/man8/pam_radius.8.gz
++
++# Only export these global pam symbols to avoid "issues"
++CFLAGS+=	-fvisibility=hidden
++PAMSYMBOLS=	pam_sm_authenticate pam_sm_setcred
++
++post-patch:
++	${REINPLACE_CMD} -e 's@PAM_EXTERN @__dso_public PAM_EXTERN @g' \
++		${WRKSRC}/pam_radius.c
++	${REINPLACE_CMD} -e "s@/etc/radius.conf@${LOCALBASE}&@g" \
++                ${WRKSRC}/pam_radius.8
++
++.include <bsd.port.mk>
+diff --git a/ports/security/pam_radius/newport/distinfo b/ports/security/pam_radius/newport/distinfo
+new file mode 100644
+index 00000000000..2f967eb7378
+--- /dev/null
++++ b/ports/security/pam_radius/newport/distinfo
+@@ -0,0 +1,3 @@
++TIMESTAMP = 1564853905
++SHA256 (pam_radius-4.0.tar.gz) = f88dfecf27fd25f3cedc20cdb7ea1b096f140a156402fdc6771e56d3e4bba0a6
++SIZE (pam_radius-4.0.tar.gz) = 5500
+diff --git a/ports/security/pam_radius/newport/pkg-descr b/ports/security/pam_radius/newport/pkg-descr
+new file mode 100644
+index 00000000000..efb76e7c1ee
+--- /dev/null
++++ b/ports/security/pam_radius/newport/pkg-descr
+@@ -0,0 +1,3 @@
++The pam_radius module provides authentication services based upon the
++RADIUS (Remote Authentication Dial In User Service) protocol for the PAM
++(Pluggable Authentication Module) framework.
+diff --git a/ports/security/pam_ssh/STATUS b/ports/security/pam_ssh/STATUS
+new file mode 100644
+index 00000000000..383507395b6
+--- /dev/null
++++ b/ports/security/pam_ssh/STATUS
+@@ -0,0 +1 @@
++DPORT
+diff --git a/ports/security/pam_ssh/newport/Makefile b/ports/security/pam_ssh/newport/Makefile
+new file mode 100644
+index 00000000000..0e4f5212d29
+--- /dev/null
++++ b/ports/security/pam_ssh/newport/Makefile
+@@ -0,0 +1,34 @@
++PORTNAME=	pam_ssh
++PORTVERSION=	8.0
++CATEGORIES=	security
++MASTER_SITES=	https://avalon.dragonflybsd.org/misc/distfiles/
++DISTNAME=	${PORTNAME}-${PORTVERSION}
++
++MAINTAINER=	dports@ef.irc
++COMMENT=	PAM module for authentication with SSH private key passphrase
++
++LICENSE=	BSD3CLAUSE
++
++USES=		ssl
++
++CFLAGS+=	-I${OPENSSLINC}
++LDFLAGS+=	-L${OPENSSLLIB} -lcrypto
++
++SUB_FILES=	pkg-message
++
++PLIST_FILES=	lib/pam_ssh.so \
++		man/man8/pam_ssh.8.gz
++
++# Only export these global pam symbols to avoid "issues"
++CFLAGS+=	-fvisibility=hidden
++PAMSYMBOLS=	pam_sm_authenticate pam_sm_setcred \
++		pam_sm_open_session pam_sm_close_session
++
++post-patch:
++	${REINPLACE_CMD} -e 's@PAM_EXTERN @__dso_public PAM_EXTERN @g' \
++		${WRKSRC}/pam_ssh.c
++
++pre-configure:
++	(cd ${WRKSRC} && ${CC} ${CFLAGS} select_config.c -o select_config && ./select_config)
++
++.include <bsd.port.mk>
+diff --git a/ports/security/pam_ssh/newport/distinfo b/ports/security/pam_ssh/newport/distinfo
+new file mode 100644
+index 00000000000..41ed1cfd280
+--- /dev/null
++++ b/ports/security/pam_ssh/newport/distinfo
+@@ -0,0 +1,3 @@
++TIMESTAMP = 1564931515
++SHA256 (pam_ssh-8.0.tar.gz) = f9256cd452f6e6ef1b5765acd1cb9acf9567068768bf640e86e9f2053111db01
++SIZE (pam_ssh-8.0.tar.gz) = 897960
+diff --git a/ports/security/pam_ssh/newport/files/pkg-message.in b/ports/security/pam_ssh/newport/files/pkg-message.in
+new file mode 100644
+index 00000000000..5ea1d40b45c
+--- /dev/null
++++ b/ports/security/pam_ssh/newport/files/pkg-message.in
+@@ -0,0 +1,13 @@
++-------------------------------------------------------------------------
++This port might create possible security risks.
++Ensure that users are using secure passphrases on remote systems for
++their default private keys in /home/USER/.ssh/id_rsa etc !!!
++
++In order to use this PAM module in sshd daemon enable option "UsePAM yes"
++in /etc/sshd/sshd_config and put following line in /etc/pam.d/sshd:
++
++  auth sufficient %%LOCALBASE%%/lib/pam_ssh.so no_warn try_first_pass
++
++Make sure not to lose connection while reinstalling the port, this will
++result in unusable sshd(8) if pam_ssh.so module is not found.
++-------------------------------------------------------------------------
+diff --git a/ports/security/pam_ssh/newport/pkg-descr b/ports/security/pam_ssh/newport/pkg-descr
+new file mode 100644
+index 00000000000..188bcc18d0f
+--- /dev/null
++++ b/ports/security/pam_ssh/newport/pkg-descr
+@@ -0,0 +1,6 @@
++The SSH authentication component provides a function to verify the
++identity of a user (pam_sm_authenticate()), by prompting the user for a
++passphrase and verifying that it can decrypt the target user's SSH key
++using that passphrase without user having direct access to private key.
++
++NOTE: Ensure that users are using secure passphrases on remote systems!
+diff --git a/ports/security/pam_tacplus/STATUS b/ports/security/pam_tacplus/STATUS
+new file mode 100644
+index 00000000000..383507395b6
+--- /dev/null
++++ b/ports/security/pam_tacplus/STATUS
+@@ -0,0 +1 @@
++DPORT
+diff --git a/ports/security/pam_tacplus/newport/Makefile b/ports/security/pam_tacplus/newport/Makefile
+new file mode 100644
+index 00000000000..f25982775fe
+--- /dev/null
++++ b/ports/security/pam_tacplus/newport/Makefile
+@@ -0,0 +1,29 @@
++PORTNAME=	pam_tacplus
++PORTVERSION=	4.0
++CATEGORIES=	security
++MASTER_SITES=	https://avalon.dragonflybsd.org/misc/distfiles/
++DISTNAME=	${PORTNAME}-${PORTVERSION}
++
++MAINTAINER=	dports@ef.irc
++COMMENT=	TACACS+ authentication PAM module
++
++LICENSE=	BSD3CLAUSE
++
++USES+=		localbase:ldflags
++
++LIB_DEPENDS=	libtacplus.so.4:net/libtacplus
++
++PLIST_FILES=	lib/pam_tacplus.so \
++		man/man8/pam_tacplus.8.gz
++
++# Only export these global pam symbols to avoid "issues"
++CFLAGS+=	-fvisibility=hidden
++PAMSYMBOLS=	pam_sm_authenticate pam_sm_setcred
++
++post-patch:
++	${REINPLACE_CMD} -e 's@PAM_EXTERN @__dso_public PAM_EXTERN @g' \
++		${WRKSRC}/pam_tacplus.c
++	${REINPLACE_CMD} -e "s@/etc/tacplus.conf@${LOCALBASE}&@g" \
++                ${WRKSRC}/pam_tacplus.8
++
++.include <bsd.port.mk>
+diff --git a/ports/security/pam_tacplus/newport/distinfo b/ports/security/pam_tacplus/newport/distinfo
+new file mode 100644
+index 00000000000..63afdf20687
+--- /dev/null
++++ b/ports/security/pam_tacplus/newport/distinfo
+@@ -0,0 +1,3 @@
++TIMESTAMP = 1564843867
++SHA256 (pam_tacplus-4.0.tar.gz) = 255d17c62d36bfa29e3fa21dcbb188fe0e1016d7903b923eb01e3e8eaf490a88
++SIZE (pam_tacplus-4.0.tar.gz) = 4409
+diff --git a/ports/security/pam_tacplus/newport/pkg-descr b/ports/security/pam_tacplus/newport/pkg-descr
+new file mode 100644
+index 00000000000..3840a99fc61
+--- /dev/null
++++ b/ports/security/pam_tacplus/newport/pkg-descr
+@@ -0,0 +1,2 @@
++The pam_tacplus module provides authentication services based upon the
++TACACS+ protocol for the PAM (Pluggable Authentication Module) framework.
+diff --git a/ports/zdeltaports.diff b/ports/zdeltaports.diff
+new file mode 100644
+index 00000000000..767bf32c9af
+--- /dev/null
++++ b/ports/zdeltaports.diff
+@@ -0,0 +1,725 @@
++diff --git a/ports/archivers/zstd/Makefile.DragonFly b/ports/archivers/zstd/Makefile.DragonFly
++index dcc052a8361..f1276cd19a9 100644
++--- a/ports/archivers/zstd/Makefile.DragonFly
+++++ b/ports/archivers/zstd/Makefile.DragonFly
++@@ -1 +1,6 @@
++ MAKE_JOBS_UNSAFE=yes
+++
+++# zrj: CCVER is reserved variable on DragonFly BSD
+++dfly-patch:
+++	${REINPLACE_CMD} -e 's@CCVER@zstd&@g' \
+++		${WRKSRC}/lib/Makefile
++diff --git a/ports/biology/bolt-lmm/Makefile.DragonFly b/ports/biology/bolt-lmm/Makefile.DragonFly
++index dd1877dce09..22e75500d78 100644
++--- a/ports/biology/bolt-lmm/Makefile.DragonFly
+++++ b/ports/biology/bolt-lmm/Makefile.DragonFly
++@@ -1,12 +1,8 @@
++ 
+++# override MF
+++MAKE_ARGS+=	LLAPACK="-lopenblas"
+++
++ # sigh, just remove -lgfortran
++ dfly-patch:
++-	${REINPLACE_CMD} -e 's@[[:<:]]isnan[[:>:]]@std::isnan@g' \
++-			 -e 's@[[:<:]]isinf[[:>:]]@std::isinf@g' \
++-		${WRKSRC}/src/Bolt.cpp \
++-		${WRKSRC}/src/Jackknife.cpp \
++-		${WRKSRC}/src/LDscoreCalibration.cpp \
++-		${WRKSRC}/src/SnpData.cpp \
++-		${WRKSRC}/src/StatsUtils.cpp
++ 	${REINPLACE_CMD} -e 's@ -lgfortran@@g' \
++ 		${WRKSRC}/src/Makefile
++diff --git a/ports/databases/postgresql12-server/Makefile.DragonFly b/ports/databases/postgresql12-server/Makefile.DragonFly
++new file mode 100644
++index 00000000000..a7abb70f1ca
++--- /dev/null
+++++ b/ports/databases/postgresql12-server/Makefile.DragonFly
++@@ -0,0 +1,7 @@
+++CONFIGURE_ARGS+=	--with-template=freebsd
+++PG_UID!=		grep -E '^pgsql:' ${PORTSDIR}/GIDs | \
+++			awk -F ':' '{print $$3}'; echo
+++
+++# Disagree with maintainer's decision to make ICU collation default
+++# It's a POLA violation for existing databases
+++OPTIONS_DEFAULT:=	${OPTIONS_DEFAULT:NICU}
++diff --git a/ports/devel/avr-gcc/dragonfly/patch-contrib_texi2pod.pl b/ports/devel/avr-gcc/dragonfly/patch-contrib_texi2pod.pl
++deleted file mode 100644
++index 5d9a9decd85..00000000000
++--- a/ports/devel/avr-gcc/dragonfly/patch-contrib_texi2pod.pl
+++++ /dev/null
++@@ -1,12 +0,0 @@
++-From upstream
++---- contrib/texi2pod.pl.orig	2014-08-11 07:29:41 UTC
++-+++ contrib/texi2pod.pl
++-@@ -316,7 +316,7 @@ while(<$inf>) {
++- 	@columns = ();
++- 	for $column (split (/\s*\@tab\s*/, $1)) {
++- 	    # @strong{...} is used a @headitem work-alike
++--	    $column =~ s/^\@strong{(.*)}$/$1/;
++-+	    $column =~ s/^\@strong\{(.*)\}$/$1/;
++- 	    push @columns, $column;
++- 	}
++- 	$_ = "\n=item ".join (" : ", @columns)."\n";
++diff --git a/ports/devel/grantlee5/Makefile.DragonFly b/ports/devel/grantlee5/Makefile.DragonFly
++index 5eb09c5ff5a..3a6e9addd49 100644
++--- a/ports/devel/grantlee5/Makefile.DragonFly
+++++ b/ports/devel/grantlee5/Makefile.DragonFly
++@@ -1,3 +1,4 @@
++ # libgcc_pic.a + ld.gold + pthread issue
++ MAKE_ENV+= LDVER=ld.bfd
++ LDFLAGS+= -pthread # sorry
+++USE_CXXSTD=	gnu++11
++diff --git a/ports/devel/nspr/dragonfly/patch-nsprpub_pr_include_md__pth.h b/ports/devel/nspr/dragonfly/patch-nsprpub_pr_include_md__pth.h
++index 9ea38f5ae53..99c909395cd 100644
++--- a/ports/devel/nspr/dragonfly/patch-nsprpub_pr_include_md__pth.h
+++++ b/ports/devel/nspr/dragonfly/patch-nsprpub_pr_include_md__pth.h
++@@ -1,28 +1,38 @@
++---- pr/include/md/_pth.h.orig	2014-06-05 21:42:08.000000000 +0000
+++--- pr/include/md/_pth.h.orig	2019-08-19 14:12:12 UTC
++ +++ pr/include/md/_pth.h
++-@@ -114,7 +114,7 @@
++- #define _PT_PTHREAD_COPY_THR_HANDLE(st, dt)   (dt) = (st)
++- #elif defined(IRIX) || defined(OSF1) || defined(AIX) || defined(SOLARIS) \
+++@@ -86,7 +86,7 @@
+++  */
+++ #if defined(AIX) || defined(SOLARIS) \
++  	|| defined(LINUX) || defined(__GNU__) || defined(__GLIBC__) \
++ -	|| defined(HPUX) || defined(FREEBSD) \
++ +	|| defined(HPUX) || defined(FREEBSD) || defined(__DragonFly__) \
++  	|| defined(NETBSD) || defined(OPENBSD) || defined(BSDI) \
++  	|| defined(NTO) || defined(DARWIN) \
++- 	|| defined(UNIXWARE) || defined(RISCOS)	|| defined(SYMBIAN)
++-@@ -201,7 +201,7 @@
++- #endif /* defined(_PR_DCETHREADS) */
+++ 	|| defined(UNIXWARE) || defined(RISCOS)
+++@@ -116,7 +116,7 @@
+++ 	|| defined(LINUX) || defined(__GNU__)|| defined(__GLIBC__) \
+++ 	|| defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD) \
+++ 	|| defined(BSDI) || defined(UNIXWARE) \
+++-	|| defined(DARWIN)
++++	|| defined(DARWIN) || defined(__DragonFly__)
+++ #define PT_NO_SIGTIMEDWAIT
+++ #endif
++  
+++@@ -133,7 +133,7 @@
+++ #define PT_PRIO_MIN            sched_get_priority_min(SCHED_OTHER)
+++ #define PT_PRIO_MAX            sched_get_priority_max(SCHED_OTHER)
++  #elif defined(LINUX) || defined(__GNU__) || defined(__GLIBC__) \
++--	|| defined(FREEBSD) || defined(SYMBIAN)
++-+	|| defined(FREEBSD) || defined(SYMBIAN) || defined(__DragonFly__)
+++-	|| defined(FREEBSD)
++++	|| defined(FREEBSD) || defined(__DragonFly__)
++  #define PT_PRIO_MIN            sched_get_priority_min(SCHED_OTHER)
++  #define PT_PRIO_MAX            sched_get_priority_max(SCHED_OTHER)
++  #elif defined(NTO)
++-@@ -260,6 +260,7 @@ extern int (*_PT_aix_yield_fcn)();
++- #elif defined(HPUX) || defined(SOLARIS) \
+++@@ -177,7 +177,7 @@ extern int (*_PT_aix_yield_fcn)();
++  	|| defined(LINUX) || defined(__GNU__) || defined(__GLIBC__) \
++  	|| defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD) \
++-+	|| defined(__DragonFly__) \
++  	|| defined(BSDI) || defined(NTO) || defined(DARWIN) \
++- 	|| defined(UNIXWARE) || defined(RISCOS) || defined(SYMBIAN)
+++-	|| defined(UNIXWARE) || defined(RISCOS)
++++	|| defined(UNIXWARE) || defined(RISCOS) || defined(__DragonFly__)
++  #define _PT_PTHREAD_YIELD()            	sched_yield()
+++ #else
+++ #error "Need to define _PT_PTHREAD_YIELD for this platform"
++diff --git a/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_md_unix_uxrng.c b/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_md_unix_uxrng.c
++index 7846bd1c0b0..d7f84df801e 100644
++--- a/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_md_unix_uxrng.c
+++++ b/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_md_unix_uxrng.c
++@@ -1,11 +1,11 @@
++---- pr/src/md/unix/uxrng.c.orig	2014-06-05 21:42:08.000000000 +0000
+++--- pr/src/md/unix/uxrng.c.orig	2019-08-19 14:12:12 UTC
++ +++ pr/src/md/unix/uxrng.c
++-@@ -86,7 +86,7 @@ GetHighResClock(void *buf, size_t maxbyt
+++@@ -64,7 +64,7 @@ GetHighResClock(void *buf, size_t maxbyt
++  
++  #elif (defined(LINUX) || defined(FREEBSD) || defined(__FreeBSD_kernel__) \
++      || defined(NETBSD) || defined(__NetBSD_kernel__) || defined(OPENBSD) \
++--    || defined(SYMBIAN) || defined(__GNU__))
++-+    || defined(SYMBIAN) || defined(__GNU__)) || defined(__DragonFly__)
+++-    || defined(__GNU__))
++++    || defined(__GNU__) || defined(__DragonFly__))
++  #include <sys/types.h>
++  #include <sys/stat.h>
++  #include <fcntl.h>
++diff --git a/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_pthreads_ptio.c b/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_pthreads_ptio.c
++index 5772717c3a4..daaa2f7224e 100644
++--- a/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_pthreads_ptio.c
+++++ b/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_pthreads_ptio.c
++@@ -1,21 +1,20 @@
++---- pr/src/pthreads/ptio.c.orig	2014-06-20 12:34:59.616376000 +0000
+++--- pr/src/pthreads/ptio.c.orig	2019-08-30 13:50:29 UTC
++ +++ pr/src/pthreads/ptio.c
++-@@ -180,7 +180,8 @@ static PRBool _pr_ipv6_v6only_on_by_defa
+++@@ -183,7 +183,7 @@ static PRBool _pr_ipv6_v6only_on_by_defa
++      || defined(LINUX) || defined(__GNU__) || defined(__GLIBC__) \
++      || defined(FREEBSD) || defined(NETBSD) || defined(OPENBSD) \
++      || defined(BSDI) || defined(NTO) || defined(DARWIN) \
++--    || defined(UNIXWARE) || defined(RISCOS) || defined(SYMBIAN)
++-+    || defined(UNIXWARE) || defined(RISCOS) || defined(SYMBIAN) \
++-+    || defined(__DragonFly__)
+++-    || defined(UNIXWARE) || defined(RISCOS)
++++    || defined(UNIXWARE) || defined(RISCOS) || defined(__DragonFly__)
++  #define _PRSelectFdSetArg_t fd_set *
++  #else
++  #error "Cannot determine architecture"
++-@@ -3256,7 +3257,7 @@ static PRIOMethods _pr_socketpollfd_meth
+++@@ -3323,7 +3323,7 @@ static PRIOMethods _pr_socketpollfd_meth
+++     || defined(LINUX) || defined(__GNU__) || defined(__GLIBC__) \
++      || defined(AIX) || defined(FREEBSD) || defined(NETBSD) \
++      || defined(OPENBSD) || defined(BSDI) || defined(NTO) \
++-     || defined(DARWIN) || defined(UNIXWARE) || defined(RISCOS) \
++--    || defined(SYMBIAN)
++-+    || defined(SYMBIAN) || defined(__DragonFly__)
+++-    || defined(DARWIN) || defined(UNIXWARE) || defined(RISCOS)
++++    || defined(DARWIN) || defined(UNIXWARE) || defined(RISCOS) || defined(__DragonFly__)
++  #define _PR_FCNTL_FLAGS O_NONBLOCK
++  #else
++  #error "Can't determine architecture"
++diff --git a/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_pthreads_ptsynch.c b/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_pthreads_ptsynch.c
++index b47393acb13..367a9a77bf8 100644
++--- a/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_pthreads_ptsynch.c
+++++ b/ports/devel/nspr/dragonfly/patch-nsprpub_pr_src_pthreads_ptsynch.c
++@@ -1,11 +1,11 @@
++---- pr/src/pthreads/ptsynch.c.orig	2018-03-22 01:34:56 UTC
+++--- pr/src/pthreads/ptsynch.c.orig	2019-08-30 13:44:48 UTC
++ +++ pr/src/pthreads/ptsynch.c
++ @@ -913,7 +913,7 @@ PR_IMPLEMENT(PRStatus) PR_DeleteSemaphor
++  #if (defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)) \
++      || (defined(FREEBSD) && __FreeBSD_version < 1200059) \
++      || defined(OPENBSD) || defined(BSDI) \
++--    || defined(DARWIN) || defined(SYMBIAN)
++-+    || defined(DARWIN) || defined(SYMBIAN) || defined(__DragonFly__)
+++-    || defined(DARWIN)
++++    || defined(DARWIN) || defined(__DragonFly__)
++  /* union semun is defined by including <sys/sem.h> */
++  #else
++  /* according to X/OPEN we have to define it ourselves */
++diff --git a/ports/devel/pecl-swoole/dragonfly/patch-src_server_reactor__thread.cc b/ports/devel/pecl-swoole/dragonfly/patch-src_server_reactor__thread.cc
++new file mode 100644
++index 00000000000..cd2ee79435e
++--- /dev/null
+++++ b/ports/devel/pecl-swoole/dragonfly/patch-src_server_reactor__thread.cc
++@@ -0,0 +1,12 @@
+++--- src/server/reactor_thread.cc.orig	2019-08-17 07:24:40 UTC
++++++ src/server/reactor_thread.cc
+++@@ -19,6 +19,9 @@
+++ #include "hash.h"
+++ #include "client.h"
+++ #include "websocket.h"
++++#ifdef __DragonFly__
++++#include <pthread_np.h>	/* for pthread_setaffinity_np() */
++++#endif
+++ 
+++ static int swReactorThread_loop(swThreadParam *param);
+++ static int swReactorThread_init(swServer *serv, swReactor *reactor, uint16_t reactor_id);
++diff --git a/ports/devel/pecl-swoole/dragonfly/patch-swoole__config.h b/ports/devel/pecl-swoole/dragonfly/patch-swoole__config.h
++new file mode 100644
++index 00000000000..8482410cb83
++--- /dev/null
+++++ b/ports/devel/pecl-swoole/dragonfly/patch-swoole__config.h
++@@ -0,0 +1,11 @@
+++--- swoole_config.h.orig	2019-08-17 07:24:40 UTC
++++++ swoole_config.h
+++@@ -41,7 +41,7 @@
+++ 
+++ #define SW_SOCKET_OVERFLOW_WAIT    100
+++ #define SW_SOCKET_MAX_DEFAULT      65536
+++-#if defined(__MACH__) || defined(__FreeBSD__)
++++#if defined(__MACH__) || defined(__FreeBSD__) || defined(__DragonFly__)
+++ #define SW_SOCKET_BUFFER_SIZE      262144
+++ #else
+++ #define SW_SOCKET_BUFFER_SIZE      8388608
++diff --git a/ports/devel/yosys/dragonfly/patch-kernel_driver.cc b/ports/devel/yosys/dragonfly/patch-kernel_driver.cc
++index 340b2dc4962..34dd922c051 100644
++--- a/ports/devel/yosys/dragonfly/patch-kernel_driver.cc
+++++ b/ports/devel/yosys/dragonfly/patch-kernel_driver.cc
++@@ -7,7 +7,7 @@
++ -			vm_size_t sz_total = kip.ki_size;
++ -			segsz_t sz_resident = kip.ki_rssize;
++ +			vm_size_t sz_total = kip.kp_vm_map_size;
++-+			segsz_t sz_resident = kip.kp_vm_rssize;
++++			long sz_resident = kip.kp_vm_rssize;
++  			meminfo = stringf(", MEM: %.2f MB total, %.2f MB resident",
++  				(int)sz_total / 1024.0 / 1024.0,
++  				(int)sz_resident * (getpagesize() / 1024.0 / 1024.0));
++diff --git a/ports/games/allacrost/Makefile.DragonFly b/ports/games/allacrost/Makefile.DragonFly
++new file mode 100644
++index 00000000000..f01e4e53ff3
++--- /dev/null
+++++ b/ports/games/allacrost/Makefile.DragonFly
++@@ -0,0 +1,3 @@
+++
+++# port uses nullptr
+++USE_CXXSTD:=	gnu++11
++diff --git a/ports/games/leela-zero/dragonfly/patch-src_Network.cpp b/ports/games/leela-zero/dragonfly/patch-src_Network.cpp
++new file mode 100644
++index 00000000000..eb97eb13899
++--- /dev/null
+++++ b/ports/games/leela-zero/dragonfly/patch-src_Network.cpp
++@@ -0,0 +1,11 @@
+++--- src/Network.cpp.intermediate	2019-08-30 17:30:00.000000000 +0000
++++++ src/Network.cpp
+++@@ -475,7 +475,7 @@ void Network::select_precision(int chann
+++ 
+++ void Network::initialize(int playouts, const std::string & weightsfile) {
+++ #ifdef USE_BLAS
+++-#if !defined(__APPLE__) && !defined(__FreeBSD__)
++++#if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__DragonFly__)
+++ #ifdef USE_OPENBLAS
+++     openblas_set_num_threads(1);
+++     myprintf("BLAS Core: %s\n", openblas_get_corename());
++diff --git a/ports/lang/gcc48/dragonfly/patch-gcc_ginclude_stddef.h b/ports/lang/gcc48/dragonfly/patch-gcc_ginclude_stddef.h
++index 2e7b859334e..5e426ff0f4a 100644
++--- a/ports/lang/gcc48/dragonfly/patch-gcc_ginclude_stddef.h
+++++ b/ports/lang/gcc48/dragonfly/patch-gcc_ginclude_stddef.h
++@@ -53,7 +53,7 @@
++     since it no longer defines _BSD_RUNE_T_ yet still desires to export
++     rune_t in some cases... */
++ -#if defined (__FreeBSD__) && (__FreeBSD__ >= 5)
++-+#if defined (__DragonFly__) || (defined (__FreeBSD__) && (__FreeBSD__ >= 5))
++++#if !defined (__DragonFly__) || (defined (__FreeBSD__) && (__FreeBSD__ >= 5))
++  #if !defined (_ANSI_SOURCE) && !defined (_POSIX_SOURCE)
++  #if __BSD_VISIBLE
++  #ifndef _RUNE_T_DECLARED
++diff --git a/ports/lang/go14/Makefile.DragonFly b/ports/lang/go14/Makefile.DragonFly
++index 517a541e2ef..b34af9aeac1 100644
++--- a/ports/lang/go14/Makefile.DragonFly
+++++ b/ports/lang/go14/Makefile.DragonFly
++@@ -8,8 +8,14 @@ PLIST_SUB+=	OPSYSL=${OPSYS:tl}
++ SHEBANG_FILES += misc/makerelease/darwin/scripts/postinstall \
++ 		 misc/makerelease/darwin/scripts/preinstall
++ 
++-
+++# attempt to fix pkg-plist missing ${OPSYS}
+++PLIST=  ${WRKDIR}/dfly-plist
++ dfly-patch:
++-	# XXX This is meh
++-	${RM} ${WRKSRC}/src/debug/elf/testdata/gcc-amd64-linux-exec \
++-		${WRKSRC}/src/debug/dwarf/testdata/typedef.elf
+++	${CAT} ${.CURDIR}/pkg-plist | ${GREP} -v "typedef.elf" | \
+++	    ${GREP} -v "/testdata/.*-exec" | \
+++	    ${SED} -e 's@freebsd_\%@%%OPSYSL%%_%@g' | \
+++	    ${SED} -e '/\/runtime\/z/s@_freebsd@_%%OPSYSL%%@g'  > ${PLIST}
+++
+++dfly-install:
+++	${RM} -fv ${STAGEDIR}/${PREFIX}/go14/src/debug/dwarf/testdata/typedef.elf*
+++	${RM} -fv ${STAGEDIR}/${PREFIX}/go14/src/debug/*/testdata/*-exec*
++diff --git a/ports/lang/go14/diffs/pkg-plist.diff b/ports/lang/go14/diffs/pkg-plist.diff
++deleted file mode 100644
++index dfbcdc4de1e..00000000000
++--- a/ports/lang/go14/diffs/pkg-plist.diff
+++++ /dev/null
++@@ -1,225 +0,0 @@
++---- pkg-plist.orig	2019-08-12 11:37:16 UTC
++-+++ pkg-plist
++-@@ -246,98 +246,98 @@ go14/pkg/freebsd_%%ARCH%%/flag.a
++- go14/pkg/freebsd_%%ARCH%%/fmt.a
++- go14/pkg/freebsd_%%ARCH%%/funcdata.h
++- go14/pkg/freebsd_%%ARCH%%/go/ast.a
++--go14/pkg/freebsd_%%ARCH%%/go/build.a
++--go14/pkg/freebsd_%%ARCH%%/go/doc.a
++--go14/pkg/freebsd_%%ARCH%%/go/format.a
++--go14/pkg/freebsd_%%ARCH%%/go/parser.a
++--go14/pkg/freebsd_%%ARCH%%/go/printer.a
++--go14/pkg/freebsd_%%ARCH%%/go/scanner.a
++--go14/pkg/freebsd_%%ARCH%%/go/token.a
++--go14/pkg/freebsd_%%ARCH%%/hash.a
++--go14/pkg/freebsd_%%ARCH%%/hash/adler32.a
++--go14/pkg/freebsd_%%ARCH%%/hash/crc32.a
++--go14/pkg/freebsd_%%ARCH%%/hash/crc64.a
++--go14/pkg/freebsd_%%ARCH%%/hash/fnv.a
++--go14/pkg/freebsd_%%ARCH%%/html.a
++--go14/pkg/freebsd_%%ARCH%%/html/template.a
++--go14/pkg/freebsd_%%ARCH%%/image.a
++--go14/pkg/freebsd_%%ARCH%%/image/color.a
++--go14/pkg/freebsd_%%ARCH%%/image/color/palette.a
++--go14/pkg/freebsd_%%ARCH%%/image/draw.a
++--go14/pkg/freebsd_%%ARCH%%/image/gif.a
++--go14/pkg/freebsd_%%ARCH%%/image/jpeg.a
++--go14/pkg/freebsd_%%ARCH%%/image/png.a
++--go14/pkg/freebsd_%%ARCH%%/index/suffixarray.a
++--go14/pkg/freebsd_%%ARCH%%/io.a
++--go14/pkg/freebsd_%%ARCH%%/io/ioutil.a
++--go14/pkg/freebsd_%%ARCH%%/log.a
++--go14/pkg/freebsd_%%ARCH%%/log/syslog.a
++--go14/pkg/freebsd_%%ARCH%%/math.a
++--go14/pkg/freebsd_%%ARCH%%/math/big.a
++--go14/pkg/freebsd_%%ARCH%%/math/cmplx.a
++--go14/pkg/freebsd_%%ARCH%%/math/rand.a
++--go14/pkg/freebsd_%%ARCH%%/mime.a
++--go14/pkg/freebsd_%%ARCH%%/mime/multipart.a
++--go14/pkg/freebsd_%%ARCH%%/net.a
++--go14/pkg/freebsd_%%ARCH%%/net/http.a
++--go14/pkg/freebsd_%%ARCH%%/net/http/cgi.a
++--go14/pkg/freebsd_%%ARCH%%/net/http/cookiejar.a
++--go14/pkg/freebsd_%%ARCH%%/net/http/fcgi.a
++--go14/pkg/freebsd_%%ARCH%%/net/http/httptest.a
++--go14/pkg/freebsd_%%ARCH%%/net/http/httputil.a
++--go14/pkg/freebsd_%%ARCH%%/net/http/internal.a
++--go14/pkg/freebsd_%%ARCH%%/net/http/pprof.a
++--go14/pkg/freebsd_%%ARCH%%/net/mail.a
++--go14/pkg/freebsd_%%ARCH%%/net/rpc.a
++--go14/pkg/freebsd_%%ARCH%%/net/rpc/jsonrpc.a
++--go14/pkg/freebsd_%%ARCH%%/net/smtp.a
++--go14/pkg/freebsd_%%ARCH%%/net/textproto.a
++--go14/pkg/freebsd_%%ARCH%%/net/url.a
++--go14/pkg/freebsd_%%ARCH%%/os.a
++--go14/pkg/freebsd_%%ARCH%%/os/exec.a
++--go14/pkg/freebsd_%%ARCH%%/os/signal.a
++--go14/pkg/freebsd_%%ARCH%%/os/user.a
++--go14/pkg/freebsd_%%ARCH%%/path.a
++--go14/pkg/freebsd_%%ARCH%%/path/filepath.a
++--go14/pkg/freebsd_%%ARCH%%/reflect.a
++--go14/pkg/freebsd_%%ARCH%%/regexp.a
++--go14/pkg/freebsd_%%ARCH%%/regexp/syntax.a
++--go14/pkg/freebsd_%%ARCH%%/runtime.a
++--go14/pkg/freebsd_%%ARCH%%/runtime.h
++--go14/pkg/freebsd_%%ARCH%%/runtime/debug.a
++--go14/pkg/freebsd_%%ARCH%%/runtime/pprof.a
++--go14/pkg/freebsd_%%ARCH%%/runtime/race.a
++--go14/pkg/freebsd_%%ARCH%%/sort.a
++--go14/pkg/freebsd_%%ARCH%%/strconv.a
++--go14/pkg/freebsd_%%ARCH%%/strings.a
++--go14/pkg/freebsd_%%ARCH%%/sync.a
++--go14/pkg/freebsd_%%ARCH%%/sync/atomic.a
++--go14/pkg/freebsd_%%ARCH%%/syscall.a
++--go14/pkg/freebsd_%%ARCH%%/testing.a
++--go14/pkg/freebsd_%%ARCH%%/testing/iotest.a
++--go14/pkg/freebsd_%%ARCH%%/testing/quick.a
++--go14/pkg/freebsd_%%ARCH%%/text/scanner.a
++--go14/pkg/freebsd_%%ARCH%%/text/tabwriter.a
++--go14/pkg/freebsd_%%ARCH%%/text/template.a
++--go14/pkg/freebsd_%%ARCH%%/text/template/parse.a
++--go14/pkg/freebsd_%%ARCH%%/textflag.h
++--go14/pkg/freebsd_%%ARCH%%/time.a
++--go14/pkg/freebsd_%%ARCH%%/unicode.a
++--go14/pkg/freebsd_%%ARCH%%/unicode/utf16.a
++--go14/pkg/freebsd_%%ARCH%%/unicode/utf8.a
++--go14/pkg/tool/freebsd_%%ARCH%%/%%GOOBJ%%a
++--go14/pkg/tool/freebsd_%%ARCH%%/%%GOOBJ%%c
++--go14/pkg/tool/freebsd_%%ARCH%%/%%GOOBJ%%g
++--go14/pkg/tool/freebsd_%%ARCH%%/%%GOOBJ%%l
++--go14/pkg/tool/freebsd_%%ARCH%%/addr2line
++--go14/pkg/tool/freebsd_%%ARCH%%/cgo
++--go14/pkg/tool/freebsd_%%ARCH%%/dist
++--go14/pkg/tool/freebsd_%%ARCH%%/fix
++--go14/pkg/tool/freebsd_%%ARCH%%/nm
++--go14/pkg/tool/freebsd_%%ARCH%%/objdump
++--go14/pkg/tool/freebsd_%%ARCH%%/pack
++--go14/pkg/tool/freebsd_%%ARCH%%/pprof
++--go14/pkg/tool/freebsd_%%ARCH%%/yacc
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/go/build.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/go/doc.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/go/format.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/go/parser.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/go/printer.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/go/scanner.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/go/token.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/hash.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/hash/adler32.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/hash/crc32.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/hash/crc64.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/hash/fnv.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/html.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/html/template.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/image.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/image/color.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/image/color/palette.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/image/draw.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/image/gif.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/image/jpeg.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/image/png.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/index/suffixarray.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/io.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/io/ioutil.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/log.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/log/syslog.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/math.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/math/big.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/math/cmplx.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/math/rand.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/mime.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/mime/multipart.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/http.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/http/cgi.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/http/cookiejar.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/http/fcgi.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/http/httptest.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/http/httputil.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/http/internal.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/http/pprof.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/mail.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/rpc.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/rpc/jsonrpc.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/smtp.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/textproto.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/net/url.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/os.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/os/exec.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/os/signal.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/os/user.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/path.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/path/filepath.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/reflect.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/regexp.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/regexp/syntax.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/runtime.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/runtime.h
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/runtime/debug.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/runtime/pprof.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/runtime/race.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/sort.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/strconv.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/strings.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/sync.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/sync/atomic.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/syscall.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/testing.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/testing/iotest.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/testing/quick.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/text/scanner.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/text/tabwriter.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/text/template.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/text/template/parse.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/textflag.h
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/time.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/unicode.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/unicode/utf16.a
++-+go14/pkg/%%OPSYSL%%_%%ARCH%%/unicode/utf8.a
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/%%GOOBJ%%a
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/%%GOOBJ%%c
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/%%GOOBJ%%g
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/%%GOOBJ%%l
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/addr2line
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/cgo
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/dist
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/fix
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/nm
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/objdump
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/pack
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/pprof
++-+go14/pkg/tool/%%OPSYSL%%_%%ARCH%%/yacc
++- go14/src/Make.dist
++- go14/src/all.bash
++- go14/src/all.bat
++-@@ -1150,7 +1150,6 @@ go14/src/debug/dwarf/const.go
++- go14/src/debug/dwarf/entry.go
++- go14/src/debug/dwarf/open.go
++- go14/src/debug/dwarf/testdata/typedef.c
++--go14/src/debug/dwarf/testdata/typedef.elf
++- go14/src/debug/dwarf/testdata/typedef.elf4
++- go14/src/debug/dwarf/testdata/typedef.macho
++- go14/src/debug/dwarf/type.go
++-@@ -1163,7 +1162,6 @@ go14/src/debug/elf/file.go
++- go14/src/debug/elf/file_test.go
++- go14/src/debug/elf/symbols_test.go
++- go14/src/debug/elf/testdata/gcc-386-freebsd-exec
++--go14/src/debug/elf/testdata/gcc-amd64-linux-exec
++- go14/src/debug/elf/testdata/gcc-amd64-openbsd-debug-with-rela.obj
++- go14/src/debug/elf/testdata/go-relocation-test-clang-x86.obj
++- go14/src/debug/elf/testdata/go-relocation-test-gcc424-x86-64.obj
++-@@ -2722,11 +2720,11 @@ go14/src/runtime/vlop_arm_test.go
++- go14/src/runtime/vlrt.c
++- go14/src/runtime/vlrt.go
++- go14/src/runtime/zaexperiment.h
++--go14/src/runtime/zasm_freebsd_%%ARCH%%.h
++-+go14/src/runtime/zasm_%%OPSYSL%%_%%ARCH%%.h
++- go14/src/runtime/zgoarch_%%ARCH%%.go
++--go14/src/runtime/zgoos_freebsd.go
++--go14/src/runtime/zruntime_defs_freebsd_%%ARCH%%.go
++--go14/src/runtime/zsys_freebsd_%%ARCH%%.s
++-+go14/src/runtime/zgoos_%%OPSYSL%%.go
++-+go14/src/runtime/zruntime_defs_%%OPSYSL%%_%%ARCH%%.go
++-+go14/src/runtime/zsys_%%OPSYSL%%_%%ARCH%%.s
++- go14/src/runtime/zversion.go
++- go14/src/sort/example_interface_test.go
++- go14/src/sort/example_keys_test.go
++diff --git a/ports/lang/sbcl/dragonfly/patch-src_runtime_bsd-os.h b/ports/lang/sbcl/dragonfly/patch-src_runtime_bsd-os.h
++new file mode 100644
++index 00000000000..5ef8dbb0863
++--- /dev/null
+++++ b/ports/lang/sbcl/dragonfly/patch-src_runtime_bsd-os.h
++@@ -0,0 +1,11 @@
+++--- src/runtime/bsd-os.h.orig	2016-12-31 08:38:30 UTC
++++++ src/runtime/bsd-os.h
+++@@ -24,7 +24,7 @@
+++ typedef caddr_t os_vm_address_t;
+++ #if defined __NetBSD__
+++ typedef vsize_t os_vm_size_t;
+++-#elif defined __OpenBSD__
++++#elif defined __OpenBSD__ || defined __DragonFly__
+++ typedef size_t os_vm_size_t;
+++ #else
+++ typedef vm_size_t os_vm_size_t;
++diff --git a/ports/math/vampire/Makefile.DragonFly b/ports/math/vampire/Makefile.DragonFly
++new file mode 100644
++index 00000000000..d875983f700
++--- /dev/null
+++++ b/ports/math/vampire/Makefile.DragonFly
++@@ -0,0 +1,5 @@
+++
+++# port does not respect CXXFLAGS
+++dfly-patch:
+++	${REINPLACE_CMD} -e 's@-Wall@-D__FreeBSD__=9 &@g' \
+++		${WRKSRC}/Makefile
++diff --git a/ports/multimedia/oggvideotools/dragonfly/patch-src_base_test_decoderTest.cpp b/ports/multimedia/oggvideotools/dragonfly/patch-src_base_test_decoderTest.cpp
++deleted file mode 100644
++index 44926b5198b..00000000000
++--- a/ports/multimedia/oggvideotools/dragonfly/patch-src_base_test_decoderTest.cpp
+++++ /dev/null
++@@ -1,10 +0,0 @@
++---- src/base/test/decoderTest.cpp.orig	2016-09-05 11:35:14.000000000 +0300
++-+++ src/base/test/decoderTest.cpp
++-@@ -5,6 +5,7 @@
++- #include "oggDecoder.h"
++- #include <vector>
++- #include <iostream>
++-+#include <cstring> // for memset
++- 
++- int main(int argc, char* argv[])
++- {
++diff --git a/ports/net-mgmt/net-snmp/Makefile.DragonFly b/ports/net-mgmt/net-snmp/Makefile.DragonFly
++index d79383f8977..1228a8cede8 100644
++--- a/ports/net-mgmt/net-snmp/Makefile.DragonFly
+++++ b/ports/net-mgmt/net-snmp/Makefile.DragonFly
++@@ -5,6 +5,9 @@ MAKE_ENV+=		MIB_SYSTEM_LIBS="-lkinfo"
++ 
++ CONFIGURE_ARGS+=	--with-out-mib-modules="sctp-mib"
++ 
+++# configure has inverted check w/ -D_KERNEL first and -D_KERNEL_STRUCTURES next
+++CONFIGURE_ARGS+=	ac_cv_IFNET_NEEDS_KERNEL=no
+++
++ # Avoid mixing openssl -lcrypto vs libressl one through libpkg.so
++ LIB_DEPENDS:= ${LIB_DEPENDS:Nlibpkg.so*}
++ CONFIGURE_ARGS+= ac_cv_header_pkg_h=no netsnmp_cv_func_pkg_init_LIBS=no
++diff --git a/ports/ports-mgmt/pkg/Makefile.DragonFly b/ports/ports-mgmt/pkg/Makefile.DragonFly
++index 66f0d3ef280..5ef5ab889db 100644
++--- a/ports/ports-mgmt/pkg/Makefile.DragonFly
+++++ b/ports/ports-mgmt/pkg/Makefile.DragonFly
++@@ -7,37 +7,33 @@ PROBLEM_FILES=	${WRKSRC}/libpkg/pkg_config.c \
++ 		${WRKSRC}/docs/pkg-version.8 \
++ 		${WRKSRC}/docs/pkg.8
++ 
++-CFLAGS+=	-I/usr/include/priv
++-LDFLAGS+=	-L/usr/lib/priv -R/lib/priv
+++# Fix wrong check that only applies to FreeBSD, archive_write_add_filter_zstd()
+++# availability only means that it can use library or invoke external zstd(1).
++ 
++ dfly-patch:
+++	${REINPLACE_CMD} -e 's@-lprivatezstd@@g' ${WRKSRC}/auto.def
++ .if defined(PACKAGE_BUILDING)
++-	@${REINPLACE_CMD} -e "s|/usr/ports|/usr/dports|g" ${PROBLEM_FILES}
+++	${REINPLACE_CMD} -e "s|/usr/ports|/usr/dports|g" ${PROBLEM_FILES}
++ .else
++-	@${REINPLACE_CMD} -e "s|/usr/ports|${PORTSDIR}|g" ${PROBLEM_FILES}
+++	${REINPLACE_CMD} -e "s|/usr/ports|${PORTSDIR}|g" ${PROBLEM_FILES}
++ .endif
+++
++ # use the private LibreSSL base libraries if available
++ .if exists(/usr/lib/priv/libprivate_ssl.so)
++ 	${REINPLACE_CMD} \
++ 		-e 's|lssl|lprivate_ssl|' \
++ 		-e 's|lcrypto|lprivate_crypto|' \
+++		-e 's|la_rpath = |la_rpath = -R /lib/priv |' \
++ 		${WRKSRC}/libpkg/Makefile.autosetup \
++ 		${WRKSRC}/src/Makefile.autosetup \
++ 		${WRKSRC}/tests/Makefile.autosetup
+++CFLAGS+=	-I/usr/include/priv
+++LDFLAGS+=	-L/usr/lib/priv -R/lib/priv
++ .endif
++ 
++-#		-e '/LOCAL_CFLAGS=/s|=|= -I/usr/include/priv|' \
++-#		-e '/LOCAL_LDFLAGS=/s|=|= -L/usr/lib/priv -R/lib/priv|'
++-
++ post-stage:
++-	${INSTALL_SCRIPT} ${WRKSRC}/scripts/periodic/411.pkg-backup \
++-		${WRKSRC}/scripts/periodic/490.status-pkg-changes \
++-		${STAGEDIR}${PREFIX}/etc/periodic/daily/
++-	${INSTALL_SCRIPT} ${WRKSRC}/scripts/periodic/460.pkg-checksum \
++-		${WRKSRC}/scripts/periodic/410.pkg-audit \
++-		${STAGEDIR}${PREFIX}/etc/periodic/security/
++-	${INSTALL_SCRIPT} ${WRKSRC}/scripts/periodic/400.status-pkg \
++-		${STAGEDIR}${PREFIX}/etc/periodic/weekly/
+++	${RM} ${STAGEDIR}${PREFIX}/sbin/pkg2ng
++ 	${MKDIR} ${STAGEDIR}${PREFIX}/etc/pkg/repos
++ 	${INSTALL_DATA} ${DFLY_FILESDIR}/df-latest.conf.sample \
+++		${DFLY_FILESDIR}/df-releases.conf.sample \
++ 		${STAGEDIR}${PREFIX}/etc/pkg/repos
++diff --git a/ports/science/quantum-espresso/Makefile.DragonFly b/ports/science/quantum-espresso/Makefile.DragonFly
++new file mode 100644
++index 00000000000..7b79bbb308b
++--- /dev/null
+++++ b/ports/science/quantum-espresso/Makefile.DragonFly
++@@ -0,0 +1,6 @@
+++
+++# exclude binary alias, use base
+++BINARY_ALIAS:=	${BINARY_ALIAS:Ncpp*}
+++
+++LDFLAGS:=	${LDFLAGS:N*gfortran.so} -L${LOCALBASE}/lib/gcc${_GCC_VER} -lgfortran
+++LDFLAGS+=	-L${LOCALBASE}/lib -lmpifort
++diff --git a/ports/sysutils/shim/Makefile.DragonFly b/ports/sysutils/shim/Makefile.DragonFly
++index 7191c703792..cc654ab4116 100644
++--- a/ports/sysutils/shim/Makefile.DragonFly
+++++ b/ports/sysutils/shim/Makefile.DragonFly
++@@ -11,3 +11,4 @@ dfly-patch:
++ 	${LN} -sv /usr/include/machine/stdint.h ${WRKSRC}/Cryptlib/Include/machine/stdint.h
++ 	${LN} -sv /usr/include/machine/int_const.h ${WRKSRC}/Cryptlib/Include/machine/int_const.h
++ 	${LN} -sv /usr/include/machine/int_limits.h ${WRKSRC}/Cryptlib/Include/machine/int_limits.h
+++	${TOUCH} ${WRKSRC}/Cryptlib/Include/machine/wchar_limits.h
++diff --git a/ports/textproc/nuspell/dragonfly/patch-src_nuspell_locale__utils.cxx b/ports/textproc/nuspell/dragonfly/patch-src_nuspell_locale__utils.cxx
++index 0a4ea210802..deb064e0a47 100644
++--- a/ports/textproc/nuspell/dragonfly/patch-src_nuspell_locale__utils.cxx
+++++ b/ports/textproc/nuspell/dragonfly/patch-src_nuspell_locale__utils.cxx
++@@ -1,11 +1,14 @@
++---- src/nuspell/locale_utils.cxx.orig	2019-03-19 14:18:46 UTC
+++--- src/nuspell/locale_utils.cxx.orig	2019-08-08 08:30:19 UTC
++ +++ src/nuspell/locale_utils.cxx
++-@@ -33,7 +33,7 @@
++- #include <intrin.h>
+++@@ -33,9 +33,9 @@
++  #endif
++  
++--#if !defined(_WIN32) && !defined(__FreeBSD__)
++-+#if !defined(_WIN32) && !defined(__FreeBSD__) && !defined(__DragonFly__)
++- #if !defined(__STDC_ISO_10646__) || defined(__STDC_MB_MIGHT_NEQ_WC__)
+++ #if !defined(U_WCHAR_IS_UTF32) && !defined(U_WCHAR_IS_UTF16) &&                \
+++-    !defined(__FreeBSD__)
++++    !defined(__FreeBSD__) && !defined(__DragonFly__)
++  #error "Platform has poor Unicode support. wchar_t must be Unicode."
+++-#elif defined(__STDC_MB_MIGHT_NEQ_WC__) && !defined(__FreeBSD__)
++++#elif defined(__STDC_MB_MIGHT_NEQ_WC__) && !defined(__FreeBSD__) && !defined(__DragonFly__)
+++ #error "Platform has non-ASCII narrow string literals."
++  #endif
+++ 
++diff --git a/ports/x11-toolkits/wlroots/dragonfly/patch-backend_session_session.c b/ports/x11-toolkits/wlroots/dragonfly/patch-backend_session_session.c
++index 8b4d3e3b7dd..98a3a3efb75 100644
++--- a/ports/x11-toolkits/wlroots/dragonfly/patch-backend_session_session.c
+++++ b/ports/x11-toolkits/wlroots/dragonfly/patch-backend_session_session.c
++@@ -1,19 +1,6 @@
++---- backend/session/session.c.orig	2019-05-24 10:53:29.041904000 +0300
++-+++ backend/session/session.c	2019-05-24 11:02:58.095172000 +0300
++-@@ -197,6 +197,12 @@ static struct wlr_device *find_device(st
++- 
++- 	wlr_log(WLR_ERROR, "Tried to use fd %d not opened by session", fd);
++- 	assert(0);
++-+
++-+	/* In order to not get build error:
++-+	 * ../backend/session/session.c:179:1: error: control reaches end of
++-+	 * non-void function [-Werror=return-type]
++-+	 */
++-+	return dev;
++- }
++- 
++- void wlr_session_close_file(struct wlr_session *session, int fd) {
++-@@ -287,7 +293,7 @@ size_t wlr_session_find_gpus(struct wlr_
+++--- backend/session/session.c.orig	2019-08-27 03:32:24.
++++++ backend/session/session.c
+++@@ -288,7 +288,7 @@ size_t wlr_session_find_gpus(struct wlr_
++  		return explicit_find_gpus(session, ret_len, ret, explicit);
++  	}
++  
