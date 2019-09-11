@@ -1,4 +1,4 @@
-From 8833c72e971d7baeeec0ced98d4c8a6ed647014b Mon Sep 17 00:00:00 2001
+From 19295a7acbddddecd3e0d46d6ee0f22c3af852e0 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 11 Sep 2019 14:01:19 +0300
 Subject: [PATCH 1/6] libc: Add global __LIBC definition while building libc.
@@ -9,9 +9,9 @@ Subject: [PATCH 1/6] libc: Add global __LIBC definition while building libc.
 In-discussion-with: swilder
 ---
  lib/libc/Makefile              | 1 +
- lib/libc/include/port_before.h | 3 +++
+ lib/libc/include/port_before.h | 2 ++
  lib/libc_rtld/Makefile         | 2 +-
- 3 files changed, 5 insertions(+), 1 deletion(-)
+ 3 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/lib/libc/Makefile b/lib/libc/Makefile
 index 00b7d2091e..2e995b9f8e 100644
@@ -26,19 +26,19 @@ index 00b7d2091e..2e995b9f8e 100644
  PRECIOUSLIB=	yes
  
 diff --git a/lib/libc/include/port_before.h b/lib/libc/include/port_before.h
-index 9bd12899d3..66cf8f7027 100644
+index 9bd12899d3..f243ae202e 100644
 --- a/lib/libc/include/port_before.h
 +++ b/lib/libc/include/port_before.h
-@@ -3,6 +3,9 @@
+@@ -3,7 +3,9 @@
  #ifndef _PORT_BEFORE_H_
  #define _PORT_BEFORE_H_
  
 +#ifdef __LIBC
-+#define _LIBC		1
-+#endif
  #define _LIBC		1
++#endif
  #define DO_PTHREADS	1
  #define USE_KQUEUE	1
+ 
 diff --git a/lib/libc_rtld/Makefile b/lib/libc_rtld/Makefile
 index f1a9b2d855..32fb36dd51 100644
 --- a/lib/libc_rtld/Makefile
