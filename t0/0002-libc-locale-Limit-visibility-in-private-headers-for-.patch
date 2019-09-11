@@ -1,16 +1,21 @@
-From ef18a5bc157a45fa44740f5b7210548b06b548b9 Mon Sep 17 00:00:00 2001
+From c877d494fd0c199b7b22d80aba50bc1a2c22e7ce Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
-Date: Tue, 10 Sep 2019 10:53:47 +0000
-Subject: [PATCH 1/5] libc/locale: Limit visibility in private headers for
+Date: Wed, 11 Sep 2019 14:34:36 +0300
+Subject: [PATCH 2/6] libc/locale: Limit visibility in private headers for
  tools.
 
- The localedef(1) requires just a few struct lc_LC_t layouts from
- internal lib/libc/locale/ headers in order to convert source defintions.
- It is desired that it uses as minimal as possible amount of private
+ The localedef(1) requires just a few struct lc_*_t layouts from private
+ lib/libc/locale/ headers in order to convert source definitions.
+ It is desired that it uses as minimal as possible amount of internal
  header information, since localedef(1) is also in BTOOLS group.
+ Same could be done to zic(8) and pwd_mkdb(8).
 
- * Use _LOCALE_TOOLS guard to limit visibility in internal headers.
+ * Use __LIBC guard to limit visibility in libc internal headers.
  * Poison xlocale_private.h to warn early that internals were used.
+
+ Another issue is that localedef(1) and zic(8) are not recompiled on
+ libc changes and require full BTOOLS recompile.  Converting both of
+ them to hostprog would solve this, however there are invoke issues.
 
  No function change.
 ---
@@ -20,18 +25,17 @@ Subject: [PATCH 1/5] libc/locale: Limit visibility in private headers for
  lib/libc/locale/lnumeric.h        | 6 ++++++
  lib/libc/locale/xlocale_private.h | 8 ++++++--
  lib/libc/stdtime/timelocal.h      | 5 +++++
- usr.bin/localedef/Makefile        | 1 +
- 7 files changed, 32 insertions(+), 2 deletions(-)
+ 6 files changed, 31 insertions(+), 2 deletions(-)
 
 diff --git a/lib/libc/locale/collate.h b/lib/libc/locale/collate.h
-index 463841e672..d434c8019d 100644
+index 463841e672..531884f7c3 100644
 --- a/lib/libc/locale/collate.h
 +++ b/lib/libc/locale/collate.h
 @@ -39,7 +39,9 @@
  #include <sys/cdefs.h>
  #include <sys/types.h>
  #include <limits.h>
-+#ifndef _LOCALE_TOOLS
++#ifdef __LIBC
  #include "xlocale_private.h"
 +#endif
  
@@ -41,7 +45,7 @@ index 463841e672..d434c8019d 100644
  	int32_t pri[COLLATE_STR_LEN];
  } collate_subst_t;
  
-+#ifndef _LOCALE_TOOLS
++#ifdef __LIBC
  struct xlocale_collate {
  	struct xlocale_component header;
  	int __collate_load_error;
@@ -53,14 +57,14 @@ index 463841e672..d434c8019d 100644
  
  #endif /* !_COLLATE_H_ */
 diff --git a/lib/libc/locale/lmessages.h b/lib/libc/locale/lmessages.h
-index 2e9f23528b..7fe2b3e629 100644
+index 2e9f23528b..ed1352d107 100644
 --- a/lib/libc/locale/lmessages.h
 +++ b/lib/libc/locale/lmessages.h
 @@ -34,7 +34,9 @@
  #ifndef _LMESSAGES_H_
  #define	_LMESSAGES_H_
  
-+#ifndef _LOCALE_TOOLS
++#ifdef __LIBC
  #include "xlocale_private.h"
 +#endif
  
@@ -70,14 +74,14 @@ index 2e9f23528b..7fe2b3e629 100644
  	const char	*nostr;
  };
  
-+#ifndef _LOCALE_TOOLS
++#ifdef __LIBC
  struct lc_messages_T *__get_current_messages_locale(locale_t);
  int	__messages_load_locale(const char *);
 +#endif
  
  #endif /* !_LMESSAGES_H_ */
 diff --git a/lib/libc/locale/lmonetary.h b/lib/libc/locale/lmonetary.h
-index 06cd8a407c..cd45bd7ca3 100644
+index 06cd8a407c..cce95cddcd 100644
 --- a/lib/libc/locale/lmonetary.h
 +++ b/lib/libc/locale/lmonetary.h
 @@ -33,7 +33,10 @@
@@ -85,7 +89,7 @@ index 06cd8a407c..cd45bd7ca3 100644
  #ifndef _LMONETARY_H_
  #define	_LMONETARY_H_
 +
-+#ifndef _LOCALE_TOOLS
++#ifdef __LIBC
  #include "xlocale_private.h"
 +#endif
  
@@ -96,7 +100,7 @@ index 06cd8a407c..cd45bd7ca3 100644
  	const char	*int_n_sign_posn;
  };
 +
-+#ifndef _LOCALE_TOOLS
++#ifdef __LIBC
  struct xlocale_monetary {
  	struct xlocale_component header;
  	char *buffer;
@@ -108,7 +112,7 @@ index 06cd8a407c..cd45bd7ca3 100644
  
  #endif /* !_LMONETARY_H_ */
 diff --git a/lib/libc/locale/lnumeric.h b/lib/libc/locale/lnumeric.h
-index 9f5bc34737..25bd87dffb 100644
+index 9f5bc34737..9ea76c96d9 100644
 --- a/lib/libc/locale/lnumeric.h
 +++ b/lib/libc/locale/lnumeric.h
 @@ -33,13 +33,18 @@
@@ -116,7 +120,7 @@ index 9f5bc34737..25bd87dffb 100644
  #ifndef _LNUMERIC_H_
  #define	_LNUMERIC_H_
 +
-+#ifndef _LOCALE_TOOLS
++#ifdef __LIBC
  #include "xlocale_private.h"
 +#endif
  
@@ -126,7 +130,7 @@ index 9f5bc34737..25bd87dffb 100644
  	const char	*grouping;
  };
 +
-+#ifndef _LOCALE_TOOLS
++#ifdef __LIBC
  struct xlocale_numeric {
  	struct xlocale_component header;
  	char *buffer;
@@ -138,14 +142,14 @@ index 9f5bc34737..25bd87dffb 100644
  
  #endif /* !_LNUMERIC_H_ */
 diff --git a/lib/libc/locale/xlocale_private.h b/lib/libc/locale/xlocale_private.h
-index c805c4381f..85c4c2df3c 100644
+index c805c4381f..c20e5d6d22 100644
 --- a/lib/libc/locale/xlocale_private.h
 +++ b/lib/libc/locale/xlocale_private.h
 @@ -29,6 +29,10 @@
   * $FreeBSD: head/lib/libc/locale/xlocale_private.h 326193 2017-11-25 17:12:48Z pfg $
   */
  
-+#ifdef _LOCALE_TOOLS
++#ifndef __LIBC
 +#error "Userland tools should not use this private header."
 +#endif
 +
@@ -171,7 +175,7 @@ index c805c4381f..85c4c2df3c 100644
  extern void* __collate_load(const char*, locale_t);
  extern void* __ctype_load(const char*, locale_t);
 diff --git a/lib/libc/stdtime/timelocal.h b/lib/libc/stdtime/timelocal.h
-index cc4c568136..5a9a7e11df 100644
+index cc4c568136..c309669c6e 100644
 --- a/lib/libc/stdtime/timelocal.h
 +++ b/lib/libc/stdtime/timelocal.h
 @@ -33,7 +33,10 @@
@@ -179,7 +183,7 @@ index cc4c568136..5a9a7e11df 100644
  #ifndef _TIMELOCAL_H_
  #define	_TIMELOCAL_H_
 +
-+#ifndef _LOCALE_TOOLS
++#ifdef __LIBC
  #include "xlocale_private.h"
 +#endif
  
@@ -189,24 +193,12 @@ index cc4c568136..5a9a7e11df 100644
  	const char	*ampm_fmt;
  };
  
-+#ifndef _LOCALE_TOOLS
++#ifdef __LIBC
  struct lc_time_T *__get_current_time_locale(locale_t);
  int	__time_load_locale(const char *);
 +#endif
  
  #endif /* !_TIMELOCAL_H_ */
-diff --git a/usr.bin/localedef/Makefile b/usr.bin/localedef/Makefile
-index 9a888c8c50..c36928eaa4 100644
---- a/usr.bin/localedef/Makefile
-+++ b/usr.bin/localedef/Makefile
-@@ -16,6 +16,7 @@ SRCS=	charmap.c \
- ${SRCS:M*.c}: parser.h
- parser.h: parser.y
- 
-+CFLAGS+=	-D_LOCALE_TOOLS
- CFLAGS+=	-I. -I${.CURDIR}
- CFLAGS+=	-I${.CURDIR}/../../lib/libc/locale
- CFLAGS+=	-I${.CURDIR}/../../lib/libc/stdtime
 -- 
 2.23.0
 

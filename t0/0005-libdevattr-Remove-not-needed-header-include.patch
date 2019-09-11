@@ -1,7 +1,7 @@
-From 29368cb8e89b5ceaeec120542f0e79c3970f4344 Mon Sep 17 00:00:00 2001
+From 67ccbb63b3758705ebd2a7a346b1b286b0f70f63 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
-Date: Tue, 10 Sep 2019 10:58:31 +0000
-Subject: [PATCH 4/5] libdevattr: Remove not needed header include.
+Date: Wed, 11 Sep 2019 14:37:31 +0300
+Subject: [PATCH 5/6] libdevattr: Remove not needed header include.
 
  Nothing is needed from <sys/device.h> here.
 ---

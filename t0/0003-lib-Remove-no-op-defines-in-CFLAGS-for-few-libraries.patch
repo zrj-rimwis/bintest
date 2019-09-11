@@ -1,7 +1,7 @@
-From 7304bf1e5c4c3116a4069007db50133b18de3e60 Mon Sep 17 00:00:00 2001
+From 8c1f2f2fa4851c08ccc060ee34f103246fe2867b Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
-Date: Tue, 10 Sep 2019 10:54:30 +0000
-Subject: [PATCH 2/5] lib: Remove no-op defines in CFLAGS for few libraries.
+Date: Wed, 11 Sep 2019 14:35:45 +0300
+Subject: [PATCH 3/6] lib: Remove no-op defines in CFLAGS for few libraries.
 
  No-op since 0d5acd7467c4e95f792ef49fceb3ab8e917ce86b.
 ---
@@ -22,7 +22,7 @@ index f8261102f2..59f5df71b9 100644
  # And the auth_getval() code and support.
  .PATH:		${.CURDIR}/../libutil
 diff --git a/lib/libutil/Makefile b/lib/libutil/Makefile
-index 6736f7fb8a..b81bde6ff6 100644
+index 40c750adbb..866aff4bb8 100644
 --- a/lib/libutil/Makefile
 +++ b/lib/libutil/Makefile
 @@ -5,7 +5,6 @@ LIB=	util
@@ -30,7 +30,7 @@ index 6736f7fb8a..b81bde6ff6 100644
  SHLIBDIR?= /lib
  CFLAGS+=-DINET6
 -CFLAGS+=-D_CTYPE_H_DISABLE_MACROS_ 
- SRCS=	flopen.c login.c login_tty.c logout.c logwtmp.c logwtmpx.c pty.c \
+ SRCS=	flopen.c login_tty.c logwtmpx.c pty.c \
  	login_cap.c login_class.c login_auth.c login_times.c login_ok.c \
  	login_crypt.c loginx.c logoutx.c _secure_path.c uucplock.c \
 -- 
