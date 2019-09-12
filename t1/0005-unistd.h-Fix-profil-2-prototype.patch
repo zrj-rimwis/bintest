@@ -1,0 +1,84 @@
+From 75ff5527ded378595b0d4821a67b0715884cbfe1 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 12 Sep 2019 12:33:32 +0300
+Subject: [PATCH 5/9] <unistd.h>: Fix profil(2) prototype.
+
+ First off the vm_offset_t is somewhat bogus in this context, same could
+ be said about size_t variant in sys/sysproto.h.  Just use plain u_long
+ type like it is already used in struct uprof and fix forth argument to
+ take u_int.  In public headers prefer to use generic types.
+
+ The uintfptr_t will be dealth with in a separate commit next
+---
+ include/unistd.h         | 2 +-
+ lib/libc/sys/profil.2    | 5 ++---
+ sys/kern/syscalls.master | 2 +-
+ sys/sys/sysproto.h       | 2 +-
+ 4 files changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/include/unistd.h b/include/unistd.h
+index 077ea38fbb..5e30f4c5ec 100644
+--- a/include/unistd.h
++++ b/include/unistd.h
+@@ -571,7 +571,7 @@ char	*mktemp(char *);
+ #define	_MKTEMP_DECLARED
+ #endif
+ int	 nfssvc(int, void *);
+-int	 profil(char *, size_t, vm_offset_t, int);
++int	 profil(char *, size_t, unsigned long, unsigned int);
+ int	 rcmd(char **, int, const char *, const char *, const char *, int *);
+ int	 rcmd_af(char **, int, const char *, const char *, const char *, int *,
+ 		 int);
+diff --git a/lib/libc/sys/profil.2 b/lib/libc/sys/profil.2
+index 7b0dcf8c88..fe6bab0cf5 100644
+--- a/lib/libc/sys/profil.2
++++ b/lib/libc/sys/profil.2
+@@ -30,9 +30,8 @@
+ .\"
+ .\"	@(#)profil.2	8.1 (Berkeley) 6/4/93
+ .\" $FreeBSD: src/lib/libc/sys/profil.2,v 1.9.2.3 2001/12/14 18:34:01 ru Exp $
+-.\" $DragonFly: src/lib/libc/sys/profil.2,v 1.2 2003/06/17 04:26:47 dillon Exp $
+ .\"
+-.Dd June 4, 1993
++.Dd September 12, 2019
+ .Dt PROFIL 2
+ .Os
+ .Sh NAME
+@@ -43,7 +42,7 @@
+ .Sh SYNOPSIS
+ .In unistd.h
+ .Ft int
+-.Fn profil "char *samples" "size_t size" "vm_offset_t offset" "int scale"
++.Fn profil "char *samples" "size_t size" "unsigned long offset" "unsigned int scale"
+ .Sh DESCRIPTION
+ The
+ .Fn profil
+diff --git a/sys/kern/syscalls.master b/sys/kern/syscalls.master
+index 1652d8e66c..1b6cc740e9 100644
+--- a/sys/kern/syscalls.master
++++ b/sys/kern/syscalls.master
+@@ -94,7 +94,7 @@
+ 42	STD	{ int pipe(void); }
+ 43	STD	{ gid_t getegid(void); }
+ 44	STD	{ int profil(caddr_t samples, size_t size, \
+-			    size_t offset, u_int scale); }
++			    u_long offset, u_int scale); }
+ 45	STD	{ int ktrace(const char *fname, int ops, int facs, \
+ 			    int pid); }
+ 46	OBSOL	freebsd3_sigaction
+diff --git a/sys/sys/sysproto.h b/sys/sys/sysproto.h
+index f8f7289ef5..eaca427976 100644
+--- a/sys/sys/sysproto.h
++++ b/sys/sys/sysproto.h
+@@ -301,7 +301,7 @@ struct	profil_args {
+ #endif
+ 	caddr_t	samples;	char samples_[PAD_(caddr_t)];
+ 	size_t	size;	char size_[PAD_(size_t)];
+-	size_t	offset;	char offset_[PAD_(size_t)];
++	u_long	offset;	char offset_[PAD_(u_long)];
+ 	u_int	scale;	char scale_[PAD_(u_int)];
+ };
+ struct	ktrace_args {
+-- 
+2.23.0
+

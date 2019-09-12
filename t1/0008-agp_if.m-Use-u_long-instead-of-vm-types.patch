@@ -1,0 +1,57 @@
+From 950adadd0366f45c9ff5b9a5bebda08fbad40fea Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 12 Sep 2019 16:48:37 +0300
+Subject: [PATCH 8/9] agp_if.m: Use u_long instead of vm types.
+
+ This is a single one .m source that uses vm types.  There is nothing
+ special about agp elements in structs, so use default unsigned long.
+ No functional change (agp is x86 specific).
+---
+ sys/dev/agp/agp_if.m | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/sys/dev/agp/agp_if.m b/sys/dev/agp/agp_if.m
+index 5e2324e72b..2861827c0b 100644
+--- a/sys/dev/agp/agp_if.m
++++ b/sys/dev/agp/agp_if.m
+@@ -67,8 +67,8 @@ METHOD int set_aperture {
+ #
+ METHOD int bind_page {
+ 	device_t	dev;
+-	vm_offset_t	offset;
+-	vm_offset_t	physical;
++	u_long		offset;
++	u_long		physical;
+ };
+ 
+ #
+@@ -76,7 +76,7 @@ METHOD int bind_page {
+ #
+ METHOD int unbind_page {
+ 	device_t	dev;
+-	vm_offset_t	offset;
++	u_long		offset;
+ };
+ 
+ #
+@@ -110,7 +110,7 @@ METHOD int enable {
+ METHOD struct agp_memory * alloc_memory {
+ 	device_t	dev;
+ 	int		type;
+-	vm_size_t	size;
++	u_long		size;
+ };
+ 
+ #
+@@ -131,7 +131,7 @@ METHOD int free_memory {
+ METHOD int bind_memory {
+ 	device_t	dev;
+ 	struct agp_memory *mem;
+-	vm_offset_t	offset;
++	u_long		offset;
+ };
+ 
+ #
+-- 
+2.23.0
+

@@ -1,0 +1,93 @@
+From 8cc176eed8b55dc2925efef2703dac44a06c8491 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 12 Sep 2019 16:56:55 +0300
+Subject: [PATCH 9/9] kernel/isa: Bury the intrmask_t type.
+
+ It is neither MI nor MD nor pure PD type, it is ISA placeholder type.
+ Also it is unfortunately named and implies bad things.  The only way to
+ make it consistent is to split it, since this type usage falls under
+ standard/isa options.  The vkernel64 was already wrongly declaring it.
+
+ No differences in generated binary outputs.
+---
+ sys/bus/isa/isavar.h                   | 9 +++++++++
+ sys/platform/pc64/icu/icu_var.h        | 8 ++++++--
+ sys/platform/pc64/include/types.h      | 8 --------
+ sys/platform/vkernel64/include/types.h | 4 ----
+ 4 files changed, 15 insertions(+), 14 deletions(-)
+
+diff --git a/sys/bus/isa/isavar.h b/sys/bus/isa/isavar.h
+index f1873da894..c5dce006f5 100644
+--- a/sys/bus/isa/isavar.h
++++ b/sys/bus/isa/isavar.h
+@@ -40,6 +40,15 @@ typedef void isa_config_cb(void *arg, struct isa_config *config, int enable);
+ 
+ #ifdef _KERNEL
+ 
++/*
++ * The intrmask_t has to be wide enough to hold any value used by the platform,
++ * u_long would be best type, but use fixed 32bit type for historic reasons.
++ */
++#ifndef _INTRMASK_T_DECLARED
++#define _INTRMASK_T_DECLARED
++typedef __uint32_t	intrmask_t; /* Interrupt mask (spl, xxx_imask, etc) */
++#endif
++
+ /*
+  * ISA devices are partially ordered to ensure that devices which are
+  * sensitive to other driver probe routines are probed first. Plug and
+diff --git a/sys/platform/pc64/icu/icu_var.h b/sys/platform/pc64/icu/icu_var.h
+index e36cb9ef55..5849635e96 100644
+--- a/sys/platform/pc64/icu/icu_var.h
++++ b/sys/platform/pc64/icu/icu_var.h
+@@ -30,8 +30,12 @@
+ #ifndef _ARCH_ICU_ICU_VAR_H_
+ #define	_ARCH_ICU_ICU_VAR_H_
+ 
+-#ifndef _SYS_TYPES_H_
+-#include <sys/types.h>
++#include <machine/stdint.h>
++
++/* Same as in bus/isa/isavar.h */
++#ifndef _INTRMASK_T_DECLARED
++#define _INTRMASK_T_DECLARED
++typedef __uint32_t	intrmask_t; /* Interrupt mask (spl, xxx_imask, etc) */
+ #endif
+ 
+ void		icu_definit(void);
+diff --git a/sys/platform/pc64/include/types.h b/sys/platform/pc64/include/types.h
+index 6a3c36abb4..e584ee8a0f 100644
+--- a/sys/platform/pc64/include/types.h
++++ b/sys/platform/pc64/include/types.h
+@@ -33,15 +33,7 @@
+ #ifndef _MACHINE_TYPES_H_
+ #define	_MACHINE_TYPES_H_
+ 
+-#include <machine/stdint.h>
+ #include <cpu/types.h>
+ 
+-#ifdef _KERNEL
+-
+-/* Interrupt mask (spl, xxx_imask, etc) */
+-typedef __uint32_t	intrmask_t;
+-
+-#endif
+-
+ #endif /* !_MACHINE_TYPES_H_ */
+ 
+diff --git a/sys/platform/vkernel64/include/types.h b/sys/platform/vkernel64/include/types.h
+index c6e1e97f2f..898c7a2cc5 100644
+--- a/sys/platform/vkernel64/include/types.h
++++ b/sys/platform/vkernel64/include/types.h
+@@ -37,8 +37,4 @@
+ 
+ #include <cpu/types.h>
+ 
+-#ifdef _KERNEL
+-typedef __uint32_t	intrmask_t;
+-#endif
+-
+ #endif /* !_MACHINE_TYPES_H_ */
+-- 
+2.23.0
+
