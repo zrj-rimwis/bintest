@@ -1,0 +1,43 @@
+From 8c178c523e5f0ef99682d3e84d02b8ed502666ed Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 9 Oct 2019 12:27:32 +0300
+Subject: [PATCH 3/3] <sys/socket.h>: Use double underscore versions for types.
+
+ Change caddr_t to plain "char *".
+
+ In preparations to remove <sys/types.h> dependency.
+---
+ sys/sys/socket.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/sys/sys/socket.h b/sys/sys/socket.h
+index 60cd33ebf5..61faee2eb8 100644
+--- a/sys/sys/socket.h
++++ b/sys/sys/socket.h
+@@ -219,7 +219,7 @@ struct sockproto {
+  * RFC 2553: protocol-independent placeholder for socket addresses
+  */
+ #define	_SS_MAXSIZE	128
+-#define	_SS_ALIGNSIZE	(sizeof(int64_t))
++#define	_SS_ALIGNSIZE	(sizeof(__int64_t))
+ #define	_SS_PAD1SIZE	(_SS_ALIGNSIZE - sizeof(unsigned char) - sizeof(sa_family_t))
+ #define	_SS_PAD2SIZE	(_SS_MAXSIZE - sizeof(unsigned char) - sizeof(sa_family_t) - \
+ 				_SS_PAD1SIZE - _SS_ALIGNSIZE)
+@@ -438,11 +438,11 @@ struct cmsgcred {
+ 
+ /* given pointer to struct cmsghdr, return pointer to next cmsghdr */
+ #define	CMSG_NXTHDR(mhdr, cmsg)	\
+-	(((caddr_t)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len) + \
++	(((char *)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len) + \
+ 	  _CMSG_ALIGN(sizeof(struct cmsghdr)) > \
+-	    (caddr_t)(mhdr)->msg_control + (mhdr)->msg_controllen) ? \
++	    (char *)(mhdr)->msg_control + (mhdr)->msg_controllen) ? \
+ 	    NULL : \
+-	    (struct cmsghdr *)((caddr_t)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len)))
++	    (struct cmsghdr *)((char *)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len)))
+ 
+ /*
+  * RFC 2292 requires to check msg_controllen, in case that the kernel returns
+-- 
+2.23.0
+

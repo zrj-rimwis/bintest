@@ -1,0 +1,180 @@
+From 0d5ef606e52352ad030b18fac1f102667356f6ae Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 9 Oct 2019 12:08:16 +0300
+Subject: [PATCH 2/3] Add <machine/alignbytes.h>.
+
+ Refactor ALIGN* macros to fix issue in <sys/socket.h> after the
+ _CMSG_ALIGN() macro was adjusted to use ALIGNBYTES definition.
+ * Including <sys/param.h> would introduce major namespace pollution.
+ * Use NetBSD variant of namespace friendly double underscore versions.
+ * Instead of <machine/cdefs.h> put double underscore versions into self
+   contained header to minimize header poisoning.
+ * Provide __ALIGN() macro to avoid visibility issues with uintptr_t.
+ * Move out single underscore versions from <machine/param.h>.  Keep them
+   for OpenBSD compat that declares them in <ARCH/_types.h>.
+ * Make non underscored versions user overridable (just like NetBSD).
+   This is useful for cases where different alignment is needed.
+
+ Later on this new header can be adjusted to provide other alignment
+ macros like: STACKALIGNBYTES, ALIGNED_POINTER etc.
+
+In-discussion-with: swilder
+---
+ sys/cpu/x86_64/include/alignbytes.h | 38 +++++++++++++++++++++++++++++
+ sys/cpu/x86_64/include/param.h      | 15 ------------
+ sys/sys/param.h                     | 16 ++++++++++++
+ sys/sys/socket.h                    |  5 ++--
+ 4 files changed, 56 insertions(+), 18 deletions(-)
+ create mode 100644 sys/cpu/x86_64/include/alignbytes.h
+
+diff --git a/sys/cpu/x86_64/include/alignbytes.h b/sys/cpu/x86_64/include/alignbytes.h
+new file mode 100644
+index 0000000000..51ae7e0a53
+--- /dev/null
++++ b/sys/cpu/x86_64/include/alignbytes.h
+@@ -0,0 +1,38 @@
++/*
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#ifndef _CPU_ALIGNBYTES_H_
++#define _CPU_ALIGNBYTES_H_
++
++/*
++ * __ALIGN(p) rounds p (pointer or byte index) up to a correctly-aligned
++ * value for all data types (int, long, ...).   The result is an
++ * unsigned long and must be cast to any desired pointer type.
++ */
++#define __ALIGNBYTES	(sizeof(long) - 1)
++#define __ALIGN(p)	(((unsigned long)(p) + __ALIGNBYTES) & ~__ALIGNBYTES)
++
++#endif /* !_CPU_ALIGNBYTES_H_ */
+diff --git a/sys/cpu/x86_64/include/param.h b/sys/cpu/x86_64/include/param.h
+index 54ecacdf12..03441227be 100644
+--- a/sys/cpu/x86_64/include/param.h
++++ b/sys/cpu/x86_64/include/param.h
+@@ -41,18 +41,6 @@
+  * Machine dependent constants for x86_64.
+  */
+ 
+-/*
+- * Round p (pointer or byte index) up to a correctly-aligned value
+- * for all data types (int, long, ...).   The result is unsigned int
+- * and must be cast to any desired pointer type.
+- */
+-#ifndef _ALIGNBYTES
+-#define _ALIGNBYTES	(sizeof(long) - 1)
+-#endif
+-#ifndef _ALIGN
+-#define _ALIGN(p)	(((unsigned long)(p) + _ALIGNBYTES) & ~_ALIGNBYTES)
+-#endif
+-
+ #ifndef _MACHINE
+ #define	_MACHINE	x86_64
+ #endif
+@@ -83,9 +71,6 @@
+ #define SMP_MAXCPU	256
+ #define MAXCPU		SMP_MAXCPU
+ 
+-#define ALIGNBYTES	_ALIGNBYTES
+-#define ALIGN(p)	_ALIGN(p)
+-
+ /* JG license? from fbsd/src/sys/amd64/include/param.h */
+ /* level 1 == page table */
+ #define	NPTEPGSHIFT	9		/* LOG2(NPTEPG) */
+diff --git a/sys/sys/param.h b/sys/sys/param.h
+index f7e7018187..3923889f46 100644
+--- a/sys/sys/param.h
++++ b/sys/sys/param.h
+@@ -257,6 +257,7 @@
+ #endif
+ 
+ /* Machine type dependent parameters. */
++#include <machine/alignbytes.h>
+ #include <machine/param.h>
+ #ifndef _KERNEL
+ #include <machine/limits.h>
+@@ -351,6 +352,21 @@
+ #define trunc_page64(x)           ((x) & ~(int64_t)PAGE_MASK)
+ #define round_page64(x)           (((x) + PAGE_MASK) & ~(int64_t)PAGE_MASK)
+ 
++/*
++ * Round p (pointer or byte index) up to a correctly-aligned value
++ * for all data types (int, long, ...).   The result is unsigned int
++ * and must be cast to any desired pointer type.  Single underscore
++ * versions are for FreeBSD/OpenBSD compat.
++ */
++#define _ALIGNBYTES	__ALIGNBYTES
++#define _ALIGN(p)	__ALIGN(p)
++#ifndef ALIGNBYTES
++#define ALIGNBYTES	__ALIGNBYTES
++#endif
++#ifndef ALIGN
++#define ALIGN(p)	__ALIGN(p)
++#endif
++
+ /* Macros for min/max. */
+ #define MIN(a,b) (((a)<(b))?(a):(b))
+ #define MAX(a,b) (((a)>(b))?(a):(b))
+diff --git a/sys/sys/socket.h b/sys/sys/socket.h
+index 2e721739f2..60cd33ebf5 100644
+--- a/sys/sys/socket.h
++++ b/sys/sys/socket.h
+@@ -42,6 +42,7 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#include <machine/alignbytes.h>
+ #include <machine/stdint.h>
+ 
+ /*
+@@ -61,7 +62,6 @@ typedef __uint8_t	sa_family_t;
+ typedef __socklen_t	socklen_t;
+ #endif
+ 
+- 
+ /*
+  * Types
+  */
+@@ -426,7 +426,6 @@ struct cmsgcred {
+ };
+ 
+ /* Alignment requirement for CMSG struct manipulation */
+-#define	__ALIGNBYTES		(sizeof(long) - 1) /* XXX -> cpu/cdefs.h? */
+ #define	_CMSG_ALIGN(n)		(((n) + __ALIGNBYTES) & ~__ALIGNBYTES)
+ 
+ #ifdef _KERNEL
+@@ -455,7 +454,7 @@ struct cmsgcred {
+ 	 NULL)
+ 
+ /* RFC 2292 additions */
+-	
++
+ #define	CMSG_SPACE(l)		(_CMSG_ALIGN(sizeof(struct cmsghdr)) + _CMSG_ALIGN(l))
+ #define	CMSG_LEN(l)		(_CMSG_ALIGN(sizeof(struct cmsghdr)) + (l))
+ 
+-- 
+2.23.0
+
