@@ -1,0 +1,471 @@
+diff --git a/contrib/wpa_supplicant/wpa_supplicant/scan.c b/contrib/wpa_supplicant/wpa_supplicant/scan.c
+index 436088f3f7..18d243ebd4 100644
+--- a/contrib/wpa_supplicant/wpa_supplicant/scan.c
++++ b/contrib/wpa_supplicant/wpa_supplicant/scan.c
+@@ -1410,9 +1410,7 @@ struct wpabuf * wpa_scan_get_vendor_ie_multi(const struct wpa_scan_res *res,
+ static int wpa_scan_result_compar(const void *a, const void *b)
+ {
+ #define IS_5GHZ(n) (n > 4000)
+-#ifndef __DragonFly__
+ #define MIN(a,b) a < b ? a : b
+-#endif
+ 	struct wpa_scan_res **_wa = (void *) a;
+ 	struct wpa_scan_res **_wb = (void *) b;
+ 	struct wpa_scan_res *wa = *_wa;
+@@ -1468,9 +1466,7 @@ static int wpa_scan_result_compar(const void *a, const void *b)
+ 	if (snr_b == snr_a)
+ 		return wb->qual - wa->qual;
+ 	return snr_b - snr_a;
+-#ifndef __DragonFly__
+ #undef MIN
+-#endif
+ #undef IS_5GHZ
+ }
+ 
+diff --git a/lib/libc/net/nscachedcli.c b/lib/libc/net/nscachedcli.c
+index bdbda718a6..c03f835d24 100644
+--- a/lib/libc/net/nscachedcli.c
++++ b/lib/libc/net/nscachedcli.c
+@@ -30,6 +30,7 @@
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <sys/event.h>
++#include <sys/time.h>
+ #include <sys/uio.h>
+ #include <sys/un.h>
+ #include <assert.h>
+diff --git a/lib/libfsid/ufs.c b/lib/libfsid/ufs.c
+index f83f8fc017..2d972078c7 100644
+--- a/lib/libfsid/ufs.c
++++ b/lib/libfsid/ufs.c
+@@ -34,6 +34,7 @@
+ 
+ #include "libfsid.h"
+ 
++#include <sys/param.h>
+ #include <vfs/ufs/ufs_types.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/fsid/fsid.c b/sbin/fsid/fsid.c
+index b3e700395b..462c11a031 100644
+--- a/sbin/fsid/fsid.c
++++ b/sbin/fsid/fsid.c
+@@ -31,6 +31,7 @@
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
++#include <sys/param.h>
+ #include <sys/stat.h>
+ #include <devattr.h>
+ #include <errno.h>
+diff --git a/sbin/restore/restore.h b/sbin/restore/restore.h
+index 4a68fe87b4..5063be1e43 100644
+--- a/sbin/restore/restore.h
++++ b/sbin/restore/restore.h
+@@ -34,6 +34,8 @@
+  * @(#)restore.h 8.3 (Berkeley) 9/13/94
+  */
+ 
++#include <sys/param.h>
++
+ /*
+  * Flags
+  */
+diff --git a/sys/cpu/x86_64/include/alignbytes.h b/sys/cpu/x86_64/include/alignbytes.h
+new file mode 100644
+index 0000000000..28b4c5164a
+--- /dev/null
++++ b/sys/cpu/x86_64/include/alignbytes.h
+@@ -0,0 +1,38 @@
++/*
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#ifndef _CPU_ALIGNBYTES_H_
++#define _CPU_ALIGNBYTES_H_
++
++/*
++ * __ALIGNPTR(p) rounds p (pointer or byte index) up to a correctly-aligned
++ * value for all data types (int, long, ...).   The result is an
++ * unsigned long and must be cast to any desired pointer type.
++ */
++#define __ALIGNBYTES	(sizeof(long) - 1)
++#define __ALIGNPTR(p)	(((unsigned long)(p) + __ALIGNBYTES) & ~__ALIGNBYTES)
++
++#endif /* !_CPU_ALIGNBYTES_H_ */
+diff --git a/sys/cpu/x86_64/include/param.h b/sys/cpu/x86_64/include/param.h
+index 54ecacdf12..03441227be 100644
+--- a/sys/cpu/x86_64/include/param.h
++++ b/sys/cpu/x86_64/include/param.h
+@@ -41,18 +41,6 @@
+  * Machine dependent constants for x86_64.
+  */
+ 
+-/*
+- * Round p (pointer or byte index) up to a correctly-aligned value
+- * for all data types (int, long, ...).   The result is unsigned int
+- * and must be cast to any desired pointer type.
+- */
+-#ifndef _ALIGNBYTES
+-#define _ALIGNBYTES	(sizeof(long) - 1)
+-#endif
+-#ifndef _ALIGN
+-#define _ALIGN(p)	(((unsigned long)(p) + _ALIGNBYTES) & ~_ALIGNBYTES)
+-#endif
+-
+ #ifndef _MACHINE
+ #define	_MACHINE	x86_64
+ #endif
+@@ -83,9 +71,6 @@
+ #define SMP_MAXCPU	256
+ #define MAXCPU		SMP_MAXCPU
+ 
+-#define ALIGNBYTES	_ALIGNBYTES
+-#define ALIGN(p)	_ALIGN(p)
+-
+ /* JG license? from fbsd/src/sys/amd64/include/param.h */
+ /* level 1 == page table */
+ #define	NPTEPGSHIFT	9		/* LOG2(NPTEPG) */
+diff --git a/sys/netinet/in_pcb.h b/sys/netinet/in_pcb.h
+index 85566812a8..31b44cbceb 100644
+--- a/sys/netinet/in_pcb.h
++++ b/sys/netinet/in_pcb.h
+@@ -345,8 +345,8 @@ struct inpcbinfo {		/* XXX documentation, prefixes */
+ #define	IN6P_RTHDR		0x100000 /* receive routing header */
+ #define	IN6P_RTHDRDSTOPTS	0x200000 /* receive dstoptions before rthdr */
+ #define IN6P_AUTOFLOWLABEL	0x800000 /* attach flowlabel automatically */
+-/* 
+- * RFC3542 Definition 
++/*
++ * RFC3542 Definition
+  */
+ #define	IN6P_TCLASS		0x400000 /* receive traffic class value */
+ #define	IN6P_RFC2292		0x40000000 /* used RFC2292 API on the socket */
+@@ -362,7 +362,7 @@ struct inpcbinfo {		/* XXX documentation, prefixes */
+ 				 IN6P_DSTOPTS|IN6P_RTHDR|IN6P_RTHDRDSTOPTS|\
+ 				 IN6P_TCLASS|IN6P_AUTOFLOWLABEL|IN6P_RFC2292|\
+ 				 IN6P_MTU)
+-				 
++
+ #define	INP_UNMAPPABLEOPTS	(IN6P_HOPOPTS|IN6P_DSTOPTS|IN6P_RTHDR|\
+ 				 IN6P_TCLASS|IN6P_AUTOFLOWLABEL)
+ 
+@@ -383,7 +383,7 @@ struct inpcbinfo {		/* XXX documentation, prefixes */
+ #define	sotoin6pcb(so)	sotoinpcb(so) /* for KAME src sync over BSD*'s */
+ 
+ /* macros for handling bitmap of ports not to allocate dynamically */
+-#define	DP_MAPBITS	(sizeof(u_int32_t) * NBBY)
++#define	DP_MAPBITS	(sizeof(u_int32_t) * __NBBY)
+ #define	DP_MAPSIZE	(howmany(65536, DP_MAPBITS))
+ #define	DP_SET(m, p)	((m)[(p) / DP_MAPBITS] |= (1 << ((p) % DP_MAPBITS)))
+ #define	DP_CLR(m, p)	((m)[(p) / DP_MAPBITS] &= ~(1 << ((p) % DP_MAPBITS)))
+diff --git a/sys/netinet6/ip6_mroute.h b/sys/netinet6/ip6_mroute.h
+index 8c562954bb..de2bb1c2c4 100644
+--- a/sys/netinet6/ip6_mroute.h
++++ b/sys/netinet6/ip6_mroute.h
+@@ -93,7 +93,7 @@ typedef u_short mifi_t;		/* type of a mif index */
+ #endif
+ 
+ typedef	u_int32_t	if_mask;
+-#define	NIFBITS	(sizeof(if_mask) * NBBY)	/* bits per mask */
++#define	NIFBITS	(sizeof(if_mask) * __NBBY)	/* bits per mask */
+ 
+ #ifndef howmany
+ #define	howmany(x, y)	(((x) + ((y) - 1)) / (y))
+diff --git a/sys/sys/malloc.h b/sys/sys/malloc.h
+index 30d8166b51..fd572256c6 100644
+--- a/sys/sys/malloc.h
++++ b/sys/sys/malloc.h
+@@ -59,7 +59,7 @@
+ #define	M_CACHEALIGN	0x4000	/* force CPU cache line alignment */
+ 
+ /*
+- * M_NOWAIT has to be a set of flags for equivalence to prior use. 
++ * M_NOWAIT has to be a set of flags for equivalence to prior use.
+  *
+  * M_SYSALLOC should be used for any critical infrastructure allocations
+  * made by the kernel proper.
+@@ -70,7 +70,7 @@
+  *
+  * NOTE ON DRAGONFLY USE OF M_NOWAIT.  In FreeBSD M_NOWAIT allocations
+  * almost always succeed.  In DragonFly, however, there is a good chance
+- * that an allocation will fail.  M_NOWAIT should only be used when 
++ * that an allocation will fail.  M_NOWAIT should only be used when
+  * allocations can fail without any serious detriment to the system.
+  *
+  * Note that allocations made from (preempted) interrupts will attempt to
+@@ -160,13 +160,6 @@ MALLOC_DECLARE(M_IP6NDP); /* for INET6 */
+ 
+ #define	MINALLOCSIZE	sizeof(void *)
+ 
+-/*
+- * XXX this should be declared in <sys/uio.h>, but that tends to fail
+- * because <sys/uio.h> is included in a header before the source file
+- * has a chance to include <sys/malloc.h> to get MALLOC_DECLARE() defined.
+- */
+-MALLOC_DECLARE(M_IOV);
+-
+ /* XXX struct malloc_type is unused for contig*(). */
+ size_t  kmem_lim_size(void);
+ void	contigfree(void *addr, unsigned long size, struct malloc_type *type)
+diff --git a/sys/sys/param.h b/sys/sys/param.h
+index f7e7018187..4cfdab0c43 100644
+--- a/sys/sys/param.h
++++ b/sys/sys/param.h
+@@ -257,6 +257,7 @@
+ #endif
+ 
+ /* Machine type dependent parameters. */
++#include <machine/alignbytes.h>
+ #include <machine/param.h>
+ #ifndef _KERNEL
+ #include <machine/limits.h>
+@@ -279,6 +280,7 @@
+ 
+ #define NZERO	0		/* default "nice" */
+ 
++#define NBBY	8		/* number of bits in a byte */
+ #define NBPW	sizeof(int)	/* number of bytes per word (integer) */
+ 
+ #define CMASK	022		/* default file mask: S_IWGRP|S_IWOTH */
+@@ -351,6 +353,21 @@
+ #define trunc_page64(x)           ((x) & ~(int64_t)PAGE_MASK)
+ #define round_page64(x)           (((x) + PAGE_MASK) & ~(int64_t)PAGE_MASK)
+ 
++/*
++ * Round p (pointer or byte index) up to a correctly-aligned value
++ * for all data types (int, long, ...).   The result is unsigned int
++ * and must be cast to any desired pointer type.  Single underscore
++ * versions are for FreeBSD/OpenBSD compat.
++ */
++#define _ALIGNBYTES	__ALIGNBYTES
++#define _ALIGN(p)	__ALIGNPTR(p)
++#ifndef ALIGNBYTES
++#define ALIGNBYTES	__ALIGNBYTES
++#endif
++#ifndef ALIGN
++#define ALIGN(p)	__ALIGNPTR(p)
++#endif
++
+ /* Macros for min/max. */
+ #define MIN(a,b) (((a)<(b))?(a):(b))
+ #define MAX(a,b) (((a)>(b))?(a):(b))
+@@ -392,7 +409,7 @@
+ 
+ #define dbtoc(db)			/* calculates devblks to pages */ \
+ 	((db + (ctodb(1) - 1)) >> (PAGE_SHIFT - DEV_BSHIFT))
+- 
++
+ #define ctodb(db)			/* calculates pages to devblks */ \
+ 	((db) << (PAGE_SHIFT - DEV_BSHIFT))
+ 
+diff --git a/sys/sys/socket.h b/sys/sys/socket.h
+index 2e721739f2..61faee2eb8 100644
+--- a/sys/sys/socket.h
++++ b/sys/sys/socket.h
+@@ -42,6 +42,7 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#include <machine/alignbytes.h>
+ #include <machine/stdint.h>
+ 
+ /*
+@@ -61,7 +62,6 @@ typedef __uint8_t	sa_family_t;
+ typedef __socklen_t	socklen_t;
+ #endif
+ 
+- 
+ /*
+  * Types
+  */
+@@ -219,7 +219,7 @@ struct sockproto {
+  * RFC 2553: protocol-independent placeholder for socket addresses
+  */
+ #define	_SS_MAXSIZE	128
+-#define	_SS_ALIGNSIZE	(sizeof(int64_t))
++#define	_SS_ALIGNSIZE	(sizeof(__int64_t))
+ #define	_SS_PAD1SIZE	(_SS_ALIGNSIZE - sizeof(unsigned char) - sizeof(sa_family_t))
+ #define	_SS_PAD2SIZE	(_SS_MAXSIZE - sizeof(unsigned char) - sizeof(sa_family_t) - \
+ 				_SS_PAD1SIZE - _SS_ALIGNSIZE)
+@@ -426,7 +426,6 @@ struct cmsgcred {
+ };
+ 
+ /* Alignment requirement for CMSG struct manipulation */
+-#define	__ALIGNBYTES		(sizeof(long) - 1) /* XXX -> cpu/cdefs.h? */
+ #define	_CMSG_ALIGN(n)		(((n) + __ALIGNBYTES) & ~__ALIGNBYTES)
+ 
+ #ifdef _KERNEL
+@@ -439,11 +438,11 @@ struct cmsgcred {
+ 
+ /* given pointer to struct cmsghdr, return pointer to next cmsghdr */
+ #define	CMSG_NXTHDR(mhdr, cmsg)	\
+-	(((caddr_t)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len) + \
++	(((char *)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len) + \
+ 	  _CMSG_ALIGN(sizeof(struct cmsghdr)) > \
+-	    (caddr_t)(mhdr)->msg_control + (mhdr)->msg_controllen) ? \
++	    (char *)(mhdr)->msg_control + (mhdr)->msg_controllen) ? \
+ 	    NULL : \
+-	    (struct cmsghdr *)((caddr_t)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len)))
++	    (struct cmsghdr *)((char *)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len)))
+ 
+ /*
+  * RFC 2292 requires to check msg_controllen, in case that the kernel returns
+@@ -455,7 +454,7 @@ struct cmsgcred {
+ 	 NULL)
+ 
+ /* RFC 2292 additions */
+-	
++
+ #define	CMSG_SPACE(l)		(_CMSG_ALIGN(sizeof(struct cmsghdr)) + _CMSG_ALIGN(l))
+ #define	CMSG_LEN(l)		(_CMSG_ALIGN(sizeof(struct cmsghdr)) + (l))
+ 
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index ce652cc6dd..da66b0f374 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -244,12 +244,8 @@ typedef	__timer_t	timer_t;
+ #endif
+ 
+ #if __BSD_VISIBLE
+-
+ #include <sys/_fd_set.h>
+ #include <sys/_timeval.h>
+-
+-#define	NBBY 8		/* number of bits in a byte */
+-
+ #endif /* __BSD_VISIBLE */
+ 
+ /*
+diff --git a/sys/sys/uio.h b/sys/sys/uio.h
+index aca9068b8e..8dd6fa1ea0 100644
+--- a/sys/sys/uio.h
++++ b/sys/sys/uio.h
+@@ -35,13 +35,19 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_iovec.h>
+-#if __BSD_VISIBLE
+-#include <sys/param.h>
+-#endif
+ #if defined(_KERNEL)
++#include <sys/_null.h>
++#include <sys/types.h>
+ #include <sys/malloc.h>		/* Needed to inline iovec_free(). */
+ #endif
+ 
++#ifdef __BSD_VISIBLE
++#ifndef _OFF_T_DECLARED
++typedef	__off_t		off_t;
++#define	_OFF_T_DECLARED
++#endif
++#endif
++
+ #ifndef _SSIZE_T_DECLARED
+ typedef	__ssize_t	ssize_t;
+ #define	_SSIZE_T_DECLARED
+@@ -56,7 +62,6 @@ enum uio_seg {
+ 	UIO_SYSSPACE,		/* from system space */
+ 	UIO_NOCOPY		/* don't copy, already in object */
+ };
+-#endif
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
+@@ -87,10 +92,12 @@ struct uio {
+ #define UIO_MAXIOV	1024		/* max 1K of iov's */
+ #define UIO_SMALLIOV	8		/* 8 on stack, else malloc */
+ 
+-#endif
++#endif /* _KERNEL) || _KERNEL_STRUCTURES */
+ 
+ #if defined(_KERNEL)
+ 
++MALLOC_DECLARE(M_IOV);		/* only if <sys/malloc.h> included above! */
++
+ struct vm_object;
+ struct vm_page;
+ 
+@@ -117,8 +124,10 @@ iovec_free(struct iovec **kiov, struct iovec *siov)
+ 	}
+ }
+ 
+-#else /* !_KERNEL */
++#endif /* _KERNEL */
++#endif /* __BSD_VISIBLE */
+ 
++#ifndef _KERNEL
+ __BEGIN_DECLS
+ ssize_t	readv(int, const struct iovec *, int);
+ ssize_t	writev(int, const struct iovec *, int);
+@@ -127,7 +136,6 @@ ssize_t	preadv(int, const struct iovec *, int, off_t);
+ ssize_t	pwritev(int, const struct iovec *, int, off_t);
+ #endif
+ __END_DECLS
+-
+-#endif /* _KERNEL */
++#endif /* !_KERNEL */
+ 
+ #endif /* !_SYS_UIO_H_ */
+diff --git a/tools/tools/toeplitz/toeplitz.c b/tools/tools/toeplitz/toeplitz.c
+index c3a941a9d5..cfb7cfd2a1 100644
+--- a/tools/tools/toeplitz/toeplitz.c
++++ b/tools/tools/toeplitz/toeplitz.c
+@@ -10,6 +10,10 @@
+ #include <string.h>
+ #include <unistd.h>
+ 
++#ifndef NBBY
++#define NBBY	__NBBY
++#endif
++
+ #define HASHMASK	0x7f
+ 
+ #define KEYLEN		40
+diff --git a/usr.bin/calendar/io.c b/usr.bin/calendar/io.c
+index 2a738c5059..d6fcd4cc1a 100644
+--- a/usr.bin/calendar/io.c
++++ b/usr.bin/calendar/io.c
+@@ -30,7 +30,7 @@
+  * @(#)calendar.c  8.3 (Berkeley) 3/25/94
+  * $FreeBSD: src/usr.bin/calendar/io.c,v 1.21 2007/06/09 05:54:13 grog Exp $
+  */
+-
++#include <sys/param.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
+diff --git a/usr.sbin/nscd/nscdcli.c b/usr.sbin/nscd/nscdcli.c
+index b04389f618..7047bb2519 100644
+--- a/usr.sbin/nscd/nscdcli.c
++++ b/usr.sbin/nscd/nscdcli.c
+@@ -36,6 +36,7 @@
+ #include <fcntl.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <time.h>
+ #include <unistd.h>
+ 
+ #include "debug.h"
