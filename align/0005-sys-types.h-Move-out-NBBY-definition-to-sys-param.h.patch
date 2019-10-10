@@ -1,0 +1,52 @@
+From e624525c3e4bfd9830efd05e6093dbfa770a9a7a Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 9 Oct 2019 13:38:16 +0300
+Subject: [PATCH 5/7] <sys/types.h>: Move out NBBY definition to <sys/param.h>.
+
+ It is a better place for it due to close proximity of macros using it.
+---
+ sys/sys/param.h | 3 ++-
+ sys/sys/types.h | 4 ----
+ 2 files changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/sys/sys/param.h b/sys/sys/param.h
+index 3923889f46..45bae7e0aa 100644
+--- a/sys/sys/param.h
++++ b/sys/sys/param.h
+@@ -280,6 +280,7 @@
+ 
+ #define NZERO	0		/* default "nice" */
+ 
++#define NBBY	8		/* number of bits in a byte */
+ #define NBPW	sizeof(int)	/* number of bytes per word (integer) */
+ 
+ #define CMASK	022		/* default file mask: S_IWGRP|S_IWOTH */
+@@ -408,7 +409,7 @@
+ 
+ #define dbtoc(db)			/* calculates devblks to pages */ \
+ 	((db + (ctodb(1) - 1)) >> (PAGE_SHIFT - DEV_BSHIFT))
+- 
++
+ #define ctodb(db)			/* calculates pages to devblks */ \
+ 	((db) << (PAGE_SHIFT - DEV_BSHIFT))
+ 
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index ce652cc6dd..da66b0f374 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -244,12 +244,8 @@ typedef	__timer_t	timer_t;
+ #endif
+ 
+ #if __BSD_VISIBLE
+-
+ #include <sys/_fd_set.h>
+ #include <sys/_timeval.h>
+-
+-#define	NBBY 8		/* number of bits in a byte */
+-
+ #endif /* __BSD_VISIBLE */
+ 
+ /*
+-- 
+2.23.0
+

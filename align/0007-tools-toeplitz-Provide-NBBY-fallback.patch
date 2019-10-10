@@ -1,0 +1,27 @@
+From 397e40a30e40d9aacb83141abe891719295657cb Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 9 Oct 2019 14:12:54 +0300
+Subject: [PATCH 7/7] tools/toeplitz: Provide NBBY fallback.
+
+---
+ tools/tools/toeplitz/toeplitz.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/tools/tools/toeplitz/toeplitz.c b/tools/tools/toeplitz/toeplitz.c
+index c3a941a9d5..cfb7cfd2a1 100644
+--- a/tools/tools/toeplitz/toeplitz.c
++++ b/tools/tools/toeplitz/toeplitz.c
+@@ -10,6 +10,10 @@
+ #include <string.h>
+ #include <unistd.h>
+ 
++#ifndef NBBY
++#define NBBY	__NBBY
++#endif
++
+ #define HASHMASK	0x7f
+ 
+ #define KEYLEN		40
+-- 
+2.23.0
+

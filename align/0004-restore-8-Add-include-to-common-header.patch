@@ -1,0 +1,26 @@
+From 9416eaf057893ae87b29f63a5a32a106b73b9c87 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 9 Oct 2019 13:37:50 +0300
+Subject: [PATCH 4/7] restore(8): Add include to common header.
+
+ Just like sbin/dump/dump.h explicitly include <sys/param.h>.
+---
+ sbin/restore/restore.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sbin/restore/restore.h b/sbin/restore/restore.h
+index 4a68fe87b4..5063be1e43 100644
+--- a/sbin/restore/restore.h
++++ b/sbin/restore/restore.h
+@@ -34,6 +34,8 @@
+  * @(#)restore.h 8.3 (Berkeley) 9/13/94
+  */
+ 
++#include <sys/param.h>
++
+ /*
+  * Flags
+  */
+-- 
+2.23.0
+

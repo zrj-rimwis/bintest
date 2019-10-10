@@ -1,7 +1,7 @@
-From 0d5ef606e52352ad030b18fac1f102667356f6ae Mon Sep 17 00:00:00 2001
+From 259152243fce5a9b18cd6a23e62e449d500a4234 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 9 Oct 2019 12:08:16 +0300
-Subject: [PATCH 2/3] Add <machine/alignbytes.h>.
+Subject: [PATCH 2/7] Add <machine/alignbytes.h>.
 
  Refactor ALIGN* macros to fix issue in <sys/socket.h> after the
  _CMSG_ALIGN() macro was adjusted to use ALIGNBYTES definition.

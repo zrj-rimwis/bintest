@@ -1,0 +1,64 @@
+From fa461f23cf8202c796beeb16ce343fcfc920a7ab Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 9 Oct 2019 13:44:35 +0300
+Subject: [PATCH 6/7] netinet: Prefer using __NBBY macro in publicly visible
+ headers.
+
+ The __NBBY macro variant is more widely visible through <sys/types.h>,
+ <sys/time.h> --> <sys/select.h> headers that include <sys/_fd_set.h>.
+
+ While there, minor whitespace cleanup.
+---
+ sys/netinet/in_pcb.h      | 8 ++++----
+ sys/netinet6/ip6_mroute.h | 2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/sys/netinet/in_pcb.h b/sys/netinet/in_pcb.h
+index 85566812a8..31b44cbceb 100644
+--- a/sys/netinet/in_pcb.h
++++ b/sys/netinet/in_pcb.h
+@@ -345,8 +345,8 @@ struct inpcbinfo {		/* XXX documentation, prefixes */
+ #define	IN6P_RTHDR		0x100000 /* receive routing header */
+ #define	IN6P_RTHDRDSTOPTS	0x200000 /* receive dstoptions before rthdr */
+ #define IN6P_AUTOFLOWLABEL	0x800000 /* attach flowlabel automatically */
+-/* 
+- * RFC3542 Definition 
++/*
++ * RFC3542 Definition
+  */
+ #define	IN6P_TCLASS		0x400000 /* receive traffic class value */
+ #define	IN6P_RFC2292		0x40000000 /* used RFC2292 API on the socket */
+@@ -362,7 +362,7 @@ struct inpcbinfo {		/* XXX documentation, prefixes */
+ 				 IN6P_DSTOPTS|IN6P_RTHDR|IN6P_RTHDRDSTOPTS|\
+ 				 IN6P_TCLASS|IN6P_AUTOFLOWLABEL|IN6P_RFC2292|\
+ 				 IN6P_MTU)
+-				 
++
+ #define	INP_UNMAPPABLEOPTS	(IN6P_HOPOPTS|IN6P_DSTOPTS|IN6P_RTHDR|\
+ 				 IN6P_TCLASS|IN6P_AUTOFLOWLABEL)
+ 
+@@ -383,7 +383,7 @@ struct inpcbinfo {		/* XXX documentation, prefixes */
+ #define	sotoin6pcb(so)	sotoinpcb(so) /* for KAME src sync over BSD*'s */
+ 
+ /* macros for handling bitmap of ports not to allocate dynamically */
+-#define	DP_MAPBITS	(sizeof(u_int32_t) * NBBY)
++#define	DP_MAPBITS	(sizeof(u_int32_t) * __NBBY)
+ #define	DP_MAPSIZE	(howmany(65536, DP_MAPBITS))
+ #define	DP_SET(m, p)	((m)[(p) / DP_MAPBITS] |= (1 << ((p) % DP_MAPBITS)))
+ #define	DP_CLR(m, p)	((m)[(p) / DP_MAPBITS] &= ~(1 << ((p) % DP_MAPBITS)))
+diff --git a/sys/netinet6/ip6_mroute.h b/sys/netinet6/ip6_mroute.h
+index 8c562954bb..de2bb1c2c4 100644
+--- a/sys/netinet6/ip6_mroute.h
++++ b/sys/netinet6/ip6_mroute.h
+@@ -93,7 +93,7 @@ typedef u_short mifi_t;		/* type of a mif index */
+ #endif
+ 
+ typedef	u_int32_t	if_mask;
+-#define	NIFBITS	(sizeof(if_mask) * NBBY)	/* bits per mask */
++#define	NIFBITS	(sizeof(if_mask) * __NBBY)	/* bits per mask */
+ 
+ #ifndef howmany
+ #define	howmany(x, y)	(((x) + ((y) - 1)) / (y))
+-- 
+2.23.0
+
