@@ -1,0 +1,25 @@
+From cd5f664b0e0431a9e275216bfabb57476a37e5dc Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 10 Oct 2019 16:51:29 +0300
+Subject: [PATCH 12/14] fsid(8): Add missing include for MAXPATHLEN.
+
+ For upcoming <sys/uio.h> cleanup.
+---
+ sbin/fsid/fsid.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sbin/fsid/fsid.c b/sbin/fsid/fsid.c
+index b3e700395b..462c11a031 100644
+--- a/sbin/fsid/fsid.c
++++ b/sbin/fsid/fsid.c
+@@ -31,6 +31,7 @@
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
++#include <sys/param.h>
+ #include <sys/stat.h>
+ #include <devattr.h>
+ #include <errno.h>
+-- 
+2.23.0
+

@@ -1,7 +1,7 @@
-From 9416eaf057893ae87b29f63a5a32a106b73b9c87 Mon Sep 17 00:00:00 2001
+From 06dc54111e3856e6097d272c9ebc64d113ec5ddf Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 9 Oct 2019 13:37:50 +0300
-Subject: [PATCH 4/7] restore(8): Add include to common header.
+Subject: [PATCH 03/14] restore(8): Add include to common header.
 
  Just like sbin/dump/dump.h explicitly include <sys/param.h>.
 ---

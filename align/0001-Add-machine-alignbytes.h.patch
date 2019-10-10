@@ -1,7 +1,7 @@
-From 259152243fce5a9b18cd6a23e62e449d500a4234 Mon Sep 17 00:00:00 2001
+From 3e14b83e4052000bf8886f59aee12021687f6ed6 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 9 Oct 2019 12:08:16 +0300
-Subject: [PATCH 2/7] Add <machine/alignbytes.h>.
+Subject: [PATCH 01/14] Add <machine/alignbytes.h>.
 
  Refactor ALIGN* macros to fix issue in <sys/socket.h> after the
  _CMSG_ALIGN() macro was adjusted to use ALIGNBYTES definition.
@@ -9,7 +9,7 @@ Subject: [PATCH 2/7] Add <machine/alignbytes.h>.
  * Use NetBSD variant of namespace friendly double underscore versions.
  * Instead of <machine/cdefs.h> put double underscore versions into self
    contained header to minimize header poisoning.
- * Provide __ALIGN() macro to avoid visibility issues with uintptr_t.
+ * Provide __ALIGNPTR() macro to avoid visibility issues with uintptr_t.
  * Move out single underscore versions from <machine/param.h>.  Keep them
    for OpenBSD compat that declares them in <ARCH/_types.h>.
  * Make non underscored versions user overridable (just like NetBSD).
@@ -29,7 +29,7 @@ In-discussion-with: swilder
 
 diff --git a/sys/cpu/x86_64/include/alignbytes.h b/sys/cpu/x86_64/include/alignbytes.h
 new file mode 100644
-index 0000000000..51ae7e0a53
+index 0000000000..28b4c5164a
 --- /dev/null
 +++ b/sys/cpu/x86_64/include/alignbytes.h
 @@ -0,0 +1,38 @@
@@ -63,12 +63,12 @@ index 0000000000..51ae7e0a53
 +#define _CPU_ALIGNBYTES_H_
 +
 +/*
-+ * __ALIGN(p) rounds p (pointer or byte index) up to a correctly-aligned
++ * __ALIGNPTR(p) rounds p (pointer or byte index) up to a correctly-aligned
 + * value for all data types (int, long, ...).   The result is an
 + * unsigned long and must be cast to any desired pointer type.
 + */
 +#define __ALIGNBYTES	(sizeof(long) - 1)
-+#define __ALIGN(p)	(((unsigned long)(p) + __ALIGNBYTES) & ~__ALIGNBYTES)
++#define __ALIGNPTR(p)	(((unsigned long)(p) + __ALIGNBYTES) & ~__ALIGNBYTES)
 +
 +#endif /* !_CPU_ALIGNBYTES_H_ */
 diff --git a/sys/cpu/x86_64/include/param.h b/sys/cpu/x86_64/include/param.h
@@ -105,7 +105,7 @@ index 54ecacdf12..03441227be 100644
  /* level 1 == page table */
  #define	NPTEPGSHIFT	9		/* LOG2(NPTEPG) */
 diff --git a/sys/sys/param.h b/sys/sys/param.h
-index f7e7018187..3923889f46 100644
+index f7e7018187..ac1a33882a 100644
 --- a/sys/sys/param.h
 +++ b/sys/sys/param.h
 @@ -257,6 +257,7 @@
@@ -127,12 +127,12 @@ index f7e7018187..3923889f46 100644
 + * versions are for FreeBSD/OpenBSD compat.
 + */
 +#define _ALIGNBYTES	__ALIGNBYTES
-+#define _ALIGN(p)	__ALIGN(p)
++#define _ALIGN(p)	__ALIGNPTR(p)
 +#ifndef ALIGNBYTES
 +#define ALIGNBYTES	__ALIGNBYTES
 +#endif
 +#ifndef ALIGN
-+#define ALIGN(p)	__ALIGN(p)
++#define ALIGN(p)	__ALIGNPTR(p)
 +#endif
 +
  /* Macros for min/max. */

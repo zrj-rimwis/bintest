@@ -1,0 +1,25 @@
+From 27bcfd501f37f8201eacf6196a59d6a6d668dbd4 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 10 Oct 2019 16:47:17 +0300
+Subject: [PATCH 09/14] nscd(8): Add missing include for timespec.
+
+ For upcoming <sys/uio.h> cleanup.
+---
+ usr.sbin/nscd/nscdcli.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/usr.sbin/nscd/nscdcli.c b/usr.sbin/nscd/nscdcli.c
+index b04389f618..7047bb2519 100644
+--- a/usr.sbin/nscd/nscdcli.c
++++ b/usr.sbin/nscd/nscdcli.c
+@@ -36,6 +36,7 @@
+ #include <fcntl.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <time.h>
+ #include <unistd.h>
+ 
+ #include "debug.h"
+-- 
+2.23.0
+

@@ -1,0 +1,97 @@
+From 637ea6459013817fb45cddbef7494567983a40e4 Mon Sep 17 00:00:00 2001
+From: Sascha Wildner <saw@online.de>
+Date: Thu, 10 Oct 2019 10:21:41 +0200
+Subject: [PATCH] <mqueue.h>: Cleanup namespace.
+
+---
+ include/mqueue.h         | 19 +++++++++++++------
+ sys/kern/makesyscalls.sh |  1 +
+ sys/sys/mqueue.h         |  2 ++
+ sys/sys/sysproto.h       |  1 +
+ sys/sys/types.h          |  1 -
+ 5 files changed, 17 insertions(+), 7 deletions(-)
+
+diff --git a/include/mqueue.h b/include/mqueue.h
+index bf2f32be49..3ff538f93d 100644
+--- a/include/mqueue.h
++++ b/include/mqueue.h
+@@ -29,14 +29,21 @@
+ #ifndef _MQUEUE_H_
+ #define _MQUEUE_H_
+ 
+-#include <fcntl.h>
+-#include <signal.h>
+-#include <time.h>
+-
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
+-
+ #include <sys/mqueue.h>
++#include <sys/_pthreadtypes.h>
++#include <sys/signal.h>
++#include <sys/_timespec.h>
++
++#ifndef _SIZE_T_DECLARED
++typedef	__size_t	size_t;
++#define	_SIZE_T_DECLARED
++#endif
++
++#ifndef _SSIZE_T_DECLARED
++typedef	__ssize_t	ssize_t;
++#define	_SSIZE_T_DECLARED
++#endif
+ 
+ __BEGIN_DECLS
+ int	mq_close(mqd_t);
+diff --git a/sys/kern/makesyscalls.sh b/sys/kern/makesyscalls.sh
+index ddd7e0afe6..debe226ae8 100644
+--- a/sys/kern/makesyscalls.sh
++++ b/sys/kern/makesyscalls.sh
+@@ -87,6 +87,7 @@ s/\$//g
+ 		printf "#include <sys/select.h>\n" > sysarg
+ 		printf "#include <sys/signal.h>\n" > sysarg
+ 		printf "#include <sys/acl.h>\n" > sysarg
++		printf "#include <sys/mqueue.h>\n" > sysarg
+ 		printf "#include <sys/msgport.h>\n" > sysarg
+ 		printf "#include <sys/sysmsg.h>\n" > sysarg
+ 		printf "#include <sys/procctl.h>\n\n" > sysarg
+diff --git a/sys/sys/mqueue.h b/sys/sys/mqueue.h
+index fe2333aa1f..8033f31056 100644
+--- a/sys/sys/mqueue.h
++++ b/sys/sys/mqueue.h
+@@ -35,6 +35,8 @@
+ /* Maximal priority of the message */
+ #define	MQ_PRIO_MAX		32
+ 
++typedef	int		mqd_t;		/* message queue descriptor */
++
+ struct mq_attr {
+ 	long	mq_flags;	/* Flags of message queue */
+ 	long	mq_maxmsg;	/* Maximum number of messages */
+diff --git a/sys/sys/sysproto.h b/sys/sys/sysproto.h
+index cb82d958be..01e8ff65cd 100644
+--- a/sys/sys/sysproto.h
++++ b/sys/sys/sysproto.h
+@@ -11,6 +11,7 @@
+ #include <sys/select.h>
+ #include <sys/signal.h>
+ #include <sys/acl.h>
++#include <sys/mqueue.h>
+ #include <sys/msgport.h>
+ #include <sys/sysmsg.h>
+ #include <sys/procctl.h>
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index ce652cc6dd..939b31dceb 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -136,7 +136,6 @@ typedef	__uint32_t	uid_t;		/* user id */
+ #define	_UID_T_DECLARED
+ #endif
+ typedef	__uint32_t	useconds_t;	/* microseconds (unsigned) */
+-typedef	int		mqd_t;		/* message queue descriptor */
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
+-- 
+2.23.0
+

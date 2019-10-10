@@ -1,0 +1,82 @@
+From 28d1deb072b3da74b082fac6852c12d2add49634 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 10 Oct 2019 17:58:05 +0300
+Subject: [PATCH 13/14] <sys/uio.h>: Cleanup namespace.
+
+ Put bigger part of this header under __BSD_VISIBLE, the "struct uio"
+ under _KERNEL needs "enum uio_rw" and "enum uio_seg" definitions.
+ Certain care is needed while handling this, lots of namespace issues.
+ The <sys/_null.h> is needed for sys/vfs/hammer/hammer_ondisk.c through
+ <sys/nlookup.h> that would benefit from separated uio enums.
+---
+ sys/sys/uio.h | 22 ++++++++++++++--------
+ 1 file changed, 14 insertions(+), 8 deletions(-)
+
+diff --git a/sys/sys/uio.h b/sys/sys/uio.h
+index aca9068b8e..46759e6dfc 100644
+--- a/sys/sys/uio.h
++++ b/sys/sys/uio.h
+@@ -35,13 +35,19 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_iovec.h>
+-#if __BSD_VISIBLE
+-#include <sys/param.h>
+-#endif
+ #if defined(_KERNEL)
++#include <sys/_null.h>
++#include <sys/types.h>
+ #include <sys/malloc.h>		/* Needed to inline iovec_free(). */
+ #endif
+ 
++#ifdef __BSD_VISIBLE
++#ifndef _OFF_T_DECLARED
++typedef	__off_t		off_t;
++#define	_OFF_T_DECLARED
++#endif
++#endif
++
+ #ifndef _SSIZE_T_DECLARED
+ typedef	__ssize_t	ssize_t;
+ #define	_SSIZE_T_DECLARED
+@@ -56,7 +62,6 @@ enum uio_seg {
+ 	UIO_SYSSPACE,		/* from system space */
+ 	UIO_NOCOPY		/* don't copy, already in object */
+ };
+-#endif
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
+@@ -87,7 +92,7 @@ struct uio {
+ #define UIO_MAXIOV	1024		/* max 1K of iov's */
+ #define UIO_SMALLIOV	8		/* 8 on stack, else malloc */
+ 
+-#endif
++#endif /* _KERNEL) || _KERNEL_STRUCTURES */
+ 
+ #if defined(_KERNEL)
+ 
+@@ -117,8 +122,10 @@ iovec_free(struct iovec **kiov, struct iovec *siov)
+ 	}
+ }
+ 
+-#else /* !_KERNEL */
++#endif /* _KERNEL */
++#endif /* __BSD_VISIBLE */
+ 
++#ifndef _KERNEL
+ __BEGIN_DECLS
+ ssize_t	readv(int, const struct iovec *, int);
+ ssize_t	writev(int, const struct iovec *, int);
+@@ -127,7 +134,6 @@ ssize_t	preadv(int, const struct iovec *, int, off_t);
+ ssize_t	pwritev(int, const struct iovec *, int, off_t);
+ #endif
+ __END_DECLS
+-
+-#endif /* _KERNEL */
++#endif /* !_KERNEL */
+ 
+ #endif /* !_SYS_UIO_H_ */
+-- 
+2.23.0
+

@@ -1,7 +1,7 @@
-From 397e40a30e40d9aacb83141abe891719295657cb Mon Sep 17 00:00:00 2001
+From a1b4b3677f91abcdf372aa9b05fd3749d8d72dea Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 9 Oct 2019 14:12:54 +0300
-Subject: [PATCH 7/7] tools/toeplitz: Provide NBBY fallback.
+Subject: [PATCH 06/14] tools/toeplitz: Provide NBBY fallback.
 
 ---
  tools/tools/toeplitz/toeplitz.c | 4 ++++

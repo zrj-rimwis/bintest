@@ -1,7 +1,8 @@
-From e624525c3e4bfd9830efd05e6093dbfa770a9a7a Mon Sep 17 00:00:00 2001
+From fcaffc00a67d9e02c10b3fb5140b4c0588136fe2 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 9 Oct 2019 13:38:16 +0300
-Subject: [PATCH 5/7] <sys/types.h>: Move out NBBY definition to <sys/param.h>.
+Subject: [PATCH 04/14] <sys/types.h>: Move out NBBY definition to
+ <sys/param.h>.
 
  It is a better place for it due to close proximity of macros using it.
 ---
@@ -10,7 +11,7 @@ Subject: [PATCH 5/7] <sys/types.h>: Move out NBBY definition to <sys/param.h>.
  2 files changed, 2 insertions(+), 5 deletions(-)
 
 diff --git a/sys/sys/param.h b/sys/sys/param.h
-index 3923889f46..45bae7e0aa 100644
+index ac1a33882a..4cfdab0c43 100644
 --- a/sys/sys/param.h
 +++ b/sys/sys/param.h
 @@ -280,6 +280,7 @@

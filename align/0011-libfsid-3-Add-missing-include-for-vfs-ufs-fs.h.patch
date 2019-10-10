@@ -1,0 +1,25 @@
+From 3efbd71bd5ee855bee4738faeb034bc8d7dfdde7 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 10 Oct 2019 16:49:09 +0300
+Subject: [PATCH 11/14] libfsid(3): Add missing include for <vfs/ufs/fs.h>.
+
+ For upcoming <sys/uio.h> cleanup.
+---
+ lib/libfsid/ufs.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/lib/libfsid/ufs.c b/lib/libfsid/ufs.c
+index f83f8fc017..2d972078c7 100644
+--- a/lib/libfsid/ufs.c
++++ b/lib/libfsid/ufs.c
+@@ -34,6 +34,7 @@
+ 
+ #include "libfsid.h"
+ 
++#include <sys/param.h>
+ #include <vfs/ufs/ufs_types.h>
+ #include <vfs/ufs/fs.h>
+ 
+-- 
+2.23.0
+

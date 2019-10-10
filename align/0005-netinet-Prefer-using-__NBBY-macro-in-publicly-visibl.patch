@@ -1,7 +1,7 @@
-From fa461f23cf8202c796beeb16ce343fcfc920a7ab Mon Sep 17 00:00:00 2001
+From dbee7c4860c3d3bae068a6e09cc3e0c0e41b30c3 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 9 Oct 2019 13:44:35 +0300
-Subject: [PATCH 6/7] netinet: Prefer using __NBBY macro in publicly visible
+Subject: [PATCH 05/14] netinet: Prefer using __NBBY macro in publicly visible
  headers.
 
  The __NBBY macro variant is more widely visible through <sys/types.h>,

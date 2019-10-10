@@ -1,0 +1,66 @@
+From b1d7ab203440e0fb9d339d6c8ea77affd8d234c6 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 10 Oct 2019 21:01:53 +0300
+Subject: [PATCH 14/14] kernel: Move M_IOV malloc definition to correct header.
+
+ It is possible because <sys/uio.h> already must include the
+ <sys/malloc.h> unconditionally for _KERNEL.
+
+ While there, minor nuke two trailing whitespaces.
+---
+ sys/sys/malloc.h | 11 ++---------
+ sys/sys/uio.h    |  2 ++
+ 2 files changed, 4 insertions(+), 9 deletions(-)
+
+diff --git a/sys/sys/malloc.h b/sys/sys/malloc.h
+index 30d8166b51..fd572256c6 100644
+--- a/sys/sys/malloc.h
++++ b/sys/sys/malloc.h
+@@ -59,7 +59,7 @@
+ #define	M_CACHEALIGN	0x4000	/* force CPU cache line alignment */
+ 
+ /*
+- * M_NOWAIT has to be a set of flags for equivalence to prior use. 
++ * M_NOWAIT has to be a set of flags for equivalence to prior use.
+  *
+  * M_SYSALLOC should be used for any critical infrastructure allocations
+  * made by the kernel proper.
+@@ -70,7 +70,7 @@
+  *
+  * NOTE ON DRAGONFLY USE OF M_NOWAIT.  In FreeBSD M_NOWAIT allocations
+  * almost always succeed.  In DragonFly, however, there is a good chance
+- * that an allocation will fail.  M_NOWAIT should only be used when 
++ * that an allocation will fail.  M_NOWAIT should only be used when
+  * allocations can fail without any serious detriment to the system.
+  *
+  * Note that allocations made from (preempted) interrupts will attempt to
+@@ -160,13 +160,6 @@ MALLOC_DECLARE(M_IP6NDP); /* for INET6 */
+ 
+ #define	MINALLOCSIZE	sizeof(void *)
+ 
+-/*
+- * XXX this should be declared in <sys/uio.h>, but that tends to fail
+- * because <sys/uio.h> is included in a header before the source file
+- * has a chance to include <sys/malloc.h> to get MALLOC_DECLARE() defined.
+- */
+-MALLOC_DECLARE(M_IOV);
+-
+ /* XXX struct malloc_type is unused for contig*(). */
+ size_t  kmem_lim_size(void);
+ void	contigfree(void *addr, unsigned long size, struct malloc_type *type)
+diff --git a/sys/sys/uio.h b/sys/sys/uio.h
+index 46759e6dfc..8dd6fa1ea0 100644
+--- a/sys/sys/uio.h
++++ b/sys/sys/uio.h
+@@ -96,6 +96,8 @@ struct uio {
+ 
+ #if defined(_KERNEL)
+ 
++MALLOC_DECLARE(M_IOV);		/* only if <sys/malloc.h> included above! */
++
+ struct vm_object;
+ struct vm_page;
+ 
+-- 
+2.23.0
+
