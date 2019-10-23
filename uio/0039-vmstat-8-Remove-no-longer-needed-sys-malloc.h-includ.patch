@@ -1,0 +1,30 @@
+From 4304bf9b0696d2ad67f458a050e00ea2557fc53e Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 23 Oct 2019 16:52:13 +0300
+Subject: [PATCH 39/39] vmstat(8): Remove no longer needed <sys/malloc.h>
+ include.
+
+ The <sys/objcache.h> now provides the "struct malloc_type" definition.
+ This leaves only two utilities in base userland that reference kernel
+ kmalloc() header:
+ * sbin/vinum through <dev/raid/vinum/vinumhdr.h>
+ * usr.bin/fstat through variuos <vfs/FS/FS.h> headers.
+---
+ usr.bin/vmstat/vmstat.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/usr.bin/vmstat/vmstat.c b/usr.bin/vmstat/vmstat.c
+index 06279f0a5c..2b4ab575f1 100644
+--- a/usr.bin/vmstat/vmstat.c
++++ b/usr.bin/vmstat/vmstat.c
+@@ -36,7 +36,6 @@
+ #include <sys/time.h>
+ #include <sys/uio.h>
+ #include <sys/namei.h>
+-#include <sys/malloc.h>
+ #include <sys/objcache.h>
+ #include <sys/signal.h>
+ #include <sys/fcntl.h>
+-- 
+2.23.0
+

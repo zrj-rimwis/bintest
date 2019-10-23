@@ -1,0 +1,88 @@
+From 191ffb84a09150ec3dcc483e0a6bcb3a25b21f74 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 20 Oct 2019 20:45:00 +0300
+Subject: [PATCH 16/39] <sys/objcache.h>: Remove dependency on <sys/malloc.h>.
+
+ Just use forward declaration.  Users of objcache include <sys/malloc.h>
+ already correctly.
+
+ While there, move <sys/objcache.h> inclusion in more correct place.
+---
+ sys/dev/acpica/Osd/OsdCache.c        |  2 ++
+ sys/dev/disk/iscsi/initiator/iscsi.c |  1 +
+ sys/sys/objcache.h                   | 13 ++++++-------
+ 3 files changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/sys/dev/acpica/Osd/OsdCache.c b/sys/dev/acpica/Osd/OsdCache.c
+index 9f8e6b5bb8..a11555c408 100644
+--- a/sys/dev/acpica/Osd/OsdCache.c
++++ b/sys/dev/acpica/Osd/OsdCache.c
+@@ -30,6 +30,8 @@
+  * SUCH DAMAGE.
+  */
+ 
++#include <sys/types.h>
++#include <sys/malloc.h>
+ #include <sys/objcache.h>
+ 
+ struct acpicache {
+diff --git a/sys/dev/disk/iscsi/initiator/iscsi.c b/sys/dev/disk/iscsi/initiator/iscsi.c
+index 868a6467fe..495933029d 100644
+--- a/sys/dev/disk/iscsi/initiator/iscsi.c
++++ b/sys/dev/disk/iscsi/initiator/iscsi.c
+@@ -56,6 +56,7 @@
+ #include <sys/mutex2.h>
+ #include <sys/devfs.h>
+ #include <sys/udev.h>
++#include <sys/objcache.h>
+ 
+ #include <bus/cam/cam.h>
+ #include <dev/disk/iscsi/initiator/iscsi.h>
+diff --git a/sys/sys/objcache.h b/sys/sys/objcache.h
+index 8f334ba3f0..53a31dee2f 100644
+--- a/sys/sys/objcache.h
++++ b/sys/sys/objcache.h
+@@ -38,9 +38,8 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
++
++struct malloc_type;
+ 
+ #define OC_MFLAGS	0x0000ffff	/* same as malloc flags */
+ 
+@@ -64,9 +63,9 @@ struct objcache
+ 			 objcache_alloc_fn *alloc, objcache_free_fn *free,
+ 			 void *allocator_args);
+ struct objcache
+-	*objcache_create_simple(malloc_type_t mtype, size_t objsize);
++	*objcache_create_simple(struct malloc_type *mtype, size_t objsize);
+ struct objcache
+-	*objcache_create_mbacked(malloc_type_t mtype, size_t objsize,
++	*objcache_create_mbacked(struct malloc_type *mtype, size_t objsize,
+ 			  int cluster_limit, int nom_cache,
+ 			  objcache_ctor_fn *ctor, objcache_dtor_fn *dtor,
+ 			  void *privdata);
+@@ -79,14 +78,14 @@ void	 objcache_populate_linear(struct objcache *oc, void *elts, int nelts,
+ __boolean_t objcache_reclaimlist(struct objcache *oc[], int nlist, int ocflags);
+ void	 objcache_destroy(struct objcache *oc);
+ 
+-#endif	/* !_KERNEL */
++#endif	/* _KERNEL */
+ 
+ /*
+  * Common underlying allocators.
+  */
+ struct objcache_malloc_args {
+ 	size_t		objsize;
+-	malloc_type_t	mtype;
++	struct malloc_type *mtype;
+ };
+ 
+ #ifdef	_KERNEL
+-- 
+2.23.0
+

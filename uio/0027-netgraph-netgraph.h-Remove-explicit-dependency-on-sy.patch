@@ -1,0 +1,297 @@
+From 60e85c9f34b66d5af6157c8bf6fdf696a3ff47c8 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 22 Oct 2019 14:09:47 +0300
+Subject: [PATCH 27/39] <netgraph/netgraph.h>: Remove explicit dependency on
+ <sys/malloc.h>.
+
+ Do the same for netgraph7.
+---
+ sys/netgraph/netgraph.h                       |  9 +++---
+ .../bluetooth/drivers/bt3c/ng_bt3c_pccard.c   |  1 +
+ .../bluetooth/drivers/h4/ng_h4_var.h          | 14 +++++----
+ sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h  | 16 +++++-----
+ sys/netgraph7/hub/ng_hub.c                    |  1 +
+ sys/netgraph7/netflow/netflow.c               |  1 +
+ sys/netgraph7/netflow/ng_netflow.c            |  1 +
+ sys/netgraph7/netgraph.h                      | 31 ++++++++++---------
+ 8 files changed, 41 insertions(+), 33 deletions(-)
+
+diff --git a/sys/netgraph/netgraph.h b/sys/netgraph/netgraph.h
+index 65a2ca8103..010d76b394 100644
+--- a/sys/netgraph/netgraph.h
++++ b/sys/netgraph/netgraph.h
+@@ -4,7 +4,7 @@
+  *
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -15,7 +15,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+@@ -46,9 +46,6 @@
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #ifndef _SYS_MODULE_H_
+ #include <sys/module.h>
+ #endif
+@@ -316,7 +313,9 @@ MODULE_DEPEND(ng_##typename, netgraph,	NG_ABI_VERSION,			\
+ 	NETGRAPH_INIT_ORDERED(tn, tp, SI_SUB_PSEUDO, SI_ORDER_ANY)
+ 
+ /* Special malloc() type for netgraph structs and ctrl messages */
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH);
++#endif
+ 
+ /* declare the base of the netgraph sysctl hierarchy */
+ /* but only if this file cares about sysctls */
+diff --git a/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c b/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c
+index 5d1eb0389f..57666da1ea 100644
+--- a/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c
++++ b/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c
+@@ -48,6 +48,7 @@
+ #include <sys/endian.h>
+ #include <sys/interrupt.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/module.h>
+ 
+diff --git a/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h b/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
+index fe8503707d..fa23d824a8 100644
+--- a/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
++++ b/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
+@@ -29,7 +29,7 @@
+  *
+  * $Id: ng_h4_var.h,v 1.5 2005/10/31 17:57:43 max Exp $
+  * $FreeBSD: head/sys/netgraph/bluetooth/drivers/h4/ng_h4_var.h 171818 2007-08-13 17:19:28Z emax $
+- * 
++ *
+  * Based on:
+  * ---------
+  *
+@@ -45,12 +45,14 @@
+  */
+ 
+ #ifndef NG_SEPARATE_MALLOC
++#if MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH_H4);
++#endif
+ #else
+ #define M_NETGRAPH_H4 M_NETGRAPH
+ #endif /* NG_SEPARATE_MALLOC */
+ 
+-/* 
++/*
+  * Debug
+  */
+ 
+@@ -61,8 +63,8 @@ MALLOC_DECLARE(M_NETGRAPH_H4);
+ 
+ #define NG_H4_HIWATER		256	/* High water mark on output */
+ 
+-/* 
+- * Per-node private info 
++/*
++ * Per-node private info
+  */
+ 
+ typedef struct ng_h4_info {
+@@ -71,7 +73,7 @@ typedef struct ng_h4_info {
+ 
+ 	ng_h4_node_debug_ep	 debug;	/* Debug level */
+ 	ng_h4_node_state_ep	 state;	/* State */
+-	
++
+ 	ng_h4_node_stat_ep	 stat;
+ #define NG_H4_STAT_PCKTS_SENT(s)	(s).pckts_sent ++
+ #define NG_H4_STAT_BYTES_SENT(s, n)	(s).bytes_sent += (n)
+@@ -86,7 +88,7 @@ typedef struct ng_h4_info {
+ #define	NG_H4_LOCK(sc)		crit_enter();
+ #define	NG_H4_UNLOCK(sc)	crit_exit();
+ 
+-#define NG_H4_IBUF_SIZE		1024	/* XXX must be big enough to hold full 
++#define NG_H4_IBUF_SIZE		1024	/* XXX must be big enough to hold full
+ 					   frame */
+ 	u_int8_t		 ibuf[NG_H4_IBUF_SIZE];	/* Incoming data */
+ 	u_int32_t		 got;	/* Number of bytes we have received */
+diff --git a/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h b/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
+index 84547164c9..88f22db5be 100644
+--- a/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
++++ b/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
+@@ -36,7 +36,9 @@
+ 
+ /* MALLOC decalation */
+ #ifdef NG_SEPARATE_MALLOC
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH_L2CAP);
++#endif
+ #else
+ #define M_NETGRAPH_L2CAP M_NETGRAPH
+ #endif /* NG_SEPARATE_MALLOC */
+@@ -59,16 +61,16 @@ MALLOC_DECLARE(M_NETGRAPH_L2CAP);
+ 
+ /*
+  * L2CAP signaling command ident's are assigned relative to the connection,
+- * because there is only one signaling channel (cid == 0x01) for every 
+- * connection. So up to 254 (0xff - 0x01) L2CAP commands can be pending at the 
++ * because there is only one signaling channel (cid == 0x01) for every
++ * connection. So up to 254 (0xff - 0x01) L2CAP commands can be pending at the
+  * same time for the same connection.
+  */
+ 
+-#define NG_L2CAP_NULL_IDENT	0x00        /* DO NOT USE THIS IDENT */ 
+-#define NG_L2CAP_FIRST_IDENT	0x01        /* dynamically alloc. (start) */ 
+-#define NG_L2CAP_LAST_IDENT	0xff        /* dynamically alloc. (end) */ 
++#define NG_L2CAP_NULL_IDENT	0x00        /* DO NOT USE THIS IDENT */
++#define NG_L2CAP_FIRST_IDENT	0x01        /* dynamically alloc. (start) */
++#define NG_L2CAP_LAST_IDENT	0xff        /* dynamically alloc. (end) */
+ 
+-/* 
++/*
+  * L2CAP (Node private)
+  */
+ 
+@@ -97,7 +99,7 @@ typedef struct ng_l2cap {
+ } ng_l2cap_t;
+ typedef ng_l2cap_t *			ng_l2cap_p;
+ 
+-/* 
++/*
+  * L2CAP connection descriptor
+  */
+ 
+diff --git a/sys/netgraph7/hub/ng_hub.c b/sys/netgraph7/hub/ng_hub.c
+index 3cce473132..230f176b97 100644
+--- a/sys/netgraph7/hub/ng_hub.c
++++ b/sys/netgraph7/hub/ng_hub.c
+@@ -29,6 +29,7 @@
+ #include <sys/param.h>
+ #include <sys/errno.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/systm.h>
+ 
+diff --git a/sys/netgraph7/netflow/netflow.c b/sys/netgraph7/netflow/netflow.c
+index aab37ec283..842e03d3e8 100644
+--- a/sys/netgraph7/netflow/netflow.c
++++ b/sys/netgraph7/netflow/netflow.c
+@@ -31,6 +31,7 @@
+ #include <sys/param.h>
+ #include <sys/kernel.h>
+ #include <sys/limits.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/syslog.h>
+ #include <sys/systm.h>
+diff --git a/sys/netgraph7/netflow/ng_netflow.c b/sys/netgraph7/netflow/ng_netflow.c
+index 7c1207d5ac..27d13be461 100644
+--- a/sys/netgraph7/netflow/ng_netflow.c
++++ b/sys/netgraph7/netflow/ng_netflow.c
+@@ -32,6 +32,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/limits.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/syslog.h>
+diff --git a/sys/netgraph7/netgraph.h b/sys/netgraph7/netgraph.h
+index 62810b1b15..48e70faada 100644
+--- a/sys/netgraph7/netgraph.h
++++ b/sys/netgraph7/netgraph.h
+@@ -5,7 +5,7 @@
+ /*-
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -16,7 +16,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+@@ -49,7 +49,6 @@
+ #endif
+ 
+ #include <sys/queue.h>
+-#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/mutex2.h>
+ #include <netgraph7/ng_message.h>	/* NG_HOOKSIZ, NG_NODESIZ */
+@@ -547,8 +546,8 @@ _ng_node_foreach_hook(node_p node, ng_fn_eachhook *fn, void *arg,
+ 	return (hook);
+ }
+ 
+-#define NG_NODE_NAME(node)		_ng_node_name(node, _NN_)	
+-#define NG_NODE_HAS_NAME(node)		_ng_node_has_name(node, _NN_)	
++#define NG_NODE_NAME(node)		_ng_node_name(node, _NN_)
++#define NG_NODE_HAS_NAME(node)		_ng_node_has_name(node, _NN_)
+ #define NG_NODE_ID(node)		_ng_node_id(node, _NN_)
+ #define NG_NODE_REF(node)		_ng_node_ref(node, _NN_)
+ #define	NG_NODE_UNREF(node)		_ng_node_unref(node, _NN_)
+@@ -568,19 +567,19 @@ _ng_node_foreach_hook(node_p node, ng_fn_eachhook *fn, void *arg,
+ 
+ #else	/* NETGRAPH_DEBUG */ /*----------------------------------------------*/
+ 
+-#define NG_NODE_NAME(node)		_NG_NODE_NAME(node)	
+-#define NG_NODE_HAS_NAME(node)		_NG_NODE_HAS_NAME(node)	
+-#define NG_NODE_ID(node)		_NG_NODE_ID(node)	
+-#define	NG_NODE_REF(node)		_NG_NODE_REF(node)	
+-#define	NG_NODE_UNREF(node)		_NG_NODE_UNREF(node)	
+-#define	NG_NODE_SET_PRIVATE(node, val)	_NG_NODE_SET_PRIVATE(node, val)	
+-#define	NG_NODE_PRIVATE(node)		_NG_NODE_PRIVATE(node)	
+-#define NG_NODE_IS_VALID(node)		_NG_NODE_IS_VALID(node)	
+-#define NG_NODE_NOT_VALID(node)		_NG_NODE_NOT_VALID(node)	
++#define NG_NODE_NAME(node)		_NG_NODE_NAME(node)
++#define NG_NODE_HAS_NAME(node)		_NG_NODE_HAS_NAME(node)
++#define NG_NODE_ID(node)		_NG_NODE_ID(node)
++#define	NG_NODE_REF(node)		_NG_NODE_REF(node)
++#define	NG_NODE_UNREF(node)		_NG_NODE_UNREF(node)
++#define	NG_NODE_SET_PRIVATE(node, val)	_NG_NODE_SET_PRIVATE(node, val)
++#define	NG_NODE_PRIVATE(node)		_NG_NODE_PRIVATE(node)
++#define NG_NODE_IS_VALID(node)		_NG_NODE_IS_VALID(node)
++#define NG_NODE_NOT_VALID(node)		_NG_NODE_NOT_VALID(node)
+ #define NG_NODE_FORCE_WRITER(node) 	_NG_NODE_FORCE_WRITER(node)
+ #define NG_NODE_HI_STACK(node) 		_NG_NODE_HI_STACK(node)
+ #define NG_NODE_REALLY_DIE(node) 	_NG_NODE_REALLY_DIE(node)
+-#define NG_NODE_NUMHOOKS(node)		_NG_NODE_NUMHOOKS(node)	
++#define NG_NODE_NUMHOOKS(node)		_NG_NODE_NUMHOOKS(node)
+ #define NG_NODE_REVIVE(node)		_NG_NODE_REVIVE(node)
+ #define NG_NODE_FOREACH_HOOK(node, fn, arg, rethook)			\
+ 		_NG_NODE_FOREACH_HOOK(node, fn, arg, rethook)
+@@ -1099,8 +1098,10 @@ MODULE_DEPEND(ng_##typename, netgraph,	NG_ABI_VERSION,			\
+ 
+ /* Special malloc() type for netgraph structs and ctrl messages */
+ /* Only these two types should be visible to nodes */
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH);
+ MALLOC_DECLARE(M_NETGRAPH_MSG);
++#endif
+ 
+ /* declare the base of the netgraph sysclt hierarchy */
+ /* but only if this file cares about sysctls */
+-- 
+2.23.0
+

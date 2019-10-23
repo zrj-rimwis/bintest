@@ -1,0 +1,180 @@
+From a28c38e5de9284cea7c57ee580068bc8527cb7f9 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 18 Oct 2019 16:23:12 +0300
+Subject: [PATCH 12/39] <sys/malloc.h>: Separate basic typedefs to _malloc.h
+ hearder.
+
+ This will be used to reduce <sys/globaldata.h> pollution through the
+ <sys/slaballoc.h> and will allow not to include <sys/malloc.h> for
+ almost every kernel source even if no memory allocations are done.
+
+ While there move MALLOC_DECLARE() macro too, it would help with malloc
+ type visibility from headers that define it and will allow finally to
+ sort most of the header includes alphabetically without side effects.
+---
+ sys/sys/_malloc.h | 83 +++++++++++++++++++++++++++++++++++++++++++++++
+ sys/sys/malloc.h  | 44 ++-----------------------
+ 2 files changed, 86 insertions(+), 41 deletions(-)
+ create mode 100644 sys/sys/_malloc.h
+
+diff --git a/sys/sys/_malloc.h b/sys/sys/_malloc.h
+new file mode 100644
+index 0000000000..e5cdb8a1b7
+--- /dev/null
++++ b/sys/sys/_malloc.h
+@@ -0,0 +1,83 @@
++/*
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
++ *
++ * This code is derived from software contributed to The DragonFly Project
++ * by Matthew Dillon <dillon@backplane.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#ifndef _SYS__MALLOC_H_
++#define	_SYS__MALLOC_H_
++
++/*
++ * Do not include this header outside _KERNEL or _KERNEL_STRUCTURES scopes.
++ * Used in <sys/user.h>.
++ */
++
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++#include <sys/cdefs.h>		/* for __cache_align */
++#include <machine/stdint.h>	/* for __* types */
++#include <machine/param.h>	/* for SMP_MAXCPU */
++
++/*
++ * The malloc tracking structure.  Note that per-cpu entries must be
++ * aggregated for accurate statistics, they do not actually break the
++ * stats down by cpu (e.g. the cpu freeing memory will subtract from
++ * its slot, not the originating cpu's slot).
++ *
++ * SMP_MAXCPU is used so modules which use malloc remain compatible
++ * between UP and SMP.
++ */
++struct kmalloc_use {
++	__size_t	memuse;
++	__size_t	inuse;
++	__int64_t	calls;	/* total packets of this type ever allocated */
++
++	/*
++	 * This value will be added to ks_loosememuse and resetted,
++	 * once it goes above certain threshold (ZoneSize).  This
++	 * is intended to reduce frequency of ks_loosememuse (global)
++	 * updates.
++	 */
++	__size_t	loosememuse;
++} __cachealign;
++
++struct malloc_type {
++	struct malloc_type *ks_next;	/* next in list */
++	__size_t	ks_loosememuse;	/* (inaccurate) aggregate memuse */
++	__size_t	ks_limit;	/* most that are allowed to exist */
++	struct kmalloc_use ks_use[SMP_MAXCPU];
++	__uint32_t	ks_magic;	/* if it's not magic, don't touch it */
++	const char	*ks_shortdesc;	/* short description */
++	__ssize_t	ks_reserved[4];	/* future use (module compatibility) */
++};
++
++typedef	struct malloc_type	*malloc_type_t;
++
++#define	MALLOC_DECLARE(type) \
++	extern struct malloc_type type[1]	/* placed here for portability */
++
++#endif
++
++#endif /* !_SYS__MALLOC_H_ */
+diff --git a/sys/sys/malloc.h b/sys/sys/malloc.h
+index fd572256c6..f06fe42bd8 100644
+--- a/sys/sys/malloc.h
++++ b/sys/sys/malloc.h
+@@ -40,10 +40,6 @@
+ #include <machine/types.h>	/* vm_paddr_t and __* types */
+ #endif
+ 
+-#ifndef _MACHINE_PARAM_H_
+-#include <machine/param.h>	/* for SMP_MAXCPU */
+-#endif
+-
+ /*
+  * flags to malloc.
+  */
+@@ -89,40 +85,9 @@
+ 
+ #define	M_MAGIC		877983977	/* time when first defined :-) */
+ 
+-/*
+- * The malloc tracking structure.  Note that per-cpu entries must be
+- * aggregated for accurate statistics, they do not actually break the
+- * stats down by cpu (e.g. the cpu freeing memory will subtract from
+- * its slot, not the originating cpu's slot).
+- *
+- * SMP_MAXCPU is used so modules which use malloc remain compatible
+- * between UP and SMP.
+- */
+-struct malloc_use {
+-	size_t	memuse;
+-	size_t	inuse;
+-	__int64_t calls;	/* total packets of this type ever allocated */
+-
+-	/*
+-	 * This value will be added to ks_loosememuse and resetted,
+-	 * once it goes above certain threshold (ZoneSize).  This
+-	 * is intended to reduce frequency of ks_loosememuse (global)
+-	 * updates.
+-	 */
+-	size_t	loosememuse;
+-} __cachealign;
+-
+-struct malloc_type {
+-	struct malloc_type *ks_next;	/* next in list */
+-	size_t	ks_loosememuse;		/* (inaccurate) aggregate memuse */
+-	size_t	ks_limit;	/* most that are allowed to exist */
+-	struct malloc_use  ks_use[SMP_MAXCPU];
+-	__uint32_t ks_magic;	/* if it's not magic, don't touch it */
+-	const char *ks_shortdesc;	/* short description */
+-	long	ks_reserved[4];	/* future use (module compatibility) */
+-};
+-
+-typedef struct malloc_type	*malloc_type_t;
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++#include <sys/_malloc.h>		/* struct malloc_type */
++#endif
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ #define	MALLOC_DEFINE(type, shortdesc, longdesc)			\
+@@ -142,9 +107,6 @@ typedef struct malloc_type	*malloc_type_t;
+ 	}
+ #endif
+ 
+-#define	MALLOC_DECLARE(type) \
+-	extern struct malloc_type type[1]
+-
+ #ifdef _KERNEL
+ 
+ MALLOC_DECLARE(M_CACHE);
+-- 
+2.23.0
+

@@ -1,0 +1,1004 @@
+From 7c2630660945fafe300252ccedd42da4d33eeaad Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 18 Oct 2019 11:46:47 +0300
+Subject: [PATCH 08/39] kernel: Clean <sys/uio.h> mess.
+
+ The iovec_free() inline very complicates this header inclusion.  The
+ NULL check is not always seen from <sys/_null.h>.  Luckily only three
+ kernel sources needs it: kern_subr.c, sys_generic.c and uipc_syscalls.c.
+ Also just a single dev/drm source makes use of 'struct uio'.
+ * Include <sys/uio.h> explicitly first in drm_fops.c to avoid kfree()
+   macro override in drm compat layer.
+ * Use <sys/_uio.h> where only enums and struct uio is needed, but ensure
+   that userland will not include it for possible later <sys/user.h> use.
+ * Stop using <sys/vnode.h> as shortcut for uiomove*() prototypes.  The
+   uiomove*() family functions possibly transfer data across kernel/user
+   space boundary.  This header presence explictly mark sources as such.
+ * Prefer to add <sys/uio.h> after <sys/systm.h>, but before <sys/proc.h>
+   and definitely before <sys/malloc.h> (except for 3 mentioned sources).
+   This will allow to remove <sys/malloc.h> from <sys/uio.h> later on.
+ * Adjust <sys/user.h> to use component headers instead of <sys/uio.h>.
+
+ While there, use oportunity for a minimal whitespace cleanup.
+
+ No functional differences observed in compiler intermediates.
+---
+ sys/bus/cam/scsi/scsi_target.c      | 1 +
+ sys/dev/disk/vn/vn.c                | 1 +
+ sys/dev/drm/drm_fops.c              | 2 ++
+ sys/dev/misc/nmdm/nmdm.c            | 1 +
+ sys/dev/misc/snp/snp.c              | 3 ++-
+ sys/dev/video/bktr/bktr_core.c      | 1 +
+ sys/gnu/vfs/ext2fs/ext2_lookup.c    | 1 +
+ sys/gnu/vfs/ext2fs/ext2_quota.c     | 1 +
+ sys/gnu/vfs/ext2fs/ext2_vnops.c     | 1 +
+ sys/kern/kern_fp.c                  | 1 +
+ sys/kern/kern_ktrace.c              | 1 +
+ sys/kern/kern_udev.c                | 1 +
+ sys/kern/kern_xio.c                 | 3 +--
+ sys/kern/subr_log.c                 | 1 +
+ sys/kern/sys_process.c              | 1 +
+ sys/kern/tty.c                      | 1 +
+ sys/kern/tty_pty.c                  | 1 +
+ sys/kern/vfs_cache.c                | 1 +
+ sys/kern/vfs_helper.c               | 2 +-
+ sys/kern/vfs_nlookup.c              | 1 +
+ sys/kern/vfs_subr.c                 | 1 +
+ sys/kern/vfs_vnops.c                | 1 +
+ sys/net/bpf.c                       | 5 +++--
+ sys/sys/file.h                      | 4 ++--
+ sys/sys/kern_syscall.h              | 2 +-
+ sys/sys/namei.h                     | 2 --
+ sys/sys/nlookup.h                   | 4 +---
+ sys/sys/user.h                      | 7 +++++--
+ sys/sys/vnode.h                     | 4 ++--
+ sys/sys/xio.h                       | 6 ++----
+ sys/vfs/hammer/hammer.h             | 1 +
+ sys/vfs/hpfs/hpfs_vnops.c           | 1 +
+ sys/vfs/isofs/cd9660/cd9660_vnops.c | 1 +
+ sys/vfs/msdosfs/msdosfs_vnops.c     | 1 +
+ sys/vfs/nfs/nfs_bio.c               | 1 +
+ sys/vfs/nfs/nfs_vnops.c             | 1 +
+ sys/vfs/ntfs/ntfs_subr.c            | 1 +
+ sys/vfs/ntfs/ntfs_vnops.c           | 1 +
+ sys/vfs/procfs/procfs_dbregs.c      | 4 ++--
+ sys/vfs/procfs/procfs_fpregs.c      | 4 ++--
+ sys/vfs/procfs/procfs_map.c         | 2 +-
+ sys/vfs/procfs/procfs_mem.c         | 1 +
+ sys/vfs/procfs/procfs_regs.c        | 4 ++--
+ sys/vfs/procfs/procfs_rlimit.c      | 4 ++--
+ sys/vfs/procfs/procfs_status.c      | 9 +++++----
+ sys/vfs/procfs/procfs_subr.c        | 3 ++-
+ sys/vfs/procfs/procfs_type.c        | 2 +-
+ sys/vfs/smbfs/smbfs_io.c            | 3 ++-
+ sys/vfs/smbfs/smbfs_vnops.c         | 1 +
+ sys/vfs/tmpfs/tmpfs_vnops.c         | 3 ++-
+ sys/vfs/udf/udf_vnops.c             | 5 +++--
+ sys/vfs/ufs/ffs_vnops.c             | 1 +
+ sys/vfs/ufs/ufs_quota.c             | 3 ++-
+ sys/vfs/ufs/ufs_vnops.c             | 1 +
+ sys/vm/vnode_pager.c                | 5 +++--
+ 55 files changed, 81 insertions(+), 44 deletions(-)
+
+diff --git a/sys/bus/cam/scsi/scsi_target.c b/sys/bus/cam/scsi/scsi_target.c
+index 6bdda19af7..613e8141cb 100644
+--- a/sys/bus/cam/scsi/scsi_target.c
++++ b/sys/bus/cam/scsi/scsi_target.c
+@@ -31,6 +31,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/conf.h>
+ #include <sys/device.h>
+diff --git a/sys/dev/disk/vn/vn.c b/sys/dev/disk/vn/vn.c
+index 11bca57c25..a43b88583a 100644
+--- a/sys/dev/disk/vn/vn.c
++++ b/sys/dev/disk/vn/vn.c
+@@ -55,6 +55,7 @@
+ #include "use_vn.h"
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+diff --git a/sys/dev/drm/drm_fops.c b/sys/dev/drm/drm_fops.c
+index 6a860cc761..8d649e4f07 100644
+--- a/sys/dev/drm/drm_fops.c
++++ b/sys/dev/drm/drm_fops.c
+@@ -34,6 +34,8 @@
+  * OTHER DEALINGS IN THE SOFTWARE.
+  */
+ 
++#include <sys/types.h>
++#include <sys/uio.h>	/* must come first to avoid kfree() macros issues */
+ #include <drm/drmP.h>
+ #include <linux/poll.h>
+ #include <linux/slab.h>
+diff --git a/sys/dev/misc/nmdm/nmdm.c b/sys/dev/misc/nmdm/nmdm.c
+index 7530b676a7..92811941ec 100644
+--- a/sys/dev/misc/nmdm/nmdm.c
++++ b/sys/dev/misc/nmdm/nmdm.c
+@@ -36,6 +36,7 @@
+  */
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+ #include <sys/tty.h>
+diff --git a/sys/dev/misc/snp/snp.c b/sys/dev/misc/snp/snp.c
+index 05b011d4c0..8c29e972fd 100644
+--- a/sys/dev/misc/snp/snp.c
++++ b/sys/dev/misc/snp/snp.c
+@@ -20,6 +20,7 @@
+ #include "use_snp.h"
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/filio.h>
+ #include <sys/malloc.h>
+ #include <sys/tty.h>
+@@ -474,7 +475,7 @@ snp_detach(struct snoop *snp)
+ 
+ detach_notty:
+ 	KNOTE(&snp->snp_kq.ki_note, 0);
+-	if ((snp->snp_flags & SNOOP_OPEN) == 0) 
++	if ((snp->snp_flags & SNOOP_OPEN) == 0)
+ 		kfree(snp, M_SNP);
+ 
+ 	return (0);
+diff --git a/sys/dev/video/bktr/bktr_core.c b/sys/dev/video/bktr/bktr_core.c
+index 99070f4d95..34d8c1f6ae 100644
+--- a/sys/dev/video/bktr/bktr_core.c
++++ b/sys/dev/video/bktr/bktr_core.c
+@@ -92,6 +92,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/lock.h>
+ #include <sys/proc.h>
+diff --git a/sys/gnu/vfs/ext2fs/ext2_lookup.c b/sys/gnu/vfs/ext2fs/ext2_lookup.c
+index df9829b769..1312fc1e41 100644
+--- a/sys/gnu/vfs/ext2fs/ext2_lookup.c
++++ b/sys/gnu/vfs/ext2fs/ext2_lookup.c
+@@ -44,6 +44,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/namei.h>
+ #include <sys/buf.h>
+ #include <sys/mount.h>
+diff --git a/sys/gnu/vfs/ext2fs/ext2_quota.c b/sys/gnu/vfs/ext2fs/ext2_quota.c
+index 2fc5e4ba13..7ac94ae371 100644
+--- a/sys/gnu/vfs/ext2fs/ext2_quota.c
++++ b/sys/gnu/vfs/ext2fs/ext2_quota.c
+@@ -35,6 +35,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/malloc.h>
+ #include <sys/fcntl.h>
+diff --git a/sys/gnu/vfs/ext2fs/ext2_vnops.c b/sys/gnu/vfs/ext2fs/ext2_vnops.c
+index 6db58421f2..5aa073ca6c 100644
+--- a/sys/gnu/vfs/ext2fs/ext2_vnops.c
++++ b/sys/gnu/vfs/ext2fs/ext2_vnops.c
+@@ -47,6 +47,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/resourcevar.h>
+ #include <sys/kernel.h>
+ #include <sys/stat.h>
+diff --git a/sys/kern/kern_fp.c b/sys/kern/kern_fp.c
+index 94b57b8058..198d3976fc 100644
+--- a/sys/kern/kern_fp.c
++++ b/sys/kern/kern_fp.c
+@@ -45,6 +45,7 @@
+ #include <sys/param.h>
+ #include <sys/kernel.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/malloc.h>
+ #include <sys/sysproto.h>
+ #include <sys/conf.h>
+diff --git a/sys/kern/kern_ktrace.c b/sys/kern/kern_ktrace.c
+index 7f9d1bb663..265eec7f2a 100644
+--- a/sys/kern/kern_ktrace.c
++++ b/sys/kern/kern_ktrace.c
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/sysproto.h>
+ #include <sys/kernel.h>
+ #include <sys/proc.h>
+diff --git a/sys/kern/kern_udev.c b/sys/kern/kern_udev.c
+index 2a069fdaa6..9aa239cedd 100644
+--- a/sys/kern/kern_udev.c
++++ b/sys/kern/kern_udev.c
+@@ -33,6 +33,7 @@
+  */
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/proc.h>
+ #include <sys/buf.h>
+diff --git a/sys/kern/kern_xio.c b/sys/kern/kern_xio.c
+index 9749ed2c73..b789dac4e2 100644
+--- a/sys/kern/kern_xio.c
++++ b/sys/kern/kern_xio.c
+@@ -30,8 +30,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+- * $DragonFly: src/sys/kern/kern_xio.c,v 1.16 2008/05/09 07:24:45 dillon Exp $
+  */
+ /*
+  * Kernel XIO interface.  An initialized XIO is basically a collection of
+@@ -49,6 +47,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/malloc.h>
+ #include <sys/proc.h>
+ #include <sys/vmmeter.h>
+diff --git a/sys/kern/subr_log.c b/sys/kern/subr_log.c
+index b6aa9e802f..060d5fe5de 100644
+--- a/sys/kern/subr_log.c
++++ b/sys/kern/subr_log.c
+@@ -36,6 +36,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/conf.h>
+ #include <sys/device.h>
+ #include <sys/proc.h>
+diff --git a/sys/kern/sys_process.c b/sys/kern/sys_process.c
+index 625aef1acf..fc5453f878 100644
+--- a/sys/kern/sys_process.c
++++ b/sys/kern/sys_process.c
+@@ -34,6 +34,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/sysproto.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+ #include <sys/vnode.h>
+diff --git a/sys/kern/tty.c b/sys/kern/tty.c
+index 6641b3ae44..5443f977ae 100644
+--- a/sys/kern/tty.c
++++ b/sys/kern/tty.c
+@@ -75,6 +75,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/filio.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+diff --git a/sys/kern/tty_pty.c b/sys/kern/tty_pty.c
+index 1cc6147ffa..787e4c1b97 100644
+--- a/sys/kern/tty_pty.c
++++ b/sys/kern/tty_pty.c
+@@ -44,6 +44,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+ #include <sys/tty.h>
+diff --git a/sys/kern/vfs_cache.c b/sys/kern/vfs_cache.c
+index d8a0af686a..b9f206e028 100644
+--- a/sys/kern/vfs_cache.c
++++ b/sys/kern/vfs_cache.c
+@@ -64,6 +64,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/sysctl.h>
+ #include <sys/mount.h>
+diff --git a/sys/kern/vfs_helper.c b/sys/kern/vfs_helper.c
+index f56d36f915..03dea506be 100644
+--- a/sys/kern/vfs_helper.c
++++ b/sys/kern/vfs_helper.c
+@@ -34,7 +34,6 @@
+  * SUCH DAMAGE.
+  *
+  * @(#)ufs_vnops.c	8.27 (Berkeley) 5/27/95
+- * $DragonFly: src/sys/kern/vfs_helper.c,v 1.5 2008/05/25 18:34:46 dillon Exp $
+  */
+ 
+ #include "opt_quota.h"
+@@ -42,6 +41,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/conf.h>
+ #include <sys/kernel.h>
+ #include <sys/fcntl.h>
+diff --git a/sys/kern/vfs_nlookup.c b/sys/kern/vfs_nlookup.c
+index 2b0b2ba402..597bb6ec24 100644
+--- a/sys/kern/vfs_nlookup.c
++++ b/sys/kern/vfs_nlookup.c
+@@ -53,6 +53,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/vnode.h>
+ #include <sys/mount.h>
+diff --git a/sys/kern/vfs_subr.c b/sys/kern/vfs_subr.c
+index 128aa0f1ad..0838473332 100644
+--- a/sys/kern/vfs_subr.c
++++ b/sys/kern/vfs_subr.c
+@@ -44,6 +44,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/buf.h>
+ #include <sys/conf.h>
+ #include <sys/dirent.h>
+diff --git a/sys/kern/vfs_vnops.c b/sys/kern/vfs_vnops.c
+index a614c4eb3e..dd75370303 100644
+--- a/sys/kern/vfs_vnops.c
++++ b/sys/kern/vfs_vnops.c
+@@ -37,6 +37,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/fcntl.h>
+ #include <sys/file.h>
+ #include <sys/stat.h>
+diff --git a/sys/net/bpf.c b/sys/net/bpf.c
+index b9ca2e84a2..df0c698cd3 100644
+--- a/sys/net/bpf.c
++++ b/sys/net/bpf.c
+@@ -40,6 +40,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/conf.h>
+ #include <sys/device.h>
+ #include <sys/malloc.h>
+@@ -728,7 +729,7 @@ bpfioctl(struct dev_ioctl_args *ap)
+ 		case BIOCGBLEN:
+ 		case BIOCFLUSH:
+ 		case BIOCGDLT:
+-		case BIOCGDLTLIST: 
++		case BIOCGDLTLIST:
+ 		case BIOCGETIF:
+ 		case BIOCGRTIMEOUT:
+ 		case BIOCGSTATS:
+@@ -811,7 +812,7 @@ bpfioctl(struct dev_ioctl_args *ap)
+ 	 */
+ 	case BIOCSETF:
+ 	case BIOCSETWF:
+-		error = bpf_setf(d, (struct bpf_program *)ap->a_data, 
++		error = bpf_setf(d, (struct bpf_program *)ap->a_data,
+ 			ap->a_cmd);
+ 		break;
+ 
+diff --git a/sys/sys/file.h b/sys/sys/file.h
+index f3b396492b..23dbe6a065 100644
+--- a/sys/sys/file.h
++++ b/sys/sys/file.h
+@@ -57,8 +57,8 @@
+ #ifndef _SYS_NAMECACHE_H_
+ #include <sys/namecache.h>
+ #endif
+-#ifndef _SYS_UIO_H_
+-#include <sys/uio.h>
++#ifndef _SYS__UIO_H_
++#include <sys/_uio.h>
+ #endif
+ 
+ struct stat;
+diff --git a/sys/sys/kern_syscall.h b/sys/sys/kern_syscall.h
+index a554a0da4e..b1f4ed3213 100644
+--- a/sys/sys/kern_syscall.h
++++ b/sys/sys/kern_syscall.h
+@@ -35,7 +35,7 @@
+ 
+ #include <sys/signal.h>
+ #include <sys/wait.h>
+-#include <sys/uio.h>
++#include <sys/_uio.h>
+ 
+ #define DUP_FIXED	0x1	/* Copy to specific fd even if in use */
+ #define DUP_VARIABLE	0x2	/* Copy fd to an unused fd */
+diff --git a/sys/sys/namei.h b/sys/sys/namei.h
+index 48ed178c60..2b62fd2a14 100644
+--- a/sys/sys/namei.h
++++ b/sys/sys/namei.h
+@@ -28,14 +28,12 @@
+  *
+  *	@(#)namei.h	8.5 (Berkeley) 1/9/95
+  * $FreeBSD: src/sys/sys/namei.h,v 1.29.2.2 2001/09/30 21:12:54 luigi Exp $
+- * $DragonFly: src/sys/sys/namei.h,v 1.15 2004/11/12 00:09:27 dillon Exp $
+  */
+ 
+ #ifndef _SYS_NAMEI_H_
+ #define	_SYS_NAMEI_H_
+ 
+ #include <sys/queue.h>
+-#include <sys/uio.h>
+ 
+ #ifdef _KERNEL
+ #ifndef _SYS_THREAD_H_
+diff --git a/sys/sys/nlookup.h b/sys/sys/nlookup.h
+index 1b07c6d87c..cef08da283 100644
+--- a/sys/sys/nlookup.h
++++ b/sys/sys/nlookup.h
+@@ -35,9 +35,6 @@
+ #ifndef _SYS_NLOOKUP_H_
+ #define	_SYS_NLOOKUP_H_
+ 
+-#ifndef _SYS_UIO_H_
+-#include <sys/uio.h>
+-#endif
+ #ifndef _SYS_NAMECACHE_H_
+ #include <sys/namecache.h>
+ #endif
+@@ -143,6 +140,7 @@ struct nlookupdata {
+ 				 NLC_READ | NLC_WRITE | NLC_EXEC | NLC_OWN)
+ 
+ #ifdef _KERNEL
++#include <sys/_uio.h>
+ 
+ int	naccess_va(struct vattr *va, int nflags, struct ucred *cred);
+ int	nlookup(struct nlookupdata *);
+diff --git a/sys/sys/user.h b/sys/sys/user.h
+index f34e5aa702..a123575f59 100644
+--- a/sys/sys/user.h
++++ b/sys/sys/user.h
+@@ -61,8 +61,11 @@
+ #ifndef _SYS_UCRED_H_
+ #include <sys/ucred.h>
+ #endif
+-#ifndef _SYS_UIO_H_
+-#include <sys/uio.h>
++#ifndef _SYS__IOVEC_H_
++#include <sys/_iovec.h>
++#endif
++#ifndef _SYS__UIO_H_
++#include <sys/_uio.h>
+ #endif
+ #ifndef _SYS_PROC_H_
+ #include <sys/proc.h>
+diff --git a/sys/sys/vnode.h b/sys/sys/vnode.h
+index 0ca5249444..81ee33e3e9 100644
+--- a/sys/sys/vnode.h
++++ b/sys/sys/vnode.h
+@@ -47,8 +47,8 @@
+ #ifndef _SYS_BIOTRACK_H_
+ #include <sys/biotrack.h>
+ #endif
+-#ifndef _SYS_UIO_H_
+-#include <sys/uio.h>
++#ifndef _SYS__UIO_H_
++#include <sys/_uio.h>
+ #endif
+ #ifndef _SYS_ACL_H_
+ #include <sys/acl.h>
+diff --git a/sys/sys/xio.h b/sys/sys/xio.h
+index 68fdf0c768..7f6212a4d6 100644
+--- a/sys/sys/xio.h
++++ b/sys/sys/xio.h
+@@ -30,8 +30,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+- * $DragonFly: src/sys/sys/xio.h,v 1.10 2007/08/13 17:20:05 dillon Exp $
+  */
+ 
+ /*
+@@ -55,8 +53,8 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
+-#ifndef _SYS_UIO_H_
+-#include <sys/uio.h>
++#ifndef _SYS__UIO_H_
++#include <sys/_uio.h>
+ #endif
+ #ifndef _SYS_MSGPORT_H_
+ #include <sys/msgport.h>
+diff --git a/sys/vfs/hammer/hammer.h b/sys/vfs/hammer/hammer.h
+index d6d975be9e..b8dc78d0b5 100644
+--- a/sys/vfs/hammer/hammer.h
++++ b/sys/vfs/hammer/hammer.h
+@@ -44,6 +44,7 @@
+ #ifdef _KERNEL
+ #include <sys/kernel.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #endif
+ #include <sys/conf.h>
+ #include <sys/tree.h>
+diff --git a/sys/vfs/hpfs/hpfs_vnops.c b/sys/vfs/hpfs/hpfs_vnops.c
+index 364b7b1505..4f059fb0a5 100644
+--- a/sys/vfs/hpfs/hpfs_vnops.c
++++ b/sys/vfs/hpfs/hpfs_vnops.c
+@@ -28,6 +28,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+diff --git a/sys/vfs/isofs/cd9660/cd9660_vnops.c b/sys/vfs/isofs/cd9660/cd9660_vnops.c
+index 70a33427c4..464fc342f8 100644
+--- a/sys/vfs/isofs/cd9660/cd9660_vnops.c
++++ b/sys/vfs/isofs/cd9660/cd9660_vnops.c
+@@ -37,6 +37,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/namei.h>
+ #include <sys/kernel.h>
+diff --git a/sys/vfs/msdosfs/msdosfs_vnops.c b/sys/vfs/msdosfs/msdosfs_vnops.c
+index 5b044badbd..26bd0e08c7 100644
+--- a/sys/vfs/msdosfs/msdosfs_vnops.c
++++ b/sys/vfs/msdosfs/msdosfs_vnops.c
+@@ -52,6 +52,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/resourcevar.h>	/* defines plimit structure in proc struct */
+ #include <sys/kernel.h>
+ #include <sys/stat.h>
+diff --git a/sys/vfs/nfs/nfs_bio.c b/sys/vfs/nfs/nfs_bio.c
+index ba9c7265de..2faea0e36e 100644
+--- a/sys/vfs/nfs/nfs_bio.c
++++ b/sys/vfs/nfs/nfs_bio.c
+@@ -36,6 +36,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/resourcevar.h>
+ #include <sys/signalvar.h>
+ #include <sys/proc.h>
+diff --git a/sys/vfs/nfs/nfs_vnops.c b/sys/vfs/nfs/nfs_vnops.c
+index 0065f3862e..a23e220a04 100644
+--- a/sys/vfs/nfs/nfs_vnops.c
++++ b/sys/vfs/nfs/nfs_vnops.c
+@@ -43,6 +43,7 @@
+ #include <sys/param.h>
+ #include <sys/kernel.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/resourcevar.h>
+ #include <sys/proc.h>
+ #include <sys/mount.h>
+diff --git a/sys/vfs/ntfs/ntfs_subr.c b/sys/vfs/ntfs/ntfs_subr.c
+index 662c64073a..fd5d5b1072 100644
+--- a/sys/vfs/ntfs/ntfs_subr.c
++++ b/sys/vfs/ntfs/ntfs_subr.c
+@@ -31,6 +31,7 @@
+ #include <sys/param.h>
+ #include <sys/types.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/namei.h>
+ #include <sys/kernel.h>
+diff --git a/sys/vfs/ntfs/ntfs_vnops.c b/sys/vfs/ntfs/ntfs_vnops.c
+index 12e8ac5206..ff47b19614 100644
+--- a/sys/vfs/ntfs/ntfs_vnops.c
++++ b/sys/vfs/ntfs/ntfs_vnops.c
+@@ -37,6 +37,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/time.h>
+ #include <sys/types.h>
+diff --git a/sys/vfs/procfs/procfs_dbregs.c b/sys/vfs/procfs/procfs_dbregs.c
+index d7f06ceb5f..f7c0f46da4 100644
+--- a/sys/vfs/procfs/procfs_dbregs.c
++++ b/sys/vfs/procfs/procfs_dbregs.c
+@@ -37,10 +37,10 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/miscfs/procfs/procfs_dbregs.c,v 1.4.2.3 2002/01/22 17:22:59 nectar Exp $
+- * $DragonFly: src/sys/vfs/procfs/procfs_dbregs.c,v 1.10 2007/02/19 01:14:24 corecode Exp $
+  */
+ 
+ #include <sys/param.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+ #include <sys/vnode.h>
+@@ -56,7 +56,7 @@ procfs_dodbregs(struct proc *curp, struct lwp *lp, struct pfsnode *pfs,
+ 	int error;
+ 	struct dbreg r;
+ 
+-	/* Can't trace a process that's currently exec'ing. */ 
++	/* Can't trace a process that's currently exec'ing. */
+ 	if ((p->p_flags & P_INEXEC) != 0)
+ 		return EAGAIN;
+ 	if (!CHECKIO(curp, p) || p_trespass(curp->p_ucred, p->p_ucred))
+diff --git a/sys/vfs/procfs/procfs_fpregs.c b/sys/vfs/procfs/procfs_fpregs.c
+index 6941e9143e..d6430b2073 100644
+--- a/sys/vfs/procfs/procfs_fpregs.c
++++ b/sys/vfs/procfs/procfs_fpregs.c
+@@ -34,10 +34,10 @@
+  *
+  * From:
+  * $FreeBSD: src/sys/miscfs/procfs/procfs_fpregs.c,v 1.11.2.3 2002/01/22 17:22:59 nectar Exp $
+- * $DragonFly: src/sys/vfs/procfs/procfs_fpregs.c,v 1.10 2007/02/19 01:14:24 corecode Exp $
+  */
+ 
+ #include <sys/param.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+ #include <sys/vnode.h>
+@@ -53,7 +53,7 @@ procfs_dofpregs(struct proc *curp, struct lwp *lp, struct pfsnode *pfs,
+ 	int error;
+ 	struct fpreg r;
+ 
+-	/* Can't trace a process that's currently exec'ing. */ 
++	/* Can't trace a process that's currently exec'ing. */
+ 	if ((p->p_flags & P_INEXEC) != 0)
+ 		return EAGAIN;
+ 	if (!CHECKIO(curp, p) || p_trespass(curp->p_ucred, p->p_ucred))
+diff --git a/sys/vfs/procfs/procfs_map.c b/sys/vfs/procfs/procfs_map.c
+index ef26bccf11..690458fb87 100644
+--- a/sys/vfs/procfs/procfs_map.c
++++ b/sys/vfs/procfs/procfs_map.c
+@@ -33,11 +33,11 @@
+  *	@(#)procfs_status.c	8.3 (Berkeley) 2/17/94
+  *
+  * $FreeBSD: src/sys/miscfs/procfs/procfs_map.c,v 1.24.2.1 2001/08/04 13:12:24 rwatson Exp $
+- * $DragonFly: src/sys/vfs/procfs/procfs_map.c,v 1.7 2007/02/19 01:14:24 corecode Exp $
+  */
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/vnode.h>
+ #include <sys/sbuf.h>
+diff --git a/sys/vfs/procfs/procfs_mem.c b/sys/vfs/procfs/procfs_mem.c
+index 1d28c57cae..7c4c10dd86 100644
+--- a/sys/vfs/procfs/procfs_mem.c
++++ b/sys/vfs/procfs/procfs_mem.c
+@@ -43,6 +43,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+ #include <sys/vnode.h>
+diff --git a/sys/vfs/procfs/procfs_regs.c b/sys/vfs/procfs/procfs_regs.c
+index e6485e4576..d50a03238b 100644
+--- a/sys/vfs/procfs/procfs_regs.c
++++ b/sys/vfs/procfs/procfs_regs.c
+@@ -34,10 +34,10 @@
+  *
+  * From:
+  * $FreeBSD: src/sys/miscfs/procfs/procfs_regs.c,v 1.10.2.3 2002/01/22 17:22:59 nectar Exp $
+- * $DragonFly: src/sys/vfs/procfs/procfs_regs.c,v 1.11 2007/02/19 01:14:24 corecode Exp $
+  */
+ 
+ #include <sys/param.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+ #include <sys/vnode.h>
+@@ -54,7 +54,7 @@ procfs_doregs(struct proc *curp, struct lwp *lp, struct pfsnode *pfs,
+ 	int error;
+ 	struct reg r;
+ 
+-	/* Can't trace a process that's currently exec'ing. */ 
++	/* Can't trace a process that's currently exec'ing. */
+ 	if ((p->p_flags & P_INEXEC) != 0)
+ 		return EAGAIN;
+ 	if (!CHECKIO(curp, p) || p_trespass(curp->p_ucred, p->p_ucred))
+diff --git a/sys/vfs/procfs/procfs_rlimit.c b/sys/vfs/procfs/procfs_rlimit.c
+index 49e579282a..539ea3772d 100644
+--- a/sys/vfs/procfs/procfs_rlimit.c
++++ b/sys/vfs/procfs/procfs_rlimit.c
+@@ -33,7 +33,6 @@
+  *	@(#)procfs_status.c	8.4 (Berkeley) 6/15/94
+  *
+  * $FreeBSD: src/sys/miscfs/procfs/procfs_rlimit.c,v 1.5 1999/12/08 08:59:37 phk Exp $
+- * $DragonFly: src/sys/vfs/procfs/procfs_rlimit.c,v 1.7 2007/02/19 01:14:24 corecode Exp $
+  */
+ 
+ /*
+@@ -44,6 +43,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/vnode.h>
+ #include <sys/resourcevar.h>
+@@ -76,7 +76,7 @@ procfs_dorlimit(struct proc *curp, struct lwp *lp, struct pfsnode *pfs,
+ 
+ 		ps += ksprintf(ps, "%s ", rlimit_ident[i]);
+ 
+-		/* 
++		/*
+ 		 * Replace RLIM_INFINITY with -1 in the string
+ 		 */
+ 
+diff --git a/sys/vfs/procfs/procfs_status.c b/sys/vfs/procfs/procfs_status.c
+index 8b9ec6e799..627ba6ca60 100644
+--- a/sys/vfs/procfs/procfs_status.c
++++ b/sys/vfs/procfs/procfs_status.c
+@@ -38,6 +38,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/malloc.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+@@ -84,7 +85,7 @@ procfs_dostatus(struct proc *curp, struct lwp *lp, struct pfsnode *pfs,
+ 	sess = p->p_pgrp->pg_session;
+ 	sid = sess->s_leader ? sess->s_leader->p_pid : 0;
+ 
+-/* comm pid ppid pgid sid maj,min ctty,sldr start ut st wmsg 
++/* comm pid ppid pgid sid maj,min ctty,sldr start ut st wmsg
+                                 euid ruid rgid,egid,groups[1 .. NGROUPS]
+ */
+ 	KASSERT(sizeof(psbuf) > MAXCOMLEN,
+@@ -144,13 +145,13 @@ procfs_dostatus(struct proc *curp, struct lwp *lp, struct pfsnode *pfs,
+ 
+ 	cr = p->p_ucred;
+ 
+-	ps += ksnprintf(ps, psbuf + sizeof(psbuf) - ps, " %lu %lu %lu", 
++	ps += ksnprintf(ps, psbuf + sizeof(psbuf) - ps, " %lu %lu %lu",
+ 		(u_long)cr->cr_uid,
+ 		(u_long)p->p_ucred->cr_ruid,
+ 		(u_long)p->p_ucred->cr_rgid);
+ 	DOCHECK();
+ 
+-	/* egid (p->p_ucred->cr_svgid) is equal to cr_ngroups[0] 
++	/* egid (p->p_ucred->cr_svgid) is equal to cr_ngroups[0]
+ 	   see also getegid(2) in /sys/kern/kern_prot.c */
+ 
+ 	for (i = 0; i < cr->cr_ngroups; i++) {
+@@ -191,7 +192,7 @@ procfs_docmdline(struct proc *curp, struct lwp *lp, struct pfsnode *pfs,
+ 
+ 	if (uio->uio_rw != UIO_READ)
+ 		return (EOPNOTSUPP);
+-	
++
+ 	/*
+ 	 * If we are using the ps/cmdline caching, use that.  Otherwise
+ 	 * revert back to the old way which only implements full cmdline
+diff --git a/sys/vfs/procfs/procfs_subr.c b/sys/vfs/procfs/procfs_subr.c
+index 3cbb063706..a911692e4a 100644
+--- a/sys/vfs/procfs/procfs_subr.c
++++ b/sys/vfs/procfs/procfs_subr.c
+@@ -38,6 +38,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/sysctl.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/mount.h>
+ #include <sys/vnode.h>
+@@ -77,7 +78,7 @@ MALLOC_DEFINE(M_PROCFS, "procfs", "procfs v_data");
+  * A single lock is kept for the entire list.  this is needed because the
+  * getnewvnode() function can block waiting for a vnode to become free,
+  * in which case there may be more than one process trying to get the same
+- * vnode.  this lock is only taken if we are going to call getnewvnode, 
++ * vnode.  this lock is only taken if we are going to call getnewvnode,
+  * since the kernel itself is single-threaded.
+  *
+  * If an entry is found on the list, then call vget() to take a reference
+diff --git a/sys/vfs/procfs/procfs_type.c b/sys/vfs/procfs/procfs_type.c
+index 9c4faea7fb..8c012a854c 100644
+--- a/sys/vfs/procfs/procfs_type.c
++++ b/sys/vfs/procfs/procfs_type.c
+@@ -31,11 +31,11 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/miscfs/procfs/procfs_type.c,v 1.6 1999/08/28 00:46:56 peter Exp $
+- * $DragonFly: src/sys/vfs/procfs/procfs_type.c,v 1.5 2007/02/19 01:14:24 corecode Exp $
+  */
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/proc.h>
+ #include <sys/sysent.h>
+ #include <sys/vnode.h>
+diff --git a/sys/vfs/smbfs/smbfs_io.c b/sys/vfs/smbfs/smbfs_io.c
+index fcee3de169..0c7887c626 100644
+--- a/sys/vfs/smbfs/smbfs_io.c
++++ b/sys/vfs/smbfs/smbfs_io.c
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/resourcevar.h>	/* defines plimit structure in proc struct */
+ #include <sys/kernel.h>
+ #include <sys/proc.h>
+@@ -493,7 +494,7 @@ smbfs_getpages(struct vop_getpages_args *ap)
+ 				      ~(DEV_BSIZE - 1);
+ 			vm_page_set_validclean(m, 0, nvalid);
+ 		}
+-		
++
+ 		if (i != ap->a_reqpage) {
+ 			/*
+ 			 * Whether or not to leave the page activated is up in
+diff --git a/sys/vfs/smbfs/smbfs_vnops.c b/sys/vfs/smbfs/smbfs_vnops.c
+index 20150067fb..dd08ef87e7 100644
+--- a/sys/vfs/smbfs/smbfs_vnops.c
++++ b/sys/vfs/smbfs/smbfs_vnops.c
+@@ -33,6 +33,7 @@
+  */
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+diff --git a/sys/vfs/tmpfs/tmpfs_vnops.c b/sys/vfs/tmpfs/tmpfs_vnops.c
+index 583d9994c1..1959223f5a 100644
+--- a/sys/vfs/tmpfs/tmpfs_vnops.c
++++ b/sys/vfs/tmpfs/tmpfs_vnops.c
+@@ -37,6 +37,7 @@
+ #include <sys/kernel.h>
+ #include <sys/kern_syscall.h>
+ #include <sys/param.h>
++#include <sys/uio.h>
+ #include <sys/fcntl.h>
+ #include <sys/lockf.h>
+ #include <sys/priv.h>
+@@ -1216,7 +1217,7 @@ tmpfs_nrename(struct vop_nrename_args *ap)
+ 	 */
+ 	if (fncp->nc_nlen != tncp->nc_nlen ||
+ 	    bcmp(fncp->nc_name, tncp->nc_name, fncp->nc_nlen) != 0) {
+-		newname = kmalloc(tncp->nc_nlen + 1, tmp->tm_name_zone, 
++		newname = kmalloc(tncp->nc_nlen + 1, tmp->tm_name_zone,
+ 				  M_WAITOK | M_NULLOK);
+ 		if (newname == NULL) {
+ 			error = ENOSPC;
+diff --git a/sys/vfs/udf/udf_vnops.c b/sys/vfs/udf/udf_vnops.c
+index 9bc6193d02..9c6a48c7ac 100644
+--- a/sys/vfs/udf/udf_vnops.c
++++ b/sys/vfs/udf/udf_vnops.c
+@@ -31,6 +31,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/namei.h>
+ #include <sys/kernel.h>
+ #include <sys/malloc.h>
+@@ -455,7 +456,7 @@ udf_cmpname(char *cs0string, char *cmpname, int cs0len, int cmplen, struct udf_m
+ 	int error = 0;
+ 
+ 	/* This is overkill, but not worth creating a new zone */
+-	
++
+ 	transname = kmalloc(NAME_MAX * sizeof(unicode_t), M_TEMP,
+ 			   M_WAITOK | M_ZERO);
+ 
+@@ -808,7 +809,7 @@ udf_strategy(struct vop_strategy_args *ap)
+ 		 * Files that are embedded in the fentry don't translate well
+ 		 * to a block number.  Reject.
+ 		 */
+-		if (udf_bmap_internal(node, 
++		if (udf_bmap_internal(node,
+ 				     bio->bio_offset,
+ 				     &dblkno, &maxsize)) {
+ 			clrbuf(bp);
+diff --git a/sys/vfs/ufs/ffs_vnops.c b/sys/vfs/ufs/ffs_vnops.c
+index 768f3d0c13..088a06ec98 100644
+--- a/sys/vfs/ufs/ffs_vnops.c
++++ b/sys/vfs/ufs/ffs_vnops.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/resourcevar.h>
+ #include <sys/signalvar.h>
+ #include <sys/kernel.h>
+diff --git a/sys/vfs/ufs/ufs_quota.c b/sys/vfs/ufs/ufs_quota.c
+index 513fc234cf..6d264b7916 100644
+--- a/sys/vfs/ufs/ufs_quota.c
++++ b/sys/vfs/ufs/ufs_quota.c
+@@ -35,6 +35,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/malloc.h>
+ #include <sys/fcntl.h>
+@@ -367,7 +368,7 @@ ufs_quotawarn(struct ufs_dquot *dq)
+ 		dqticks = ticks / hz;
+ 		uprintf("%s: warning, quota file expanded, quotacheck "
+ 			"was not run!\n",
+-			dq->dq_ump->um_mountp->mnt_stat.f_mntfromname); 
++			dq->dq_ump->um_mountp->mnt_stat.f_mntfromname);
+ 	}
+ }
+ 
+diff --git a/sys/vfs/ufs/ufs_vnops.c b/sys/vfs/ufs/ufs_vnops.c
+index e505c89665..4c054f09b4 100644
+--- a/sys/vfs/ufs/ufs_vnops.c
++++ b/sys/vfs/ufs/ufs_vnops.c
+@@ -41,6 +41,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/fcntl.h>
+ #include <sys/stat.h>
+diff --git a/sys/vm/vnode_pager.c b/sys/vm/vnode_pager.c
+index f479fe6bcb..c0169442c5 100644
+--- a/sys/vm/vnode_pager.c
++++ b/sys/vm/vnode_pager.c
+@@ -51,6 +51,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/proc.h>
+ #include <sys/vnode.h>
+@@ -574,7 +575,7 @@ vnode_pager_generic_getpages(struct vnode *vp, vm_page_t *mpp, int bytecount,
+ 
+ 	/*
+ 	 * Calculate the actual number of bytes read and clean up the
+-	 * page list.  
++	 * page list.
+ 	 */
+ 	bytecount -= auio.uio_resid;
+ 
+@@ -638,7 +639,7 @@ vnode_pager_putpages(vm_object_t object, vm_page_t *m, int count,
+ 	/*
+ 	 * Force synchronous operation if we are extremely low on memory
+ 	 * to prevent a low-memory deadlock.  VOP operations often need to
+-	 * allocate more memory to initiate the I/O ( i.e. do a BMAP 
++	 * allocate more memory to initiate the I/O ( i.e. do a BMAP
+ 	 * operation ).  The swapper handles the case by limiting the amount
+ 	 * of asynchronous I/O, but that sort of solution doesn't scale well
+ 	 * for the vnode pager without a lot of work.
+-- 
+2.23.0
+

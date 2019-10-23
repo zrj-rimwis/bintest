@@ -1,0 +1,277 @@
+From 3b0d1099dce4f4c64856af3d4a7feba6bc9a01f2 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 22 Oct 2019 19:32:14 +0300
+Subject: [PATCH 35/39] kernel: Mark last few sources that use
+ kmalloc()/kfree() directly.
+
+ While there, minor whitespace cleanup.
+---
+ sys/dev/netif/nfe/if_nfe.c                     | 11 ++++++-----
+ sys/kern/kern_uuid.c                           |  2 +-
+ sys/net/dummynet/ip_dummynet_glue.c            |  9 +++++----
+ sys/net/if_loop.c                              |  1 +
+ sys/net/pf/pf_norm.c                           | 11 ++++++-----
+ sys/net/pf/pf_osfp.c                           |  1 +
+ sys/netproto/802_11/wlan/ieee80211_dragonfly.c |  9 +++++----
+ sys/netproto/802_11/wlan/ieee80211_superg.c    | 11 ++++++-----
+ 8 files changed, 31 insertions(+), 24 deletions(-)
+
+diff --git a/sys/dev/netif/nfe/if_nfe.c b/sys/dev/netif/nfe/if_nfe.c
+index 5881b35791..71c6c51ffe 100644
+--- a/sys/dev/netif/nfe/if_nfe.c
++++ b/sys/dev/netif/nfe/if_nfe.c
+@@ -2,15 +2,15 @@
+ 
+ /*
+  * Copyright (c) 2006 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Sepherosa Ziehau <sepherosa@gmail.com> and
+  * Matthew Dillon <dillon@apollo.backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -20,7 +20,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -59,6 +59,7 @@
+ #include <sys/param.h>
+ #include <sys/endian.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/bus.h>
+ #include <sys/interrupt.h>
+ #include <sys/proc.h>
+@@ -1268,7 +1269,7 @@ nfe_encap(struct nfe_softc *sc, struct nfe_tx_ring *ring, struct mbuf *m0)
+ 	}
+ 
+ 	/*
+-	 * XXX urm. somebody is unaware of how hardware works.  You 
++	 * XXX urm. somebody is unaware of how hardware works.  You
+ 	 * absolutely CANNOT set NFE_TX_VALID on the next descriptor in
+ 	 * the ring until the entire chain is actually *VALID*.  Otherwise
+ 	 * the hardware may encounter a partially initialized chain that
+diff --git a/sys/kern/kern_uuid.c b/sys/kern/kern_uuid.c
+index 0901c96e97..52a1e5aecf 100644
+--- a/sys/kern/kern_uuid.c
++++ b/sys/kern/kern_uuid.c
+@@ -24,7 +24,6 @@
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/kern/kern_uuid.c,v 1.13 2007/04/23 12:53:00 pjd Exp $
+- * $DragonFly: src/sys/kern/kern_uuid.c,v 1.4 2007/06/19 06:07:57 dillon Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -33,6 +32,7 @@
+ #include <sys/kernel.h>
+ #include <sys/lock.h>
+ #include <sys/kern_syscall.h>
++#include <sys/malloc.h>
+ #include <sys/random.h>
+ #include <sys/sbuf.h>
+ #include <sys/socket.h>
+diff --git a/sys/net/dummynet/ip_dummynet_glue.c b/sys/net/dummynet/ip_dummynet_glue.c
+index d79f93ebe3..d240f4b08a 100644
+--- a/sys/net/dummynet/ip_dummynet_glue.c
++++ b/sys/net/dummynet/ip_dummynet_glue.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2007 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Sepherosa Ziehau <sepherosa@gmail.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/msgport.h>
+ #include <sys/socketvar.h>
+diff --git a/sys/net/if_loop.c b/sys/net/if_loop.c
+index 3db4488bbe..b38d27ba45 100644
+--- a/sys/net/if_loop.c
++++ b/sys/net/if_loop.c
+@@ -42,6 +42,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/lock.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/sockio.h>
+diff --git a/sys/net/pf/pf_norm.c b/sys/net/pf/pf_norm.c
+index 23033ee4df..1a29b2f4dc 100644
+--- a/sys/net/pf/pf_norm.c
++++ b/sys/net/pf/pf_norm.c
+@@ -35,6 +35,7 @@
+ #include <sys/mbuf.h>
+ #include <sys/filio.h>
+ #include <sys/fcntl.h>
++#include <sys/malloc.h>
+ #include <sys/socket.h>
+ #include <sys/kernel.h>
+ #include <sys/time.h>
+@@ -644,8 +645,8 @@ pf_fragcache(struct mbuf **m0, struct ip *h, struct pf_fragment **frag, int mff,
+ 				    (*m0)->m_pkthdr.len);
+ 				if (*m0 == NULL)
+ 					goto no_mem;
+-				KASSERT(((*m0)->m_next == NULL), 
+-				    ("(*m0)->m_next != NULL: %s", 
++				KASSERT(((*m0)->m_next == NULL),
++				    ("(*m0)->m_next != NULL: %s",
+ 				    __func__));
+ 				m_adj(m, precut + (h->ip_hl << 2));
+ 				m_cat(*m0, m);
+@@ -1390,7 +1391,7 @@ pf_normalize_tcp_init(struct mbuf *m, int off, struct pf_pdesc *pd,
+ 	u_int8_t hdr[60];
+ 	u_int8_t *opt;
+ 
+-	KASSERT((src->scrub == NULL), 
++	KASSERT((src->scrub == NULL),
+ 	    ("pf_normalize_tcp_init: src->scrub != NULL"));
+ 
+ 	src->scrub = kmalloc(sizeof(struct pf_state_scrub), M_PFSTATESCRUBPL,
+@@ -1489,7 +1490,7 @@ pf_normalize_tcp_stateful(struct mbuf *m, int off, struct pf_pdesc *pd,
+ 	int copyback = 0;
+ 	int got_ts = 0;
+ 
+-	KASSERT((src->scrub || dst->scrub), 
++	KASSERT((src->scrub || dst->scrub),
+ 	    ("pf_normalize_tcp_statefull: src->scrub && dst->scrub!"));
+ 
+ 	tsval = 0;	/* avoid gcc complaint */
+@@ -1644,7 +1645,7 @@ pf_normalize_tcp_stateful(struct mbuf *m, int off, struct pf_pdesc *pd,
+ 		 * measurement of RTT (round trip time) and PAWS
+ 		 * (protection against wrapped sequence numbers).  PAWS
+ 		 * gives us a set of rules for rejecting packets on
+-		 * long fat pipes (packets that were somehow delayed 
++		 * long fat pipes (packets that were somehow delayed
+ 		 * in transit longer than the time it took to send the
+ 		 * full TCP sequence space of 4Gb).  We can use these
+ 		 * rules and infer a few others that will let us treat
+diff --git a/sys/net/pf/pf_osfp.c b/sys/net/pf/pf_osfp.c
+index 56ba8872f5..15d333fd88 100644
+--- a/sys/net/pf/pf_osfp.c
++++ b/sys/net/pf/pf_osfp.c
+@@ -21,6 +21,7 @@
+ #include <sys/socket.h>
+ #ifdef _KERNEL
+ #include <sys/systm.h>
++#include <sys/malloc.h>
+ #endif /* _KERNEL */
+ #include <sys/mbuf.h>
+ 
+diff --git a/sys/netproto/802_11/wlan/ieee80211_dragonfly.c b/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
+index bc7e5325e2..0dfe630c2d 100644
+--- a/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
++++ b/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
+@@ -32,9 +32,10 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
+-#include <sys/systm.h> 
++#include <sys/systm.h>
+ #include <sys/linker.h>
+-#include <sys/mbuf.h>   
++#include <sys/malloc.h>
++#include <sys/mbuf.h>
+ #include <sys/module.h>
+ #include <sys/proc.h>
+ #include <sys/sysctl.h>
+@@ -69,7 +70,7 @@ SYSCTL_INT(_net_wlan, OID_AUTO, force_swcrypto, CTLFLAG_RW,
+ static int	wlan_clone_destroy(struct ifnet *);
+ static int	wlan_clone_create(struct if_clone *, int, caddr_t);
+ 
+-static struct if_clone wlan_cloner = 
++static struct if_clone wlan_cloner =
+ 	IF_CLONE_INITIALIZER("wlan", wlan_clone_create, wlan_clone_destroy,
+ 	    0, IF_MAXUNIT);
+ 
+@@ -261,7 +262,7 @@ ieee80211_get_rx_params(struct mbuf *m, struct ieee80211_rx_stats *rxs)
+ {
+ 	struct m_tag *mtag;
+ 	struct ieee80211_rx_params *rx;
+- 
++
+ 	mtag = m_tag_locate(m, MTAG_ABI_NET80211, NET80211_TAG_RECV_PARAMS,
+ 	    NULL);
+ 	if (mtag == NULL)
+diff --git a/sys/netproto/802_11/wlan/ieee80211_superg.c b/sys/netproto/802_11/wlan/ieee80211_superg.c
+index 8c86104e47..f5312b4396 100644
+--- a/sys/netproto/802_11/wlan/ieee80211_superg.c
++++ b/sys/netproto/802_11/wlan/ieee80211_superg.c
+@@ -31,13 +31,14 @@ __FBSDID("$FreeBSD$");
+ #ifdef	IEEE80211_SUPPORT_SUPERG
+ 
+ #include <sys/param.h>
+-#include <sys/systm.h> 
+-#include <sys/mbuf.h>   
++#include <sys/systm.h>
++#include <sys/malloc.h>
++#include <sys/mbuf.h>
+ #include <sys/kernel.h>
+ #include <sys/endian.h>
+ 
+ #include <sys/socket.h>
+- 
++
+ #include <net/if.h>
+ #include <net/if_var.h>
+ #include <net/if_llc.h>
+@@ -178,7 +179,7 @@ ieee80211_add_ath(uint8_t *frm, uint8_t caps, ieee80211_keyix defkeyix)
+ 		ath->ath_defkeyix[0] = 0xff;
+ 		ath->ath_defkeyix[1] = 0x7f;
+ 	}
+-	return frm + sizeof(info); 
++	return frm + sizeof(info);
+ }
+ #undef ATH_OUI_BYTES
+ 
+@@ -239,7 +240,7 @@ ieee80211_parse_athparams(struct ieee80211_node *ni, uint8_t *frm,
+ 		 */
+ 		newflags = curflags = vap->iv_ic->ic_bsschan->ic_flags;
+ 		/* NB: BOOST is not in ic_flags, so get it from the ie */
+-		if (ath->ath_capability & ATHEROS_CAP_BOOST) 
++		if (ath->ath_capability & ATHEROS_CAP_BOOST)
+ 			newflags |= IEEE80211_CHAN_TURBO;
+ 		else
+ 			newflags &= ~IEEE80211_CHAN_TURBO;
+-- 
+2.23.0
+

@@ -1,0 +1,103 @@
+From 7c61a158d77f4d66a90325d6da281d020cfe51a3 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 18 Oct 2019 13:58:45 +0300
+Subject: [PATCH 10/39] kernel: Move M_LWKTMSG declaration to <sys/msgport2.h>.
+
+ Including <sys/malloc.h> has side effects, its introduction in this
+ header was done in 6aad077d69b6a2d39405e25c987bb090ff78a724.
+ The msgport2.h is a better place for M_LWKTMSG since all users already
+ include this header directly or indirectly through <net/netmsg2.h>.
+
+ Also this moves <sys/malloc.h> inclusion after <sys/globaldata.h> down
+ the chain when including <sys/systm.h> (TBA later).
+
+ Fix a single case where malloc.h where not included before <sys/mount.h>
+ for M_MOUNT.
+---
+ sys/kern/vfs_quota.c |  1 +
+ sys/sys/msgport.h    | 12 ------------
+ sys/sys/msgport2.h   | 11 +++++++++--
+ 3 files changed, 10 insertions(+), 14 deletions(-)
+
+diff --git a/sys/kern/vfs_quota.c b/sys/kern/vfs_quota.c
+index e3b6f9b42d..ffb51d8772 100644
+--- a/sys/kern/vfs_quota.c
++++ b/sys/kern/vfs_quota.c
+@@ -31,6 +31,7 @@
+  */
+ 
+ #include <sys/sysctl.h>
++#include <sys/malloc.h>
+ #include <sys/mount.h>
+ #include <sys/systm.h>
+ #include <sys/nlookup.h>
+diff --git a/sys/sys/msgport.h b/sys/sys/msgport.h
+index d7591b30bd..9917555d56 100644
+--- a/sys/sys/msgport.h
++++ b/sys/sys/msgport.h
+@@ -17,14 +17,6 @@
+ #include <sys/spinlock.h>
+ #endif
+ 
+-#ifdef _KERNEL
+-
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+-
+-#endif
+-
+ struct lwkt_msg;
+ struct lwkt_port;
+ struct lwkt_serialize;
+@@ -112,10 +104,6 @@ typedef struct lwkt_msg {
+ #define MSG_CMD_SYSCALL	0x00030000
+ #define MSG_SUBCMD_MASK	0x0000FFFF
+ 
+-#ifdef _KERNEL
+-MALLOC_DECLARE(M_LWKTMSG);
+-#endif
+-
+ /*
+  * Notes on port processing requirements:
+  *
+diff --git a/sys/sys/msgport2.h b/sys/sys/msgport2.h
+index 9f63216b04..b5e2035cdd 100644
+--- a/sys/sys/msgport2.h
++++ b/sys/sys/msgport2.h
+@@ -11,7 +11,14 @@
+ #error "This file should not be included by userland programs."
+ #endif
+ 
++#ifndef _SYS_SYSTM_H_
+ #include <sys/systm.h>
++#endif
++#ifndef _SYS_MALLOC_H_
++#include <sys/malloc.h>
++#endif
++
++MALLOC_DECLARE(M_LWKTMSG);
+ 
+ /*
+  * Initialize a LWKT message structure.  Note that if the message supports
+@@ -42,7 +49,7 @@ lwkt_initmsg_abortable(lwkt_msg_t msg, lwkt_port_t rport, int flags,
+ static __inline
+ void
+ lwkt_replymsg(lwkt_msg_t msg, int error)
+-{   
++{
+     lwkt_port_t port;
+ 
+     msg->ms_error = error;
+@@ -54,7 +61,7 @@ lwkt_replymsg(lwkt_msg_t msg, int error)
+  * Retrieve the next message from the port's message queue, return NULL
+  * if no messages are pending.  The retrieved message will either be a
+  * request or a reply based on the MSGF_REPLY bit.
+- * 
++ *
+  * If the backend port is a thread port, the the calling thread MUST
+  * own the port.
+  */
+-- 
+2.23.0
+

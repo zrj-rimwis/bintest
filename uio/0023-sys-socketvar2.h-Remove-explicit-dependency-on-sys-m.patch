@@ -1,0 +1,181 @@
+From 0d75b6d8430a02c37622e5a337b801429b2fdd4e Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 21 Oct 2019 21:05:13 +0300
+Subject: [PATCH 23/39] <sys/socketvar2.h>: Remove explicit dependency on
+ <sys/malloc.h>.
+
+ Mark this header as kernel only.
+---
+ sys/kern/uipc_msg.c    | 11 ++++++-----
+ sys/net/raw_usrreq.c   |  3 ++-
+ sys/netbt/hci_socket.c | 11 ++++++-----
+ sys/sys/socketvar2.h   |  9 ++++++---
+ 4 files changed, 20 insertions(+), 14 deletions(-)
+
+diff --git a/sys/kern/uipc_msg.c b/sys/kern/uipc_msg.c
+index d2ef81db22..1931352912 100644
+--- a/sys/kern/uipc_msg.c
++++ b/sys/kern/uipc_msg.c
+@@ -1,10 +1,10 @@
+ /*
+  * Copyright (c) 2003, 2004 Jeffrey M. Hsu.  All rights reserved.
+  * Copyright (c) 2003, 2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Jeffrey M. Hsu.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -16,7 +16,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -34,6 +34,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/msgport.h>
+ #include <sys/protosw.h>
+ #include <sys/socket.h>
+@@ -569,7 +570,7 @@ so_pr_ctloutput(struct socket *so, struct sockopt *sopt)
+ }
+ 
+ struct lwkt_port *
+-so_pr_ctlport(struct protosw *pr, int cmd, struct sockaddr *arg, 
++so_pr_ctlport(struct protosw *pr, int cmd, struct sockaddr *arg,
+     void *extra, int *cpuid)
+ {
+ 	if (pr->pr_ctlport == NULL)
+@@ -715,7 +716,7 @@ netmsg_so_notify_doabort(lwkt_msg_t lmsg)
+ /*
+  * Predicate requests can be aborted.  This function is only called once
+  * and will interlock against processing/reply races (since such races
+- * occur on the same thread that controls the port where the abort is 
++ * occur on the same thread that controls the port where the abort is
+  * requeued).
+  *
+  * This part of the abort request occurs on the target cpu.  The message
+diff --git a/sys/net/raw_usrreq.c b/sys/net/raw_usrreq.c
+index 3945822baa..d4013c4bcd 100644
+--- a/sys/net/raw_usrreq.c
++++ b/sys/net/raw_usrreq.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+@@ -376,7 +377,7 @@ struct pr_usrreqs raw_usrreqs = {
+ 	.pru_connect = raw_uconnect,
+ 	.pru_connect2 = pr_generic_notsupp,
+ 	.pru_control = pr_generic_notsupp,
+-	.pru_detach = raw_udetach, 
++	.pru_detach = raw_udetach,
+ 	.pru_disconnect = raw_udisconnect,
+ 	.pru_listen = pr_generic_notsupp,
+ 	.pru_peeraddr = raw_upeeraddr,
+diff --git a/sys/netbt/hci_socket.c b/sys/netbt/hci_socket.c
+index bededfc096..a725ea5306 100644
+--- a/sys/netbt/hci_socket.c
++++ b/sys/netbt/hci_socket.c
+@@ -40,6 +40,7 @@
+ #include <sys/param.h>
+ #include <sys/domain.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+@@ -560,9 +561,9 @@ static void
+ hci_sdetach(netmsg_t msg)
+ {
+ 	struct socket *so = msg->detach.base.nm_so;
+-	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;	
++	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;
+ 	int error;
+-	
++
+ 	if (pcb == NULL) {
+ 		error = EINVAL;
+ 	} else {
+@@ -583,7 +584,7 @@ static void
+ hci_sdisconnect(netmsg_t msg)
+ {
+ 	struct socket *so = msg->disconnect.base.nm_so;
+-	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;	
++	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;
+ 	int error;
+ 
+ 	if (pcb) {
+@@ -751,7 +752,7 @@ hci_ssockaddr(netmsg_t msg)
+ 	struct sockaddr **nam = msg->sockaddr.nm_nam;
+ 	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;
+ 	struct sockaddr_bt *sa;
+-	
++
+ 	KKASSERT(nam != NULL);
+ 	sa = (struct sockaddr_bt *)nam;
+ 
+@@ -872,7 +873,7 @@ hci_ctloutput(netmsg_t msg)
+ 		case SO_HCI_EVT_FILTER:	/* set event filter */
+ 			error = soopt_to_kbuf(sopt, &pcb->hp_efilter,
+ 			    sizeof(struct hci_filter),
+-			    sizeof(struct hci_filter)); 
++			    sizeof(struct hci_filter));
+ 			break;
+ 
+ 		case SO_HCI_PKT_FILTER:	/* set packet filter */
+diff --git a/sys/sys/socketvar2.h b/sys/sys/socketvar2.h
+index 1104d5dba0..34c1dc1a2b 100644
+--- a/sys/sys/socketvar2.h
++++ b/sys/sys/socketvar2.h
+@@ -33,15 +33,16 @@
+ #ifndef _SYS_SOCKETVAR2_H_
+ #define _SYS_SOCKETVAR2_H_
+ 
++#ifndef _KERNEL
++#error "This file should not be included by userland programs."
++#endif
++
+ #ifndef _SYS_SOCKETVAR_H_
+ #include <sys/socketvar.h>
+ #endif
+ #ifndef _SYS_SYSTM_H_
+ #include <sys/systm.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #include <machine/atomic.h>
+ 
+ /*
+@@ -53,6 +54,7 @@
+  *
+  * Returns 0 on success, non-zero if the lock could not be acquired.
+  */
++#ifdef MALLOC_DEFINE
+ static __inline int
+ ssb_lock(struct signalsockbuf *ssb, int wf)
+ {
+@@ -72,6 +74,7 @@ ssb_lock(struct signalsockbuf *ssb, int wf)
+ 		}
+ 	}
+ }
++#endif
+ 
+ /*
+  * Release a previously acquired lock on a signalsockbuf.
+-- 
+2.23.0
+

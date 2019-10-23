@@ -1,0 +1,109 @@
+From 729ff77cc81217921d6933fe7d7154398216ba24 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 22 Oct 2019 19:18:56 +0300
+Subject: [PATCH 33/39] kernel/drm: Decouple from network headers.
+
+ This removes all <net*/*.h> headers (including <sys/mbuf.h>) from
+ dependency chain in all drm devices.  There is no need to use network
+ headers in drm compat layer.  Previously drm was using <net/if_var.h>
+ as a fallback to get <sys/malloc.h>.  Use kmalloc/kfree and M_* flags
+ in linux/gfp.h.  At this point no system headers should be including
+ <sys/malloc.h> except for disk and vfs headers for obvious reasons.
+
+ Later on even M_* flags could be moved into <sys/_malloc.h> for better
+ separation to linux/slab.h.
+---
+ sys/dev/drm/include/linux/gfp.h    |  1 +
+ sys/dev/drm/include/linux/list.h   | 18 ++++++++++++++----
+ sys/dev/drm/linux_kobject.c        |  1 +
+ sys/dev/video/vga/vga_switcheroo.c |  1 +
+ 4 files changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/sys/dev/drm/include/linux/gfp.h b/sys/dev/drm/include/linux/gfp.h
+index 0b7cb713af..ea935a2ff7 100644
+--- a/sys/dev/drm/include/linux/gfp.h
++++ b/sys/dev/drm/include/linux/gfp.h
+@@ -31,6 +31,7 @@
+ #include <linux/mmzone.h>
+ #include <linux/stddef.h>
+ 
++#include <sys/malloc.h>
+ #include <vm/vm_page.h>
+ #include <machine/bus_dma.h>
+ 
+diff --git a/sys/dev/drm/include/linux/list.h b/sys/dev/drm/include/linux/list.h
+index 31912da171..346b5e8f45 100644
+--- a/sys/dev/drm/include/linux/list.h
++++ b/sys/dev/drm/include/linux/list.h
+@@ -34,23 +34,32 @@
+  * Since LIST_HEAD conflicts with the linux definition we must include any
+  * FreeBSD header which requires it here so it is resolved with the correct
+  * definition prior to the undef.
++ *
++ * However on DragonFly we do not undef LIST_HEAD, no need to prepoison yet.
+  */
+ #include <linux/types.h>
+ #include <linux/stddef.h>
+ #include <linux/kernel.h>
+ 
++#include <sys/queue.h>
++
+ #include <sys/param.h>
++#include <sys/conf.h>	/* for struct cdev */
+ #include <sys/kernel.h>
+-#include <sys/queue.h>
+-#include <sys/jail.h>
+ #include <sys/lock.h>
++#include <sys/sysctl.h>
++#include <vm/vm_page.h>
++
+ #include <sys/mutex.h>
+ #include <sys/proc.h>
+-#include <sys/conf.h>
+ #include <sys/socket.h>
+-#include <sys/mbuf.h>
+ 
++#if 0
++/* XXX should not be in here */
++#include <sys/jail.h>
++#include <sys/mbuf.h>
+ #include <net/bpf.h>
++
+ #include <net/if.h>
+ #include <net/if_var.h>
+ #include <net/if_types.h>
+@@ -62,6 +71,7 @@
+ 
+ #include <netinet6/in6_var.h>
+ #include <netinet6/nd6.h>
++#endif
+ 
+ #include <vm/vm.h>
+ #include <vm/vm_object.h>
+diff --git a/sys/dev/drm/linux_kobject.c b/sys/dev/drm/linux_kobject.c
+index 2ff9278d91..ebe337d25e 100644
+--- a/sys/dev/drm/linux_kobject.c
++++ b/sys/dev/drm/linux_kobject.c
+@@ -24,6 +24,7 @@
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include <linux/gfp.h>
+ #include <linux/kobject.h>
+ 
+ extern char *drm_vasprintf(int flags, const char *format, va_list ap);
+diff --git a/sys/dev/video/vga/vga_switcheroo.c b/sys/dev/video/vga/vga_switcheroo.c
+index 467c9733d2..c9ec93c5ce 100644
+--- a/sys/dev/video/vga/vga_switcheroo.c
++++ b/sys/dev/video/vga/vga_switcheroo.c
+@@ -43,6 +43,7 @@
+ #include <sys/module.h>
+ #include <sys/proc.h>
+ #include <sys/types.h>
++#include <sys/sysctl.h>
+ #include <sys/systm.h>
+ #include <sys/device.h>
+ #include <sys/conf.h>
+-- 
+2.23.0
+

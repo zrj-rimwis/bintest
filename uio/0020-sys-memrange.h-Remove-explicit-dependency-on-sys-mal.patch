@@ -1,0 +1,89 @@
+From 89111617b14cce7723955609e47b6e77e3c2f714 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 21 Oct 2019 12:26:58 +0300
+Subject: [PATCH 20/39] <sys/memrange.h>: Remove explicit dependency on
+ <sys/malloc.h>.
+
+---
+ sys/platform/vkernel64/platform/cothread.c |  3 ++-
+ sys/sys/memrange.h                         | 17 +++++------------
+ 2 files changed, 7 insertions(+), 13 deletions(-)
+
+diff --git a/sys/platform/vkernel64/platform/cothread.c b/sys/platform/vkernel64/platform/cothread.c
+index 9c4a6c9e9a..1de97e81df 100644
+--- a/sys/platform/vkernel64/platform/cothread.c
++++ b/sys/platform/vkernel64/platform/cothread.c
+@@ -39,11 +39,12 @@
+  * 'mycpu' do not exist for it.
+  */
+ 
++#include <sys/types.h>
+ #include <sys/interrupt.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/memrange.h>
+ #include <sys/tls.h>
+-#include <sys/types.h>
+ #include <sys/bus.h>
+ #include <sys/thread2.h>
+ #include <time.h>
+diff --git a/sys/sys/memrange.h b/sys/sys/memrange.h
+index 86d9f7359c..c8548e3da9 100644
+--- a/sys/sys/memrange.h
++++ b/sys/sys/memrange.h
+@@ -3,7 +3,6 @@
+  * Memory range attribute operations, peformed on /dev/mem
+  *
+  * $FreeBSD: src/sys/sys/memrange.h,v 1.4.2.2 2002/09/16 21:58:37 dwmalone Exp $
+- * $DragonFly: src/sys/sys/memrange.h,v 1.4 2006/12/17 20:07:33 dillon Exp $
+  */
+ 
+ #ifndef _SYS_MEMRANGE_H_
+@@ -16,14 +15,6 @@
+ #include <sys/ioccom.h>
+ #endif
+ 
+-#ifdef _KERNEL
+-
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+-
+-#endif
+-
+ /* Memory range attributes */
+ #define MDF_UNCACHEABLE		(1<<0)	/* region not cached */
+ #define MDF_WRITECOMBINE	(1<<1)	/* region supports "write combine" action */
+@@ -64,19 +55,21 @@ struct mem_range_op
+ 
+ #ifdef _KERNEL
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_MEMDESC);
++#endif
+ 
+ struct mem_range_softc;
+ struct mem_range_ops
+ {
+ 	void	(*init)(struct mem_range_softc *sc);
+ 	int	(*set)(struct mem_range_softc *sc, struct mem_range_desc *mrd, int *arg);
+-    	void	(*initAP)(struct mem_range_softc *sc);
++	void	(*initAP)(struct mem_range_softc *sc);
+ 	void	(*set_iopl)(struct mem_range_softc *sc);
+ 	void	(*clr_iopl)(struct mem_range_softc *sc);
+ };
+ 
+-struct mem_range_softc 
++struct mem_range_softc
+ {
+ 	struct mem_range_ops	*mr_op;
+ 	int			mr_cap;
+@@ -93,4 +86,4 @@ extern int cpu_set_iopl(void);
+ extern int cpu_clr_iopl(void);
+ #endif
+ 
+-#endif
++#endif	/* !_SYS_MEMRANGE_H_ */
+-- 
+2.23.0
+

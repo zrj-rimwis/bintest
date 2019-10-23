@@ -1,0 +1,44 @@
+From 316273fdfae08da9ad0fead1d46a6397a56e7eb0 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 18 Oct 2019 09:45:09 +0300
+Subject: [PATCH 06/39] libdmsg: Forward declare struct iovec for public
+ prototypes.
+
+ This removes the need to include <sys/socket.h> or <sys/uio.h> to use
+ the <dmsg.h>.  The dmsg_crypto_encrypt() and dmsg_crypto_decrypt() are
+ used locally, maybe worth to internalize.
+
+ While there, remove not needed <sys/uio.h> inclusion from hammer2(8).
+---
+ lib/libdmsg/dmsg.h     | 2 ++
+ sbin/hammer2/hammer2.h | 1 -
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/lib/libdmsg/dmsg.h b/lib/libdmsg/dmsg.h
+index 7f0f1c634f..cc73a44fa0 100644
+--- a/lib/libdmsg/dmsg.h
++++ b/lib/libdmsg/dmsg.h
+@@ -360,6 +360,8 @@ struct dmsg_master_service_info {
+ 
+ typedef struct dmsg_master_service_info dmsg_master_service_info_t;
+ 
++struct iovec;	/* forward decl for dmsg_crypto_encrypt() prototype */
++
+ /*
+  * node callbacks
+  */
+diff --git a/sbin/hammer2/hammer2.h b/sbin/hammer2/hammer2.h
+index f771d5fd57..06639f5cef 100644
+--- a/sbin/hammer2/hammer2.h
++++ b/sbin/hammer2/hammer2.h
+@@ -40,7 +40,6 @@
+  * Rollup headers for hammer2 utility
+  */
+ #include <sys/types.h>
+-#include <sys/uio.h>
+ #include <sys/queue.h>
+ #include <sys/mount.h>
+ #include <sys/file.h>
+-- 
+2.23.0
+

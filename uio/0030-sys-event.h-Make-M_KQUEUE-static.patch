@@ -1,0 +1,88 @@
+From 1d2ea646a9ee3b5ca6f9dba1ca182f8bc2e75cad Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 22 Oct 2019 14:15:18 +0300
+Subject: [PATCH 30/39] <sys/event.h>: Make M_KQUEUE static.
+
+ Used in a single kernel source only.
+
+ While there, minor whitespace cleanup.
+---
+ sys/kern/kern_event.c | 10 +++++-----
+ sys/sys/event.h       |  5 -----
+ 2 files changed, 5 insertions(+), 10 deletions(-)
+
+diff --git a/sys/kern/kern_event.c b/sys/kern/kern_event.c
+index 021b4519e6..5861b5cbe7 100644
+--- a/sys/kern/kern_event.c
++++ b/sys/kern/kern_event.c
+@@ -30,7 +30,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/proc.h>
+-#include <sys/malloc.h> 
++#include <sys/malloc.h>
+ #include <sys/unistd.h>
+ #include <sys/file.h>
+ #include <sys/lock.h>
+@@ -59,7 +59,7 @@
+ #define EVENT_REGISTER	1
+ #define EVENT_PROCESS	2
+ 
+-MALLOC_DEFINE(M_KQUEUE, "kqueue", "memory for kqueue system");
++static MALLOC_DEFINE(M_KQUEUE, "kqueue", "memory for kqueue system");
+ 
+ struct kevent_copyin_args {
+ 	struct kevent_args	*ka;
+@@ -385,7 +385,7 @@ filt_proc(struct knote *kn, long hint)
+ 			kn->kn_ptr.p_proc = NULL;
+ 			PRELE(p);
+ 		}
+-		kn->kn_flags |= (EV_EOF | EV_NODATA | EV_ONESHOT); 
++		kn->kn_flags |= (EV_EOF | EV_NODATA | EV_ONESHOT);
+ 		return (1);
+ 	}
+ 
+@@ -472,7 +472,7 @@ filt_timerexpire(void *knx)
+ 
+ /*
+  * data contains amount of time to sleep, in milliseconds
+- */ 
++ */
+ static int
+ filt_timerattach(struct knote *kn)
+ {
+@@ -1294,7 +1294,7 @@ kqueue_register(struct kqueue *kq, struct kevent *kev, int *countp)
+ 		} else {
+ 			/*
+ 			 * The user may change some filter values after the
+-			 * initial EV_ADD, but doing so will not reset any 
++			 * initial EV_ADD, but doing so will not reset any
+ 			 * filter which have already been triggered.
+ 			 */
+ 			KKASSERT(kn->kn_status & KN_PROCESSING);
+diff --git a/sys/sys/event.h b/sys/sys/event.h
+index 71aa7e9ba1..ff82e134ca 100644
+--- a/sys/sys/event.h
++++ b/sys/sys/event.h
+@@ -24,7 +24,6 @@
+  * SUCH DAMAGE.
+  *
+  *	$FreeBSD: src/sys/sys/event.h,v 1.5.2.6 2003/02/09 15:28:13 nectar Exp $
+- *	$DragonFly: src/sys/sys/event.h,v 1.7 2007/01/15 01:26:56 dillon Exp $
+  */
+ 
+ #ifndef _SYS_EVENT_H_
+@@ -165,10 +164,6 @@ struct kqinfo {
+ 
+ #ifdef _KERNEL
+ 
+-#ifdef MALLOC_DECLARE
+-MALLOC_DECLARE(M_KQUEUE);
+-#endif
+-
+ #define KNOTE(list, hint)	if (!SLIST_EMPTY((list))) knote(list, hint)
+ 
+ /*
+-- 
+2.23.0
+

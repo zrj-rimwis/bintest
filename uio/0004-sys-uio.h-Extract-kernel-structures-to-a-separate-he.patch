@@ -1,0 +1,246 @@
+From 9c7dce9e56ad852a0b3cebd3407cca0324974246 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 17 Oct 2019 18:02:47 +0300
+Subject: [PATCH 04/39] <sys/uio.h>: Extract kernel structures to a separate
+ header.
+
+ The only userspace user of these bits is kdump(1) that already properly
+ defines _KERNEL_STRUCTURES before including system headers.
+ * Put ui_rw and ui_seg enums under _KERNEL_STRUCTURES.
+ * Adjust <sys/ktrace.h> for 'struct ktr_genio' visibility too.
+
+ Handling KTR_GENIO requires special knowledge (hidden members) and
+ kdump(1) is also a single userspace case using it. This does not affect
+ utilities like ktrace(1) and allows for further cleanups.
+---
+ lib/libc/sys/ktrace.2 |  7 ++--
+ lib/libc/sys/utrace.2 |  4 +--
+ sys/sys/_uio.h        | 76 +++++++++++++++++++++++++++++++++++++++++++
+ sys/sys/ktrace.h      |  7 ++--
+ sys/sys/uio.h         | 31 +-----------------
+ 5 files changed, 84 insertions(+), 41 deletions(-)
+ create mode 100644 sys/sys/_uio.h
+
+diff --git a/lib/libc/sys/ktrace.2 b/lib/libc/sys/ktrace.2
+index 8078de72dd..e9cabf15e6 100644
+--- a/lib/libc/sys/ktrace.2
++++ b/lib/libc/sys/ktrace.2
+@@ -27,9 +27,8 @@
+ .\"
+ .\"     @(#)ktrace.2	8.1 (Berkeley) 6/4/93
+ .\" $FreeBSD: src/lib/libc/sys/ktrace.2,v 1.9.2.7 2001/12/14 18:34:01 ru Exp $
+-.\" $DragonFly: src/lib/libc/sys/ktrace.2,v 1.4 2008/10/16 08:15:18 swildner Exp $
+ .\"
+-.Dd November 15, 2009
++.Dd November 20, 2019
+ .Dt KTRACE 2
+ .Os
+ .Sh NAME
+@@ -40,7 +39,6 @@
+ .Sh SYNOPSIS
+ .In sys/param.h
+ .In sys/time.h
+-.In sys/uio.h
+ .In sys/ktrace.h
+ .Ft int
+ .Fn ktrace "const char *tracefile" "int ops" "int trpoints" "int pid"
+@@ -137,7 +135,8 @@ include file.
+ .Sh RETURN VALUES
+ .Rv -std ktrace
+ .Sh ERRORS
+-.Fn Ktrace
++The
++.Fn ktrace
+ will fail if:
+ .Bl -tag -width Er
+ .It Bq Er ENOTDIR
+diff --git a/lib/libc/sys/utrace.2 b/lib/libc/sys/utrace.2
+index 35b796deb0..3d0eeb7b1c 100644
+--- a/lib/libc/sys/utrace.2
++++ b/lib/libc/sys/utrace.2
+@@ -34,9 +34,8 @@
+ .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ .\"
+ .\" $FreeBSD: src/lib/libc/sys/utrace.2,v 1.3 2004/07/03 23:14:34 ru Exp $
+-.\" $DragonFly: src/lib/libc/sys/utrace.2,v 1.1 2008/10/16 07:58:43 matthias Exp $
+ .\"
+-.Dd October 16, 2008
++.Dd November 20, 2019
+ .Dt UTRACE 2
+ .Os
+ .Sh NAME
+@@ -48,7 +47,6 @@
+ .In sys/types.h
+ .In sys/param.h
+ .In sys/time.h
+-.In sys/uio.h
+ .In sys/ktrace.h
+ .Ft int
+ .Fn utrace "const void *addr" "size_t len"
+diff --git a/sys/sys/_uio.h b/sys/sys/_uio.h
+new file mode 100644
+index 0000000000..9183312b00
+--- /dev/null
++++ b/sys/sys/_uio.h
+@@ -0,0 +1,76 @@
++/*
++ * Copyright (c) 1982, 1986, 1993, 1994
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)uio.h	8.5 (Berkeley) 2/22/94
++ */
++
++#ifndef _SYS__UIO_H_
++#define	_SYS__UIO_H_
++
++/*
++ * Do not include this header outside _KERNEL or _KERNEL_STRUCTURES scopes.
++ * Used in <sys/user.h>.
++ */
++
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++enum uio_rw {
++	UIO_READ,
++	UIO_WRITE
++};
++
++/* Segment flag values. */
++enum uio_seg {
++	UIO_USERSPACE,		/* from user data space */
++	UIO_SYSSPACE,		/* from system space */
++	UIO_NOCOPY		/* don't copy, already in object */
++};
++
++struct iovec;
++struct thread;
++
++/*
++ * uio_td is primarily used for USERSPACE transfers, but some devices
++ * like ttys may also use it to get at the process.
++ *
++ * NOTE: uio_resid: Previously used int and FreeBSD decided to use ssize_t,
++ *	 but after reviewing use cases and in particular the fact that the
++ *	 iov uses an unsigned quantity, DragonFly will use the (unsigned)
++ *	 size_t.
++ */
++struct uio {
++	struct	iovec *uio_iov;
++	int	uio_iovcnt;
++	off_t	uio_offset;
++	size_t	uio_resid;
++	enum	uio_seg uio_segflg;
++	enum	uio_rw uio_rw;
++	struct	thread *uio_td;
++};
++#endif /* _KERNEL || _KERNEL_STRUCTURES */
++
++#endif /* !_SYS__UIO_H_ */
+diff --git a/sys/sys/ktrace.h b/sys/sys/ktrace.h
+index c2a5a71b78..9658668aa0 100644
+--- a/sys/sys/ktrace.h
++++ b/sys/sys/ktrace.h
+@@ -28,7 +28,6 @@
+  *
+  *	@(#)ktrace.h	8.1 (Berkeley) 6/2/93
+  * $FreeBSD: src/sys/sys/ktrace.h,v 1.19.2.3 2001/01/06 09:58:23 alfred Exp $
+- * $DragonFly: src/sys/sys/ktrace.h,v 1.10 2008/04/14 12:01:53 dillon Exp $
+  */
+ 
+ #ifndef _SYS_KTRACE_H_
+@@ -40,9 +39,6 @@
+ #ifndef _SYS_TIME_H_
+ #include <sys/time.h>
+ #endif
+-#ifndef _SYS_UIO_H_
+-#include <sys/uio.h>
+-#endif
+ #ifndef _SYS_SIGNAL_H_
+ #include <sys/signal.h>
+ #endif
+@@ -135,6 +131,8 @@ struct ktr_sysret {
+  * KTR_GENIO - trace generic process i/o
+  */
+ #define KTR_GENIO	4
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++#include <sys/_uio.h>		/* enum uio_rw, struct uio */
+ struct ktr_genio {
+ 	int	ktr_fd;
+ 	enum	uio_rw ktr_rw;
+@@ -142,6 +140,7 @@ struct ktr_genio {
+ 	 * followed by data successfully read/written
+ 	 */
+ };
++#endif
+ 
+ /*
+  * KTR_PSIG - trace processed signal
+diff --git a/sys/sys/uio.h b/sys/sys/uio.h
+index 80d9950ae5..d7bff73935 100644
+--- a/sys/sys/uio.h
++++ b/sys/sys/uio.h
+@@ -54,37 +54,8 @@ typedef	__ssize_t	ssize_t;
+ #define	_SSIZE_T_DECLARED
+ #endif
+ 
+-#if __BSD_VISIBLE
+-enum	uio_rw { UIO_READ, UIO_WRITE };
+-
+-/* Segment flag values. */
+-enum uio_seg {
+-	UIO_USERSPACE,		/* from user data space */
+-	UIO_SYSSPACE,		/* from system space */
+-	UIO_NOCOPY		/* don't copy, already in object */
+-};
+-#endif
+-
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+-
+-/*
+- * uio_td is primarily used for USERSPACE transfers, but some devices
+- * like ttys may also use it to get at the process.
+- *
+- * NOTE: uio_resid: Previously used int and FreeBSD decided to use ssize_t,
+- *	 but after reviewing use cases and in particular the fact that the
+- *	 iov uses an unsigned quantity, DragonFly will use the (unsigned)
+- *	 size_t.
+- */
+-struct uio {
+-	struct	iovec *uio_iov;
+-	int	uio_iovcnt;
+-	off_t	uio_offset;
+-	size_t	uio_resid;
+-	enum	uio_seg uio_segflg;
+-	enum	uio_rw uio_rw;
+-	struct	thread *uio_td;
+-};
++#include <sys/_uio.h>			/* struct uio and enums */
+ 
+ /*
+  * Limits
+-- 
+2.23.0
+

@@ -1,0 +1,41 @@
+From 9226b7b2df2a48451caf0cd40583ecb4377e876a Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 22 Oct 2019 09:23:08 +0300
+Subject: [PATCH 25/39] <net/altq_var.h>: Remove explicit dependency on
+ <sys/malloc.h>.
+
+ All users correctly include <sys/malloc.h>.
+---
+ sys/net/altq/altq_var.h | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/sys/net/altq/altq_var.h b/sys/net/altq/altq_var.h
+index c97bba1840..8ed772347e 100644
+--- a/sys/net/altq/altq_var.h
++++ b/sys/net/altq/altq_var.h
+@@ -1,5 +1,4 @@
+ /*	$KAME: altq_var.h,v 1.17 2004/04/20 05:09:08 kjc Exp $	*/
+-/*	$DragonFly: src/sys/net/altq/altq_var.h,v 1.5 2008/05/14 11:59:23 sephe Exp $ */
+ 
+ /*
+  * Copyright (C) 1998-2003
+@@ -37,14 +36,13 @@
+ #ifndef _SYS_KERNEL_H_
+ #include <sys/kernel.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_ALTQ);
++#endif
+ 
+ /*
+  * machine dependent clock
+-- 
+2.23.0
+

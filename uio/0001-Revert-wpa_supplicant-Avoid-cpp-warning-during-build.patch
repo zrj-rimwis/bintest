@@ -1,0 +1,40 @@
+From 6bb369f8ae0b9f999f2a11b4bf20256fe411b1ab Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 17 Oct 2019 14:26:41 +0300
+Subject: [PATCH 01/39] Revert "wpa_supplicant: Avoid cpp warning during
+ buildworld."
+
+This reverts commit ddaf9f4ac09fd506d0ed3a635e1048beafae310c.
+
+Will no longer be needed after <sys/uio.h> namespace cleanup.
+---
+ contrib/wpa_supplicant/wpa_supplicant/scan.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/contrib/wpa_supplicant/wpa_supplicant/scan.c b/contrib/wpa_supplicant/wpa_supplicant/scan.c
+index 436088f3f7..18d243ebd4 100644
+--- a/contrib/wpa_supplicant/wpa_supplicant/scan.c
++++ b/contrib/wpa_supplicant/wpa_supplicant/scan.c
+@@ -1410,9 +1410,7 @@ struct wpabuf * wpa_scan_get_vendor_ie_multi(const struct wpa_scan_res *res,
+ static int wpa_scan_result_compar(const void *a, const void *b)
+ {
+ #define IS_5GHZ(n) (n > 4000)
+-#ifndef __DragonFly__
+ #define MIN(a,b) a < b ? a : b
+-#endif
+ 	struct wpa_scan_res **_wa = (void *) a;
+ 	struct wpa_scan_res **_wb = (void *) b;
+ 	struct wpa_scan_res *wa = *_wa;
+@@ -1468,9 +1466,7 @@ static int wpa_scan_result_compar(const void *a, const void *b)
+ 	if (snr_b == snr_a)
+ 		return wb->qual - wa->qual;
+ 	return snr_b - snr_a;
+-#ifndef __DragonFly__
+ #undef MIN
+-#endif
+ #undef IS_5GHZ
+ }
+ 
+-- 
+2.23.0
+

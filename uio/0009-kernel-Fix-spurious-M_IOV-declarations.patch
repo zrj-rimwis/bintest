@@ -1,0 +1,68 @@
+From cbbbf9b974f77baa20ae66bf111156b4c5303c61 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 18 Oct 2019 12:19:44 +0300
+Subject: [PATCH 09/39] kernel: Fix spurious M_IOV declarations.
+
+ Do not include <sys/malloc.h> uncoditionally in <sys/uio.h> as it only
+ hides issues in other headers and source codes.
+ * Include <sys/malloc.h> before <sys/uio.h> in sys_generic.c for M_IOV.
+---
+ sys/kern/sys_generic.c | 2 +-
+ sys/sys/uio.h          | 9 +++++----
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/sys/kern/sys_generic.c b/sys/kern/sys_generic.c
+index ca5a55606b..ae1befb1ce 100644
+--- a/sys/kern/sys_generic.c
++++ b/sys/kern/sys_generic.c
+@@ -48,10 +48,10 @@
+ #include <sys/proc.h>
+ #include <sys/signalvar.h>
+ #include <sys/socketvar.h>
++#include <sys/malloc.h>
+ #include <sys/uio.h>
+ #include <sys/kernel.h>
+ #include <sys/kern_syscall.h>
+-#include <sys/malloc.h>
+ #include <sys/mapped_ioctl.h>
+ #include <sys/poll.h>
+ #include <sys/queue.h>
+diff --git a/sys/sys/uio.h b/sys/sys/uio.h
+index d7bff73935..5083afc27f 100644
+--- a/sys/sys/uio.h
++++ b/sys/sys/uio.h
+@@ -35,10 +35,6 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_iovec.h>
+-#if defined(_KERNEL)
+-#include <sys/_null.h>		/* XXX */
+-#include <sys/malloc.h>		/* Needed to inline iovec_free(). */
+-#endif
+ 
+ #ifdef __BSD_VISIBLE
+ #ifndef _OFF_T_DECLARED
+@@ -81,8 +77,12 @@ int	uioread (int, struct uio *, struct vm_object *, int *);
+ int	iovec_copyin(const struct iovec *, struct iovec **, struct iovec *,
+ 			    int, size_t *);
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_IOV);	/* only if <sys/malloc.h> included before! */
++#endif
+ 
++#ifdef MALLOC_DEFINE
++#include <sys/_null.h>			/* XXX, visibility */
+ /*
+  * MPSAFE
+  */
+@@ -94,6 +94,7 @@ iovec_free(struct iovec **kiov, struct iovec *siov)
+ 		*kiov = NULL;
+ 	}
+ }
++#endif
+ #endif /* _KERNEL */
+ 
+ #ifndef _KERNEL
+-- 
+2.23.0
+

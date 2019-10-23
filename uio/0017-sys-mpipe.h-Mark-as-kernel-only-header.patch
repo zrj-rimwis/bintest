@@ -1,0 +1,182 @@
+From a29a6a76b518f1d8b57cd8cdda980e96e8aa9173 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 20 Oct 2019 21:24:43 +0300
+Subject: [PATCH 17/39] <sys/mpipe.h>: Mark as kernel only header.
+
+ Not used in any of the kernel headers and should not be included by the
+ userland and especially DPorts.  Adjust kern_mpipe.c too.
+
+ While there, minor whitespace cleanup.
+---
+ sys/kern/kern_mpipe.c | 19 ++++++++++---------
+ sys/sys/mpipe.h       | 28 +++++++++++++++-------------
+ 2 files changed, 25 insertions(+), 22 deletions(-)
+
+diff --git a/sys/kern/kern_mpipe.c b/sys/kern/kern_mpipe.c
+index e463f6d0e9..9a0cb666d0 100644
+--- a/sys/kern/kern_mpipe.c
++++ b/sys/kern/kern_mpipe.c
+@@ -2,14 +2,14 @@
+  * (MPSAFE)
+  *
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -19,7 +19,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -38,6 +38,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/slaballoc.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/vmmeter.h>
+ #include <sys/lock.h>
+@@ -64,8 +65,8 @@ static void mpipe_thread(void *arg);
+  */
+ void
+ mpipe_init(malloc_pipe_t mpipe, malloc_type_t type, int bytes,
+-	int nnom, int nmax, 
+-	int mpflags, 
++	int nnom, int nmax,
++	int mpflags,
+ 	void (*construct)(void *, void *),
+ 	void (*deconstruct)(void *, void *),
+ 	void *priv)
+@@ -91,7 +92,7 @@ mpipe_init(malloc_pipe_t mpipe, malloc_type_t type, int bytes,
+ 	mpipe->mflags |= M_USE_RESERVE | M_USE_INTERRUPT_RESERVE;
+     mpipe->ary_count = nnom;
+     mpipe->max_count = nmax;
+-    mpipe->array = kmalloc(nnom * sizeof(mpipe->array[0]), M_MPIPEARY, 
++    mpipe->array = kmalloc(nnom * sizeof(mpipe->array[0]), M_MPIPEARY,
+ 			    M_WAITOK | M_ZERO);
+ 
+     while (mpipe->free_count < nnom) {
+@@ -222,7 +223,7 @@ _mpipe_alloc_locked(malloc_pipe_t mpipe, int mfailed)
+ 	 */
+ 	buf = kmalloc(mpipe->bytes, mpipe->type, M_NOWAIT | mpipe->mflags);
+ 	if (buf) {
+-	    ++mpipe->total_count; 
++	    ++mpipe->total_count;
+ 	    if (mpipe->construct)
+ 	        mpipe->construct(buf, mpipe->priv);
+ 	}
+@@ -343,7 +344,7 @@ mpipe_free(malloc_pipe_t mpipe, void *buf)
+ 	 */
+ 	mpipe->array[n] = buf;
+ 	++mpipe->free_count;
+-	if ((mpipe->mpflags & (MPF_CACHEDATA|MPF_NOZERO)) == 0) 
++	if ((mpipe->mpflags & (MPF_CACHEDATA|MPF_NOZERO)) == 0)
+ 	    bzero(buf, mpipe->bytes);
+ 	if (mpipe->mpflags & MPF_QUEUEWAIT) {
+ 		mpipe->mpflags &= ~MPF_QUEUEWAIT;
+diff --git a/sys/sys/mpipe.h b/sys/sys/mpipe.h
+index 32168d3d51..ceeb0558bc 100644
+--- a/sys/sys/mpipe.h
++++ b/sys/sys/mpipe.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,15 +30,17 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+- * $DragonFly: src/sys/sys/mpipe.h,v 1.4 2004/07/16 05:51:57 dillon Exp $
+  */
+ 
+ #ifndef _SYS_MPIPE_H_
+ #define _SYS_MPIPE_H_
+ 
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
++#ifndef _KERNEL
++#error "This file should not be included by userland programs."
++#endif
++
++#ifndef _SYS__MALLOC_H_
++#include <sys/_malloc.h>
+ #endif
+ #ifndef _SYS_THREAD_H_
+ #include <sys/thread.h>
+@@ -53,7 +55,7 @@
+  * in order to allow memory allocations to block while at the same time
+  * guarenteeing that no deadlocks will occur.
+  *
+- * By default new allocations are zero'd out. 
++ * By default new allocations are zero'd out.
+  *
+  * MPF_NOZERO		If specified the underlying buffers are not zero'd.
+  *			Note this also means you have no way of knowing which
+@@ -99,7 +101,7 @@ struct malloc_pipe {
+     STAILQ_HEAD(, mpipe_callback) queue;
+ };
+ 
+-#define MPF_CACHEDATA		0x0001	/* cache old buffers (do not zero) */ 
++#define MPF_CACHEDATA		0x0001	/* cache old buffers (do not zero) */
+ #define MPF_NOZERO		0x0002	/* do not zero-out new allocations */
+ #define MPF_INT			0x0004	/* use the interrupt memory reserve */
+ #define MPF_QUEUEWAIT		0x0008
+@@ -111,8 +113,8 @@ typedef struct malloc_pipe *malloc_pipe_t;
+ #ifdef _KERNEL
+ 
+ void mpipe_init(malloc_pipe_t mpipe, malloc_type_t type,
+-		int bytes, int nnom, int nmax, 
+-		int mpflags, 
++		int bytes, int nnom, int nmax,
++		int mpflags,
+ 		void (*construct)(void *, void *),
+ 		void (*deconstruct)(void *, void *),
+ 		void *priv);
+@@ -126,5 +128,5 @@ void mpipe_free(malloc_pipe_t mpipe, void *vbuf);
+ 
+ #endif
+ 
+-#endif
++#endif	/* !_SYS_MPIPE_H_ */
+ 
+-- 
+2.23.0
+

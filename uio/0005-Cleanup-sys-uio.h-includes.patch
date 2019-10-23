@@ -1,0 +1,111 @@
+From af7dc2bb444c1bda65fceb48e083d4aa22dc831e Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 18 Oct 2019 08:53:07 +0300
+Subject: [PATCH 05/39] Cleanup <sys/uio.h> includes.
+
+ No longer needed after <sys/ktrace.h> cleanup.
+---
+ lib/libc/stdlib/dmalloc.c            | 1 -
+ lib/libc/stdlib/nmalloc.c            | 1 -
+ libexec/rtld-elf/rtld.c              | 1 -
+ sys/kern/kern_synch.c                | 1 -
+ sys/platform/vkernel64/x86_64/trap.c | 1 -
+ usr.bin/kdump/kdump.c                | 1 -
+ usr.bin/ktrace/ktrace.c              | 2 --
+ 7 files changed, 8 deletions(-)
+
+diff --git a/lib/libc/stdlib/dmalloc.c b/lib/libc/stdlib/dmalloc.c
+index 983de72801..3f7fd7e40f 100644
+--- a/lib/libc/stdlib/dmalloc.c
++++ b/lib/libc/stdlib/dmalloc.c
+@@ -118,7 +118,6 @@
+ #include <sys/types.h>
+ #include <sys/mman.h>
+ #include <sys/queue.h>
+-#include <sys/uio.h>
+ #include <sys/ktrace.h>
+ #include <stdio.h>
+ #include <stdint.h>
+diff --git a/lib/libc/stdlib/nmalloc.c b/lib/libc/stdlib/nmalloc.c
+index 3608a750e8..4ef9ac3094 100644
+--- a/lib/libc/stdlib/nmalloc.c
++++ b/lib/libc/stdlib/nmalloc.c
+@@ -115,7 +115,6 @@
+ #include <sys/types.h>
+ #include <sys/mman.h>
+ #include <sys/queue.h>
+-#include <sys/uio.h>
+ #include <sys/ktrace.h>
+ #include <stdio.h>
+ #include <stdint.h>
+diff --git a/libexec/rtld-elf/rtld.c b/libexec/rtld-elf/rtld.c
+index cca3a66aa9..1c237bdc06 100644
+--- a/libexec/rtld-elf/rtld.c
++++ b/libexec/rtld-elf/rtld.c
+@@ -43,7 +43,6 @@
+ #include <sys/mman.h>
+ #include <sys/stat.h>
+ #include <sys/sysctl.h>
+-#include <sys/uio.h>
+ #include <sys/utsname.h>
+ #include <sys/ktrace.h>
+ #include <sys/resident.h>
+diff --git a/sys/kern/kern_synch.c b/sys/kern/kern_synch.c
+index 8f3e85f4ce..e135bb2a7c 100644
+--- a/sys/kern/kern_synch.c
++++ b/sys/kern/kern_synch.c
+@@ -46,7 +46,6 @@
+ #include <sys/vmmeter.h>
+ #include <sys/sysctl.h>
+ #include <sys/lock.h>
+-#include <sys/uio.h>
+ #include <sys/priv.h>
+ #include <sys/kcollect.h>
+ #ifdef KTRACE
+diff --git a/sys/platform/vkernel64/x86_64/trap.c b/sys/platform/vkernel64/x86_64/trap.c
+index df3babab9e..e766087ce6 100644
+--- a/sys/platform/vkernel64/x86_64/trap.c
++++ b/sys/platform/vkernel64/x86_64/trap.c
+@@ -58,7 +58,6 @@
+ #include <sys/syscall.h>
+ #include <sys/sysctl.h>
+ #include <sys/sysent.h>
+-#include <sys/uio.h>
+ #include <sys/vmmeter.h>
+ #include <sys/malloc.h>
+ #ifdef KTRACE
+diff --git a/usr.bin/kdump/kdump.c b/usr.bin/kdump/kdump.c
+index dcb0023efe..ad3a3aeaaf 100644
+--- a/usr.bin/kdump/kdump.c
++++ b/usr.bin/kdump/kdump.c
+@@ -36,7 +36,6 @@
+ #include <sys/errno.h>
+ #include <sys/param.h>
+ #include <sys/time.h>
+-#include <sys/uio.h>
+ #include <sys/ktrace.h>
+ #include <sys/ioctl.h>
+ #include <sys/ptrace.h>
+diff --git a/usr.bin/ktrace/ktrace.c b/usr.bin/ktrace/ktrace.c
+index d25e4fa9a7..e66f0a6395 100644
+--- a/usr.bin/ktrace/ktrace.c
++++ b/usr.bin/ktrace/ktrace.c
+@@ -29,7 +29,6 @@
+  * @(#) Copyright (c) 1988, 1993 The Regents of the University of California.  All rights reserved.
+  * @(#)ktrace.c	8.1 (Berkeley) 6/6/93
+  * $FreeBSD: src/usr.bin/ktrace/ktrace.c,v 1.12.2.3 2001/07/11 00:29:27 mikeh Exp $
+- * $DragonFly: src/usr.bin/ktrace/ktrace.c,v 1.4 2005/06/01 03:05:40 swildner Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -37,7 +36,6 @@
+ #include <sys/file.h>
+ #include <sys/time.h>
+ #include <sys/errno.h>
+-#include <sys/uio.h>
+ #include <sys/ktrace.h>
+ 
+ #include <err.h>
+-- 
+2.23.0
+

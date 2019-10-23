@@ -1,0 +1,91 @@
+From 6a1ddef52224796f33f42856628262faf2254651 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 21 Oct 2019 13:47:52 +0300
+Subject: [PATCH 21/39] <sys/mountctl.h>: Remove explicit dependency on
+ <sys/malloc.h>.
+
+ While there, include <sys/thread.h> for _KERNEL_STRUCTURES since the
+ "struct journal" embeds "struct thread".
+---
+ sys/sys/mountctl.h | 21 ++++++++-------------
+ 1 file changed, 8 insertions(+), 13 deletions(-)
+
+diff --git a/sys/sys/mountctl.h b/sys/sys/mountctl.h
+index 7d1375c436..dc43b9e72d 100644
+--- a/sys/sys/mountctl.h
++++ b/sys/sys/mountctl.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,8 +30,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- *
+- * $DragonFly: src/sys/sys/mountctl.h,v 1.15 2008/06/01 19:27:37 dillon Exp $
+  */
+ 
+ #ifndef _SYS_MOUNTCTL_H_
+@@ -47,15 +45,10 @@
+ #include <sys/queue.h>
+ #endif
+ 
+-#ifdef _KERNEL
+-
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ #ifndef _SYS_THREAD_H_
+ #include <sys/thread.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+-
+ #endif
+ 
+ /*
+@@ -186,7 +179,7 @@ struct journal {
+ 
+ /*
+  * The jrecord structure is used to build a journaling transaction.  Since
+- * a single journaling transaction might encompass very large buffers it 
++ * a single journaling transaction might encompass very large buffers it
+  * is possible for multiple transactions to be written out to the FIFO
+  * in parallel and in peacemeal.
+  */
+@@ -269,8 +262,10 @@ void jrecord_write_uio(struct jrecord *jrec, int16_t rectype, struct uio *uio);
+ void jrecord_file_data(struct jrecord *jrec, struct vnode *vp,
+ 			off_t off, off_t bytes);
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_JOURNAL);
+ MALLOC_DECLARE(M_JFIFO);
++#endif
+ 
+ #else
+ 
+-- 
+2.23.0
+

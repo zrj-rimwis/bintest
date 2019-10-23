@@ -1,0 +1,282 @@
+From ecb6c6ded8f4eebb792377d1668c3a913c4faeb8 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 22 Oct 2019 14:11:25 +0300
+Subject: [PATCH 28/39] kernel: Consistently check if MALLOC_DECLARE was
+ defined.
+
+ Helps with intermediates checks.
+---
+ sys/bus/firewire/firewirereg.h          | 2 ++
+ sys/bus/isa/isa_common.h                | 2 ++
+ sys/bus/u4b/usb.h                       | 4 ++--
+ sys/dev/crypto/aesni/aesni.h            | 1 -
+ sys/dev/disk/dm/dm.h                    | 2 ++
+ sys/dev/raid/mfi/mfivar.h               | 2 ++
+ sys/net/netmap/netmap_kern.h            | 2 ++
+ sys/net/pf/pfvar.h                      | 2 ++
+ sys/netproto/802_11/ieee80211_crypto.h  | 2 ++
+ sys/netproto/802_11/ieee80211_mesh.h    | 2 ++
+ sys/netproto/802_11/ieee80211_node.h    | 2 ++
+ sys/netproto/802_11/ieee80211_ratectl.h | 2 ++
+ sys/netproto/802_11/ieee80211_scan.h    | 2 ++
+ sys/netproto/802_11/ieee80211_var.h     | 2 ++
+ sys/opencrypto/cryptodev.h              | 2 ++
+ sys/opencrypto/xform.h                  | 8 +++-----
+ 16 files changed, 31 insertions(+), 8 deletions(-)
+
+diff --git a/sys/bus/firewire/firewirereg.h b/sys/bus/firewire/firewirereg.h
+index c03f5c5631..6cff3012ee 100644
+--- a/sys/bus/firewire/firewirereg.h
++++ b/sys/bus/firewire/firewirereg.h
+@@ -303,5 +303,7 @@ extern devclass_t firewire_devclass;
+ 
+ #define CALLOUT_INIT(x) callout_init(x)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_FW);
+ MALLOC_DECLARE(M_FWXFER);
++#endif
+diff --git a/sys/bus/isa/isa_common.h b/sys/bus/isa/isa_common.h
+index d47c087268..514a912fcd 100644
+--- a/sys/bus/isa/isa_common.h
++++ b/sys/bus/isa/isa_common.h
+@@ -33,7 +33,9 @@
+  * without notice.
+  */
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_ISADEV);
++#endif
+ 
+ /*
+  * PNP configurations are kept in a tailq.
+diff --git a/sys/bus/u4b/usb.h b/sys/bus/u4b/usb.h
+index 177ab45c73..f7c223b2fd 100644
+--- a/sys/bus/u4b/usb.h
++++ b/sys/bus/u4b/usb.h
+@@ -47,10 +47,10 @@
+ SYSCTL_DECL(_hw_usb);
+ #endif
+ 
+-#include <sys/malloc.h>
+-
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_USB);
+ MALLOC_DECLARE(M_USBDEV);
++#endif
+ #endif /* _KERNEL */
+ 
+ #include <bus/u4b/usb_endian.h>
+diff --git a/sys/dev/crypto/aesni/aesni.h b/sys/dev/crypto/aesni/aesni.h
+index 6219280038..f463fb1735 100644
+--- a/sys/dev/crypto/aesni/aesni.h
++++ b/sys/dev/crypto/aesni/aesni.h
+@@ -30,7 +30,6 @@
+ #define _AESNI_H_
+ 
+ #include <sys/types.h>
+-#include <sys/malloc.h>
+ #include <sys/queue.h>
+ 
+ #include <opencrypto/cryptodev.h>
+diff --git a/sys/dev/disk/dm/dm.h b/sys/dev/disk/dm/dm.h
+index 6e12c1749b..2533905c5b 100644
+--- a/sys/dev/disk/dm/dm.h
++++ b/sys/dev/disk/dm/dm.h
+@@ -180,7 +180,9 @@ uint64_t atoi64(const char *);
+ char *dm_alloc_string(int len);
+ void dm_builtin_init(void *);
+ void dm_builtin_uninit(void *);
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_DM);
++#endif
+ extern int dm_debug_level;
+ 
+ /* dm_ioctl.c */
+diff --git a/sys/dev/raid/mfi/mfivar.h b/sys/dev/raid/mfi/mfivar.h
+index db64f58f8a..141198a1db 100644
+--- a/sys/dev/raid/mfi/mfivar.h
++++ b/sys/dev/raid/mfi/mfivar.h
+@@ -582,7 +582,9 @@ mfi_lockassert(struct lock *lockp)
+ #define MFI_READ1(sc, reg)		bus_space_read_1((sc)->mfi_btag, \
+ 	(sc)->mfi_bhandle, (reg))
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_MFIBUF);
++#endif
+ 
+ #define MFI_RESET_WAIT_TIME 180
+ #define MFI_CMD_TIMEOUT 30
+diff --git a/sys/net/netmap/netmap_kern.h b/sys/net/netmap/netmap_kern.h
+index 2e6251335f..70fcefd7ab 100644
+--- a/sys/net/netmap/netmap_kern.h
++++ b/sys/net/netmap/netmap_kern.h
+@@ -65,7 +65,9 @@
+ #define rmb()	cpu_lfence()
+ #define wmb()	cpu_sfence()
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETMAP);
++#endif
+ 
+ // XXX linux struct, not used in FreeBSD
+ struct net_device_ops {
+diff --git a/sys/net/pf/pfvar.h b/sys/net/pf/pfvar.h
+index a6e4e2e0b5..aab5e15d9a 100644
+--- a/sys/net/pf/pfvar.h
++++ b/sys/net/pf/pfvar.h
+@@ -200,7 +200,9 @@ struct pf_addr_wrap {
+ 
+ #ifdef _KERNEL
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_PF);
++#endif
+ 
+ struct pfi_dynaddr {
+ 	TAILQ_ENTRY(pfi_dynaddr)	 entry;
+diff --git a/sys/netproto/802_11/ieee80211_crypto.h b/sys/netproto/802_11/ieee80211_crypto.h
+index cca166d602..98f1d35781 100644
+--- a/sys/netproto/802_11/ieee80211_crypto.h
++++ b/sys/netproto/802_11/ieee80211_crypto.h
+@@ -149,7 +149,9 @@ struct ieee80211vap;
+ struct ieee80211_node;
+ struct mbuf;
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_CRYPTO);
++#endif
+ 
+ void	ieee80211_crypto_attach(struct ieee80211com *);
+ void	ieee80211_crypto_detach(struct ieee80211com *);
+diff --git a/sys/netproto/802_11/ieee80211_mesh.h b/sys/netproto/802_11/ieee80211_mesh.h
+index 9972c93fd5..98c4d1b04a 100644
+--- a/sys/netproto/802_11/ieee80211_mesh.h
++++ b/sys/netproto/802_11/ieee80211_mesh.h
+@@ -400,12 +400,14 @@ enum {
+ };
+ 
+ #ifdef _KERNEL
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_MESH_PREQ);
+ MALLOC_DECLARE(M_80211_MESH_PREP);
+ MALLOC_DECLARE(M_80211_MESH_PERR);
+ 
+ MALLOC_DECLARE(M_80211_MESH_RT);
+ MALLOC_DECLARE(M_80211_MESH_GT_RT);
++#endif
+ /*
+  * Basic forwarding information:
+  * o Destination MAC
+diff --git a/sys/netproto/802_11/ieee80211_node.h b/sys/netproto/802_11/ieee80211_node.h
+index 0faaf35131..1a3d29ad0e 100644
+--- a/sys/netproto/802_11/ieee80211_node.h
++++ b/sys/netproto/802_11/ieee80211_node.h
+@@ -233,8 +233,10 @@ struct ieee80211_node {
+ 	void			*ni_rctls;	/* private ratectl state */
+ 	uint64_t		ni_spare[3];
+ };
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_NODE);
+ MALLOC_DECLARE(M_80211_NODE_IE);
++#endif
+ 
+ #define	IEEE80211_NODE_ATH	(IEEE80211_NODE_FF | IEEE80211_NODE_TURBOP)
+ #define	IEEE80211_NODE_AMPDU \
+diff --git a/sys/netproto/802_11/ieee80211_ratectl.h b/sys/netproto/802_11/ieee80211_ratectl.h
+index 82601c1527..68ad95c898 100644
+--- a/sys/netproto/802_11/ieee80211_ratectl.h
++++ b/sys/netproto/802_11/ieee80211_ratectl.h
+@@ -61,7 +61,9 @@ void	ieee80211_ratectl_unregister(int);
+ void	ieee80211_ratectl_init(struct ieee80211vap *);
+ void	ieee80211_ratectl_set(struct ieee80211vap *, int);
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_RATECTL);
++#endif
+ 
+ static __inline void
+ ieee80211_ratectl_deinit(struct ieee80211vap *vap)
+diff --git a/sys/netproto/802_11/ieee80211_scan.h b/sys/netproto/802_11/ieee80211_scan.h
+index 7ece1c2a42..c7f4c6ed7c 100644
+--- a/sys/netproto/802_11/ieee80211_scan.h
++++ b/sys/netproto/802_11/ieee80211_scan.h
+@@ -283,7 +283,9 @@ struct ieee80211_scan_entry {
+ 	struct ieee80211_ies se_ies;	/* captured ie's */
+ 	u_int		se_age;		/* age of entry (0 on create) */
+ };
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_SCAN);
++#endif
+ 
+ /*
+  * Template for an in-kernel scan policy module.
+diff --git a/sys/netproto/802_11/ieee80211_var.h b/sys/netproto/802_11/ieee80211_var.h
+index cfbcdc4122..826323e49f 100644
+--- a/sys/netproto/802_11/ieee80211_var.h
++++ b/sys/netproto/802_11/ieee80211_var.h
+@@ -536,7 +536,9 @@ struct ieee80211vap {
+ #endif
+ 	uint64_t		iv_spare[6];
+ };
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_VAP);
++#endif
+ 
+ #define	IEEE80211_ADDR_EQ(a1,a2)	(memcmp(a1,a2,IEEE80211_ADDR_LEN) == 0)
+ #define	IEEE80211_ADDR_COPY(dst,src)	memcpy(dst,src,IEEE80211_ADDR_LEN)
+diff --git a/sys/opencrypto/cryptodev.h b/sys/opencrypto/cryptodev.h
+index cbc41753ca..a2cf1cc3b8 100644
+--- a/sys/opencrypto/cryptodev.h
++++ b/sys/opencrypto/cryptodev.h
+@@ -404,7 +404,9 @@ struct cryptkop {
+ #define	CRYPTO_SESID2CAPS(_sid)	(((_sid) >> 32) & 0xff000000)
+ #define	CRYPTO_SESID2LID(_sid)	(((u_int32_t) (_sid)) & 0xffffffff)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_CRYPTO_DATA);
++#endif
+ 
+ extern	int crypto_newsession(u_int64_t *sid, struct cryptoini *cri, int hard);
+ extern	int crypto_freesession(u_int64_t sid);
+diff --git a/sys/opencrypto/xform.h b/sys/opencrypto/xform.h
+index 5100cd5159..a5048aca43 100644
+--- a/sys/opencrypto/xform.h
++++ b/sys/opencrypto/xform.h
+@@ -1,5 +1,4 @@
+ /*	$FreeBSD: src/sys/opencrypto/xform.h,v 1.4 2007/05/09 19:37:02 gnn Exp $	*/
+-/*	$DragonFly: src/sys/opencrypto/xform.h,v 1.2 2003/06/17 04:28:54 dillon Exp $	*/
+ /*	$OpenBSD: xform.h,v 1.8 2001/08/28 12:20:43 ben Exp $	*/
+ 
+ /*-
+@@ -14,7 +13,7 @@
+  * Permission to use, copy, and modify this software without fee
+  * is hereby granted, provided that this entire notice is included in
+  * all source code copies of any software which is or includes a copy or
+- * modification of this software. 
++ * modification of this software.
+  *
+  * THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR
+  * IMPLIED WARRANTY. IN PARTICULAR, NONE OF THE AUTHORS MAKES ANY
+@@ -37,7 +36,7 @@ struct auth_hash {
+ 	int type;
+ 	char *name;
+ 	u_int16_t keysize;
+-	u_int16_t hashsize; 
++	u_int16_t hashsize;
+ 	u_int16_t blocksize;
+ 	u_int16_t ctxsize;
+ 	void (*Init) (void *);
+@@ -112,8 +111,7 @@ extern struct auth_hash auth_hash_gmac_aes_256;
+ 
+ extern struct comp_algo comp_algo_deflate;
+ 
+-#ifdef _KERNEL
+-#include <sys/malloc.h>
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_XDATA);
+ #endif
+ #endif /* _CRYPTO_XFORM_H_ */
+-- 
+2.23.0
+

@@ -1,0 +1,25 @@
+From 03f6d90b263c38b30387f7311cb53d973244b057 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 22 Oct 2019 19:31:21 +0300
+Subject: [PATCH 34/39] <sys/malloc.h>: Add comment about assumption in drm
+ layer.
+
+---
+ sys/sys/malloc.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sys/sys/malloc.h b/sys/sys/malloc.h
+index f06fe42bd8..f58e065c71 100644
+--- a/sys/sys/malloc.h
++++ b/sys/sys/malloc.h
+@@ -53,6 +53,7 @@
+ 			0x1000	/* can exhaust free list entirely */
+ #define	M_POWEROF2	0x2000	/* roundup size to the nearest power of 2 */
+ #define	M_CACHEALIGN	0x4000	/* force CPU cache line alignment */
++/* GFP_DMA32 0x10000 reserved for drm layer (not handled by kmalloc) */
+ 
+ /*
+  * M_NOWAIT has to be a set of flags for equivalence to prior use.
+-- 
+2.23.0
+
