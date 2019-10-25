@@ -1,0 +1,809 @@
+From 2b9db0b40679e07db29861757c064410e3aa0d85 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 20 Oct 2019 16:36:39 +0300
+Subject: [PATCH 05/26] kernel: Minor whitespace cleanup in few sources.
+
+---
+ sys/kern/imgact_resident.c       | 14 +++++++-------
+ sys/kern/kern_plimit.c           |  8 ++++----
+ sys/kern/kern_slaballoc.c        | 26 ++++++++++++-------------
+ sys/kern/kern_synch.c            | 16 ++++++++--------
+ sys/kern/kern_timeout.c          |  8 ++++----
+ sys/kern/libmchain/subr_mchain.c |  8 ++++----
+ sys/kern/subr_cpu_topology.c     | 33 ++++++++++++++++----------------
+ sys/platform/pc64/apic/ioapic.c  |  4 ++--
+ sys/platform/pc64/apic/lapic.c   | 10 +++++-----
+ sys/sys/slaballoc.h              | 12 +++++-------
+ sys/vfs/nfs/nfs_bio.c            | 19 +++++++++---------
+ sys/vm/vm_meter.c                | 11 +++++------
+ sys/vm/vm_object.c               | 14 +++++++-------
+ 13 files changed, 89 insertions(+), 94 deletions(-)
+
+diff --git a/sys/kern/imgact_resident.c b/sys/kern/imgact_resident.c
+index 5ae1982254..20a94c6137 100644
+--- a/sys/kern/imgact_resident.c
++++ b/sys/kern/imgact_resident.c
+@@ -2,14 +2,14 @@
+  * (MPSAFE)
+  *
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -19,7 +19,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -103,7 +103,7 @@ fill_xresident(struct vmresident *vr, struct xresident *in, struct thread *td)
+ 		error = vget(vrtmp, LK_EXCLUSIVE);
+ 		if (error)
+ 			goto done;
+-	
++
+ 		/* retrieve underlying stat information and release vnode */
+ 		error = vn_stat(vrtmp, &st, td->td_ucred);
+ 		vput(vrtmp);
+@@ -136,7 +136,7 @@ sysctl_vm_resident(SYSCTL_HANDLER_ARGS)
+ 
+ 	if (exec_res_id == 0)
+ 	    return error;
+-	
++
+ 	/* client queried for number of resident binaries */
+ 	if (!req->oldptr)
+ 	    return SYSCTL_OUT(req, 0, exec_res_id);
+@@ -148,7 +148,7 @@ sysctl_vm_resident(SYSCTL_HANDLER_ARGS)
+ 		error = fill_xresident(vmres, &xres, td);
+ 		if (error != 0)
+ 			break;
+-		
++
+ 		error = SYSCTL_OUT(req, (void *)&xres,
+ 				sizeof(struct xresident));
+ 		if (error != 0)
+diff --git a/sys/kern/kern_plimit.c b/sys/kern/kern_plimit.c
+index 8e052ab118..6742478cb3 100644
+--- a/sys/kern/kern_plimit.c
++++ b/sys/kern/kern_plimit.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2006,2017,2018 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/sys/kern/kern_slaballoc.c b/sys/kern/kern_slaballoc.c
+index be67cdfc7c..8751d10c83 100644
+--- a/sys/kern/kern_slaballoc.c
++++ b/sys/kern/kern_slaballoc.c
+@@ -1,16 +1,16 @@
+ /*
+  * KERN_SLABALLOC.C	- Kernel SLAB memory allocator
+- * 
++ *
+  * Copyright (c) 2003,2004,2010-2019 The DragonFly Project.
+  * All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -20,7 +20,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -185,7 +185,7 @@ static void chunk_mark_free(SLZone *z, void *chunk);
+ #endif
+ 
+ /*
+- * Misc constants.  Note that allocations that are exact multiples of 
++ * Misc constants.  Note that allocations that are exact multiples of
+  * PAGE_SIZE, or exceed the zone limit, fall through to the kmem module.
+  */
+ #define ZONE_RELS_THRESH	32		/* threshold number of zones */
+@@ -195,7 +195,7 @@ static void chunk_mark_free(SLZone *z, void *chunk);
+  * The WEIRD_ADDR is used as known text to copy into free objects to
+  * try to create deterministic failure cases if the data is accessed after
+  * free.
+- */    
++ */
+ #define WEIRD_ADDR      0xdeadc0de
+ #endif
+ #define ZERO_LENGTH_PTR	((void *)-8)
+@@ -208,7 +208,7 @@ MALLOC_DEFINE(M_CACHE, "cache", "Various Dynamically allocated caches");
+ MALLOC_DEFINE(M_DEVBUF, "devbuf", "device driver memory");
+ MALLOC_DEFINE(M_TEMP, "temp", "misc temporary data buffers");
+ MALLOC_DEFINE(M_DRM, "m_drm", "DRM memory allocations");
+- 
++
+ MALLOC_DEFINE(M_IP6OPT, "ip6opt", "IPv6 options");
+ MALLOC_DEFINE(M_IP6NDP, "ip6ndp", "IPv6 Neighbor Discovery");
+ 
+@@ -217,7 +217,7 @@ MALLOC_DEFINE(M_IP6NDP, "ip6ndp", "IPv6 Neighbor Discovery");
+  * on available physical memory.  We choose a zone side which is approximately
+  * 1/1024th of our memory, so if we have 128MB of ram we have a zone size of
+  * 128K.  The zone size is limited to the bounds set in slaballoc.h
+- * (typically 32K min, 128K max). 
++ * (typically 32K min, 128K max).
+  */
+ static void kmeminit(void *dummy);
+ 
+@@ -350,7 +350,7 @@ malloc_init(void *data)
+ 
+     if (type->ks_magic != M_MAGIC)
+ 	panic("malloc type lacks magic");
+-					   
++
+     if (type->ks_limit != 0)
+ 	return;
+ 
+@@ -391,7 +391,7 @@ malloc_uninit(void *data)
+ #ifdef INVARIANTS
+     /*
+      * memuse is only correct in aggregation.  Due to memory being allocated
+-     * on one cpu and freed on another individual array entries may be 
++     * on one cpu and freed on another individual array entries may be
+      * negative or positive (canceling each other out).
+      */
+     for (i = ttl = 0; i < ncpus; ++i)
+@@ -499,7 +499,7 @@ zoneindex(unsigned long *bytes, unsigned long *align)
+ 	    *bytes = n = (n + 63) & ~63;
+ 	    *align = 64;
+ 	    return(n / 64 + 23);
+-	} 
++	}
+ 	if (n < 2048) {
+ 	    *bytes = n = (n + 127) & ~127;
+ 	    *align = 128;
+@@ -1291,7 +1291,7 @@ kfree(void *ptr, struct malloc_type *type)
+ 
+     /*
+      * Zone case.  Figure out the zone based on the fact that it is
+-     * ZoneSize aligned. 
++     * ZoneSize aligned.
+      */
+     z = (SLZone *)((uintptr_t)ptr & ZoneMask);
+     kup = btokup(z);
+diff --git a/sys/kern/kern_synch.c b/sys/kern/kern_synch.c
+index e135bb2a7c..943108121b 100644
+--- a/sys/kern/kern_synch.c
++++ b/sys/kern/kern_synch.c
+@@ -125,7 +125,7 @@ SYSCTL_INT(_kern, OID_AUTO, pctcpu_decay, CTLFLAG_RW,
+ 	   &pctcpu_decay, 0, "");
+ 
+ /*
+- * kernel uses `FSCALE', userland (SHOULD) use kern.fscale 
++ * kernel uses `FSCALE', userland (SHOULD) use kern.fscale
+  */
+ __read_mostly int fscale __unused = FSCALE;	/* exported to systat */
+ SYSCTL_INT(_kern, OID_AUTO, fscale, CTLFLAG_RD, 0, FSCALE, "");
+@@ -189,7 +189,7 @@ SYSCTL_PROC(_debug, OID_AUTO, wakeup_umtx, CTLTYPE_UQUAD|CTLFLAG_RW, 0, 0,
+  * a 1-second recalc to help out.
+  *
+  * This code also allows us to store sysclock_t data in the process structure
+- * without fear of an overrun, since sysclock_t are guarenteed to hold 
++ * without fear of an overrun, since sysclock_t are guarenteed to hold
+  * several seconds worth of count.
+  *
+  * WARNING!  callouts can preempt normal threads.  However, they will not
+@@ -719,7 +719,7 @@ tsleep(const volatile void *ident, int flags, const char *wmesg, int timo)
+ 		lwkt_switch();
+ 	}
+ 
+-	/* 
++	/*
+ 	 * Make sure we haven't switched cpus while we were asleep.  It's
+ 	 * not supposed to happen.  Cleanup our temporary flags.
+ 	 */
+@@ -764,7 +764,7 @@ tsleep(const volatile void *ident, int flags, const char *wmesg, int timo)
+ 
+ 	/*
+ 	 * Figure out the correct error return.  If interrupted by a
+-	 * signal we want to return EINTR or ERESTART.  
++	 * signal we want to return EINTR or ERESTART.
+ 	 */
+ resume:
+ 	if (lp) {
+@@ -905,7 +905,7 @@ lwkt_sleep(const char *wmesg, int flags)
+ 			return(EINTR);
+ 		else
+ 			return(ERESTART);
+-			
++
+ 	}
+ 	td->td_flags |= TDF_BLOCKED | TDF_SINTR;
+ 	td->td_wmesg = wmesg;
+@@ -1007,7 +1007,7 @@ _wakeup(void *ident, int domain)
+ restart:
+ 	for (td = TAILQ_FIRST(&qp->queue); td != NULL; td = ntd) {
+ 		ntd = TAILQ_NEXT(td, td_sleepq);
+-		if (td->td_wchan == ident && 
++		if (td->td_wchan == ident &&
+ 		    td->td_wdomain == (domain & PDOMAIN_MASK)
+ 		) {
+ 			KKASSERT(td->td_gd == gd);
+@@ -1067,7 +1067,7 @@ _wakeup(void *ident, int domain)
+ 	 * to continue checking cpus.
+ 	 *
+ 	 * It should be noted that this scheme is actually less expensive then
+-	 * the old scheme when waking up multiple threads, since we send 
++	 * the old scheme when waking up multiple threads, since we send
+ 	 * only one IPI message per target candidate which may then schedule
+ 	 * multiple threads.  Before we could have wound up sending an IPI
+ 	 * message for each thread on the target cpu (!= current cpu) that
+@@ -1314,7 +1314,7 @@ setrunnable(struct lwp *lp)
+ 
+ /*
+  * The process is stopped due to some condition, usually because p_stat is
+- * set to SSTOP, but also possibly due to being traced.  
++ * set to SSTOP, but also possibly due to being traced.
+  *
+  * Caller must hold p->p_token
+  *
+diff --git a/sys/kern/kern_timeout.c b/sys/kern/kern_timeout.c
+index 58b259c2da..11b3a635fc 100644
+--- a/sys/kern/kern_timeout.c
++++ b/sys/kern/kern_timeout.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2004,2014,2019 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/sys/kern/libmchain/subr_mchain.c b/sys/kern/libmchain/subr_mchain.c
+index 8ba5da5e23..c5cf83da33 100644
+--- a/sys/kern/libmchain/subr_mchain.c
++++ b/sys/kern/libmchain/subr_mchain.c
+@@ -72,7 +72,7 @@ mb_init(struct mbchain *mbp)
+ 	struct mbuf *m;
+ 
+ 	m = m_gethdr(M_WAITOK, MT_DATA);
+-	if (m == NULL) 
++	if (m == NULL)
+ 		return ENOBUFS;
+ 	m->m_pkthdr.rcvif = NULL;
+ 	m->m_len = 0;
+@@ -117,7 +117,7 @@ mb_fixhdr(struct mbchain *mbp)
+  * Check if object of size 'size' fit to the current position and
+  * allocate new mbuf if not. Advance pointers and increase length of mbuf(s).
+  * Return pointer to the object placeholder or NULL if any error occured.
+- * Note: size should be <= MLEN 
++ * Note: size should be <= MLEN
+  */
+ caddr_t
+ mb_reserve(struct mbchain *mbp, int size)
+@@ -312,7 +312,7 @@ md_init(struct mdchain *mdp)
+ 	struct mbuf *m;
+ 
+ 	m = m_gethdr(M_WAITOK, MT_DATA);
+-	if (m == NULL) 
++	if (m == NULL)
+ 		return ENOBUFS;
+ 	m->m_pkthdr.rcvif = NULL;
+ 	m->m_len = 0;
+@@ -476,7 +476,7 @@ md_get_mem(struct mdchain *mdp, caddr_t target, int size, int type)
+ 	int error;
+ 	u_int count;
+ 	u_char *s;
+-	
++
+ 	while (size > 0) {
+ 		if (m == NULL) {
+ 			MBERROR("incomplete copy\n");
+diff --git a/sys/kern/subr_cpu_topology.c b/sys/kern/subr_cpu_topology.c
+index 2dd67bf183..420202aef4 100644
+--- a/sys/kern/subr_cpu_topology.c
++++ b/sys/kern/subr_cpu_topology.c
+@@ -1,10 +1,10 @@
+ /*
+  * Copyright (c) 2012 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -14,7 +14,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -27,7 +27,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+  */
+ 
+ #include <sys/param.h>
+@@ -109,11 +108,11 @@ get_next_valid_apicid(int curr_apicid)
+  * - node : the current node
+  * - last_free_node : the last free node in the global array.
+  * - cpuid : basicly this are the ids of the leafs
+- */ 
++ */
+ static void
+ build_topology_tree(int *children_no_per_level,
+    uint8_t *level_types,
+-   int cur_level, 
++   int cur_level,
+    cpu_node_t *node,
+    cpu_node_t **last_free_node,
+    int *apicid)
+@@ -133,7 +132,7 @@ build_topology_tree(int *children_no_per_level,
+ 
+ 	if (node->parent_node == NULL)
+ 		root_cpu_node = node;
+-	
++
+ 	for (i = 0; i < node->child_no; i++) {
+ 		node->child_node[i] = *last_free_node;
+ 		(*last_free_node)++;
+@@ -165,7 +164,7 @@ migrate_elements(cpu_node_t **a, int n, int pos)
+ #endif
+ 
+ /* Build CPU topology. The detection is made by comparing the
+- * chip, core and logical IDs of each CPU with the IDs of the 
++ * chip, core and logical IDs of each CPU with the IDs of the
+  * BSP. When we found a match, at that level the CPUs are siblings.
+  */
+ static void
+@@ -212,7 +211,7 @@ build_cpu_topology(int assumed_ncpus)
+ 
+ 	cores_per_chip /= threads_per_core;
+ 	chips_per_package = assumed_ncpus / (cores_per_chip * threads_per_core);
+-	
++
+ 	kprintf("CPU Topology: cores_per_chip: %d; threads_per_core: %d; "
+ 		"chips_per_package: %d;\n",
+ 		cores_per_chip, threads_per_core, chips_per_package);
+@@ -228,7 +227,7 @@ build_cpu_topology(int assumed_ncpus)
+ 		level_types[1] = CHIP_LEVEL;
+ 		level_types[2] = CORE_LEVEL;
+ 		level_types[3] = THREAD_LEVEL;
+-	
++
+ 		build_topology_tree(children_no_per_level,
+ 		    level_types,
+ 		    0,
+@@ -247,7 +246,7 @@ build_cpu_topology(int assumed_ncpus)
+ 		level_types[0] = PACKAGE_LEVEL;
+ 		level_types[1] = CHIP_LEVEL;
+ 		level_types[2] = CORE_LEVEL;
+-	
++
+ 		build_topology_tree(children_no_per_level,
+ 		    level_types,
+ 		    0,
+@@ -264,7 +263,7 @@ build_cpu_topology(int assumed_ncpus)
+ 
+ 		level_types[0] = PACKAGE_LEVEL;
+ 		level_types[1] = CHIP_LEVEL;
+-	
++
+ 		build_topology_tree(children_no_per_level,
+ 		    level_types,
+ 		    0,
+@@ -360,7 +359,7 @@ print_cpu_topology_tree_sysctl_helper(cpu_node_t *node,
+ 		buf[buf_len] = '|';buf_len++;
+ 		buf[buf_len] = ' ';buf_len++;
+ 	}
+-	
++
+ 	bsr_member = BSRCPUMASK(node->members);
+ 
+ 	if (node->type == PACKAGE_LEVEL) {
+@@ -448,7 +447,7 @@ print_cpu_topology_level_description_sysctl(SYSCTL_HANDLER_ARGS)
+ 
+ 	sbuf_delete(sb);
+ 
+-	return ret;	
++	return ret;
+ }
+ 
+ /* Find a cpu_node_t by a mask */
+@@ -626,7 +625,7 @@ build_sysctl_cpu_topology(int assumed_ncpus)
+ {
+ 	int i;
+ 	struct sbuf sb;
+-	
++
+ 	/* SYSCTL new leaf for "cpu_topology" */
+ 	sysctl_ctx_init(&cpu_topology_sysctl_ctx);
+ 	cpu_topology_sysctl_tree = SYSCTL_ADD_NODE(&cpu_topology_sysctl_ctx,
+@@ -664,7 +663,7 @@ build_sysctl_cpu_topology(int assumed_ncpus)
+ 	/* SYSCTL per_cpu info */
+ 	for (i = 0; i < assumed_ncpus; i++) {
+ 		/* New leaf : hw.cpu_topology.cpux */
+-		sysctl_ctx_init(&pcpu_sysctl[i].sysctl_ctx); 
++		sysctl_ctx_init(&pcpu_sysctl[i].sysctl_ctx);
+ 		pcpu_sysctl[i].sysctl_tree = SYSCTL_ADD_NODE(&pcpu_sysctl[i].sysctl_ctx,
+ 		    SYSCTL_CHILDREN(cpu_topology_sysctl_tree),
+ 		    OID_AUTO,
+@@ -701,7 +700,7 @@ build_sysctl_cpu_topology(int assumed_ncpus)
+ 		    OID_AUTO, "core_id", CTLFLAG_RD,
+ 		    &pcpu_sysctl[i].core_id, 0,
+ 		    "Core ID");
+-		
++
+ 		/*Add core siblings */
+ 		SYSCTL_ADD_STRING(&pcpu_sysctl[i].sysctl_ctx,
+ 		    SYSCTL_CHILDREN(pcpu_sysctl[i].sysctl_tree),
+diff --git a/sys/platform/pc64/apic/ioapic.c b/sys/platform/pc64/apic/ioapic.c
+index e92b39cfcc..c72ed1f177 100644
+--- a/sys/platform/pc64/apic/ioapic.c
++++ b/sys/platform/pc64/apic/ioapic.c
+@@ -466,9 +466,9 @@ ioapic_pin_setup(void *addr, int pin, int vec,
+ 	 * vector any EOI from pending ints on this pin could be lost and
+ 	 * IRR might never get reset.
+ 	 *
+-	 * To fix this problem, clear the vector and make sure it is 
++	 * To fix this problem, clear the vector and make sure it is
+ 	 * programmed as an edge interrupt.  This should theoretically
+-	 * clear IRR so we can later, safely program it as a level 
++	 * clear IRR so we can later, safely program it as a level
+ 	 * interrupt.
+ 	 */
+ 	ioapic_pin_prog(addr, pin, vec, INTR_TRIGGER_EDGE, INTR_POLARITY_HIGH,
+diff --git a/sys/platform/pc64/apic/lapic.c b/sys/platform/pc64/apic/lapic.c
+index 3c32f42ad3..cc34f92d68 100644
+--- a/sys/platform/pc64/apic/lapic.c
++++ b/sys/platform/pc64/apic/lapic.c
+@@ -271,7 +271,7 @@ lapic_init(boolean_t bsp)
+ 	 * mode we use because we leave it masked.
+ 	 */
+ 	temp = LAPIC_READ(lvt_lint0);
+-	temp &= ~(APIC_LVT_MASKED | APIC_LVT_TRIG_MASK | 
++	temp &= ~(APIC_LVT_MASKED | APIC_LVT_TRIG_MASK |
+ 		  APIC_LVT_POLARITY_MASK | APIC_LVT_DM_MASK);
+ 	if (bsp) {
+ 		temp |= APIC_LVT_DM_EXTINT;
+@@ -292,7 +292,7 @@ lapic_init(boolean_t bsp)
+ 	 * Disable LINT1 on the APs.
+ 	 */
+ 	temp = LAPIC_READ(lvt_lint1);
+-	temp &= ~(APIC_LVT_MASKED | APIC_LVT_TRIG_MASK | 
++	temp &= ~(APIC_LVT_MASKED | APIC_LVT_TRIG_MASK |
+ 		  APIC_LVT_POLARITY_MASK | APIC_LVT_DM_MASK);
+ 	temp |= APIC_LVT_MASKED | APIC_LVT_DM_NMI;
+ 	if (bsp && ioapic_enable)
+@@ -371,8 +371,8 @@ lapic_init(boolean_t bsp)
+ 		}
+ 	}
+ 
+-	/* 
+-	 * Enable the LAPIC 
++	/*
++	 * Enable the LAPIC
+ 	 */
+ 	temp = LAPIC_READ(svr);
+ 	temp |= APIC_SVR_ENABLE;	/* enable the LAPIC */
+@@ -774,7 +774,7 @@ lapic_timer_fixup_handler(void *arg)
+ 		 * the local APIC timer dead, so we disable it by reading
+ 		 * the Interrupt Pending Message register and clearing both
+ 		 * C1eOnCmpHalt (bit 28) and SmiOnCmpHalt (bit 27).
+-		 * 
++		 *
+ 		 * Reference:
+ 		 *   "BIOS and Kernel Developer's Guide for AMD NPT
+ 		 *    Family 0Fh Processors"
+diff --git a/sys/sys/slaballoc.h b/sys/sys/slaballoc.h
+index ed1df45a5f..cbd3bc9ca6 100644
+--- a/sys/sys/slaballoc.h
++++ b/sys/sys/slaballoc.h
+@@ -1,15 +1,15 @@
+ /*
+  * KERN_SLABALLOC.H	- Kernel SLAB memory allocator
+- * 
++ *
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -19,7 +19,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -32,8 +32,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+- * $DragonFly: src/sys/sys/slaballoc.h,v 1.8 2005/06/20 20:49:12 dillon Exp $
+  */
+ 
+ #ifndef _SYS_SLABALLOC_H_
+diff --git a/sys/vfs/nfs/nfs_bio.c b/sys/vfs/nfs/nfs_bio.c
+index 2faea0e36e..9b4d98e49d 100644
+--- a/sys/vfs/nfs/nfs_bio.c
++++ b/sys/vfs/nfs/nfs_bio.c
+@@ -33,7 +33,6 @@
+  * $FreeBSD: /repoman/r/ncvs/src/sys/nfsclient/nfs_bio.c,v 1.130 2004/04/14 23:23:55 peadar Exp $
+  */
+ 
+-
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/uio.h>
+@@ -213,7 +212,7 @@ nfs_bioread(struct vnode *vp, struct uio *uio, int ioflag)
+ 		/*
+ 		 * Obtain the buffer cache block.  Figure out the buffer size
+ 		 * when we are at EOF.  If we are modifying the size of the
+-		 * buffer based on an EOF condition we need to hold 
++		 * buffer based on an EOF condition we need to hold
+ 		 * nfs_rslock() through obtaining the buffer to prevent
+ 		 * a potential writer-appender from messing with n_size.
+ 		 * Otherwise we may accidently truncate the buffer and
+@@ -388,7 +387,7 @@ nfs_bioread(struct vnode *vp, struct uio *uio, int ioflag)
+ 		 * to EOF.  *BUT* this information is lost if the buffer goes
+ 		 * away and is reconstituted into a B_CACHE state ( due to
+ 		 * being VMIO ) later.  So we keep track of the directory eof
+-		 * in np->n_direofoffset and chop it off as an extra step 
++		 * in np->n_direofoffset and chop it off as an extra step
+ 		 * right here.
+ 		 *
+ 		 * NOTE: boff could already be beyond EOF.
+@@ -698,13 +697,13 @@ nfs_write(struct vop_write_args *ap)
+ 		/*
+ 		 * If dirtyend exceeds file size, chop it down.  This should
+ 		 * not normally occur but there is an append race where it
+-		 * might occur XXX, so we log it. 
++		 * might occur XXX, so we log it.
+ 		 *
+ 		 * If the chopping creates a reverse-indexed or degenerate
+ 		 * situation with dirtyoff/end, we 0 both of them.
+ 		 */
+ 		if (bp->b_dirtyend > bcount) {
+-			kprintf("NFS append race @%08llx:%d\n", 
++			kprintf("NFS append race @%08llx:%d\n",
+ 			    (long long)bp->b_bio2.bio_offset,
+ 			    bp->b_dirtyend - bcount);
+ 			bp->b_dirtyend = bcount;
+@@ -718,9 +717,9 @@ nfs_write(struct vop_write_args *ap)
+ 		 * area, just update the b_dirtyoff and b_dirtyend,
+ 		 * otherwise force a write rpc of the old dirty area.
+ 		 *
+-		 * While it is possible to merge discontiguous writes due to 
++		 * While it is possible to merge discontiguous writes due to
+ 		 * our having a B_CACHE buffer ( and thus valid read data
+-		 * for the hole), we don't because it could lead to 
++		 * for the hole), we don't because it could lead to
+ 		 * significant cache coherency problems with multiple clients,
+ 		 * especially if locking is implemented later on.
+ 		 *
+@@ -756,7 +755,7 @@ nfs_write(struct vop_write_args *ap)
+ 		}
+ 
+ 		/*
+-		 * Only update dirtyoff/dirtyend if not a degenerate 
++		 * Only update dirtyoff/dirtyend if not a degenerate
+ 		 * condition.
+ 		 *
+ 		 * The underlying VM pages have been marked valid by
+@@ -1091,7 +1090,7 @@ nfs_doio(struct vnode *vp, struct bio *bio, struct thread *td)
+ 	 */
+ 	bp->b_flags &= ~(B_ERROR | B_INVAL);
+ 
+-	KASSERT(bp->b_cmd != BUF_CMD_DONE, 
++	KASSERT(bp->b_cmd != BUF_CMD_DONE,
+ 		("nfs_doio: bp %p already marked done!", bp));
+ 
+ 	if (bp->b_cmd == BUF_CMD_READ) {
+@@ -1157,7 +1156,7 @@ nfs_doio(struct vnode *vp, struct bio *bio, struct thread *td)
+ 	    }
+ 	    bp->b_resid = uiop->uio_resid;
+ 	} else {
+-	    /* 
++	    /*
+ 	     * If we only need to commit, try to commit.
+ 	     *
+ 	     * NOTE: The I/O has already been staged for the write and
+diff --git a/sys/vm/vm_meter.c b/sys/vm/vm_meter.c
+index bd0c67c3e4..7ec9fe3f4a 100644
+--- a/sys/vm/vm_meter.c
++++ b/sys/vm/vm_meter.c
+@@ -30,7 +30,6 @@
+  *
+  *	@(#)vm_meter.c	8.4 (Berkeley) 1/4/94
+  * $FreeBSD: src/sys/vm/vm_meter.c,v 1.34.2.7 2002/10/10 19:28:22 dillon Exp $
+- * $DragonFly: src/sys/vm/vm_meter.c,v 1.15 2008/04/28 18:04:08 dillon Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -226,7 +225,7 @@ do_vmmeter(SYSCTL_HANDLER_ARGS)
+ 			*(u_int *)((char *)&vmm + off) +=
+ 				*(u_int *)((char *)&gd->gd_cnt + off);
+ 		}
+-		
++
+ 	}
+ 	vmm.v_intr += vmm.v_ipi + vmm.v_timer;
+ 	return (sysctl_handle_opaque(oidp, &vmm, sizeof(vmm), req));
+@@ -280,13 +279,13 @@ vcnt_intr(SYSCTL_HANDLER_ARGS)
+ #define VMMETEROFF(var)	offsetof(struct vmmeter, var)
+ 
+ SYSCTL_PROC(_vm, OID_AUTO, vmtotal, CTLTYPE_OPAQUE|CTLFLAG_RD,
+-    0, sizeof(struct vmtotal), do_vmtotal, "S,vmtotal", 
++    0, sizeof(struct vmtotal), do_vmtotal, "S,vmtotal",
+     "System virtual memory aggregate");
+ SYSCTL_PROC(_vm, OID_AUTO, vmstats, CTLTYPE_OPAQUE|CTLFLAG_RD,
+-    0, sizeof(struct vmstats), do_vmstats, "S,vmstats", 
++    0, sizeof(struct vmstats), do_vmstats, "S,vmstats",
+     "System virtual memory statistics");
+ SYSCTL_PROC(_vm, OID_AUTO, vmmeter, CTLTYPE_OPAQUE|CTLFLAG_RD,
+-    0, sizeof(struct vmmeter), do_vmmeter, "S,vmmeter", 
++    0, sizeof(struct vmmeter), do_vmmeter, "S,vmmeter",
+     "System statistics");
+ SYSCTL_NODE(_vm, OID_AUTO, stats, CTLFLAG_RW, 0, "VM meter stats");
+ SYSCTL_NODE(_vm_stats, OID_AUTO, sys, CTLFLAG_RW, 0, "VM meter sys stats");
+@@ -380,7 +379,7 @@ SYSCTL_UINT(_vm_stats_vm, OID_AUTO,
+ 	v_page_size, CTLFLAG_RD, &vmstats.v_page_size, 0,
+ 	"Page size in bytes");
+ SYSCTL_ULONG(_vm_stats_vm, OID_AUTO,
+-	v_page_count, CTLFLAG_RD, &vmstats.v_page_count, 0, 
++	v_page_count, CTLFLAG_RD, &vmstats.v_page_count, 0,
+ 	"Total number of pages in system");
+ SYSCTL_ULONG(_vm_stats_vm, OID_AUTO,
+ 	v_free_reserved, CTLFLAG_RD, &vmstats.v_free_reserved, 0,
+diff --git a/sys/vm/vm_object.c b/sys/vm/vm_object.c
+index 27b9933021..bcd36175f3 100644
+--- a/sys/vm/vm_object.c
++++ b/sys/vm/vm_object.c
+@@ -796,7 +796,7 @@ vm_object_terminate(vm_object_t object)
+ 	/*
+ 	 * Now free any remaining pages. For internal objects, this also
+ 	 * removes them from paging queues. Don't free wired pages, just
+-	 * remove them from the object. 
++	 * remove them from the object.
+ 	 */
+ 	info.count = 0;
+ 	info.object = object;
+@@ -933,14 +933,14 @@ vm_object_page_clean(vm_object_t object, vm_pindex_t start, vm_pindex_t end,
+ 		return;
+ 	}
+ 
+-	pagerflags = (flags & (OBJPC_SYNC | OBJPC_INVAL)) ? 
++	pagerflags = (flags & (OBJPC_SYNC | OBJPC_INVAL)) ?
+ 			VM_PAGER_PUT_SYNC : VM_PAGER_CLUSTER_OK;
+ 	pagerflags |= (flags & OBJPC_INVAL) ? VM_PAGER_PUT_INVAL : 0;
+ 
+ 	vp = object->handle;
+ 
+ 	/*
+-	 * Interlock other major object operations.  This allows us to 
++	 * Interlock other major object operations.  This allows us to
+ 	 * temporarily clear OBJ_WRITEABLE and OBJ_MIGHTBEDIRTY.
+ 	 */
+ 	vm_object_set_flag(object, OBJ_CLEANING);
+@@ -1004,7 +1004,7 @@ vm_object_page_clean(vm_object_t object, vm_pindex_t start, vm_pindex_t end,
+ /*
+  * The caller must hold the object.
+  */
+-static 
++static
+ int
+ vm_object_page_clean_pass1(struct vm_page *p, void *data)
+ {
+@@ -1034,7 +1034,7 @@ vm_object_page_clean_pass1(struct vm_page *p, void *data)
+ /*
+  * The caller must hold the object
+  */
+-static 
++static
+ int
+ vm_object_page_clean_pass2(struct vm_page *p, void *data)
+ {
+@@ -1328,7 +1328,7 @@ vm_object_madvise(vm_object_t object, vm_pindex_t pindex,
+ 				swap_pager_freespace(object, pindex, 1);
+ 		}
+ 		vm_page_wakeup(m);
+-	}	
++	}
+ 	vm_object_drop(object);
+ }
+ 
+@@ -1367,7 +1367,7 @@ vm_object_page_remove(vm_object_t object, vm_pindex_t start, vm_pindex_t end,
+ 	/*
+ 	 * Figure out the actual removal range and whether we are removing
+ 	 * the entire contents of the object or not.  If removing the entire
+-	 * contents, be sure to get all pages, even those that might be 
++	 * contents, be sure to get all pages, even those that might be
+ 	 * beyond the end of the object.
+ 	 */
+ 	info.object = object;
+-- 
+2.23.0
+

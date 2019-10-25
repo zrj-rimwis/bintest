@@ -1,0 +1,51 @@
+From 0cc018f83acc26fd606a2da7d014763155356ee9 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 22 Oct 2019 17:27:16 +0300
+Subject: [PATCH 14/26] <sys/idr.h>: Move implementation details to Linux
+ compat layer.
+
+ Nothing is needed here, linux_idr.c already includes <sys/malloc.h>,
+ while drm layer still needs malloc prototypes.  So move it there.
+---
+ sys/dev/drm/include/linux/idr.h | 7 +++++++
+ sys/sys/idr.h                   | 5 -----
+ 2 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/sys/dev/drm/include/linux/idr.h b/sys/dev/drm/include/linux/idr.h
+index 3b1ac31cae..2cf67d81ee 100644
+--- a/sys/dev/drm/include/linux/idr.h
++++ b/sys/dev/drm/include/linux/idr.h
+@@ -29,7 +29,14 @@
+ 
+ #include <sys/idr.h>
+ 
++#ifndef GFP_KERNEL
++#include <sys/malloc.h>
++#define	GFP_KERNEL	M_WAITOK
++#endif
++
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_IDR);
++#endif
+ 
+ #define	IDA_CHUNK_SIZE		128	/* 128 bytes per chunk */
+ #define	IDA_BITMAP_LONGS	(IDA_CHUNK_SIZE / sizeof(long) - 1)
+diff --git a/sys/sys/idr.h b/sys/sys/idr.h
+index f148eec809..3c7c7aa75f 100644
+--- a/sys/sys/idr.h
++++ b/sys/sys/idr.h
+@@ -50,11 +50,6 @@
+ 
+ #include <sys/thread.h>
+ 
+-#ifndef GFP_KERNEL
+-#include <sys/malloc.h>
+-#define GFP_KERNEL	M_WAITOK
+-#endif
+-
+ struct idr_node {
+ 	void	*data;
+ 	int	 allocated;
+-- 
+2.23.0
+

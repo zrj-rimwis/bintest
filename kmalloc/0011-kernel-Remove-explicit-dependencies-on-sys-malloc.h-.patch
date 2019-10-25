@@ -1,0 +1,961 @@
+From 0cd6b927bf54df51d239a4ea64dc7d03c44ae928 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 21 Oct 2019 11:44:20 +0300
+Subject: [PATCH 11/26] kernel: Remove explicit dependencies on <sys/malloc.h>
+ in headers.
+
+ Most except <net/if_var.h> for now, it needs decoupling in drm first.
+ * Include <sys/malloc.h> in foo.c if they have kmalloc()/kfree() calls.
+ * Consistently check if MALLOC_DECLARE was declared before.
+ * <sys/mountctl.h>: include <sys/thread.h> for _KERNEL_STRUCTURES too
+   since the "struct journal" embeds "struct thread".
+ * <sys/tty.h>: Only two kernel sources makes use of M_TTYS.
+ * <sys/socketvar2.h>: Make it kernel only header.
+---
+ sys/bus/firewire/firewirereg.h                       |  2 ++
+ sys/bus/isa/isa_common.h                             |  2 ++
+ sys/bus/u4b/usb.h                                    |  4 ++--
+ sys/dev/crypto/aesni/aesni.h                         |  1 -
+ sys/dev/disk/dm/dm.h                                 |  2 ++
+ sys/dev/netif/nfe/if_nfe.c                           |  1 +
+ sys/dev/powermng/clockmod/clockmod.c                 |  1 +
+ sys/dev/raid/mfi/mfivar.h                            |  2 ++
+ sys/dev/serial/sio/sio_pccard.c                      |  1 +
+ sys/kern/kern_p1003_1b.c                             |  1 +
+ sys/kern/kern_sched.c                                |  1 +
+ sys/kern/kern_uuid.c                                 |  1 +
+ sys/kern/subr_disklabel32.c                          |  1 +
+ sys/kern/tty.c                                       |  2 +-
+ sys/kern/uipc_msg.c                                  |  1 +
+ sys/net/altq/altq_var.h                              |  5 ++---
+ sys/net/dummynet/ip_dummynet_glue.c                  |  1 +
+ sys/net/if_loop.c                                    |  1 +
+ sys/net/netmap/netmap_kern.h                         |  2 ++
+ sys/net/pf/pf_norm.c                                 |  1 +
+ sys/net/pf/pf_osfp.c                                 |  1 +
+ sys/net/pf/pf_ruleset.c                              |  1 +
+ sys/net/pf/pfvar.h                                   |  2 ++
+ sys/net/raw_usrreq.c                                 |  1 +
+ sys/netbt/bluetooth.h                                |  3 ++-
+ sys/netbt/hci_socket.c                               |  1 +
+ sys/netbt/l2cap_upper.c                              |  1 +
+ sys/netbt/rfcomm_dlc.c                               |  1 +
+ sys/netbt/rfcomm_session.c                           |  1 +
+ sys/netbt/rfcomm_upper.c                             |  1 +
+ sys/netbt/sco_upper.c                                |  1 +
+ sys/netgraph/netgraph.h                              |  5 ++---
+ .../bluetooth/drivers/bt3c/ng_bt3c_pccard.c          |  1 +
+ sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h       |  4 +++-
+ sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h         |  2 ++
+ sys/netgraph7/hub/ng_hub.c                           |  1 +
+ sys/netgraph7/netflow/netflow.c                      |  1 +
+ sys/netgraph7/netflow/ng_netflow.c                   |  1 +
+ sys/netgraph7/netgraph.h                             |  3 ++-
+ sys/netproto/802_11/ieee80211_crypto.h               |  2 ++
+ sys/netproto/802_11/ieee80211_mesh.h                 |  2 ++
+ sys/netproto/802_11/ieee80211_node.h                 |  2 ++
+ sys/netproto/802_11/ieee80211_ratectl.h              |  2 ++
+ sys/netproto/802_11/ieee80211_scan.h                 |  2 ++
+ sys/netproto/802_11/ieee80211_var.h                  |  2 ++
+ sys/netproto/802_11/wlan/ieee80211_dragonfly.c       |  5 +++--
+ sys/netproto/802_11/wlan/ieee80211_superg.c          |  7 ++++---
+ sys/opencrypto/cryptodev.h                           |  2 ++
+ sys/opencrypto/xform.h                               |  3 +--
+ sys/platform/vkernel64/platform/cothread.c           |  3 ++-
+ sys/sys/memrange.h                                   | 12 +++---------
+ sys/sys/mountctl.h                                   |  9 +++------
+ sys/sys/msgport2.h                                   |  5 ++---
+ sys/sys/posix4.h                                     |  3 ++-
+ sys/sys/socketvar2.h                                 |  9 ++++++---
+ sys/sys/tty.h                                        |  6 ++----
+ sys/vfs/devfs/devfs_core.c                           |  1 +
+ 57 files changed, 95 insertions(+), 47 deletions(-)
+
+diff --git a/sys/bus/firewire/firewirereg.h b/sys/bus/firewire/firewirereg.h
+index c03f5c5631..6cff3012ee 100644
+--- a/sys/bus/firewire/firewirereg.h
++++ b/sys/bus/firewire/firewirereg.h
+@@ -303,5 +303,7 @@ extern devclass_t firewire_devclass;
+ 
+ #define CALLOUT_INIT(x) callout_init(x)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_FW);
+ MALLOC_DECLARE(M_FWXFER);
++#endif
+diff --git a/sys/bus/isa/isa_common.h b/sys/bus/isa/isa_common.h
+index d47c087268..514a912fcd 100644
+--- a/sys/bus/isa/isa_common.h
++++ b/sys/bus/isa/isa_common.h
+@@ -33,7 +33,9 @@
+  * without notice.
+  */
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_ISADEV);
++#endif
+ 
+ /*
+  * PNP configurations are kept in a tailq.
+diff --git a/sys/bus/u4b/usb.h b/sys/bus/u4b/usb.h
+index 177ab45c73..f7c223b2fd 100644
+--- a/sys/bus/u4b/usb.h
++++ b/sys/bus/u4b/usb.h
+@@ -47,10 +47,10 @@
+ SYSCTL_DECL(_hw_usb);
+ #endif
+ 
+-#include <sys/malloc.h>
+-
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_USB);
+ MALLOC_DECLARE(M_USBDEV);
++#endif
+ #endif /* _KERNEL */
+ 
+ #include <bus/u4b/usb_endian.h>
+diff --git a/sys/dev/crypto/aesni/aesni.h b/sys/dev/crypto/aesni/aesni.h
+index 6219280038..f463fb1735 100644
+--- a/sys/dev/crypto/aesni/aesni.h
++++ b/sys/dev/crypto/aesni/aesni.h
+@@ -30,7 +30,6 @@
+ #define _AESNI_H_
+ 
+ #include <sys/types.h>
+-#include <sys/malloc.h>
+ #include <sys/queue.h>
+ 
+ #include <opencrypto/cryptodev.h>
+diff --git a/sys/dev/disk/dm/dm.h b/sys/dev/disk/dm/dm.h
+index 6e12c1749b..2533905c5b 100644
+--- a/sys/dev/disk/dm/dm.h
++++ b/sys/dev/disk/dm/dm.h
+@@ -180,7 +180,9 @@ uint64_t atoi64(const char *);
+ char *dm_alloc_string(int len);
+ void dm_builtin_init(void *);
+ void dm_builtin_uninit(void *);
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_DM);
++#endif
+ extern int dm_debug_level;
+ 
+ /* dm_ioctl.c */
+diff --git a/sys/dev/netif/nfe/if_nfe.c b/sys/dev/netif/nfe/if_nfe.c
+index c1f736354d..71c6c51ffe 100644
+--- a/sys/dev/netif/nfe/if_nfe.c
++++ b/sys/dev/netif/nfe/if_nfe.c
+@@ -59,6 +59,7 @@
+ #include <sys/param.h>
+ #include <sys/endian.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/bus.h>
+ #include <sys/interrupt.h>
+ #include <sys/proc.h>
+diff --git a/sys/dev/powermng/clockmod/clockmod.c b/sys/dev/powermng/clockmod/clockmod.c
+index 7e3eaa4b25..6c397e33f9 100644
+--- a/sys/dev/powermng/clockmod/clockmod.c
++++ b/sys/dev/powermng/clockmod/clockmod.c
+@@ -38,6 +38,7 @@
+ #include <sys/bus.h>
+ #include <sys/cpu_topology.h>
+ #include <sys/cpuhelper.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/queue.h>
+ #include <sys/serialize.h>
+diff --git a/sys/dev/raid/mfi/mfivar.h b/sys/dev/raid/mfi/mfivar.h
+index db64f58f8a..141198a1db 100644
+--- a/sys/dev/raid/mfi/mfivar.h
++++ b/sys/dev/raid/mfi/mfivar.h
+@@ -582,7 +582,9 @@ mfi_lockassert(struct lock *lockp)
+ #define MFI_READ1(sc, reg)		bus_space_read_1((sc)->mfi_btag, \
+ 	(sc)->mfi_bhandle, (reg))
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_MFIBUF);
++#endif
+ 
+ #define MFI_RESET_WAIT_TIME 180
+ #define MFI_CMD_TIMEOUT 30
+diff --git a/sys/dev/serial/sio/sio_pccard.c b/sys/dev/serial/sio/sio_pccard.c
+index 0fad8486e9..1d17b53a96 100644
+--- a/sys/dev/serial/sio/sio_pccard.c
++++ b/sys/dev/serial/sio/sio_pccard.c
+@@ -31,6 +31,7 @@
+ #include <sys/systm.h>
+ #include <sys/tty.h>
+ #include <sys/proc.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/kernel.h>
+ #include <sys/bus.h>
+diff --git a/sys/kern/kern_p1003_1b.c b/sys/kern/kern_p1003_1b.c
+index 5ebb8b7168..bc2baf4de7 100644
+--- a/sys/kern/kern_p1003_1b.c
++++ b/sys/kern/kern_p1003_1b.c
+@@ -39,6 +39,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/sysent.h>
++#include <sys/malloc.h>
+ #include <sys/posix4.h>
+ #include <sys/proc.h>
+ #include <sys/syslog.h>
+diff --git a/sys/kern/kern_sched.c b/sys/kern/kern_sched.c
+index 4b423c1f2a..9e9a5552c2 100644
+--- a/sys/kern/kern_sched.c
++++ b/sys/kern/kern_sched.c
+@@ -38,6 +38,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>
+ #include <sys/posix4.h>
+ #include <sys/proc.h>
+ #include <sys/kernel.h>
+diff --git a/sys/kern/kern_uuid.c b/sys/kern/kern_uuid.c
+index 504349ed2c..52a1e5aecf 100644
+--- a/sys/kern/kern_uuid.c
++++ b/sys/kern/kern_uuid.c
+@@ -32,6 +32,7 @@
+ #include <sys/kernel.h>
+ #include <sys/lock.h>
+ #include <sys/kern_syscall.h>
++#include <sys/malloc.h>
+ #include <sys/random.h>
+ #include <sys/sbuf.h>
+ #include <sys/socket.h>
+diff --git a/sys/kern/subr_disklabel32.c b/sys/kern/subr_disklabel32.c
+index 39ec9b4e9b..cea80b9e25 100644
+--- a/sys/kern/subr_disklabel32.c
++++ b/sys/kern/subr_disklabel32.c
+@@ -90,6 +90,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/proc.h>
+ #include <sys/sysctl.h>
+ #include <sys/buf.h>
+diff --git a/sys/kern/tty.c b/sys/kern/tty.c
+index 5443f977ae..cf52425af9 100644
+--- a/sys/kern/tty.c
++++ b/sys/kern/tty.c
+@@ -77,6 +77,7 @@
+ #include <sys/systm.h>
+ #include <sys/uio.h>
+ #include <sys/filio.h>
++#include <sys/malloc.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+ #include <sys/tty.h>
+@@ -91,7 +92,6 @@
+ #include <sys/signalvar.h>
+ #include <sys/signal2.h>
+ #include <sys/resourcevar.h>
+-#include <sys/malloc.h>
+ #include <sys/filedesc.h>
+ #include <sys/sysctl.h>
+ #include <sys/thread2.h>
+diff --git a/sys/kern/uipc_msg.c b/sys/kern/uipc_msg.c
+index 5c3114de5b..1931352912 100644
+--- a/sys/kern/uipc_msg.c
++++ b/sys/kern/uipc_msg.c
+@@ -34,6 +34,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/msgport.h>
+ #include <sys/protosw.h>
+ #include <sys/socket.h>
+diff --git a/sys/net/altq/altq_var.h b/sys/net/altq/altq_var.h
+index c39e734833..8ed772347e 100644
+--- a/sys/net/altq/altq_var.h
++++ b/sys/net/altq/altq_var.h
+@@ -36,14 +36,13 @@
+ #ifndef _SYS_KERNEL_H_
+ #include <sys/kernel.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_ALTQ);
++#endif
+ 
+ /*
+  * machine dependent clock
+diff --git a/sys/net/dummynet/ip_dummynet_glue.c b/sys/net/dummynet/ip_dummynet_glue.c
+index b477d5b32a..d240f4b08a 100644
+--- a/sys/net/dummynet/ip_dummynet_glue.c
++++ b/sys/net/dummynet/ip_dummynet_glue.c
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/msgport.h>
+ #include <sys/socketvar.h>
+diff --git a/sys/net/if_loop.c b/sys/net/if_loop.c
+index 3db4488bbe..b38d27ba45 100644
+--- a/sys/net/if_loop.c
++++ b/sys/net/if_loop.c
+@@ -42,6 +42,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/lock.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/sockio.h>
+diff --git a/sys/net/netmap/netmap_kern.h b/sys/net/netmap/netmap_kern.h
+index 2e6251335f..70fcefd7ab 100644
+--- a/sys/net/netmap/netmap_kern.h
++++ b/sys/net/netmap/netmap_kern.h
+@@ -65,7 +65,9 @@
+ #define rmb()	cpu_lfence()
+ #define wmb()	cpu_sfence()
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETMAP);
++#endif
+ 
+ // XXX linux struct, not used in FreeBSD
+ struct net_device_ops {
+diff --git a/sys/net/pf/pf_norm.c b/sys/net/pf/pf_norm.c
+index af417b628b..1a29b2f4dc 100644
+--- a/sys/net/pf/pf_norm.c
++++ b/sys/net/pf/pf_norm.c
+@@ -35,6 +35,7 @@
+ #include <sys/mbuf.h>
+ #include <sys/filio.h>
+ #include <sys/fcntl.h>
++#include <sys/malloc.h>
+ #include <sys/socket.h>
+ #include <sys/kernel.h>
+ #include <sys/time.h>
+diff --git a/sys/net/pf/pf_osfp.c b/sys/net/pf/pf_osfp.c
+index 56ba8872f5..15d333fd88 100644
+--- a/sys/net/pf/pf_osfp.c
++++ b/sys/net/pf/pf_osfp.c
+@@ -21,6 +21,7 @@
+ #include <sys/socket.h>
+ #ifdef _KERNEL
+ #include <sys/systm.h>
++#include <sys/malloc.h>
+ #endif /* _KERNEL */
+ #include <sys/mbuf.h>
+ 
+diff --git a/sys/net/pf/pf_ruleset.c b/sys/net/pf/pf_ruleset.c
+index 49b9675c1c..8c1db465c5 100644
+--- a/sys/net/pf/pf_ruleset.c
++++ b/sys/net/pf/pf_ruleset.c
+@@ -39,6 +39,7 @@
+ #include <sys/socket.h>
+ #ifdef _KERNEL
+ # include <sys/systm.h>
++# include <sys/malloc.h>
+ #endif /* _KERNEL */
+ #include <sys/mbuf.h>
+ 
+diff --git a/sys/net/pf/pfvar.h b/sys/net/pf/pfvar.h
+index a6e4e2e0b5..aab5e15d9a 100644
+--- a/sys/net/pf/pfvar.h
++++ b/sys/net/pf/pfvar.h
+@@ -200,7 +200,9 @@ struct pf_addr_wrap {
+ 
+ #ifdef _KERNEL
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_PF);
++#endif
+ 
+ struct pfi_dynaddr {
+ 	TAILQ_ENTRY(pfi_dynaddr)	 entry;
+diff --git a/sys/net/raw_usrreq.c b/sys/net/raw_usrreq.c
+index 9db0b809c4..d4013c4bcd 100644
+--- a/sys/net/raw_usrreq.c
++++ b/sys/net/raw_usrreq.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+diff --git a/sys/netbt/bluetooth.h b/sys/netbt/bluetooth.h
+index 42d8beb359..54cd927c96 100644
+--- a/sys/netbt/bluetooth.h
++++ b/sys/netbt/bluetooth.h
+@@ -104,10 +104,11 @@ struct sockaddr_bt {
+ #define BDADDR_ANY	((const bdaddr_t *) "\000\000\000\000\000")
+ 
+ #ifdef _KERNEL
+-#include <sys/malloc.h>
+ #include <sys/bus.h>
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_BLUETOOTH);
++#endif
+ 
+ /*
+  * Bluetooth Protocol API callback methods
+diff --git a/sys/netbt/hci_socket.c b/sys/netbt/hci_socket.c
+index 50637192f3..a725ea5306 100644
+--- a/sys/netbt/hci_socket.c
++++ b/sys/netbt/hci_socket.c
+@@ -40,6 +40,7 @@
+ #include <sys/param.h>
+ #include <sys/domain.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+diff --git a/sys/netbt/l2cap_upper.c b/sys/netbt/l2cap_upper.c
+index b7406e6eef..2b27b726ba 100644
+--- a/sys/netbt/l2cap_upper.c
++++ b/sys/netbt/l2cap_upper.c
+@@ -33,6 +33,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/queue.h>
+diff --git a/sys/netbt/rfcomm_dlc.c b/sys/netbt/rfcomm_dlc.c
+index 904d415bcb..88c7706752 100644
+--- a/sys/netbt/rfcomm_dlc.c
++++ b/sys/netbt/rfcomm_dlc.c
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+diff --git a/sys/netbt/rfcomm_session.c b/sys/netbt/rfcomm_session.c
+index 01d97feb91..135105336d 100644
+--- a/sys/netbt/rfcomm_session.c
++++ b/sys/netbt/rfcomm_session.c
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+diff --git a/sys/netbt/rfcomm_upper.c b/sys/netbt/rfcomm_upper.c
+index 2707d88e0f..387aebf73a 100644
+--- a/sys/netbt/rfcomm_upper.c
++++ b/sys/netbt/rfcomm_upper.c
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+diff --git a/sys/netbt/sco_upper.c b/sys/netbt/sco_upper.c
+index 0d63a3ef4c..ecbf93d793 100644
+--- a/sys/netbt/sco_upper.c
++++ b/sys/netbt/sco_upper.c
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+diff --git a/sys/netgraph/netgraph.h b/sys/netgraph/netgraph.h
+index d89d5379b3..010d76b394 100644
+--- a/sys/netgraph/netgraph.h
++++ b/sys/netgraph/netgraph.h
+@@ -46,9 +46,6 @@
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #ifndef _SYS_MODULE_H_
+ #include <sys/module.h>
+ #endif
+@@ -316,7 +313,9 @@ MODULE_DEPEND(ng_##typename, netgraph,	NG_ABI_VERSION,			\
+ 	NETGRAPH_INIT_ORDERED(tn, tp, SI_SUB_PSEUDO, SI_ORDER_ANY)
+ 
+ /* Special malloc() type for netgraph structs and ctrl messages */
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH);
++#endif
+ 
+ /* declare the base of the netgraph sysctl hierarchy */
+ /* but only if this file cares about sysctls */
+diff --git a/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c b/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c
+index 5d1eb0389f..57666da1ea 100644
+--- a/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c
++++ b/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c
+@@ -48,6 +48,7 @@
+ #include <sys/endian.h>
+ #include <sys/interrupt.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/module.h>
+ 
+diff --git a/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h b/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
+index 1cd2766bb8..fa23d824a8 100644
+--- a/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
++++ b/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
+@@ -45,12 +45,14 @@
+  */
+ 
+ #ifndef NG_SEPARATE_MALLOC
++#if MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH_H4);
++#endif
+ #else
+ #define M_NETGRAPH_H4 M_NETGRAPH
+ #endif /* NG_SEPARATE_MALLOC */
+ 
+-/* 
++/*
+  * Debug
+  */
+ 
+diff --git a/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h b/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
+index c55b05d02b..88f22db5be 100644
+--- a/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
++++ b/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
+@@ -36,7 +36,9 @@
+ 
+ /* MALLOC decalation */
+ #ifdef NG_SEPARATE_MALLOC
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH_L2CAP);
++#endif
+ #else
+ #define M_NETGRAPH_L2CAP M_NETGRAPH
+ #endif /* NG_SEPARATE_MALLOC */
+diff --git a/sys/netgraph7/hub/ng_hub.c b/sys/netgraph7/hub/ng_hub.c
+index 3cce473132..230f176b97 100644
+--- a/sys/netgraph7/hub/ng_hub.c
++++ b/sys/netgraph7/hub/ng_hub.c
+@@ -29,6 +29,7 @@
+ #include <sys/param.h>
+ #include <sys/errno.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/systm.h>
+ 
+diff --git a/sys/netgraph7/netflow/netflow.c b/sys/netgraph7/netflow/netflow.c
+index aab37ec283..842e03d3e8 100644
+--- a/sys/netgraph7/netflow/netflow.c
++++ b/sys/netgraph7/netflow/netflow.c
+@@ -31,6 +31,7 @@
+ #include <sys/param.h>
+ #include <sys/kernel.h>
+ #include <sys/limits.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/syslog.h>
+ #include <sys/systm.h>
+diff --git a/sys/netgraph7/netflow/ng_netflow.c b/sys/netgraph7/netflow/ng_netflow.c
+index 7c1207d5ac..27d13be461 100644
+--- a/sys/netgraph7/netflow/ng_netflow.c
++++ b/sys/netgraph7/netflow/ng_netflow.c
+@@ -32,6 +32,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/limits.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/syslog.h>
+diff --git a/sys/netgraph7/netgraph.h b/sys/netgraph7/netgraph.h
+index bf641d4c9f..61092a8f5d 100644
+--- a/sys/netgraph7/netgraph.h
++++ b/sys/netgraph7/netgraph.h
+@@ -49,7 +49,6 @@
+ #endif
+ 
+ #include <sys/queue.h>
+-#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/mutex2.h>
+ #include <netgraph7/ng_message.h>	/* NG_HOOKSIZ, NG_NODESIZ */
+@@ -1099,8 +1098,10 @@ MODULE_DEPEND(ng_##typename, netgraph,	NG_ABI_VERSION,			\
+ 
+ /* Special malloc() type for netgraph structs and ctrl messages */
+ /* Only these two types should be visible to nodes */
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH);
+ MALLOC_DECLARE(M_NETGRAPH_MSG);
++#endif
+ 
+ /* declare the base of the netgraph sysclt hierarchy */
+ /* but only if this file cares about sysctls */
+diff --git a/sys/netproto/802_11/ieee80211_crypto.h b/sys/netproto/802_11/ieee80211_crypto.h
+index cca166d602..98f1d35781 100644
+--- a/sys/netproto/802_11/ieee80211_crypto.h
++++ b/sys/netproto/802_11/ieee80211_crypto.h
+@@ -149,7 +149,9 @@ struct ieee80211vap;
+ struct ieee80211_node;
+ struct mbuf;
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_CRYPTO);
++#endif
+ 
+ void	ieee80211_crypto_attach(struct ieee80211com *);
+ void	ieee80211_crypto_detach(struct ieee80211com *);
+diff --git a/sys/netproto/802_11/ieee80211_mesh.h b/sys/netproto/802_11/ieee80211_mesh.h
+index 9972c93fd5..98c4d1b04a 100644
+--- a/sys/netproto/802_11/ieee80211_mesh.h
++++ b/sys/netproto/802_11/ieee80211_mesh.h
+@@ -400,12 +400,14 @@ enum {
+ };
+ 
+ #ifdef _KERNEL
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_MESH_PREQ);
+ MALLOC_DECLARE(M_80211_MESH_PREP);
+ MALLOC_DECLARE(M_80211_MESH_PERR);
+ 
+ MALLOC_DECLARE(M_80211_MESH_RT);
+ MALLOC_DECLARE(M_80211_MESH_GT_RT);
++#endif
+ /*
+  * Basic forwarding information:
+  * o Destination MAC
+diff --git a/sys/netproto/802_11/ieee80211_node.h b/sys/netproto/802_11/ieee80211_node.h
+index 0faaf35131..1a3d29ad0e 100644
+--- a/sys/netproto/802_11/ieee80211_node.h
++++ b/sys/netproto/802_11/ieee80211_node.h
+@@ -233,8 +233,10 @@ struct ieee80211_node {
+ 	void			*ni_rctls;	/* private ratectl state */
+ 	uint64_t		ni_spare[3];
+ };
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_NODE);
+ MALLOC_DECLARE(M_80211_NODE_IE);
++#endif
+ 
+ #define	IEEE80211_NODE_ATH	(IEEE80211_NODE_FF | IEEE80211_NODE_TURBOP)
+ #define	IEEE80211_NODE_AMPDU \
+diff --git a/sys/netproto/802_11/ieee80211_ratectl.h b/sys/netproto/802_11/ieee80211_ratectl.h
+index 82601c1527..68ad95c898 100644
+--- a/sys/netproto/802_11/ieee80211_ratectl.h
++++ b/sys/netproto/802_11/ieee80211_ratectl.h
+@@ -61,7 +61,9 @@ void	ieee80211_ratectl_unregister(int);
+ void	ieee80211_ratectl_init(struct ieee80211vap *);
+ void	ieee80211_ratectl_set(struct ieee80211vap *, int);
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_RATECTL);
++#endif
+ 
+ static __inline void
+ ieee80211_ratectl_deinit(struct ieee80211vap *vap)
+diff --git a/sys/netproto/802_11/ieee80211_scan.h b/sys/netproto/802_11/ieee80211_scan.h
+index 7ece1c2a42..c7f4c6ed7c 100644
+--- a/sys/netproto/802_11/ieee80211_scan.h
++++ b/sys/netproto/802_11/ieee80211_scan.h
+@@ -283,7 +283,9 @@ struct ieee80211_scan_entry {
+ 	struct ieee80211_ies se_ies;	/* captured ie's */
+ 	u_int		se_age;		/* age of entry (0 on create) */
+ };
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_SCAN);
++#endif
+ 
+ /*
+  * Template for an in-kernel scan policy module.
+diff --git a/sys/netproto/802_11/ieee80211_var.h b/sys/netproto/802_11/ieee80211_var.h
+index cfbcdc4122..826323e49f 100644
+--- a/sys/netproto/802_11/ieee80211_var.h
++++ b/sys/netproto/802_11/ieee80211_var.h
+@@ -536,7 +536,9 @@ struct ieee80211vap {
+ #endif
+ 	uint64_t		iv_spare[6];
+ };
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_VAP);
++#endif
+ 
+ #define	IEEE80211_ADDR_EQ(a1,a2)	(memcmp(a1,a2,IEEE80211_ADDR_LEN) == 0)
+ #define	IEEE80211_ADDR_COPY(dst,src)	memcpy(dst,src,IEEE80211_ADDR_LEN)
+diff --git a/sys/netproto/802_11/wlan/ieee80211_dragonfly.c b/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
+index f69d08d103..0dfe630c2d 100644
+--- a/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
++++ b/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
+@@ -32,9 +32,10 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
+-#include <sys/systm.h> 
++#include <sys/systm.h>
+ #include <sys/linker.h>
+-#include <sys/mbuf.h>   
++#include <sys/malloc.h>
++#include <sys/mbuf.h>
+ #include <sys/module.h>
+ #include <sys/proc.h>
+ #include <sys/sysctl.h>
+diff --git a/sys/netproto/802_11/wlan/ieee80211_superg.c b/sys/netproto/802_11/wlan/ieee80211_superg.c
+index 67cdbbc3c5..f5312b4396 100644
+--- a/sys/netproto/802_11/wlan/ieee80211_superg.c
++++ b/sys/netproto/802_11/wlan/ieee80211_superg.c
+@@ -31,13 +31,14 @@ __FBSDID("$FreeBSD$");
+ #ifdef	IEEE80211_SUPPORT_SUPERG
+ 
+ #include <sys/param.h>
+-#include <sys/systm.h> 
+-#include <sys/mbuf.h>   
++#include <sys/systm.h>
++#include <sys/malloc.h>
++#include <sys/mbuf.h>
+ #include <sys/kernel.h>
+ #include <sys/endian.h>
+ 
+ #include <sys/socket.h>
+- 
++
+ #include <net/if.h>
+ #include <net/if_var.h>
+ #include <net/if_llc.h>
+diff --git a/sys/opencrypto/cryptodev.h b/sys/opencrypto/cryptodev.h
+index cbc41753ca..a2cf1cc3b8 100644
+--- a/sys/opencrypto/cryptodev.h
++++ b/sys/opencrypto/cryptodev.h
+@@ -404,7 +404,9 @@ struct cryptkop {
+ #define	CRYPTO_SESID2CAPS(_sid)	(((_sid) >> 32) & 0xff000000)
+ #define	CRYPTO_SESID2LID(_sid)	(((u_int32_t) (_sid)) & 0xffffffff)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_CRYPTO_DATA);
++#endif
+ 
+ extern	int crypto_newsession(u_int64_t *sid, struct cryptoini *cri, int hard);
+ extern	int crypto_freesession(u_int64_t sid);
+diff --git a/sys/opencrypto/xform.h b/sys/opencrypto/xform.h
+index 5e726da869..a5048aca43 100644
+--- a/sys/opencrypto/xform.h
++++ b/sys/opencrypto/xform.h
+@@ -111,8 +111,7 @@ extern struct auth_hash auth_hash_gmac_aes_256;
+ 
+ extern struct comp_algo comp_algo_deflate;
+ 
+-#ifdef _KERNEL
+-#include <sys/malloc.h>
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_XDATA);
+ #endif
+ #endif /* _CRYPTO_XFORM_H_ */
+diff --git a/sys/platform/vkernel64/platform/cothread.c b/sys/platform/vkernel64/platform/cothread.c
+index 9c4a6c9e9a..1de97e81df 100644
+--- a/sys/platform/vkernel64/platform/cothread.c
++++ b/sys/platform/vkernel64/platform/cothread.c
+@@ -39,11 +39,12 @@
+  * 'mycpu' do not exist for it.
+  */
+ 
++#include <sys/types.h>
+ #include <sys/interrupt.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/memrange.h>
+ #include <sys/tls.h>
+-#include <sys/types.h>
+ #include <sys/bus.h>
+ #include <sys/thread2.h>
+ #include <time.h>
+diff --git a/sys/sys/memrange.h b/sys/sys/memrange.h
+index 180ea14dd2..c8548e3da9 100644
+--- a/sys/sys/memrange.h
++++ b/sys/sys/memrange.h
+@@ -15,14 +15,6 @@
+ #include <sys/ioccom.h>
+ #endif
+ 
+-#ifdef _KERNEL
+-
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+-
+-#endif
+-
+ /* Memory range attributes */
+ #define MDF_UNCACHEABLE		(1<<0)	/* region not cached */
+ #define MDF_WRITECOMBINE	(1<<1)	/* region supports "write combine" action */
+@@ -63,7 +55,9 @@ struct mem_range_op
+ 
+ #ifdef _KERNEL
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_MEMDESC);
++#endif
+ 
+ struct mem_range_softc;
+ struct mem_range_ops
+@@ -92,4 +86,4 @@ extern int cpu_set_iopl(void);
+ extern int cpu_clr_iopl(void);
+ #endif
+ 
+-#endif
++#endif	/* !_SYS_MEMRANGE_H_ */
+diff --git a/sys/sys/mountctl.h b/sys/sys/mountctl.h
+index 95d4079c52..dc43b9e72d 100644
+--- a/sys/sys/mountctl.h
++++ b/sys/sys/mountctl.h
+@@ -45,15 +45,10 @@
+ #include <sys/queue.h>
+ #endif
+ 
+-#ifdef _KERNEL
+-
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ #ifndef _SYS_THREAD_H_
+ #include <sys/thread.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+-
+ #endif
+ 
+ /*
+@@ -267,8 +262,10 @@ void jrecord_write_uio(struct jrecord *jrec, int16_t rectype, struct uio *uio);
+ void jrecord_file_data(struct jrecord *jrec, struct vnode *vp,
+ 			off_t off, off_t bytes);
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_JOURNAL);
+ MALLOC_DECLARE(M_JFIFO);
++#endif
+ 
+ #else
+ 
+diff --git a/sys/sys/msgport2.h b/sys/sys/msgport2.h
+index b5e2035cdd..3b0edf9e02 100644
+--- a/sys/sys/msgport2.h
++++ b/sys/sys/msgport2.h
+@@ -14,11 +14,10 @@
+ #ifndef _SYS_SYSTM_H_
+ #include <sys/systm.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_LWKTMSG);
++#endif
+ 
+ /*
+  * Initialize a LWKT message structure.  Note that if the message supports
+diff --git a/sys/sys/posix4.h b/sys/sys/posix4.h
+index 8b6b171fde..08c5f01460 100644
+--- a/sys/sys/posix4.h
++++ b/sys/sys/posix4.h
+@@ -44,10 +44,11 @@
+ #include "opt_posix.h"
+ 
+ #include <sys/param.h>
+-#include <sys/malloc.h>
+ #include <sys/sched.h>
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_P31B);
++#endif
+ 
+ #define p31b_malloc(SIZE) kmalloc((SIZE), M_P31B, M_WAITOK)
+ #define p31b_free(P) kfree((P), M_P31B)
+diff --git a/sys/sys/socketvar2.h b/sys/sys/socketvar2.h
+index 1104d5dba0..34c1dc1a2b 100644
+--- a/sys/sys/socketvar2.h
++++ b/sys/sys/socketvar2.h
+@@ -33,15 +33,16 @@
+ #ifndef _SYS_SOCKETVAR2_H_
+ #define _SYS_SOCKETVAR2_H_
+ 
++#ifndef _KERNEL
++#error "This file should not be included by userland programs."
++#endif
++
+ #ifndef _SYS_SOCKETVAR_H_
+ #include <sys/socketvar.h>
+ #endif
+ #ifndef _SYS_SYSTM_H_
+ #include <sys/systm.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #include <machine/atomic.h>
+ 
+ /*
+@@ -53,6 +54,7 @@
+  *
+  * Returns 0 on success, non-zero if the lock could not be acquired.
+  */
++#ifdef MALLOC_DEFINE
+ static __inline int
+ ssb_lock(struct signalsockbuf *ssb, int wf)
+ {
+@@ -72,6 +74,7 @@ ssb_lock(struct signalsockbuf *ssb, int wf)
+ 		}
+ 	}
+ }
++#endif
+ 
+ /*
+  * Release a previously acquired lock on a signalsockbuf.
+diff --git a/sys/sys/tty.h b/sys/sys/tty.h
+index de90b5e5a7..a0f42a05bd 100644
+--- a/sys/sys/tty.h
++++ b/sys/sys/tty.h
+@@ -231,11 +231,9 @@ struct speedtab {
+ 
+ #ifdef _KERNEL
+ 
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+-
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_TTYS);
++#endif
+ 
+ extern	struct tty *constty;	/* Temporary virtual console. */
+ 
+diff --git a/sys/vfs/devfs/devfs_core.c b/sys/vfs/devfs/devfs_core.c
+index ae628d007e..9ffe7694dd 100644
+--- a/sys/vfs/devfs/devfs_core.c
++++ b/sys/vfs/devfs/devfs_core.c
+@@ -35,6 +35,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/bus.h>
++#include <sys/malloc.h>
+ #include <sys/mount.h>
+ #include <sys/vnode.h>
+ #include <sys/lock.h>
+-- 
+2.23.0
+

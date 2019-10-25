@@ -1,0 +1,141 @@
+From b39bcd28687f0129fe8997c39e61adac22523f97 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 25 Oct 2019 21:05:10 +0300
+Subject: [PATCH 25/26] <sys/malloc.h>: Avoid self referencing macros.
+
+ It was reported that previoud kmalloc() implementation at header level
+ is breaking tools like Coccinelle and likely others.  Since this header
+ now has implicit requirement on other headers only for using the
+ MALLOC_DEFINE() macro (<sys/kernel.h> must be included before), it is
+ possible to safely use inline functions.  Inline function does not have
+ flexibility limitations like preprocessor macro and expands to much
+ nicer line in compiler intermediates while allowing to easilly make
+ future adjustments when needed.  Also we should be able to no longer
+ avoid using kmalloc*() calls directly in other kernel headers.
+
+ The LINT64 builds with SLAB_DEBUG option enabled are not affected by
+ this change, but for consistency add alias for _kmalloc() too.
+
+ Move in the "#if 1" into the _kmalloc() body, this allows compiler to
+ perform additional optimizations for non __builtin_constant_p() cases.
+
+ The generated code in kernel does not differ a lot, mainly:
+  kmod dm_target_striped.s:
+    less pop
+  kmod minimal differnces in drm code
+  amr.s:
+    on less .p2align 4,,10
+  cam_xpt.s:
+    move movq around kmalloc
+  ciss.s:
+    diffs
+  cryptosoft.s:
+    diffs in swcr_newsession:
+  firewire.s:
+    one more .p2align 4,,10
+  ieee80211_mesh.s:
+    one less .p2align 4,,10
+  if_txp.s:
+    small diffs
+  ip6_output.s:
+    cmpl+jnb vs testl+je+cmpl+jbe
+  kern_memio.s:
+    jumps to common label after read_random_unlimited
+  link_elf_obj.s:
+    small diffs
+  mrsas_ioctl.s:
+    small diffs
+  pci.s:
+    more movq around kmalloc
+  prop_array.s:
+    more inlining
+  prod_dictionary.s:
+    more inlining
+  radix.s:
+    move less movq, jnb vs jbe
+  subr_bus.s:
+    more push/pop
+  subr_sbuf.s:
+    more inlining
+  subr_taskqueue.s:
+    taskqueue_start_threads: slightly different
+  sysv_sem.s:
+    sys_semget: slightly different registers
+  vmx.s:
+    more push/pop
+
+  Compared with -save-temps on GENERIC without debug enabled.
+---
+ sys/sys/malloc.h | 39 +++++++++++++++++++++------------------
+ 1 file changed, 21 insertions(+), 18 deletions(-)
+
+diff --git a/sys/sys/malloc.h b/sys/sys/malloc.h
+index 7518e309dd..f85ab2fe05 100644
+--- a/sys/sys/malloc.h
++++ b/sys/sys/malloc.h
+@@ -161,7 +161,7 @@ char	*kstrdup_debug(const char *, struct malloc_type *,
+ char	*kstrndup_debug(const char *, size_t maxlen, struct malloc_type *,
+ 			const char *file, int line) __malloclike __heedresult;
+ #if 1
+-#define kmalloc(size, type, flags) ({					\
++#define _kmalloc(size, type, flags) ({					\
+ 	void *_malloc_item;						\
+ 	size_t _size = (size);						\
+ 									\
+@@ -181,7 +181,11 @@ char	*kstrndup_debug(const char *, size_t maxlen, struct malloc_type *,
+ 	}								\
+ 	_malloc_item;							\
+ })
++#else
++#define _kmalloc(size, type, flags)	\
++	kmalloc_debug(_size, type, flags, __FILE__, __LINE__);
+ #endif
++#define kmalloc(size, type, flags)	_kmalloc(size, type, flags)
+ #define krealloc(addr, size, type, flags)	\
+ 	krealloc_debug(addr, size, type, flags, __FILE__, __LINE__)
+ #define kstrdup(str, type)			\
+@@ -193,25 +197,24 @@ char	*kstrndup_debug(const char *, size_t maxlen, struct malloc_type *,
+ 
+ void	*kmalloc(unsigned long size, struct malloc_type *type, int flags)
+ 		 __malloclike __heedresult __alloc_size(1);
++static __inline __always_inline void *
++_kmalloc(size_t _size, struct malloc_type *_type, int _flags)
++{
+ #if 1
+-#define kmalloc(size, type, flags) ({					\
+-	void *_malloc_item;						\
+-	size_t _size = (size);						\
+-									\
+-	if (__builtin_constant_p(size) &&				\
+-	    __builtin_constant_p(flags) &&				\
+-	    ((flags) & M_ZERO)) {					\
+-		_malloc_item = kmalloc(_size, type, (flags) & ~M_ZERO);	\
+-		if (((flags) & (M_WAITOK|M_NULLOK)) == M_WAITOK ||	\
+-		    __predict_true(_malloc_item != NULL)) {		\
+-			__builtin_memset(_malloc_item, 0, _size);	\
+-		}							\
+-	} else {							\
+-	    _malloc_item = kmalloc(_size, type, flags);			\
+-	}								\
+-	_malloc_item;							\
+-})
++	if (__builtin_constant_p(_size) && __builtin_constant_p(_flags) &&
++	    (_flags & M_ZERO)) {
++		void *_malloc_item;
++		_malloc_item = kmalloc(_size, _type, _flags & ~M_ZERO);
++		if ((_flags & (M_WAITOK|M_NULLOK)) == M_WAITOK ||
++		    __predict_true(_malloc_item != NULL)) {
++			__builtin_memset(_malloc_item, 0, _size);
++		}
++		return _malloc_item;
++	}
+ #endif
++	return (kmalloc(_size, _type, _flags));
++}
++#define kmalloc(size, type, flags)	_kmalloc((size), (type), (flags))
+ void	*krealloc(void *addr, unsigned long size, struct malloc_type *type,
+ 		  int flags) __heedresult __alloc_size(2);
+ char	*kstrdup(const char *, struct malloc_type *)
+-- 
+2.23.0
+

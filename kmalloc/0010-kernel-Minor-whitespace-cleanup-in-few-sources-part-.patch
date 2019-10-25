@@ -1,0 +1,796 @@
+From 0bbf16e50d4c7922e1c2ae472c38aee0f6bdd562 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 24 Oct 2019 19:03:22 +0300
+Subject: [PATCH 10/26] kernel: Minor whitespace cleanup in few sources (part
+ 2).
+
+ Separated from next.
+---
+ sys/dev/netif/nfe/if_nfe.c                    | 10 +++----
+ sys/dev/powermng/clockmod/clockmod.c          |  4 +--
+ sys/kern/kern_p1003_1b.c                      |  4 +--
+ sys/kern/kern_uuid.c                          |  1 -
+ sys/kern/subr_disklabel32.c                   | 14 +++++-----
+ sys/kern/uipc_msg.c                           | 10 +++----
+ sys/net/altq/altq_var.h                       |  1 -
+ sys/net/dummynet/ip_dummynet_glue.c           |  8 +++---
+ sys/net/pf/pf_norm.c                          | 10 +++----
+ sys/net/raw_usrreq.c                          |  2 +-
+ sys/net/vlan/if_vlan_ether.c                  |  2 +-
+ sys/netbt/hci_misc.c                          |  1 -
+ sys/netbt/hci_socket.c                        | 10 +++----
+ sys/netbt/rfcomm_upper.c                      |  1 -
+ sys/netgraph/netgraph.h                       |  4 +--
+ .../bluetooth/drivers/h4/ng_h4_var.h          | 10 +++----
+ sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h  | 14 +++++-----
+ sys/netgraph7/netgraph.h                      | 28 +++++++++----------
+ sys/netinet/ip_icmp.c                         |  2 +-
+ sys/netinet/tcp_output.c                      |  4 +--
+ .../802_11/wlan/ieee80211_dragonfly.c         |  4 +--
+ sys/netproto/802_11/wlan/ieee80211_superg.c   |  4 +--
+ sys/netproto/mpls/mpls_output.c               |  6 ++--
+ sys/opencrypto/xform.h                        |  5 ++--
+ sys/sys/memrange.h                            |  5 ++--
+ sys/sys/mountctl.h                            | 12 ++++----
+ sys/sys/posix4.h                              |  2 +-
+ 27 files changed, 85 insertions(+), 93 deletions(-)
+
+diff --git a/sys/dev/netif/nfe/if_nfe.c b/sys/dev/netif/nfe/if_nfe.c
+index 5881b35791..c1f736354d 100644
+--- a/sys/dev/netif/nfe/if_nfe.c
++++ b/sys/dev/netif/nfe/if_nfe.c
+@@ -2,15 +2,15 @@
+ 
+ /*
+  * Copyright (c) 2006 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Sepherosa Ziehau <sepherosa@gmail.com> and
+  * Matthew Dillon <dillon@apollo.backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -20,7 +20,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -1268,7 +1268,7 @@ nfe_encap(struct nfe_softc *sc, struct nfe_tx_ring *ring, struct mbuf *m0)
+ 	}
+ 
+ 	/*
+-	 * XXX urm. somebody is unaware of how hardware works.  You 
++	 * XXX urm. somebody is unaware of how hardware works.  You
+ 	 * absolutely CANNOT set NFE_TX_VALID on the next descriptor in
+ 	 * the ring until the entire chain is actually *VALID*.  Otherwise
+ 	 * the hardware may encounter a partially initialized chain that
+diff --git a/sys/dev/powermng/clockmod/clockmod.c b/sys/dev/powermng/clockmod/clockmod.c
+index 26a486705d..7e3eaa4b25 100644
+--- a/sys/dev/powermng/clockmod/clockmod.c
++++ b/sys/dev/powermng/clockmod/clockmod.c
+@@ -331,7 +331,7 @@ clockmod_dom_create(cpumask_t mask)
+ 				ctrl->ctl_value |= 1 << 4;
+ 
+ 			if (bootverbose) {
+-				kprintf("  0x%04jx %s\n", 
++				kprintf("  0x%04jx %s\n",
+ 				    (uintmax_t)ctrl->ctl_value,
+ 				    ctrl->ctl_name);
+ 			}
+@@ -472,7 +472,7 @@ clockmod_select_handler(struct cpuhelper_msg *msg)
+ 	cpuhelper_replymsg(msg, 0);
+ }
+ 
+-static int 
++static int
+ clockmod_select(const struct clockmod_softc *sc,
+     const struct clockmod_dom_ctrl *ctrl)
+ {
+diff --git a/sys/kern/kern_p1003_1b.c b/sys/kern/kern_p1003_1b.c
+index 83b00c7613..5ebb8b7168 100644
+--- a/sys/kern/kern_p1003_1b.c
++++ b/sys/kern/kern_p1003_1b.c
+@@ -223,7 +223,7 @@ sys_sched_getparam(struct sched_getparam_args *uap)
+ 	struct lwp *lp;
+ 	struct sched_param sched_param;
+ 	int e;
+- 
++
+ 	if ((e = p31b_proc(uap->pid, &targetp)) == 0) {
+ 		lp = FIRST_LWP_IN_PROC(targetp); /* XXX lwp */
+ 		if (lp) {
+@@ -277,7 +277,7 @@ sys_sched_getscheduler(struct sched_getscheduler_args *uap)
+ 	struct proc *targetp;
+ 	struct lwp *lp;
+ 	int e;
+- 
++
+ 	if ((e = p31b_proc(uap->pid, &targetp)) == 0) {
+ 		lp = FIRST_LWP_IN_PROC(targetp); /* XXX lwp */
+ 		if (lp) {
+diff --git a/sys/kern/kern_uuid.c b/sys/kern/kern_uuid.c
+index 0901c96e97..504349ed2c 100644
+--- a/sys/kern/kern_uuid.c
++++ b/sys/kern/kern_uuid.c
+@@ -24,7 +24,6 @@
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/kern/kern_uuid.c,v 1.13 2007/04/23 12:53:00 pjd Exp $
+- * $DragonFly: src/sys/kern/kern_uuid.c,v 1.4 2007/06/19 06:07:57 dillon Exp $
+  */
+ 
+ #include <sys/param.h>
+diff --git a/sys/kern/subr_disklabel32.c b/sys/kern/subr_disklabel32.c
+index 323bb02a9e..39ec9b4e9b 100644
+--- a/sys/kern/subr_disklabel32.c
++++ b/sys/kern/subr_disklabel32.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2003-2007 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,7 +30,7 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
++ *
+  * ----------------------------------------------------------------------------
+  * "THE BEER-WARE LICENSE" (Revision 42):
+  * <phk@FreeBSD.ORG> wrote this file.  As long as you retain this notice you
+@@ -181,7 +181,7 @@ l32_freedisklabel(disklabel_t *lpp)
+ }
+ 
+ /*
+- * Attempt to read a disk label from a device.  
++ * Attempt to read a disk label from a device.
+  *
+  * Returns NULL on sucess, and an error string on failure
+  */
+@@ -217,7 +217,7 @@ l32_readdisklabel(cdev_t dev, struct diskslice *sp, disklabel_t *lpp,
+ 			 * NOTE! dsreadandsetlabel() does a strcmp() on
+ 			 * this string.
+ 			 */
+-			if (msg == NULL) 
++			if (msg == NULL)
+ 				msg = "no disk label";
+ 		} else if (dlp->d_npartitions > MAXPARTITIONS32 ||
+ 			   dkcksum32(dlp) != 0) {
+diff --git a/sys/kern/uipc_msg.c b/sys/kern/uipc_msg.c
+index d2ef81db22..5c3114de5b 100644
+--- a/sys/kern/uipc_msg.c
++++ b/sys/kern/uipc_msg.c
+@@ -1,10 +1,10 @@
+ /*
+  * Copyright (c) 2003, 2004 Jeffrey M. Hsu.  All rights reserved.
+  * Copyright (c) 2003, 2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Jeffrey M. Hsu.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -16,7 +16,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -569,7 +569,7 @@ so_pr_ctloutput(struct socket *so, struct sockopt *sopt)
+ }
+ 
+ struct lwkt_port *
+-so_pr_ctlport(struct protosw *pr, int cmd, struct sockaddr *arg, 
++so_pr_ctlport(struct protosw *pr, int cmd, struct sockaddr *arg,
+     void *extra, int *cpuid)
+ {
+ 	if (pr->pr_ctlport == NULL)
+@@ -715,7 +715,7 @@ netmsg_so_notify_doabort(lwkt_msg_t lmsg)
+ /*
+  * Predicate requests can be aborted.  This function is only called once
+  * and will interlock against processing/reply races (since such races
+- * occur on the same thread that controls the port where the abort is 
++ * occur on the same thread that controls the port where the abort is
+  * requeued).
+  *
+  * This part of the abort request occurs on the target cpu.  The message
+diff --git a/sys/net/altq/altq_var.h b/sys/net/altq/altq_var.h
+index c97bba1840..c39e734833 100644
+--- a/sys/net/altq/altq_var.h
++++ b/sys/net/altq/altq_var.h
+@@ -1,5 +1,4 @@
+ /*	$KAME: altq_var.h,v 1.17 2004/04/20 05:09:08 kjc Exp $	*/
+-/*	$DragonFly: src/sys/net/altq/altq_var.h,v 1.5 2008/05/14 11:59:23 sephe Exp $ */
+ 
+ /*
+  * Copyright (C) 1998-2003
+diff --git a/sys/net/dummynet/ip_dummynet_glue.c b/sys/net/dummynet/ip_dummynet_glue.c
+index d79f93ebe3..b477d5b32a 100644
+--- a/sys/net/dummynet/ip_dummynet_glue.c
++++ b/sys/net/dummynet/ip_dummynet_glue.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2007 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Sepherosa Ziehau <sepherosa@gmail.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+diff --git a/sys/net/pf/pf_norm.c b/sys/net/pf/pf_norm.c
+index 23033ee4df..af417b628b 100644
+--- a/sys/net/pf/pf_norm.c
++++ b/sys/net/pf/pf_norm.c
+@@ -644,8 +644,8 @@ pf_fragcache(struct mbuf **m0, struct ip *h, struct pf_fragment **frag, int mff,
+ 				    (*m0)->m_pkthdr.len);
+ 				if (*m0 == NULL)
+ 					goto no_mem;
+-				KASSERT(((*m0)->m_next == NULL), 
+-				    ("(*m0)->m_next != NULL: %s", 
++				KASSERT(((*m0)->m_next == NULL),
++				    ("(*m0)->m_next != NULL: %s",
+ 				    __func__));
+ 				m_adj(m, precut + (h->ip_hl << 2));
+ 				m_cat(*m0, m);
+@@ -1390,7 +1390,7 @@ pf_normalize_tcp_init(struct mbuf *m, int off, struct pf_pdesc *pd,
+ 	u_int8_t hdr[60];
+ 	u_int8_t *opt;
+ 
+-	KASSERT((src->scrub == NULL), 
++	KASSERT((src->scrub == NULL),
+ 	    ("pf_normalize_tcp_init: src->scrub != NULL"));
+ 
+ 	src->scrub = kmalloc(sizeof(struct pf_state_scrub), M_PFSTATESCRUBPL,
+@@ -1489,7 +1489,7 @@ pf_normalize_tcp_stateful(struct mbuf *m, int off, struct pf_pdesc *pd,
+ 	int copyback = 0;
+ 	int got_ts = 0;
+ 
+-	KASSERT((src->scrub || dst->scrub), 
++	KASSERT((src->scrub || dst->scrub),
+ 	    ("pf_normalize_tcp_statefull: src->scrub && dst->scrub!"));
+ 
+ 	tsval = 0;	/* avoid gcc complaint */
+@@ -1644,7 +1644,7 @@ pf_normalize_tcp_stateful(struct mbuf *m, int off, struct pf_pdesc *pd,
+ 		 * measurement of RTT (round trip time) and PAWS
+ 		 * (protection against wrapped sequence numbers).  PAWS
+ 		 * gives us a set of rules for rejecting packets on
+-		 * long fat pipes (packets that were somehow delayed 
++		 * long fat pipes (packets that were somehow delayed
+ 		 * in transit longer than the time it took to send the
+ 		 * full TCP sequence space of 4Gb).  We can use these
+ 		 * rules and infer a few others that will let us treat
+diff --git a/sys/net/raw_usrreq.c b/sys/net/raw_usrreq.c
+index 3945822baa..9db0b809c4 100644
+--- a/sys/net/raw_usrreq.c
++++ b/sys/net/raw_usrreq.c
+@@ -376,7 +376,7 @@ struct pr_usrreqs raw_usrreqs = {
+ 	.pru_connect = raw_uconnect,
+ 	.pru_connect2 = pr_generic_notsupp,
+ 	.pru_control = pr_generic_notsupp,
+-	.pru_detach = raw_udetach, 
++	.pru_detach = raw_udetach,
+ 	.pru_disconnect = raw_udisconnect,
+ 	.pru_listen = pr_generic_notsupp,
+ 	.pru_peeraddr = raw_upeeraddr,
+diff --git a/sys/net/vlan/if_vlan_ether.c b/sys/net/vlan/if_vlan_ether.c
+index ce9d42939b..176cab279b 100644
+--- a/sys/net/vlan/if_vlan_ether.c
++++ b/sys/net/vlan/if_vlan_ether.c
+@@ -12,7 +12,7 @@
+  * no representations about the suitability of this software for any
+  * purpose.  It is provided "as is" without express or implied
+  * warranty.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY M.I.T. ``AS IS''.  M.I.T. DISCLAIMS
+  * ALL EXPRESS OR IMPLIED WARRANTIES WITH REGARD TO THIS SOFTWARE,
+  * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+diff --git a/sys/netbt/hci_misc.c b/sys/netbt/hci_misc.c
+index 29af609922..7e92564533 100644
+--- a/sys/netbt/hci_misc.c
++++ b/sys/netbt/hci_misc.c
+@@ -1,4 +1,3 @@
+-/* $DragonFly: src/sys/netbt/hci_misc.c,v 1.2 2008/03/18 13:41:42 hasso Exp $ */
+ /* $OpenBSD: src/sys/netbt/hci_misc.c,v 1.2 2008/02/24 21:34:48 uwe Exp $ */
+ /* $NetBSD: hci_misc.c,v 1.3 2007/09/16 19:59:30 plunky Exp $ */
+ 
+diff --git a/sys/netbt/hci_socket.c b/sys/netbt/hci_socket.c
+index bededfc096..50637192f3 100644
+--- a/sys/netbt/hci_socket.c
++++ b/sys/netbt/hci_socket.c
+@@ -560,9 +560,9 @@ static void
+ hci_sdetach(netmsg_t msg)
+ {
+ 	struct socket *so = msg->detach.base.nm_so;
+-	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;	
++	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;
+ 	int error;
+-	
++
+ 	if (pcb == NULL) {
+ 		error = EINVAL;
+ 	} else {
+@@ -583,7 +583,7 @@ static void
+ hci_sdisconnect(netmsg_t msg)
+ {
+ 	struct socket *so = msg->disconnect.base.nm_so;
+-	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;	
++	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;
+ 	int error;
+ 
+ 	if (pcb) {
+@@ -751,7 +751,7 @@ hci_ssockaddr(netmsg_t msg)
+ 	struct sockaddr **nam = msg->sockaddr.nm_nam;
+ 	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;
+ 	struct sockaddr_bt *sa;
+-	
++
+ 	KKASSERT(nam != NULL);
+ 	sa = (struct sockaddr_bt *)nam;
+ 
+@@ -872,7 +872,7 @@ hci_ctloutput(netmsg_t msg)
+ 		case SO_HCI_EVT_FILTER:	/* set event filter */
+ 			error = soopt_to_kbuf(sopt, &pcb->hp_efilter,
+ 			    sizeof(struct hci_filter),
+-			    sizeof(struct hci_filter)); 
++			    sizeof(struct hci_filter));
+ 			break;
+ 
+ 		case SO_HCI_PKT_FILTER:	/* set packet filter */
+diff --git a/sys/netbt/rfcomm_upper.c b/sys/netbt/rfcomm_upper.c
+index e04bf3f2c1..2707d88e0f 100644
+--- a/sys/netbt/rfcomm_upper.c
++++ b/sys/netbt/rfcomm_upper.c
+@@ -1,4 +1,3 @@
+-/* $DragonFly: src/sys/netbt/rfcomm_upper.c,v 1.3 2008/06/20 20:52:29 aggelos Exp $ */
+ /* $OpenBSD: src/sys/netbt/rfcomm_upper.c,v 1.4 2008/02/24 21:34:48 uwe Exp $ */
+ /* $NetBSD: rfcomm_upper.c,v 1.10 2007/11/20 20:25:57 plunky Exp $ */
+ 
+diff --git a/sys/netgraph/netgraph.h b/sys/netgraph/netgraph.h
+index 65a2ca8103..d89d5379b3 100644
+--- a/sys/netgraph/netgraph.h
++++ b/sys/netgraph/netgraph.h
+@@ -4,7 +4,7 @@
+  *
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -15,7 +15,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+diff --git a/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h b/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
+index fe8503707d..1cd2766bb8 100644
+--- a/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
++++ b/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
+@@ -29,7 +29,7 @@
+  *
+  * $Id: ng_h4_var.h,v 1.5 2005/10/31 17:57:43 max Exp $
+  * $FreeBSD: head/sys/netgraph/bluetooth/drivers/h4/ng_h4_var.h 171818 2007-08-13 17:19:28Z emax $
+- * 
++ *
+  * Based on:
+  * ---------
+  *
+@@ -61,8 +61,8 @@ MALLOC_DECLARE(M_NETGRAPH_H4);
+ 
+ #define NG_H4_HIWATER		256	/* High water mark on output */
+ 
+-/* 
+- * Per-node private info 
++/*
++ * Per-node private info
+  */
+ 
+ typedef struct ng_h4_info {
+@@ -71,7 +71,7 @@ typedef struct ng_h4_info {
+ 
+ 	ng_h4_node_debug_ep	 debug;	/* Debug level */
+ 	ng_h4_node_state_ep	 state;	/* State */
+-	
++
+ 	ng_h4_node_stat_ep	 stat;
+ #define NG_H4_STAT_PCKTS_SENT(s)	(s).pckts_sent ++
+ #define NG_H4_STAT_BYTES_SENT(s, n)	(s).bytes_sent += (n)
+@@ -86,7 +86,7 @@ typedef struct ng_h4_info {
+ #define	NG_H4_LOCK(sc)		crit_enter();
+ #define	NG_H4_UNLOCK(sc)	crit_exit();
+ 
+-#define NG_H4_IBUF_SIZE		1024	/* XXX must be big enough to hold full 
++#define NG_H4_IBUF_SIZE		1024	/* XXX must be big enough to hold full
+ 					   frame */
+ 	u_int8_t		 ibuf[NG_H4_IBUF_SIZE];	/* Incoming data */
+ 	u_int32_t		 got;	/* Number of bytes we have received */
+diff --git a/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h b/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
+index 84547164c9..c55b05d02b 100644
+--- a/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
++++ b/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
+@@ -59,16 +59,16 @@ MALLOC_DECLARE(M_NETGRAPH_L2CAP);
+ 
+ /*
+  * L2CAP signaling command ident's are assigned relative to the connection,
+- * because there is only one signaling channel (cid == 0x01) for every 
+- * connection. So up to 254 (0xff - 0x01) L2CAP commands can be pending at the 
++ * because there is only one signaling channel (cid == 0x01) for every
++ * connection. So up to 254 (0xff - 0x01) L2CAP commands can be pending at the
+  * same time for the same connection.
+  */
+ 
+-#define NG_L2CAP_NULL_IDENT	0x00        /* DO NOT USE THIS IDENT */ 
+-#define NG_L2CAP_FIRST_IDENT	0x01        /* dynamically alloc. (start) */ 
+-#define NG_L2CAP_LAST_IDENT	0xff        /* dynamically alloc. (end) */ 
++#define NG_L2CAP_NULL_IDENT	0x00        /* DO NOT USE THIS IDENT */
++#define NG_L2CAP_FIRST_IDENT	0x01        /* dynamically alloc. (start) */
++#define NG_L2CAP_LAST_IDENT	0xff        /* dynamically alloc. (end) */
+ 
+-/* 
++/*
+  * L2CAP (Node private)
+  */
+ 
+@@ -97,7 +97,7 @@ typedef struct ng_l2cap {
+ } ng_l2cap_t;
+ typedef ng_l2cap_t *			ng_l2cap_p;
+ 
+-/* 
++/*
+  * L2CAP connection descriptor
+  */
+ 
+diff --git a/sys/netgraph7/netgraph.h b/sys/netgraph7/netgraph.h
+index 62810b1b15..bf641d4c9f 100644
+--- a/sys/netgraph7/netgraph.h
++++ b/sys/netgraph7/netgraph.h
+@@ -5,7 +5,7 @@
+ /*-
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -16,7 +16,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+@@ -547,8 +547,8 @@ _ng_node_foreach_hook(node_p node, ng_fn_eachhook *fn, void *arg,
+ 	return (hook);
+ }
+ 
+-#define NG_NODE_NAME(node)		_ng_node_name(node, _NN_)	
+-#define NG_NODE_HAS_NAME(node)		_ng_node_has_name(node, _NN_)	
++#define NG_NODE_NAME(node)		_ng_node_name(node, _NN_)
++#define NG_NODE_HAS_NAME(node)		_ng_node_has_name(node, _NN_)
+ #define NG_NODE_ID(node)		_ng_node_id(node, _NN_)
+ #define NG_NODE_REF(node)		_ng_node_ref(node, _NN_)
+ #define	NG_NODE_UNREF(node)		_ng_node_unref(node, _NN_)
+@@ -568,19 +568,19 @@ _ng_node_foreach_hook(node_p node, ng_fn_eachhook *fn, void *arg,
+ 
+ #else	/* NETGRAPH_DEBUG */ /*----------------------------------------------*/
+ 
+-#define NG_NODE_NAME(node)		_NG_NODE_NAME(node)	
+-#define NG_NODE_HAS_NAME(node)		_NG_NODE_HAS_NAME(node)	
+-#define NG_NODE_ID(node)		_NG_NODE_ID(node)	
+-#define	NG_NODE_REF(node)		_NG_NODE_REF(node)	
+-#define	NG_NODE_UNREF(node)		_NG_NODE_UNREF(node)	
+-#define	NG_NODE_SET_PRIVATE(node, val)	_NG_NODE_SET_PRIVATE(node, val)	
+-#define	NG_NODE_PRIVATE(node)		_NG_NODE_PRIVATE(node)	
+-#define NG_NODE_IS_VALID(node)		_NG_NODE_IS_VALID(node)	
+-#define NG_NODE_NOT_VALID(node)		_NG_NODE_NOT_VALID(node)	
++#define NG_NODE_NAME(node)		_NG_NODE_NAME(node)
++#define NG_NODE_HAS_NAME(node)		_NG_NODE_HAS_NAME(node)
++#define NG_NODE_ID(node)		_NG_NODE_ID(node)
++#define NG_NODE_REF(node)		_NG_NODE_REF(node)
++#define NG_NODE_UNREF(node)		_NG_NODE_UNREF(node)
++#define NG_NODE_SET_PRIVATE(node, val)	_NG_NODE_SET_PRIVATE(node, val)
++#define NG_NODE_PRIVATE(node)		_NG_NODE_PRIVATE(node)
++#define NG_NODE_IS_VALID(node)		_NG_NODE_IS_VALID(node)
++#define NG_NODE_NOT_VALID(node)		_NG_NODE_NOT_VALID(node)
+ #define NG_NODE_FORCE_WRITER(node) 	_NG_NODE_FORCE_WRITER(node)
+ #define NG_NODE_HI_STACK(node) 		_NG_NODE_HI_STACK(node)
+ #define NG_NODE_REALLY_DIE(node) 	_NG_NODE_REALLY_DIE(node)
+-#define NG_NODE_NUMHOOKS(node)		_NG_NODE_NUMHOOKS(node)	
++#define NG_NODE_NUMHOOKS(node)		_NG_NODE_NUMHOOKS(node)
+ #define NG_NODE_REVIVE(node)		_NG_NODE_REVIVE(node)
+ #define NG_NODE_FOREACH_HOOK(node, fn, arg, rethook)			\
+ 		_NG_NODE_FOREACH_HOOK(node, fn, arg, rethook)
+diff --git a/sys/netinet/ip_icmp.c b/sys/netinet/ip_icmp.c
+index 28024feeb6..8e71d5e73c 100644
+--- a/sys/netinet/ip_icmp.c
++++ b/sys/netinet/ip_icmp.c
+@@ -99,7 +99,7 @@ SYSCTL_INT(_net_inet_icmp, ICMPCTL_ICMPLIM, icmplim, CTLFLAG_RW,
+ static int      icmplim = -1;
+ SYSCTL_INT(_net_inet_icmp, ICMPCTL_ICMPLIM, icmplim, CTLFLAG_RD,
+ 	&icmplim, 0, "ICMP bandwidth limit");
+-	
++
+ #endif
+ 
+ static int	icmplim_output = 0;
+diff --git a/sys/netinet/tcp_output.c b/sys/netinet/tcp_output.c
+index 74358b8f04..b357a80e89 100644
+--- a/sys/netinet/tcp_output.c
++++ b/sys/netinet/tcp_output.c
+@@ -219,7 +219,7 @@ tcp_output(struct tcpcb *tp)
+ 		idle_cwv = TRUE;
+ 
+ 	/*
+-	 * Calculate whether the transmit stream was previously idle 
++	 * Calculate whether the transmit stream was previously idle
+ 	 * and adjust TF_LASTIDLE for the next time.
+ 	 */
+ 	idle = (tp->t_flags & TF_LASTIDLE) || (tp->snd_max == tp->snd_una);
+@@ -1505,7 +1505,7 @@ tcp_output_sched(struct tcpcb *tp)
+  * if others segments and ACKs are queued on to the same hardware transmit
+  * queue; thus cause unfairness between senders and suppress receiving
+  * performance.
+- * 
++ *
+  * Fairsend should be performed at the places that do not affect segment
+  * sending during congestion control, e.g.
+  * - User requested output
+diff --git a/sys/netproto/802_11/wlan/ieee80211_dragonfly.c b/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
+index bc7e5325e2..f69d08d103 100644
+--- a/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
++++ b/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
+@@ -69,7 +69,7 @@ SYSCTL_INT(_net_wlan, OID_AUTO, force_swcrypto, CTLFLAG_RW,
+ static int	wlan_clone_destroy(struct ifnet *);
+ static int	wlan_clone_create(struct if_clone *, int, caddr_t);
+ 
+-static struct if_clone wlan_cloner = 
++static struct if_clone wlan_cloner =
+ 	IF_CLONE_INITIALIZER("wlan", wlan_clone_create, wlan_clone_destroy,
+ 	    0, IF_MAXUNIT);
+ 
+@@ -261,7 +261,7 @@ ieee80211_get_rx_params(struct mbuf *m, struct ieee80211_rx_stats *rxs)
+ {
+ 	struct m_tag *mtag;
+ 	struct ieee80211_rx_params *rx;
+- 
++
+ 	mtag = m_tag_locate(m, MTAG_ABI_NET80211, NET80211_TAG_RECV_PARAMS,
+ 	    NULL);
+ 	if (mtag == NULL)
+diff --git a/sys/netproto/802_11/wlan/ieee80211_superg.c b/sys/netproto/802_11/wlan/ieee80211_superg.c
+index 8c86104e47..67cdbbc3c5 100644
+--- a/sys/netproto/802_11/wlan/ieee80211_superg.c
++++ b/sys/netproto/802_11/wlan/ieee80211_superg.c
+@@ -178,7 +178,7 @@ ieee80211_add_ath(uint8_t *frm, uint8_t caps, ieee80211_keyix defkeyix)
+ 		ath->ath_defkeyix[0] = 0xff;
+ 		ath->ath_defkeyix[1] = 0x7f;
+ 	}
+-	return frm + sizeof(info); 
++	return frm + sizeof(info);
+ }
+ #undef ATH_OUI_BYTES
+ 
+@@ -239,7 +239,7 @@ ieee80211_parse_athparams(struct ieee80211_node *ni, uint8_t *frm,
+ 		 */
+ 		newflags = curflags = vap->iv_ic->ic_bsschan->ic_flags;
+ 		/* NB: BOOST is not in ic_flags, so get it from the ie */
+-		if (ath->ath_capability & ATHEROS_CAP_BOOST) 
++		if (ath->ath_capability & ATHEROS_CAP_BOOST)
+ 			newflags |= IEEE80211_CHAN_TURBO;
+ 		else
+ 			newflags &= ~IEEE80211_CHAN_TURBO;
+diff --git a/sys/netproto/mpls/mpls_output.c b/sys/netproto/mpls/mpls_output.c
+index a1d3785c74..1934add0fa 100644
+--- a/sys/netproto/mpls/mpls_output.c
++++ b/sys/netproto/mpls/mpls_output.c
+@@ -123,7 +123,7 @@ mpls_output(struct mbuf *m, struct rtentry *rt)
+ 			return (ENOTSUP);
+ 		}
+ 	}
+-	
++
+ 	return (error);
+ }
+ 
+@@ -163,7 +163,7 @@ mpls_push(struct mbuf **m, mpls_label_t label, mpls_s_t s, mpls_exp_t exp, mpls_
+ 	MPLS_SET_TTL(buf, ttl);
+ 	mpls = mtod(*m, struct mpls *);
+ 	mpls->mpls_shim = htonl(buf);
+-	
++
+ 	return (0);
+ }
+ 
+@@ -188,7 +188,7 @@ mpls_swap(struct mbuf *m, mpls_label_t label) {
+ 	MPLS_SET_LABEL(buf, label);
+ 	MPLS_SET_TTL(buf, ttl); /* XXX tunnel mode: uniform, pipe, short pipe */
+ 	mpls->mpls_shim = htonl(buf);
+-	
++
+ 	return (0);
+ }
+ 
+diff --git a/sys/opencrypto/xform.h b/sys/opencrypto/xform.h
+index 5100cd5159..5e726da869 100644
+--- a/sys/opencrypto/xform.h
++++ b/sys/opencrypto/xform.h
+@@ -1,5 +1,4 @@
+ /*	$FreeBSD: src/sys/opencrypto/xform.h,v 1.4 2007/05/09 19:37:02 gnn Exp $	*/
+-/*	$DragonFly: src/sys/opencrypto/xform.h,v 1.2 2003/06/17 04:28:54 dillon Exp $	*/
+ /*	$OpenBSD: xform.h,v 1.8 2001/08/28 12:20:43 ben Exp $	*/
+ 
+ /*-
+@@ -14,7 +13,7 @@
+  * Permission to use, copy, and modify this software without fee
+  * is hereby granted, provided that this entire notice is included in
+  * all source code copies of any software which is or includes a copy or
+- * modification of this software. 
++ * modification of this software.
+  *
+  * THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR
+  * IMPLIED WARRANTY. IN PARTICULAR, NONE OF THE AUTHORS MAKES ANY
+@@ -37,7 +36,7 @@ struct auth_hash {
+ 	int type;
+ 	char *name;
+ 	u_int16_t keysize;
+-	u_int16_t hashsize; 
++	u_int16_t hashsize;
+ 	u_int16_t blocksize;
+ 	u_int16_t ctxsize;
+ 	void (*Init) (void *);
+diff --git a/sys/sys/memrange.h b/sys/sys/memrange.h
+index 86d9f7359c..180ea14dd2 100644
+--- a/sys/sys/memrange.h
++++ b/sys/sys/memrange.h
+@@ -3,7 +3,6 @@
+  * Memory range attribute operations, peformed on /dev/mem
+  *
+  * $FreeBSD: src/sys/sys/memrange.h,v 1.4.2.2 2002/09/16 21:58:37 dwmalone Exp $
+- * $DragonFly: src/sys/sys/memrange.h,v 1.4 2006/12/17 20:07:33 dillon Exp $
+  */
+ 
+ #ifndef _SYS_MEMRANGE_H_
+@@ -71,12 +70,12 @@ struct mem_range_ops
+ {
+ 	void	(*init)(struct mem_range_softc *sc);
+ 	int	(*set)(struct mem_range_softc *sc, struct mem_range_desc *mrd, int *arg);
+-    	void	(*initAP)(struct mem_range_softc *sc);
++	void	(*initAP)(struct mem_range_softc *sc);
+ 	void	(*set_iopl)(struct mem_range_softc *sc);
+ 	void	(*clr_iopl)(struct mem_range_softc *sc);
+ };
+ 
+-struct mem_range_softc 
++struct mem_range_softc
+ {
+ 	struct mem_range_ops	*mr_op;
+ 	int			mr_cap;
+diff --git a/sys/sys/mountctl.h b/sys/sys/mountctl.h
+index 7d1375c436..95d4079c52 100644
+--- a/sys/sys/mountctl.h
++++ b/sys/sys/mountctl.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,8 +30,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- *
+- * $DragonFly: src/sys/sys/mountctl.h,v 1.15 2008/06/01 19:27:37 dillon Exp $
+  */
+ 
+ #ifndef _SYS_MOUNTCTL_H_
+@@ -186,7 +184,7 @@ struct journal {
+ 
+ /*
+  * The jrecord structure is used to build a journaling transaction.  Since
+- * a single journaling transaction might encompass very large buffers it 
++ * a single journaling transaction might encompass very large buffers it
+  * is possible for multiple transactions to be written out to the FIFO
+  * in parallel and in peacemeal.
+  */
+diff --git a/sys/sys/posix4.h b/sys/sys/posix4.h
+index f365caf737..8b6b171fde 100644
+--- a/sys/sys/posix4.h
++++ b/sys/sys/posix4.h
+@@ -59,7 +59,7 @@ void p31b_setcfg (int, int);
+ 
+ #ifdef _KPOSIX_PRIORITY_SCHEDULING
+ 
+-/* 
++/*
+  * KSCHED_OP_RW is a vector of read/write flags for each entry indexed
+  * by the enum ksched_op.
+  *
+-- 
+2.23.0
+

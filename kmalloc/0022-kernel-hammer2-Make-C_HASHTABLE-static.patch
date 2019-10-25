@@ -1,0 +1,35 @@
+From e348a794374e4b5f30a628ce11ae55aa7237ae86 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 25 Oct 2019 12:56:00 +0300
+Subject: [PATCH 22/26] kernel/hammer2: Make C_HASHTABLE static.
+
+ Only used in lz4.c locally.  Include hammer2.h first to include common
+ headers first.
+---
+ sys/vfs/hammer2/hammer2_lz4.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/sys/vfs/hammer2/hammer2_lz4.c b/sys/vfs/hammer2/hammer2_lz4.c
+index 90b7e4144c..19f88b27d1 100644
+--- a/sys/vfs/hammer2/hammer2_lz4.c
++++ b/sys/vfs/hammer2/hammer2_lz4.c
+@@ -105,14 +105,13 @@ Note : this source file requires "hammer2_lz4_encoder.h"
+ //**************************************
+ // Includes
+ //**************************************
+-#include <sys/malloc.h> //for malloc macros
+ #include "hammer2.h"
+ #include "hammer2_lz4.h"
++#include <sys/malloc.h> //for malloc macros, hammer2.h includes sys/param.h
+ 
+ 
+ //Declaration for kmalloc functions
+-MALLOC_DECLARE(C_HASHTABLE);
+-MALLOC_DEFINE(C_HASHTABLE, "comphashtable",
++static MALLOC_DEFINE(C_HASHTABLE, "comphashtable",
+ 	"A hash table used by LZ4 compression function.");
+ 
+ 
+-- 
+2.23.0
+

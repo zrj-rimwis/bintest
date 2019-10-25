@@ -1,0 +1,75 @@
+From d80022b0f689cacdabda58d48fd7f16a85da764e Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 20 Oct 2019 20:45:00 +0300
+Subject: [PATCH 08/26] <sys/objcache.h>: Switch to lighter <sys/_malloc.h>
+ header.
+
+ Exposing "struct malloc_type" internals is useful even under kernel
+ structures namespace. In vmstat(8) this will allow to drop dependency
+ on the <sys/malloc.h> header.
+---
+ sys/dev/acpica/Osd/OsdCache.c        |  2 ++
+ sys/dev/disk/iscsi/initiator/iscsi.c |  1 +
+ sys/sys/objcache.h                   | 11 ++++++-----
+ 3 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/sys/dev/acpica/Osd/OsdCache.c b/sys/dev/acpica/Osd/OsdCache.c
+index 9f8e6b5bb8..a11555c408 100644
+--- a/sys/dev/acpica/Osd/OsdCache.c
++++ b/sys/dev/acpica/Osd/OsdCache.c
+@@ -30,6 +30,8 @@
+  * SUCH DAMAGE.
+  */
+ 
++#include <sys/types.h>
++#include <sys/malloc.h>
+ #include <sys/objcache.h>
+ 
+ struct acpicache {
+diff --git a/sys/dev/disk/iscsi/initiator/iscsi.c b/sys/dev/disk/iscsi/initiator/iscsi.c
+index 868a6467fe..495933029d 100644
+--- a/sys/dev/disk/iscsi/initiator/iscsi.c
++++ b/sys/dev/disk/iscsi/initiator/iscsi.c
+@@ -56,6 +56,7 @@
+ #include <sys/mutex2.h>
+ #include <sys/devfs.h>
+ #include <sys/udev.h>
++#include <sys/objcache.h>
+ 
+ #include <bus/cam/cam.h>
+ #include <dev/disk/iscsi/initiator/iscsi.h>
+diff --git a/sys/sys/objcache.h b/sys/sys/objcache.h
+index 8f334ba3f0..483edc0c7a 100644
+--- a/sys/sys/objcache.h
++++ b/sys/sys/objcache.h
+@@ -33,13 +33,14 @@
+ #ifndef _SYS_OBJCACHE_H_
+ #define _SYS_OBJCACHE_H_
+ 
+-#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+-
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
++
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++
++#ifndef _SYS__MALLOC_H_
++#include <sys/_malloc.h>
+ #endif
+ 
+ #define OC_MFLAGS	0x0000ffff	/* same as malloc flags */
+@@ -79,7 +80,7 @@ void	 objcache_populate_linear(struct objcache *oc, void *elts, int nelts,
+ __boolean_t objcache_reclaimlist(struct objcache *oc[], int nlist, int ocflags);
+ void	 objcache_destroy(struct objcache *oc);
+ 
+-#endif	/* !_KERNEL */
++#endif	/* _KERNEL */
+ 
+ /*
+  * Common underlying allocators.
+-- 
+2.23.0
+

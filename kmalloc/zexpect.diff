@@ -1,0 +1,54 @@
+diff --git a/sys/dev/virtual/vmware/vmxnet3/if_vmx.c b/sys/dev/virtual/vmware/vmxnet3/if_vmx.c
+index cefdb143cf..0dc49c6fef 100644
+--- a/sys/dev/virtual/vmware/vmxnet3/if_vmx.c
++++ b/sys/dev/virtual/vmware/vmxnet3/if_vmx.c
+@@ -2315,7 +2315,7 @@ vmxnet3_rxq_eof(struct vmxnet3_rxqueue *rxq)
+ 		}
+ 
+ nextp:
+-		if (__predict_false(rxq->vxrxq_rs->update_rxhead)) {
++		if (__predict_false(rxq->vxrxq_rs->update_rxhead != 0)) {
+ 			int qid = rxcd->qid;
+ 			bus_size_t r;
+ 
+diff --git a/sys/kern/kern_event.c b/sys/kern/kern_event.c
+index 5861b5cbe7..7bfc3788b8 100644
+--- a/sys/kern/kern_event.c
++++ b/sys/kern/kern_event.c
+@@ -1403,7 +1403,7 @@ kqueue_register(struct kqueue *kq, struct kevent *kev, int *countp)
+ done:
+ 	if (td != NULL) { /* Owner of the kq_regtd */
+ 		kq->kq_regtd = NULL;
+-		if (__predict_false(kq->kq_state & KQ_REGWAIT)) {
++		if (__predict_false((kq->kq_state & KQ_REGWAIT) != 0)) {
+ 			kq->kq_state &= ~KQ_REGWAIT;
+ 			wakeup(&kq->kq_regtd);
+ 		}
+diff --git a/sys/sys/cdefs.h b/sys/sys/cdefs.h
+index fea444908a..421e434ec6 100644
+--- a/sys/sys/cdefs.h
++++ b/sys/sys/cdefs.h
+@@ -308,8 +308,8 @@
+  *	  larger code.
+  */
+ #if __GNUC_PREREQ__(2, 96)
+-#define	__predict_true(exp)     __builtin_expect((exp), 1)
+-#define	__predict_false(exp)    __builtin_expect((exp), 0)
++#define	__predict_true(exp)     __builtin_expect(!!(exp), 1)
++#define	__predict_false(exp)    __builtin_expect(!!(exp), 0)
+ #else
+ #define	__predict_true(exp)     (exp)
+ #define	__predict_false(exp)    (exp)
+diff --git a/sys/sys/thread2.h b/sys/sys/thread2.h
+index abef300fbc..f3a40b64c9 100644
+--- a/sys/sys/thread2.h
++++ b/sys/sys/thread2.h
+@@ -225,7 +225,7 @@ static __inline void
+ _crit_exit_quick(thread_t td __DEBUG_CRIT_ADD_ARG__)
+ {
+     _crit_exit_noyield(td __DEBUG_CRIT_PASS_ARG__);
+-    if (__predict_false(td->td_gd->gd_reqflags & RQF_IDLECHECK_MASK))
++    if (__predict_false((td->td_gd->gd_reqflags & RQF_IDLECHECK_MASK) != 0))
+ 	lwkt_maybe_splz(td);
+ }
+ 

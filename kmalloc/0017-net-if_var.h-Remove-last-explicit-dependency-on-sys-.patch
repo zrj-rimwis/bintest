@@ -1,0 +1,242 @@
+From 487ae546bc1dcc9c40d0f0dd165ca91103ed6ae5 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 22 Oct 2019 19:42:52 +0300
+Subject: [PATCH 17/26] <net/if_var.h>: Remove last explicit dependency on
+ <sys/malloc.h>.
+
+ These kernel sources pass M_NOWAIT flag to m_copym() and friends.
+ Mark that it was for M_NOWAIT visibility.
+---
+ sys/bus/u4b/net/if_axge.c       | 1 +
+ sys/dev/netif/lnc/lance.c       | 1 +
+ sys/dev/netif/oce/oce_if.h      | 1 +
+ sys/dev/netif/xe/if_xe.c        | 1 +
+ sys/dev/netif/xl/if_xl.c        | 1 +
+ sys/net/bridge/bridgestp.c      | 1 +
+ sys/net/if_var.h                | 3 ++-
+ sys/net/vlan/if_vlan_ether.c    | 1 +
+ sys/netbt/l2cap_signal.c        | 1 +
+ sys/netbt/l2cap_socket.c        | 1 +
+ sys/netbt/rfcomm_socket.c       | 1 +
+ sys/netbt/sco_socket.c          | 1 +
+ sys/netinet/ip_icmp.c           | 1 +
+ sys/netinet/tcp_output.c        | 1 +
+ sys/netinet6/mld6.c             | 1 +
+ sys/netinet6/udp6_usrreq.c      | 1 +
+ sys/netproto/mpls/mpls_output.c | 1 +
+ 17 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/sys/bus/u4b/net/if_axge.c b/sys/bus/u4b/net/if_axge.c
+index 51ba654b09..a5013e1453 100644
+--- a/sys/bus/u4b/net/if_axge.c
++++ b/sys/bus/u4b/net/if_axge.c
+@@ -36,6 +36,7 @@
+ #include <sys/condvar.h>
+ #include <sys/kernel.h>
+ #include <sys/lock.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/module.h>
+ #include <sys/socket.h>
+ #include <sys/sysctl.h>
+diff --git a/sys/dev/netif/lnc/lance.c b/sys/dev/netif/lnc/lance.c
+index f2fc0bc95e..eed952f234 100644
+--- a/sys/dev/netif/lnc/lance.c
++++ b/sys/dev/netif/lnc/lance.c
+@@ -77,6 +77,7 @@
+ #include <sys/bus.h>
+ #include <sys/endian.h>
+ #include <sys/lock.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/sockio.h>
+diff --git a/sys/dev/netif/oce/oce_if.h b/sys/dev/netif/oce/oce_if.h
+index add5eb618e..c21bc880be 100644
+--- a/sys/dev/netif/oce/oce_if.h
++++ b/sys/dev/netif/oce/oce_if.h
+@@ -44,6 +44,7 @@
+ #include <sys/module.h>
+ #include <sys/kernel.h>
+ #include <sys/bus.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/rman.h>
+ #include <sys/socket.h>
+diff --git a/sys/dev/netif/xe/if_xe.c b/sys/dev/netif/xe/if_xe.c
+index 08b67cf0e2..f9479ccf50 100644
+--- a/sys/dev/netif/xe/if_xe.c
++++ b/sys/dev/netif/xe/if_xe.c
+@@ -96,6 +96,7 @@
+ #include <sys/param.h>
+ #include <sys/errno.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/select.h>
+ #include <sys/socket.h>
+diff --git a/sys/dev/netif/xl/if_xl.c b/sys/dev/netif/xl/if_xl.c
+index d5cffa72e6..b2ca469f1c 100644
+--- a/sys/dev/netif/xl/if_xl.c
++++ b/sys/dev/netif/xl/if_xl.c
+@@ -104,6 +104,7 @@
+ #include <sys/systm.h>
+ #include <sys/sockio.h>
+ #include <sys/endian.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/kernel.h>
+ #include <sys/socket.h>
+diff --git a/sys/net/bridge/bridgestp.c b/sys/net/bridge/bridgestp.c
+index 7235c26b17..d1cb737a4e 100644
+--- a/sys/net/bridge/bridgestp.c
++++ b/sys/net/bridge/bridgestp.c
+@@ -41,6 +41,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/sockio.h>
+diff --git a/sys/net/if_var.h b/sys/net/if_var.h
+index 3f6fe12173..9861c37973 100644
+--- a/sys/net/if_var.h
++++ b/sys/net/if_var.h
+@@ -792,12 +792,13 @@ IFAREF(struct ifaddr *_ifa)
+ 	_IFAREF(_ifa, mycpuid);
+ }
+ 
+-#include <sys/malloc.h>
+ #include <sys/serialize2.h>
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_IFADDR);
+ MALLOC_DECLARE(M_IFMADDR);
+ MALLOC_DECLARE(M_IFNET);
++#endif
+ 
+ void	ifac_free(struct ifaddr_container *, int);
+ 
+diff --git a/sys/net/vlan/if_vlan_ether.c b/sys/net/vlan/if_vlan_ether.c
+index 176cab279b..4272339615 100644
+--- a/sys/net/vlan/if_vlan_ether.c
++++ b/sys/net/vlan/if_vlan_ether.c
+@@ -30,6 +30,7 @@
+  */
+ 
+ #include <sys/param.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/serialize.h>
+ 
+diff --git a/sys/netbt/l2cap_signal.c b/sys/netbt/l2cap_signal.c
+index 3bf1be478f..149385fb49 100644
+--- a/sys/netbt/l2cap_signal.c
++++ b/sys/netbt/l2cap_signal.c
+@@ -33,6 +33,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/queue.h>
+diff --git a/sys/netbt/l2cap_socket.c b/sys/netbt/l2cap_socket.c
+index 129b66718c..a458ce0c66 100644
+--- a/sys/netbt/l2cap_socket.c
++++ b/sys/netbt/l2cap_socket.c
+@@ -40,6 +40,7 @@
+ #include <sys/param.h>
+ #include <sys/domain.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/protosw.h>
+diff --git a/sys/netbt/rfcomm_socket.c b/sys/netbt/rfcomm_socket.c
+index 9261284b55..aa5399d9a2 100644
+--- a/sys/netbt/rfcomm_socket.c
++++ b/sys/netbt/rfcomm_socket.c
+@@ -41,6 +41,7 @@
+ #include <sys/param.h>
+ #include <sys/domain.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/protosw.h>
+diff --git a/sys/netbt/sco_socket.c b/sys/netbt/sco_socket.c
+index 831c4fc4c9..cf60dee98b 100644
+--- a/sys/netbt/sco_socket.c
++++ b/sys/netbt/sco_socket.c
+@@ -39,6 +39,7 @@
+ #include <sys/param.h>
+ #include <sys/domain.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/protosw.h>
+diff --git a/sys/netinet/ip_icmp.c b/sys/netinet/ip_icmp.c
+index 8e71d5e73c..d4882ff898 100644
+--- a/sys/netinet/ip_icmp.c
++++ b/sys/netinet/ip_icmp.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/protosw.h>
+ #include <sys/socket.h>
+diff --git a/sys/netinet/tcp_output.c b/sys/netinet/tcp_output.c
+index b357a80e89..f5ddc54b2e 100644
+--- a/sys/netinet/tcp_output.c
++++ b/sys/netinet/tcp_output.c
+@@ -70,6 +70,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/sysctl.h>
+ #include <sys/mbuf.h>
+ #include <sys/domain.h>
+diff --git a/sys/netinet6/mld6.c b/sys/netinet6/mld6.c
+index b8ec812644..d226850c90 100644
+--- a/sys/netinet6/mld6.c
++++ b/sys/netinet6/mld6.c
+@@ -70,6 +70,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/protosw.h>
+diff --git a/sys/netinet6/udp6_usrreq.c b/sys/netinet6/udp6_usrreq.c
+index d75554d0d9..8f414cb541 100644
+--- a/sys/netinet6/udp6_usrreq.c
++++ b/sys/netinet6/udp6_usrreq.c
+@@ -66,6 +66,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT, XXX legacy m_copy() */
+ #include <sys/mbuf.h>
+ #include <sys/protosw.h>
+ #include <sys/socket.h>
+diff --git a/sys/netproto/mpls/mpls_output.c b/sys/netproto/mpls/mpls_output.c
+index 1934add0fa..f3198b7f41 100644
+--- a/sys/netproto/mpls/mpls_output.c
++++ b/sys/netproto/mpls/mpls_output.c
+@@ -30,6 +30,7 @@
+  */
+ 
+ #include <sys/param.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/systm.h>
+ 
+-- 
+2.23.0
+

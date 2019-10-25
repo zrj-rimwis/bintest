@@ -1,0 +1,30 @@
+From 1210ca8257cafd9ab2affc8c85f03525160a8612 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 25 Oct 2019 12:57:33 +0300
+Subject: [PATCH 23/26] <sys/malloc.h>: Reduce kmalloc() implicit requirements
+ for NULL.
+
+ Make sure it is available for ease of use.  This potentially allows to
+ not to add <sys/param.h> in kernel sources just for NULL when kmalloc()
+ is used in source code.
+---
+ sys/sys/malloc.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/sys/sys/malloc.h b/sys/sys/malloc.h
+index f58e065c71..8850b0ebb4 100644
+--- a/sys/sys/malloc.h
++++ b/sys/sys/malloc.h
+@@ -88,6 +88,9 @@
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ #include <sys/_malloc.h>		/* struct malloc_type */
++#ifndef NULL
++#include <sys/_null.h>			/* ensure NULL is defined */
++#endif
+ #endif
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+-- 
+2.23.0
+

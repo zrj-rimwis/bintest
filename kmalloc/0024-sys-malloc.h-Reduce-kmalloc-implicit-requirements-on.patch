@@ -1,0 +1,52 @@
+From 08a0e67d6b02d5d61120eaa4947dbc9b07186cff Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 25 Oct 2019 13:54:32 +0300
+Subject: [PATCH 24/26] <sys/malloc.h>: Reduce kmalloc() implicit requirements
+ on <sys/systm.h>.
+
+ Use __builtin_memset() directly.  Use of __DEQUALIFY() not needed here.
+
+ The "#if 1" case already makes use of __builtin_constant_p() compiler
+ extension that we do not have feature check in <sys/cdefs.h> (using
+ "#if __GNUC_PREREQ__(2, 0)" should be good enough).
+
+ This finally decouples <sys/malloc.h> from <sys/systm.h> bzero() macro
+ visibility (also in "#if 1" block).
+
+ XXX We should not be really harding "#if 1" like we currently have in:
+   <sys/_fd_set.h>: for FD_ZERO()
+   <sys/systm.h>:   for bzero() and memset()
+ Maybe feature check in <sys/cdefs.h> with "#if __GNUC_PREREQ__(2, 96)"?
+ The __builtin_constant_p use:
+   <cpu/cpufunc.h>: inb(), outb()
+   <cpu/endian.h>:  __word_swap_*()
+   few in sys/boot/
+---
+ sys/sys/malloc.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sys/sys/malloc.h b/sys/sys/malloc.h
+index 8850b0ebb4..7518e309dd 100644
+--- a/sys/sys/malloc.h
++++ b/sys/sys/malloc.h
+@@ -173,7 +173,7 @@ char	*kstrndup_debug(const char *, size_t maxlen, struct malloc_type *,
+ 					    __FILE__, __LINE__);	\
+ 		if (((flags) & (M_WAITOK|M_NULLOK)) == M_WAITOK ||	\
+ 		    __predict_true(_malloc_item != NULL)) {		\
+-			bzero(_malloc_item, _size);			\
++			__builtin_memset(_malloc_item, 0, _size);	\
+ 		}							\
+ 	} else {							\
+ 	    _malloc_item = kmalloc_debug(_size, type, flags,		\
+@@ -204,7 +204,7 @@ void	*kmalloc(unsigned long size, struct malloc_type *type, int flags)
+ 		_malloc_item = kmalloc(_size, type, (flags) & ~M_ZERO);	\
+ 		if (((flags) & (M_WAITOK|M_NULLOK)) == M_WAITOK ||	\
+ 		    __predict_true(_malloc_item != NULL)) {		\
+-			bzero(_malloc_item, _size);			\
++			__builtin_memset(_malloc_item, 0, _size);	\
+ 		}							\
+ 	} else {							\
+ 	    _malloc_item = kmalloc(_size, type, flags);			\
+-- 
+2.23.0
+

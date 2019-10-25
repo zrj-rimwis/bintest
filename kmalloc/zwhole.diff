@@ -1,0 +1,4157 @@
+diff --git a/sys/bus/firewire/firewirereg.h b/sys/bus/firewire/firewirereg.h
+index c03f5c5631..6cff3012ee 100644
+--- a/sys/bus/firewire/firewirereg.h
++++ b/sys/bus/firewire/firewirereg.h
+@@ -303,5 +303,7 @@ extern devclass_t firewire_devclass;
+ 
+ #define CALLOUT_INIT(x) callout_init(x)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_FW);
+ MALLOC_DECLARE(M_FWXFER);
++#endif
+diff --git a/sys/bus/gpio/gpio_acpi/gpio_acpi.c b/sys/bus/gpio/gpio_acpi/gpio_acpi.c
+index b86ac27801..a92c9e365f 100644
+--- a/sys/bus/gpio/gpio_acpi/gpio_acpi.c
++++ b/sys/bus/gpio/gpio_acpi/gpio_acpi.c
+@@ -37,6 +37,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/errno.h>
+ #include <sys/lock.h>
+diff --git a/sys/bus/isa/isa_common.h b/sys/bus/isa/isa_common.h
+index d47c087268..514a912fcd 100644
+--- a/sys/bus/isa/isa_common.h
++++ b/sys/bus/isa/isa_common.h
+@@ -33,7 +33,9 @@
+  * without notice.
+  */
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_ISADEV);
++#endif
+ 
+ /*
+  * PNP configurations are kept in a tailq.
+diff --git a/sys/bus/u4b/net/if_axge.c b/sys/bus/u4b/net/if_axge.c
+index 51ba654b09..a5013e1453 100644
+--- a/sys/bus/u4b/net/if_axge.c
++++ b/sys/bus/u4b/net/if_axge.c
+@@ -36,6 +36,7 @@
+ #include <sys/condvar.h>
+ #include <sys/kernel.h>
+ #include <sys/lock.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/module.h>
+ #include <sys/socket.h>
+ #include <sys/sysctl.h>
+diff --git a/sys/bus/u4b/usb.h b/sys/bus/u4b/usb.h
+index 177ab45c73..f7c223b2fd 100644
+--- a/sys/bus/u4b/usb.h
++++ b/sys/bus/u4b/usb.h
+@@ -47,10 +47,10 @@
+ SYSCTL_DECL(_hw_usb);
+ #endif
+ 
+-#include <sys/malloc.h>
+-
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_USB);
+ MALLOC_DECLARE(M_USBDEV);
++#endif
+ #endif /* _KERNEL */
+ 
+ #include <bus/u4b/usb_endian.h>
+diff --git a/sys/dev/acpica/Osd/OsdCache.c b/sys/dev/acpica/Osd/OsdCache.c
+index 9f8e6b5bb8..a11555c408 100644
+--- a/sys/dev/acpica/Osd/OsdCache.c
++++ b/sys/dev/acpica/Osd/OsdCache.c
+@@ -30,6 +30,8 @@
+  * SUCH DAMAGE.
+  */
+ 
++#include <sys/types.h>
++#include <sys/malloc.h>
+ #include <sys/objcache.h>
+ 
+ struct acpicache {
+diff --git a/sys/dev/crypto/aesni/aesni.h b/sys/dev/crypto/aesni/aesni.h
+index 6219280038..f463fb1735 100644
+--- a/sys/dev/crypto/aesni/aesni.h
++++ b/sys/dev/crypto/aesni/aesni.h
+@@ -30,7 +30,6 @@
+ #define _AESNI_H_
+ 
+ #include <sys/types.h>
+-#include <sys/malloc.h>
+ #include <sys/queue.h>
+ 
+ #include <opencrypto/cryptodev.h>
+diff --git a/sys/dev/disk/dm/delay/dm_target_delay.c b/sys/dev/disk/dm/delay/dm_target_delay.c
+index 5fbb78a048..669348818b 100644
+--- a/sys/dev/disk/dm/delay/dm_target_delay.c
++++ b/sys/dev/disk/dm/delay/dm_target_delay.c
+@@ -32,6 +32,8 @@
+  * SUCH DAMAGE.
+  */
+ 
++#include <sys/param.h>
++#include <sys/malloc.h>
+ #include <sys/mutex2.h>
+ #include <sys/objcache.h>
+ #include <sys/callout.h>
+diff --git a/sys/dev/disk/dm/dm.h b/sys/dev/disk/dm/dm.h
+index 6e12c1749b..2533905c5b 100644
+--- a/sys/dev/disk/dm/dm.h
++++ b/sys/dev/disk/dm/dm.h
+@@ -180,7 +180,9 @@ uint64_t atoi64(const char *);
+ char *dm_alloc_string(int len);
+ void dm_builtin_init(void *);
+ void dm_builtin_uninit(void *);
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_DM);
++#endif
+ extern int dm_debug_level;
+ 
+ /* dm_ioctl.c */
+diff --git a/sys/dev/disk/dm/dm_ioctl.c b/sys/dev/disk/dm/dm_ioctl.c
+index 48373a709a..1821ca1490 100644
+--- a/sys/dev/disk/dm/dm_ioctl.c
++++ b/sys/dev/disk/dm/dm_ioctl.c
+@@ -79,6 +79,7 @@
+  *
+  */
+ 
++#include <sys/param.h>
+ #include <sys/device.h>
+ #include <sys/malloc.h>
+ #include <cpu/atomic.h>
+diff --git a/sys/dev/disk/dm/dm_table.c b/sys/dev/disk/dm/dm_table.c
+index a10b4d3173..2c69c42b94 100644
+--- a/sys/dev/disk/dm/dm_table.c
++++ b/sys/dev/disk/dm/dm_table.c
+@@ -30,6 +30,7 @@
+  * POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include <sys/param.h>
+ #include <sys/malloc.h>
+ #include <cpu/atomic.h>
+ #include <dev/disk/dm/dm.h>
+diff --git a/sys/dev/disk/dm/dm_target.c b/sys/dev/disk/dm/dm_target.c
+index 4bcc732270..5402907eb1 100644
+--- a/sys/dev/disk/dm/dm_target.c
++++ b/sys/dev/disk/dm/dm_target.c
+@@ -30,6 +30,7 @@
+  * POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include <sys/param.h>
+ #include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/linker.h>
+diff --git a/sys/dev/disk/dm/flakey/dm_target_flakey.c b/sys/dev/disk/dm/flakey/dm_target_flakey.c
+index a5eb06e6f8..d54b136d15 100644
+--- a/sys/dev/disk/dm/flakey/dm_target_flakey.c
++++ b/sys/dev/disk/dm/flakey/dm_target_flakey.c
+@@ -32,6 +32,8 @@
+  * SUCH DAMAGE.
+  */
+ 
++#include <sys/param.h>
++#include <sys/malloc.h>
+ #include <dev/disk/dm/dm.h>
+ 
+ MALLOC_DEFINE(M_DMFLAKEY, "dm_flakey", "Device Mapper Target Flakey");
+diff --git a/sys/dev/disk/dm/linear/dm_target_linear.c b/sys/dev/disk/dm/linear/dm_target_linear.c
+index 745a0e1072..104c2771e0 100644
+--- a/sys/dev/disk/dm/linear/dm_target_linear.c
++++ b/sys/dev/disk/dm/linear/dm_target_linear.c
+@@ -34,9 +34,9 @@
+  * This file implements initial version of device-mapper dklinear target.
+  */
+ 
+-#include <sys/malloc.h>
+-
+ #include <dev/disk/dm/dm.h>
++#include <sys/malloc.h>		/* for malloc macros, dm.h includes sys/param.h */
++
+ MALLOC_DEFINE(M_DMLINEAR, "dm_linear", "Device Mapper Target Linear");
+ 
+ typedef struct target_linear_config {
+diff --git a/sys/dev/disk/dm/striped/dm_target_striped.c b/sys/dev/disk/dm/striped/dm_target_striped.c
+index 241c250523..c69cb677de 100644
+--- a/sys/dev/disk/dm/striped/dm_target_striped.c
++++ b/sys/dev/disk/dm/striped/dm_target_striped.c
+@@ -37,9 +37,9 @@
+  *
+  * DragonFly changes: Increase to an unlimited number of stripes
+  */
+-#include <sys/malloc.h>
+-
+ #include <dev/disk/dm/dm.h>
++#include <sys/malloc.h>		/* for malloc macros, dm.h includes sys/param.h */
++
+ MALLOC_DEFINE(M_DMSTRIPE, "dm_striped", "Device Mapper Target Striped");
+ 
+ #define MAX_STRIPES 32
+diff --git a/sys/dev/disk/iscsi/initiator/iscsi.c b/sys/dev/disk/iscsi/initiator/iscsi.c
+index 868a6467fe..495933029d 100644
+--- a/sys/dev/disk/iscsi/initiator/iscsi.c
++++ b/sys/dev/disk/iscsi/initiator/iscsi.c
+@@ -56,6 +56,7 @@
+ #include <sys/mutex2.h>
+ #include <sys/devfs.h>
+ #include <sys/udev.h>
++#include <sys/objcache.h>
+ 
+ #include <bus/cam/cam.h>
+ #include <dev/disk/iscsi/initiator/iscsi.h>
+diff --git a/sys/dev/drm/include/linux/gfp.h b/sys/dev/drm/include/linux/gfp.h
+index 0b7cb713af..ea935a2ff7 100644
+--- a/sys/dev/drm/include/linux/gfp.h
++++ b/sys/dev/drm/include/linux/gfp.h
+@@ -31,6 +31,7 @@
+ #include <linux/mmzone.h>
+ #include <linux/stddef.h>
+ 
++#include <sys/malloc.h>
+ #include <vm/vm_page.h>
+ #include <machine/bus_dma.h>
+ 
+diff --git a/sys/dev/drm/include/linux/idr.h b/sys/dev/drm/include/linux/idr.h
+index 3b1ac31cae..2cf67d81ee 100644
+--- a/sys/dev/drm/include/linux/idr.h
++++ b/sys/dev/drm/include/linux/idr.h
+@@ -29,7 +29,14 @@
+ 
+ #include <sys/idr.h>
+ 
++#ifndef GFP_KERNEL
++#include <sys/malloc.h>
++#define	GFP_KERNEL	M_WAITOK
++#endif
++
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_IDR);
++#endif
+ 
+ #define	IDA_CHUNK_SIZE		128	/* 128 bytes per chunk */
+ #define	IDA_BITMAP_LONGS	(IDA_CHUNK_SIZE / sizeof(long) - 1)
+diff --git a/sys/dev/drm/include/linux/list.h b/sys/dev/drm/include/linux/list.h
+index 31912da171..346b5e8f45 100644
+--- a/sys/dev/drm/include/linux/list.h
++++ b/sys/dev/drm/include/linux/list.h
+@@ -34,23 +34,32 @@
+  * Since LIST_HEAD conflicts with the linux definition we must include any
+  * FreeBSD header which requires it here so it is resolved with the correct
+  * definition prior to the undef.
++ *
++ * However on DragonFly we do not undef LIST_HEAD, no need to prepoison yet.
+  */
+ #include <linux/types.h>
+ #include <linux/stddef.h>
+ #include <linux/kernel.h>
+ 
++#include <sys/queue.h>
++
+ #include <sys/param.h>
++#include <sys/conf.h>	/* for struct cdev */
+ #include <sys/kernel.h>
+-#include <sys/queue.h>
+-#include <sys/jail.h>
+ #include <sys/lock.h>
++#include <sys/sysctl.h>
++#include <vm/vm_page.h>
++
+ #include <sys/mutex.h>
+ #include <sys/proc.h>
+-#include <sys/conf.h>
+ #include <sys/socket.h>
+-#include <sys/mbuf.h>
+ 
++#if 0
++/* XXX should not be in here */
++#include <sys/jail.h>
++#include <sys/mbuf.h>
+ #include <net/bpf.h>
++
+ #include <net/if.h>
+ #include <net/if_var.h>
+ #include <net/if_types.h>
+@@ -62,6 +71,7 @@
+ 
+ #include <netinet6/in6_var.h>
+ #include <netinet6/nd6.h>
++#endif
+ 
+ #include <vm/vm.h>
+ #include <vm/vm_object.h>
+diff --git a/sys/dev/drm/linux_kobject.c b/sys/dev/drm/linux_kobject.c
+index 2ff9278d91..ebe337d25e 100644
+--- a/sys/dev/drm/linux_kobject.c
++++ b/sys/dev/drm/linux_kobject.c
+@@ -24,6 +24,7 @@
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include <linux/gfp.h>
+ #include <linux/kobject.h>
+ 
+ extern char *drm_vasprintf(int flags, const char *format, va_list ap);
+diff --git a/sys/dev/netif/lnc/lance.c b/sys/dev/netif/lnc/lance.c
+index f2fc0bc95e..eed952f234 100644
+--- a/sys/dev/netif/lnc/lance.c
++++ b/sys/dev/netif/lnc/lance.c
+@@ -77,6 +77,7 @@
+ #include <sys/bus.h>
+ #include <sys/endian.h>
+ #include <sys/lock.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/sockio.h>
+diff --git a/sys/dev/netif/nfe/if_nfe.c b/sys/dev/netif/nfe/if_nfe.c
+index 5881b35791..71c6c51ffe 100644
+--- a/sys/dev/netif/nfe/if_nfe.c
++++ b/sys/dev/netif/nfe/if_nfe.c
+@@ -2,15 +2,15 @@
+ 
+ /*
+  * Copyright (c) 2006 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Sepherosa Ziehau <sepherosa@gmail.com> and
+  * Matthew Dillon <dillon@apollo.backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -20,7 +20,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -59,6 +59,7 @@
+ #include <sys/param.h>
+ #include <sys/endian.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/bus.h>
+ #include <sys/interrupt.h>
+ #include <sys/proc.h>
+@@ -1268,7 +1269,7 @@ nfe_encap(struct nfe_softc *sc, struct nfe_tx_ring *ring, struct mbuf *m0)
+ 	}
+ 
+ 	/*
+-	 * XXX urm. somebody is unaware of how hardware works.  You 
++	 * XXX urm. somebody is unaware of how hardware works.  You
+ 	 * absolutely CANNOT set NFE_TX_VALID on the next descriptor in
+ 	 * the ring until the entire chain is actually *VALID*.  Otherwise
+ 	 * the hardware may encounter a partially initialized chain that
+diff --git a/sys/dev/netif/oce/oce_if.h b/sys/dev/netif/oce/oce_if.h
+index add5eb618e..c21bc880be 100644
+--- a/sys/dev/netif/oce/oce_if.h
++++ b/sys/dev/netif/oce/oce_if.h
+@@ -44,6 +44,7 @@
+ #include <sys/module.h>
+ #include <sys/kernel.h>
+ #include <sys/bus.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/rman.h>
+ #include <sys/socket.h>
+diff --git a/sys/dev/netif/xe/if_xe.c b/sys/dev/netif/xe/if_xe.c
+index 08b67cf0e2..f9479ccf50 100644
+--- a/sys/dev/netif/xe/if_xe.c
++++ b/sys/dev/netif/xe/if_xe.c
+@@ -96,6 +96,7 @@
+ #include <sys/param.h>
+ #include <sys/errno.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/select.h>
+ #include <sys/socket.h>
+diff --git a/sys/dev/netif/xl/if_xl.c b/sys/dev/netif/xl/if_xl.c
+index d5cffa72e6..b2ca469f1c 100644
+--- a/sys/dev/netif/xl/if_xl.c
++++ b/sys/dev/netif/xl/if_xl.c
+@@ -104,6 +104,7 @@
+ #include <sys/systm.h>
+ #include <sys/sockio.h>
+ #include <sys/endian.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/kernel.h>
+ #include <sys/socket.h>
+diff --git a/sys/dev/powermng/clockmod/clockmod.c b/sys/dev/powermng/clockmod/clockmod.c
+index 26a486705d..6c397e33f9 100644
+--- a/sys/dev/powermng/clockmod/clockmod.c
++++ b/sys/dev/powermng/clockmod/clockmod.c
+@@ -38,6 +38,7 @@
+ #include <sys/bus.h>
+ #include <sys/cpu_topology.h>
+ #include <sys/cpuhelper.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/queue.h>
+ #include <sys/serialize.h>
+@@ -331,7 +332,7 @@ clockmod_dom_create(cpumask_t mask)
+ 				ctrl->ctl_value |= 1 << 4;
+ 
+ 			if (bootverbose) {
+-				kprintf("  0x%04jx %s\n", 
++				kprintf("  0x%04jx %s\n",
+ 				    (uintmax_t)ctrl->ctl_value,
+ 				    ctrl->ctl_name);
+ 			}
+@@ -472,7 +473,7 @@ clockmod_select_handler(struct cpuhelper_msg *msg)
+ 	cpuhelper_replymsg(msg, 0);
+ }
+ 
+-static int 
++static int
+ clockmod_select(const struct clockmod_softc *sc,
+     const struct clockmod_dom_ctrl *ctrl)
+ {
+diff --git a/sys/dev/powermng/coretemp/coretemp.c b/sys/dev/powermng/coretemp/coretemp.c
+index cc89ce3e65..0a55c3ca3e 100644
+--- a/sys/dev/powermng/coretemp/coretemp.c
++++ b/sys/dev/powermng/coretemp/coretemp.c
+@@ -38,6 +38,7 @@
+ #include <sys/conf.h>
+ #include <sys/cpu_topology.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/sensors.h>
+ #include <sys/proc.h>	/* for curthread */
+ #include <sys/sched.h>
+diff --git a/sys/dev/raid/mfi/mfivar.h b/sys/dev/raid/mfi/mfivar.h
+index db64f58f8a..141198a1db 100644
+--- a/sys/dev/raid/mfi/mfivar.h
++++ b/sys/dev/raid/mfi/mfivar.h
+@@ -582,7 +582,9 @@ mfi_lockassert(struct lock *lockp)
+ #define MFI_READ1(sc, reg)		bus_space_read_1((sc)->mfi_btag, \
+ 	(sc)->mfi_bhandle, (reg))
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_MFIBUF);
++#endif
+ 
+ #define MFI_RESET_WAIT_TIME 180
+ #define MFI_CMD_TIMEOUT 30
+diff --git a/sys/dev/serial/sio/sio_pccard.c b/sys/dev/serial/sio/sio_pccard.c
+index 0fad8486e9..1d17b53a96 100644
+--- a/sys/dev/serial/sio/sio_pccard.c
++++ b/sys/dev/serial/sio/sio_pccard.c
+@@ -31,6 +31,7 @@
+ #include <sys/systm.h>
+ #include <sys/tty.h>
+ #include <sys/proc.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/kernel.h>
+ #include <sys/bus.h>
+diff --git a/sys/dev/smbus/atmel_mxt/atmel_mxt.c b/sys/dev/smbus/atmel_mxt/atmel_mxt.c
+index 0218239364..40ed934ed3 100644
+--- a/sys/dev/smbus/atmel_mxt/atmel_mxt.c
++++ b/sys/dev/smbus/atmel_mxt/atmel_mxt.c
+@@ -148,6 +148,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/device.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/bus.h>
+ #include <sys/conf.h>
+diff --git a/sys/dev/video/vga/vga_switcheroo.c b/sys/dev/video/vga/vga_switcheroo.c
+index 467c9733d2..c9ec93c5ce 100644
+--- a/sys/dev/video/vga/vga_switcheroo.c
++++ b/sys/dev/video/vga/vga_switcheroo.c
+@@ -43,6 +43,7 @@
+ #include <sys/module.h>
+ #include <sys/proc.h>
+ #include <sys/types.h>
++#include <sys/sysctl.h>
+ #include <sys/systm.h>
+ #include <sys/device.h>
+ #include <sys/conf.h>
+diff --git a/sys/dev/virtual/hyperv/vmbus/vmbus.c b/sys/dev/virtual/hyperv/vmbus/vmbus.c
+index 2cfcbbf1f8..62c59804bd 100644
+--- a/sys/dev/virtual/hyperv/vmbus/vmbus.c
++++ b/sys/dev/virtual/hyperv/vmbus/vmbus.c
+@@ -31,6 +31,7 @@
+ #include <sys/param.h>
+ #include <sys/bus.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/rman.h>
+ #include <sys/systimer.h>
+diff --git a/sys/kern/imgact_resident.c b/sys/kern/imgact_resident.c
+index 5ae1982254..1ba7a98577 100644
+--- a/sys/kern/imgact_resident.c
++++ b/sys/kern/imgact_resident.c
+@@ -2,14 +2,14 @@
+  * (MPSAFE)
+  *
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -19,7 +19,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -51,6 +51,7 @@
+ #include <sys/sysctl.h>
+ #include <sys/lock.h>
+ #include <sys/resident.h>
++#include <sys/malloc.h>
+ 
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+@@ -103,7 +104,7 @@ fill_xresident(struct vmresident *vr, struct xresident *in, struct thread *td)
+ 		error = vget(vrtmp, LK_EXCLUSIVE);
+ 		if (error)
+ 			goto done;
+-	
++
+ 		/* retrieve underlying stat information and release vnode */
+ 		error = vn_stat(vrtmp, &st, td->td_ucred);
+ 		vput(vrtmp);
+@@ -136,7 +137,7 @@ sysctl_vm_resident(SYSCTL_HANDLER_ARGS)
+ 
+ 	if (exec_res_id == 0)
+ 	    return error;
+-	
++
+ 	/* client queried for number of resident binaries */
+ 	if (!req->oldptr)
+ 	    return SYSCTL_OUT(req, 0, exec_res_id);
+@@ -148,7 +149,7 @@ sysctl_vm_resident(SYSCTL_HANDLER_ARGS)
+ 		error = fill_xresident(vmres, &xres, td);
+ 		if (error != 0)
+ 			break;
+-		
++
+ 		error = SYSCTL_OUT(req, (void *)&xres,
+ 				sizeof(struct xresident));
+ 		if (error != 0)
+diff --git a/sys/kern/kern_collect.c b/sys/kern/kern_collect.c
+index c4b42f6129..6e603ffcaf 100644
+--- a/sys/kern/kern_collect.c
++++ b/sys/kern/kern_collect.c
+@@ -45,6 +45,7 @@
+ #include <sys/lock.h>
+ #include <sys/spinlock.h>
+ #include <sys/kcollect.h>
++#include <sys/malloc.h>
+ 
+ #include <sys/thread2.h>
+ #include <sys/spinlock2.h>
+diff --git a/sys/kern/kern_event.c b/sys/kern/kern_event.c
+index 021b4519e6..5861b5cbe7 100644
+--- a/sys/kern/kern_event.c
++++ b/sys/kern/kern_event.c
+@@ -30,7 +30,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/proc.h>
+-#include <sys/malloc.h> 
++#include <sys/malloc.h>
+ #include <sys/unistd.h>
+ #include <sys/file.h>
+ #include <sys/lock.h>
+@@ -59,7 +59,7 @@
+ #define EVENT_REGISTER	1
+ #define EVENT_PROCESS	2
+ 
+-MALLOC_DEFINE(M_KQUEUE, "kqueue", "memory for kqueue system");
++static MALLOC_DEFINE(M_KQUEUE, "kqueue", "memory for kqueue system");
+ 
+ struct kevent_copyin_args {
+ 	struct kevent_args	*ka;
+@@ -385,7 +385,7 @@ filt_proc(struct knote *kn, long hint)
+ 			kn->kn_ptr.p_proc = NULL;
+ 			PRELE(p);
+ 		}
+-		kn->kn_flags |= (EV_EOF | EV_NODATA | EV_ONESHOT); 
++		kn->kn_flags |= (EV_EOF | EV_NODATA | EV_ONESHOT);
+ 		return (1);
+ 	}
+ 
+@@ -472,7 +472,7 @@ filt_timerexpire(void *knx)
+ 
+ /*
+  * data contains amount of time to sleep, in milliseconds
+- */ 
++ */
+ static int
+ filt_timerattach(struct knote *kn)
+ {
+@@ -1294,7 +1294,7 @@ kqueue_register(struct kqueue *kq, struct kevent *kev, int *countp)
+ 		} else {
+ 			/*
+ 			 * The user may change some filter values after the
+-			 * initial EV_ADD, but doing so will not reset any 
++			 * initial EV_ADD, but doing so will not reset any
+ 			 * filter which have already been triggered.
+ 			 */
+ 			KKASSERT(kn->kn_status & KN_PROCESSING);
+diff --git a/sys/kern/kern_mpipe.c b/sys/kern/kern_mpipe.c
+index e463f6d0e9..9a0cb666d0 100644
+--- a/sys/kern/kern_mpipe.c
++++ b/sys/kern/kern_mpipe.c
+@@ -2,14 +2,14 @@
+  * (MPSAFE)
+  *
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -19,7 +19,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -38,6 +38,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/slaballoc.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/vmmeter.h>
+ #include <sys/lock.h>
+@@ -64,8 +65,8 @@ static void mpipe_thread(void *arg);
+  */
+ void
+ mpipe_init(malloc_pipe_t mpipe, malloc_type_t type, int bytes,
+-	int nnom, int nmax, 
+-	int mpflags, 
++	int nnom, int nmax,
++	int mpflags,
+ 	void (*construct)(void *, void *),
+ 	void (*deconstruct)(void *, void *),
+ 	void *priv)
+@@ -91,7 +92,7 @@ mpipe_init(malloc_pipe_t mpipe, malloc_type_t type, int bytes,
+ 	mpipe->mflags |= M_USE_RESERVE | M_USE_INTERRUPT_RESERVE;
+     mpipe->ary_count = nnom;
+     mpipe->max_count = nmax;
+-    mpipe->array = kmalloc(nnom * sizeof(mpipe->array[0]), M_MPIPEARY, 
++    mpipe->array = kmalloc(nnom * sizeof(mpipe->array[0]), M_MPIPEARY,
+ 			    M_WAITOK | M_ZERO);
+ 
+     while (mpipe->free_count < nnom) {
+@@ -222,7 +223,7 @@ _mpipe_alloc_locked(malloc_pipe_t mpipe, int mfailed)
+ 	 */
+ 	buf = kmalloc(mpipe->bytes, mpipe->type, M_NOWAIT | mpipe->mflags);
+ 	if (buf) {
+-	    ++mpipe->total_count; 
++	    ++mpipe->total_count;
+ 	    if (mpipe->construct)
+ 	        mpipe->construct(buf, mpipe->priv);
+ 	}
+@@ -343,7 +344,7 @@ mpipe_free(malloc_pipe_t mpipe, void *buf)
+ 	 */
+ 	mpipe->array[n] = buf;
+ 	++mpipe->free_count;
+-	if ((mpipe->mpflags & (MPF_CACHEDATA|MPF_NOZERO)) == 0) 
++	if ((mpipe->mpflags & (MPF_CACHEDATA|MPF_NOZERO)) == 0)
+ 	    bzero(buf, mpipe->bytes);
+ 	if (mpipe->mpflags & MPF_QUEUEWAIT) {
+ 		mpipe->mpflags &= ~MPF_QUEUEWAIT;
+diff --git a/sys/kern/kern_p1003_1b.c b/sys/kern/kern_p1003_1b.c
+index 83b00c7613..bc2baf4de7 100644
+--- a/sys/kern/kern_p1003_1b.c
++++ b/sys/kern/kern_p1003_1b.c
+@@ -39,6 +39,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/sysent.h>
++#include <sys/malloc.h>
+ #include <sys/posix4.h>
+ #include <sys/proc.h>
+ #include <sys/syslog.h>
+@@ -223,7 +224,7 @@ sys_sched_getparam(struct sched_getparam_args *uap)
+ 	struct lwp *lp;
+ 	struct sched_param sched_param;
+ 	int e;
+- 
++
+ 	if ((e = p31b_proc(uap->pid, &targetp)) == 0) {
+ 		lp = FIRST_LWP_IN_PROC(targetp); /* XXX lwp */
+ 		if (lp) {
+@@ -277,7 +278,7 @@ sys_sched_getscheduler(struct sched_getscheduler_args *uap)
+ 	struct proc *targetp;
+ 	struct lwp *lp;
+ 	int e;
+- 
++
+ 	if ((e = p31b_proc(uap->pid, &targetp)) == 0) {
+ 		lp = FIRST_LWP_IN_PROC(targetp); /* XXX lwp */
+ 		if (lp) {
+diff --git a/sys/kern/kern_plimit.c b/sys/kern/kern_plimit.c
+index 8e052ab118..0800435b60 100644
+--- a/sys/kern/kern_plimit.c
++++ b/sys/kern/kern_plimit.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2006,2017,2018 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -73,6 +73,7 @@
+ #include <sys/file.h>
+ #include <sys/lockf.h>
+ #include <sys/kern_syscall.h>
++#include <sys/malloc.h>
+ 
+ #include <vm/vm_param.h>
+ #include <vm/vm.h>
+diff --git a/sys/kern/kern_sched.c b/sys/kern/kern_sched.c
+index 4b423c1f2a..8e89b75c60 100644
+--- a/sys/kern/kern_sched.c
++++ b/sys/kern/kern_sched.c
+@@ -38,6 +38,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>
+ #include <sys/posix4.h>
+ #include <sys/proc.h>
+ #include <sys/kernel.h>
+@@ -55,7 +56,9 @@ struct ksched {
+ int
+ ksched_attach(struct ksched **p)
+ {
+-	struct ksched *ksched= p31b_malloc(sizeof(*ksched));
++	struct ksched *ksched;
++
++	ksched = kmalloc(sizeof(*ksched), M_P31B, M_WAITOK);
+ 
+ 	ksched->rr_interval.tv_sec = 0;
+ 	ksched->rr_interval.tv_nsec = 1000000000L / 10;	/* XXX */
+@@ -67,7 +70,7 @@ ksched_attach(struct ksched **p)
+ int
+ ksched_detach(struct ksched *p)
+ {
+-	p31b_free(p);
++	kfree(p, M_P31B);
+ 
+ 	return 0;
+ }
+diff --git a/sys/kern/kern_slaballoc.c b/sys/kern/kern_slaballoc.c
+index be67cdfc7c..092b1cc4ba 100644
+--- a/sys/kern/kern_slaballoc.c
++++ b/sys/kern/kern_slaballoc.c
+@@ -1,16 +1,16 @@
+ /*
+  * KERN_SLABALLOC.C	- Kernel SLAB memory allocator
+- * 
++ *
+  * Copyright (c) 2003,2004,2010-2019 The DragonFly Project.
+  * All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -20,7 +20,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -107,6 +107,7 @@
+ #include <sys/globaldata.h>
+ #include <sys/sysctl.h>
+ #include <sys/ktr.h>
++#include <sys/malloc.h>
+ 
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+@@ -185,7 +186,7 @@ static void chunk_mark_free(SLZone *z, void *chunk);
+ #endif
+ 
+ /*
+- * Misc constants.  Note that allocations that are exact multiples of 
++ * Misc constants.  Note that allocations that are exact multiples of
+  * PAGE_SIZE, or exceed the zone limit, fall through to the kmem module.
+  */
+ #define ZONE_RELS_THRESH	32		/* threshold number of zones */
+@@ -195,7 +196,7 @@ static void chunk_mark_free(SLZone *z, void *chunk);
+  * The WEIRD_ADDR is used as known text to copy into free objects to
+  * try to create deterministic failure cases if the data is accessed after
+  * free.
+- */    
++ */
+ #define WEIRD_ADDR      0xdeadc0de
+ #endif
+ #define ZERO_LENGTH_PTR	((void *)-8)
+@@ -208,7 +209,7 @@ MALLOC_DEFINE(M_CACHE, "cache", "Various Dynamically allocated caches");
+ MALLOC_DEFINE(M_DEVBUF, "devbuf", "device driver memory");
+ MALLOC_DEFINE(M_TEMP, "temp", "misc temporary data buffers");
+ MALLOC_DEFINE(M_DRM, "m_drm", "DRM memory allocations");
+- 
++
+ MALLOC_DEFINE(M_IP6OPT, "ip6opt", "IPv6 options");
+ MALLOC_DEFINE(M_IP6NDP, "ip6ndp", "IPv6 Neighbor Discovery");
+ 
+@@ -217,7 +218,7 @@ MALLOC_DEFINE(M_IP6NDP, "ip6ndp", "IPv6 Neighbor Discovery");
+  * on available physical memory.  We choose a zone side which is approximately
+  * 1/1024th of our memory, so if we have 128MB of ram we have a zone size of
+  * 128K.  The zone size is limited to the bounds set in slaballoc.h
+- * (typically 32K min, 128K max). 
++ * (typically 32K min, 128K max).
+  */
+ static void kmeminit(void *dummy);
+ 
+@@ -350,7 +351,7 @@ malloc_init(void *data)
+ 
+     if (type->ks_magic != M_MAGIC)
+ 	panic("malloc type lacks magic");
+-					   
++
+     if (type->ks_limit != 0)
+ 	return;
+ 
+@@ -391,7 +392,7 @@ malloc_uninit(void *data)
+ #ifdef INVARIANTS
+     /*
+      * memuse is only correct in aggregation.  Due to memory being allocated
+-     * on one cpu and freed on another individual array entries may be 
++     * on one cpu and freed on another individual array entries may be
+      * negative or positive (canceling each other out).
+      */
+     for (i = ttl = 0; i < ncpus; ++i)
+@@ -499,7 +500,7 @@ zoneindex(unsigned long *bytes, unsigned long *align)
+ 	    *bytes = n = (n + 63) & ~63;
+ 	    *align = 64;
+ 	    return(n / 64 + 23);
+-	} 
++	}
+ 	if (n < 2048) {
+ 	    *bytes = n = (n + 127) & ~127;
+ 	    *align = 128;
+@@ -1291,7 +1292,7 @@ kfree(void *ptr, struct malloc_type *type)
+ 
+     /*
+      * Zone case.  Figure out the zone based on the fact that it is
+-     * ZoneSize aligned. 
++     * ZoneSize aligned.
+      */
+     z = (SLZone *)((uintptr_t)ptr & ZoneMask);
+     kup = btokup(z);
+diff --git a/sys/kern/kern_synch.c b/sys/kern/kern_synch.c
+index e135bb2a7c..3cfe07b9e5 100644
+--- a/sys/kern/kern_synch.c
++++ b/sys/kern/kern_synch.c
+@@ -48,6 +48,7 @@
+ #include <sys/lock.h>
+ #include <sys/priv.h>
+ #include <sys/kcollect.h>
++#include <sys/malloc.h>
+ #ifdef KTRACE
+ #include <sys/ktrace.h>
+ #endif
+@@ -125,7 +126,7 @@ SYSCTL_INT(_kern, OID_AUTO, pctcpu_decay, CTLFLAG_RW,
+ 	   &pctcpu_decay, 0, "");
+ 
+ /*
+- * kernel uses `FSCALE', userland (SHOULD) use kern.fscale 
++ * kernel uses `FSCALE', userland (SHOULD) use kern.fscale
+  */
+ __read_mostly int fscale __unused = FSCALE;	/* exported to systat */
+ SYSCTL_INT(_kern, OID_AUTO, fscale, CTLFLAG_RD, 0, FSCALE, "");
+@@ -189,7 +190,7 @@ SYSCTL_PROC(_debug, OID_AUTO, wakeup_umtx, CTLTYPE_UQUAD|CTLFLAG_RW, 0, 0,
+  * a 1-second recalc to help out.
+  *
+  * This code also allows us to store sysclock_t data in the process structure
+- * without fear of an overrun, since sysclock_t are guarenteed to hold 
++ * without fear of an overrun, since sysclock_t are guarenteed to hold
+  * several seconds worth of count.
+  *
+  * WARNING!  callouts can preempt normal threads.  However, they will not
+@@ -719,7 +720,7 @@ tsleep(const volatile void *ident, int flags, const char *wmesg, int timo)
+ 		lwkt_switch();
+ 	}
+ 
+-	/* 
++	/*
+ 	 * Make sure we haven't switched cpus while we were asleep.  It's
+ 	 * not supposed to happen.  Cleanup our temporary flags.
+ 	 */
+@@ -764,7 +765,7 @@ tsleep(const volatile void *ident, int flags, const char *wmesg, int timo)
+ 
+ 	/*
+ 	 * Figure out the correct error return.  If interrupted by a
+-	 * signal we want to return EINTR or ERESTART.  
++	 * signal we want to return EINTR or ERESTART.
+ 	 */
+ resume:
+ 	if (lp) {
+@@ -905,7 +906,7 @@ lwkt_sleep(const char *wmesg, int flags)
+ 			return(EINTR);
+ 		else
+ 			return(ERESTART);
+-			
++
+ 	}
+ 	td->td_flags |= TDF_BLOCKED | TDF_SINTR;
+ 	td->td_wmesg = wmesg;
+@@ -1007,7 +1008,7 @@ _wakeup(void *ident, int domain)
+ restart:
+ 	for (td = TAILQ_FIRST(&qp->queue); td != NULL; td = ntd) {
+ 		ntd = TAILQ_NEXT(td, td_sleepq);
+-		if (td->td_wchan == ident && 
++		if (td->td_wchan == ident &&
+ 		    td->td_wdomain == (domain & PDOMAIN_MASK)
+ 		) {
+ 			KKASSERT(td->td_gd == gd);
+@@ -1067,7 +1068,7 @@ _wakeup(void *ident, int domain)
+ 	 * to continue checking cpus.
+ 	 *
+ 	 * It should be noted that this scheme is actually less expensive then
+-	 * the old scheme when waking up multiple threads, since we send 
++	 * the old scheme when waking up multiple threads, since we send
+ 	 * only one IPI message per target candidate which may then schedule
+ 	 * multiple threads.  Before we could have wound up sending an IPI
+ 	 * message for each thread on the target cpu (!= current cpu) that
+@@ -1314,7 +1315,7 @@ setrunnable(struct lwp *lp)
+ 
+ /*
+  * The process is stopped due to some condition, usually because p_stat is
+- * set to SSTOP, but also possibly due to being traced.  
++ * set to SSTOP, but also possibly due to being traced.
+  *
+  * Caller must hold p->p_token
+  *
+diff --git a/sys/kern/kern_sysref.c b/sys/kern/kern_sysref.c
+index 3b9e54e9a2..095a8c3608 100644
+--- a/sys/kern/kern_sysref.c
++++ b/sys/kern/kern_sysref.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2007 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -48,6 +48,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/tree.h>
+ #include <sys/spinlock.h>
+ #include <machine/atomic.h>
+@@ -141,7 +142,7 @@ sysref_alloc(struct sysref_class *srclass)
+ 	if (srclass->oc == NULL) {
+ 		KKASSERT(srclass->mtype != NULL);
+ 		srclass->oc = objcache_create_mbacked(
+-				srclass->mtype, srclass->objsize, 
++				srclass->mtype, srclass->objsize,
+ 				0, srclass->nom_cache,
+ 				sysref_ctor, sysref_dtor, srclass);
+ 	}
+diff --git a/sys/kern/kern_timeout.c b/sys/kern/kern_timeout.c
+index 58b259c2da..7cbdb36396 100644
+--- a/sys/kern/kern_timeout.c
++++ b/sys/kern/kern_timeout.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2004,2014,2019 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -81,6 +81,7 @@
+ #include <sys/spinlock.h>
+ #include <sys/callout.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/interrupt.h>
+ #include <sys/thread.h>
+ #include <sys/sysctl.h>
+diff --git a/sys/kern/kern_uuid.c b/sys/kern/kern_uuid.c
+index 0901c96e97..52a1e5aecf 100644
+--- a/sys/kern/kern_uuid.c
++++ b/sys/kern/kern_uuid.c
+@@ -24,7 +24,6 @@
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/kern/kern_uuid.c,v 1.13 2007/04/23 12:53:00 pjd Exp $
+- * $DragonFly: src/sys/kern/kern_uuid.c,v 1.4 2007/06/19 06:07:57 dillon Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -33,6 +32,7 @@
+ #include <sys/kernel.h>
+ #include <sys/lock.h>
+ #include <sys/kern_syscall.h>
++#include <sys/malloc.h>
+ #include <sys/random.h>
+ #include <sys/sbuf.h>
+ #include <sys/socket.h>
+diff --git a/sys/kern/libmchain/subr_mchain.c b/sys/kern/libmchain/subr_mchain.c
+index 8ba5da5e23..c038982810 100644
+--- a/sys/kern/libmchain/subr_mchain.c
++++ b/sys/kern/libmchain/subr_mchain.c
+@@ -35,6 +35,7 @@
+ #include <sys/kernel.h>
+ #include <sys/endian.h>
+ #include <sys/errno.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/module.h>
+ #include <sys/uio.h>
+@@ -72,7 +73,7 @@ mb_init(struct mbchain *mbp)
+ 	struct mbuf *m;
+ 
+ 	m = m_gethdr(M_WAITOK, MT_DATA);
+-	if (m == NULL) 
++	if (m == NULL)
+ 		return ENOBUFS;
+ 	m->m_pkthdr.rcvif = NULL;
+ 	m->m_len = 0;
+@@ -117,7 +118,7 @@ mb_fixhdr(struct mbchain *mbp)
+  * Check if object of size 'size' fit to the current position and
+  * allocate new mbuf if not. Advance pointers and increase length of mbuf(s).
+  * Return pointer to the object placeholder or NULL if any error occured.
+- * Note: size should be <= MLEN 
++ * Note: size should be <= MLEN
+  */
+ caddr_t
+ mb_reserve(struct mbchain *mbp, int size)
+@@ -312,7 +313,7 @@ md_init(struct mdchain *mdp)
+ 	struct mbuf *m;
+ 
+ 	m = m_gethdr(M_WAITOK, MT_DATA);
+-	if (m == NULL) 
++	if (m == NULL)
+ 		return ENOBUFS;
+ 	m->m_pkthdr.rcvif = NULL;
+ 	m->m_len = 0;
+@@ -476,7 +477,7 @@ md_get_mem(struct mdchain *mdp, caddr_t target, int size, int type)
+ 	int error;
+ 	u_int count;
+ 	u_char *s;
+-	
++
+ 	while (size > 0) {
+ 		if (m == NULL) {
+ 			MBERROR("incomplete copy\n");
+diff --git a/sys/kern/lwkt_thread.c b/sys/kern/lwkt_thread.c
+index 8df2c9fbcf..deeb207b3d 100644
+--- a/sys/kern/lwkt_thread.c
++++ b/sys/kern/lwkt_thread.c
+@@ -35,7 +35,7 @@
+ /*
+  * Each cpu in a system has its own self-contained light weight kernel
+  * thread scheduler, which means that generally speaking we only need
+- * to use a critical section to avoid problems.  Foreign thread 
++ * to use a critical section to avoid problems.  Foreign thread
+  * scheduling is queued via (async) IPIs.
+  */
+ 
+@@ -45,6 +45,7 @@
+ #include <sys/proc.h>
+ #include <sys/rtprio.h>
+ #include <sys/kinfo.h>
++#include <sys/malloc.h>
+ #include <sys/queue.h>
+ #include <sys/sysctl.h>
+ #include <sys/kthread.h>
+@@ -119,9 +120,9 @@ SYSCTL_INT(_lwkt, OID_AUTO, panic_on_cscount, CTLFLAG_RW, &panic_on_cscount, 0,
+ #ifdef DEBUG_LWKT_THREAD
+ SYSCTL_QUAD(_lwkt, OID_AUTO, switch_count, CTLFLAG_RW, &switch_count, 0,
+     "Number of switched threads");
+-SYSCTL_QUAD(_lwkt, OID_AUTO, preempt_hit, CTLFLAG_RW, &preempt_hit, 0, 
++SYSCTL_QUAD(_lwkt, OID_AUTO, preempt_hit, CTLFLAG_RW, &preempt_hit, 0,
+     "Successful preemption events");
+-SYSCTL_QUAD(_lwkt, OID_AUTO, preempt_miss, CTLFLAG_RW, &preempt_miss, 0, 
++SYSCTL_QUAD(_lwkt, OID_AUTO, preempt_miss, CTLFLAG_RW, &preempt_miss, 0,
+     "Failed preemption events");
+ SYSCTL_QUAD(_lwkt, OID_AUTO, preempt_weird, CTLFLAG_RW, &preempt_weird, 0,
+     "Number of preempted threads.");
+@@ -413,7 +414,7 @@ lwkt_alloc_thread(struct thread *td, int stksize, int cpu, int flags)
+  *
+  * All threads start out in a critical section at a priority of
+  * TDPRI_KERN_DAEMON.  Higher level code will modify the priority as
+- * appropriate.  This function may send an IPI message when the 
++ * appropriate.  This function may send an IPI message when the
+  * requested cpu is not the current cpu and consequently gd_tdallq may
+  * not be initialized synchronously from the point of view of the originating
+  * cpu.
+@@ -528,7 +529,7 @@ lwkt_free_thread(thread_t td)
+ 
+ 
+ /*
+- * Switch to the next runnable lwkt.  If no LWKTs are runnable then 
++ * Switch to the next runnable lwkt.  If no LWKTs are runnable then
+  * switch to the idlethread.  Switching must occur within a critical
+  * section to avoid races with the scheduling queue.
+  *
+@@ -1410,8 +1411,8 @@ lwkt_acquire(thread_t td)
+ 
+ /*
+  * Generic deschedule.  Descheduling threads other then your own should be
+- * done only in carefully controlled circumstances.  Descheduling is 
+- * asynchronous.  
++ * done only in carefully controlled circumstances.  Descheduling is
++ * asynchronous.
+  *
+  * This function may block if the cpu has run out of messages.
+  */
+@@ -1530,7 +1531,7 @@ lwkt_schedulerclock(thread_t td)
+ }
+ 
+ /*
+- * Migrate the current thread to the specified cpu. 
++ * Migrate the current thread to the specified cpu.
+  *
+  * This is accomplished by descheduling ourselves from the current cpu
+  * and setting td_migrate_gd.  The lwkt_switch() code will detect that the
+diff --git a/sys/kern/subr_busdma.c b/sys/kern/subr_busdma.c
+index 41a015b8f5..84e82c6c75 100644
+--- a/sys/kern/subr_busdma.c
++++ b/sys/kern/subr_busdma.c
+@@ -36,6 +36,7 @@
+ #include <sys/systm.h>
+ #include <sys/bus_dma.h>
+ #include <sys/mbuf.h>
++#include <sys/malloc.h>
+ 
+ static void
+ _bus_dmamem_coherent_cb(void *arg, bus_dma_segment_t *segs, int nseg, int error)
+diff --git a/sys/kern/subr_cpu_topology.c b/sys/kern/subr_cpu_topology.c
+index 2dd67bf183..c471919387 100644
+--- a/sys/kern/subr_cpu_topology.c
++++ b/sys/kern/subr_cpu_topology.c
+@@ -1,10 +1,10 @@
+ /*
+  * Copyright (c) 2012 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -14,7 +14,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -27,12 +27,12 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+  */
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/sysctl.h>
+ #include <sys/sbuf.h>
+ #include <sys/cpu_topology.h>
+@@ -109,11 +109,11 @@ get_next_valid_apicid(int curr_apicid)
+  * - node : the current node
+  * - last_free_node : the last free node in the global array.
+  * - cpuid : basicly this are the ids of the leafs
+- */ 
++ */
+ static void
+ build_topology_tree(int *children_no_per_level,
+    uint8_t *level_types,
+-   int cur_level, 
++   int cur_level,
+    cpu_node_t *node,
+    cpu_node_t **last_free_node,
+    int *apicid)
+@@ -133,7 +133,7 @@ build_topology_tree(int *children_no_per_level,
+ 
+ 	if (node->parent_node == NULL)
+ 		root_cpu_node = node;
+-	
++
+ 	for (i = 0; i < node->child_no; i++) {
+ 		node->child_node[i] = *last_free_node;
+ 		(*last_free_node)++;
+@@ -165,7 +165,7 @@ migrate_elements(cpu_node_t **a, int n, int pos)
+ #endif
+ 
+ /* Build CPU topology. The detection is made by comparing the
+- * chip, core and logical IDs of each CPU with the IDs of the 
++ * chip, core and logical IDs of each CPU with the IDs of the
+  * BSP. When we found a match, at that level the CPUs are siblings.
+  */
+ static void
+@@ -212,7 +212,7 @@ build_cpu_topology(int assumed_ncpus)
+ 
+ 	cores_per_chip /= threads_per_core;
+ 	chips_per_package = assumed_ncpus / (cores_per_chip * threads_per_core);
+-	
++
+ 	kprintf("CPU Topology: cores_per_chip: %d; threads_per_core: %d; "
+ 		"chips_per_package: %d;\n",
+ 		cores_per_chip, threads_per_core, chips_per_package);
+@@ -228,7 +228,7 @@ build_cpu_topology(int assumed_ncpus)
+ 		level_types[1] = CHIP_LEVEL;
+ 		level_types[2] = CORE_LEVEL;
+ 		level_types[3] = THREAD_LEVEL;
+-	
++
+ 		build_topology_tree(children_no_per_level,
+ 		    level_types,
+ 		    0,
+@@ -247,7 +247,7 @@ build_cpu_topology(int assumed_ncpus)
+ 		level_types[0] = PACKAGE_LEVEL;
+ 		level_types[1] = CHIP_LEVEL;
+ 		level_types[2] = CORE_LEVEL;
+-	
++
+ 		build_topology_tree(children_no_per_level,
+ 		    level_types,
+ 		    0,
+@@ -264,7 +264,7 @@ build_cpu_topology(int assumed_ncpus)
+ 
+ 		level_types[0] = PACKAGE_LEVEL;
+ 		level_types[1] = CHIP_LEVEL;
+-	
++
+ 		build_topology_tree(children_no_per_level,
+ 		    level_types,
+ 		    0,
+@@ -360,7 +360,7 @@ print_cpu_topology_tree_sysctl_helper(cpu_node_t *node,
+ 		buf[buf_len] = '|';buf_len++;
+ 		buf[buf_len] = ' ';buf_len++;
+ 	}
+-	
++
+ 	bsr_member = BSRCPUMASK(node->members);
+ 
+ 	if (node->type == PACKAGE_LEVEL) {
+@@ -448,7 +448,7 @@ print_cpu_topology_level_description_sysctl(SYSCTL_HANDLER_ARGS)
+ 
+ 	sbuf_delete(sb);
+ 
+-	return ret;	
++	return ret;
+ }
+ 
+ /* Find a cpu_node_t by a mask */
+@@ -626,7 +626,7 @@ build_sysctl_cpu_topology(int assumed_ncpus)
+ {
+ 	int i;
+ 	struct sbuf sb;
+-	
++
+ 	/* SYSCTL new leaf for "cpu_topology" */
+ 	sysctl_ctx_init(&cpu_topology_sysctl_ctx);
+ 	cpu_topology_sysctl_tree = SYSCTL_ADD_NODE(&cpu_topology_sysctl_ctx,
+@@ -664,7 +664,7 @@ build_sysctl_cpu_topology(int assumed_ncpus)
+ 	/* SYSCTL per_cpu info */
+ 	for (i = 0; i < assumed_ncpus; i++) {
+ 		/* New leaf : hw.cpu_topology.cpux */
+-		sysctl_ctx_init(&pcpu_sysctl[i].sysctl_ctx); 
++		sysctl_ctx_init(&pcpu_sysctl[i].sysctl_ctx);
+ 		pcpu_sysctl[i].sysctl_tree = SYSCTL_ADD_NODE(&pcpu_sysctl[i].sysctl_ctx,
+ 		    SYSCTL_CHILDREN(cpu_topology_sysctl_tree),
+ 		    OID_AUTO,
+@@ -701,7 +701,7 @@ build_sysctl_cpu_topology(int assumed_ncpus)
+ 		    OID_AUTO, "core_id", CTLFLAG_RD,
+ 		    &pcpu_sysctl[i].core_id, 0,
+ 		    "Core ID");
+-		
++
+ 		/*Add core siblings */
+ 		SYSCTL_ADD_STRING(&pcpu_sysctl[i].sysctl_ctx,
+ 		    SYSCTL_CHILDREN(pcpu_sysctl[i].sysctl_tree),
+diff --git a/sys/kern/subr_disklabel32.c b/sys/kern/subr_disklabel32.c
+index 323bb02a9e..cea80b9e25 100644
+--- a/sys/kern/subr_disklabel32.c
++++ b/sys/kern/subr_disklabel32.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2003-2007 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,7 +30,7 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
++ *
+  * ----------------------------------------------------------------------------
+  * "THE BEER-WARE LICENSE" (Revision 42):
+  * <phk@FreeBSD.ORG> wrote this file.  As long as you retain this notice you
+@@ -90,6 +90,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/proc.h>
+ #include <sys/sysctl.h>
+ #include <sys/buf.h>
+@@ -181,7 +182,7 @@ l32_freedisklabel(disklabel_t *lpp)
+ }
+ 
+ /*
+- * Attempt to read a disk label from a device.  
++ * Attempt to read a disk label from a device.
+  *
+  * Returns NULL on sucess, and an error string on failure
+  */
+@@ -217,7 +218,7 @@ l32_readdisklabel(cdev_t dev, struct diskslice *sp, disklabel_t *lpp,
+ 			 * NOTE! dsreadandsetlabel() does a strcmp() on
+ 			 * this string.
+ 			 */
+-			if (msg == NULL) 
++			if (msg == NULL)
+ 				msg = "no disk label";
+ 		} else if (dlp->d_npartitions > MAXPARTITIONS32 ||
+ 			   dkcksum32(dlp) != 0) {
+diff --git a/sys/kern/subr_disklabel64.c b/sys/kern/subr_disklabel64.c
+index d83743bd4b..478ab04a3c 100644
+--- a/sys/kern/subr_disklabel64.c
++++ b/sys/kern/subr_disklabel64.c
+@@ -35,6 +35,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/conf.h>
+ #include <sys/disklabel.h>
+ #include <sys/disklabel64.h>
+diff --git a/sys/kern/tty.c b/sys/kern/tty.c
+index 5443f977ae..cf52425af9 100644
+--- a/sys/kern/tty.c
++++ b/sys/kern/tty.c
+@@ -77,6 +77,7 @@
+ #include <sys/systm.h>
+ #include <sys/uio.h>
+ #include <sys/filio.h>
++#include <sys/malloc.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+ #include <sys/tty.h>
+@@ -91,7 +92,6 @@
+ #include <sys/signalvar.h>
+ #include <sys/signal2.h>
+ #include <sys/resourcevar.h>
+-#include <sys/malloc.h>
+ #include <sys/filedesc.h>
+ #include <sys/sysctl.h>
+ #include <sys/thread2.h>
+diff --git a/sys/kern/uipc_msg.c b/sys/kern/uipc_msg.c
+index d2ef81db22..1931352912 100644
+--- a/sys/kern/uipc_msg.c
++++ b/sys/kern/uipc_msg.c
+@@ -1,10 +1,10 @@
+ /*
+  * Copyright (c) 2003, 2004 Jeffrey M. Hsu.  All rights reserved.
+  * Copyright (c) 2003, 2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Jeffrey M. Hsu.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -16,7 +16,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -34,6 +34,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/msgport.h>
+ #include <sys/protosw.h>
+ #include <sys/socket.h>
+@@ -569,7 +570,7 @@ so_pr_ctloutput(struct socket *so, struct sockopt *sopt)
+ }
+ 
+ struct lwkt_port *
+-so_pr_ctlport(struct protosw *pr, int cmd, struct sockaddr *arg, 
++so_pr_ctlport(struct protosw *pr, int cmd, struct sockaddr *arg,
+     void *extra, int *cpuid)
+ {
+ 	if (pr->pr_ctlport == NULL)
+@@ -715,7 +716,7 @@ netmsg_so_notify_doabort(lwkt_msg_t lmsg)
+ /*
+  * Predicate requests can be aborted.  This function is only called once
+  * and will interlock against processing/reply races (since such races
+- * occur on the same thread that controls the port where the abort is 
++ * occur on the same thread that controls the port where the abort is
+  * requeued).
+  *
+  * This part of the abort request occurs on the target cpu.  The message
+diff --git a/sys/kern/vfs_aio.c b/sys/kern/vfs_aio.c
+index e074fb7489..02e7494f89 100644
+--- a/sys/kern/vfs_aio.c
++++ b/sys/kern/vfs_aio.c
+@@ -21,36 +21,8 @@
+  */
+ 
+ #include <sys/param.h>
+-#include <sys/systm.h>
+-#include <sys/buf.h>
+ #include <sys/sysproto.h>
+-#include <sys/filedesc.h>
+-#include <sys/kernel.h>
+-#include <sys/fcntl.h>
+-#include <sys/file.h>
+-#include <sys/lock.h>
+-#include <sys/unistd.h>
+-#include <sys/proc.h>
+-#include <sys/resourcevar.h>
+-#include <sys/signalvar.h>
+-#include <sys/protosw.h>
+-#include <sys/socketvar.h>
+-#include <sys/sysctl.h>
+-#include <sys/vnode.h>
+-#include <sys/conf.h>
+ #include <sys/event.h>
+-#include <sys/objcache.h>
+-
+-#include <vm/vm.h>
+-#include <vm/vm_extern.h>
+-#include <vm/pmap.h>
+-#include <vm/vm_map.h>
+-#include <sys/aio.h>
+-
+-#include <sys/file2.h>
+-#include <sys/buf2.h>
+-
+-#include <machine/limits.h>
+ 
+ int
+ sys_aio_return(struct aio_return_args *uap)
+diff --git a/sys/net/altq/altq_var.h b/sys/net/altq/altq_var.h
+index c97bba1840..8ed772347e 100644
+--- a/sys/net/altq/altq_var.h
++++ b/sys/net/altq/altq_var.h
+@@ -1,5 +1,4 @@
+ /*	$KAME: altq_var.h,v 1.17 2004/04/20 05:09:08 kjc Exp $	*/
+-/*	$DragonFly: src/sys/net/altq/altq_var.h,v 1.5 2008/05/14 11:59:23 sephe Exp $ */
+ 
+ /*
+  * Copyright (C) 1998-2003
+@@ -37,14 +36,13 @@
+ #ifndef _SYS_KERNEL_H_
+ #include <sys/kernel.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_ALTQ);
++#endif
+ 
+ /*
+  * machine dependent clock
+diff --git a/sys/net/bridge/bridgestp.c b/sys/net/bridge/bridgestp.c
+index 7235c26b17..d1cb737a4e 100644
+--- a/sys/net/bridge/bridgestp.c
++++ b/sys/net/bridge/bridgestp.c
+@@ -41,6 +41,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/sockio.h>
+diff --git a/sys/net/dummynet/ip_dummynet_glue.c b/sys/net/dummynet/ip_dummynet_glue.c
+index d79f93ebe3..d240f4b08a 100644
+--- a/sys/net/dummynet/ip_dummynet_glue.c
++++ b/sys/net/dummynet/ip_dummynet_glue.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2007 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Sepherosa Ziehau <sepherosa@gmail.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/msgport.h>
+ #include <sys/socketvar.h>
+diff --git a/sys/net/if_loop.c b/sys/net/if_loop.c
+index 3db4488bbe..b38d27ba45 100644
+--- a/sys/net/if_loop.c
++++ b/sys/net/if_loop.c
+@@ -42,6 +42,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/lock.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/sockio.h>
+diff --git a/sys/net/if_var.h b/sys/net/if_var.h
+index 3f6fe12173..9861c37973 100644
+--- a/sys/net/if_var.h
++++ b/sys/net/if_var.h
+@@ -792,12 +792,13 @@ IFAREF(struct ifaddr *_ifa)
+ 	_IFAREF(_ifa, mycpuid);
+ }
+ 
+-#include <sys/malloc.h>
+ #include <sys/serialize2.h>
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_IFADDR);
+ MALLOC_DECLARE(M_IFMADDR);
+ MALLOC_DECLARE(M_IFNET);
++#endif
+ 
+ void	ifac_free(struct ifaddr_container *, int);
+ 
+diff --git a/sys/net/netmap/netmap_kern.h b/sys/net/netmap/netmap_kern.h
+index 2e6251335f..70fcefd7ab 100644
+--- a/sys/net/netmap/netmap_kern.h
++++ b/sys/net/netmap/netmap_kern.h
+@@ -65,7 +65,9 @@
+ #define rmb()	cpu_lfence()
+ #define wmb()	cpu_sfence()
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETMAP);
++#endif
+ 
+ // XXX linux struct, not used in FreeBSD
+ struct net_device_ops {
+diff --git a/sys/net/pf/pf_norm.c b/sys/net/pf/pf_norm.c
+index 23033ee4df..1a29b2f4dc 100644
+--- a/sys/net/pf/pf_norm.c
++++ b/sys/net/pf/pf_norm.c
+@@ -35,6 +35,7 @@
+ #include <sys/mbuf.h>
+ #include <sys/filio.h>
+ #include <sys/fcntl.h>
++#include <sys/malloc.h>
+ #include <sys/socket.h>
+ #include <sys/kernel.h>
+ #include <sys/time.h>
+@@ -644,8 +645,8 @@ pf_fragcache(struct mbuf **m0, struct ip *h, struct pf_fragment **frag, int mff,
+ 				    (*m0)->m_pkthdr.len);
+ 				if (*m0 == NULL)
+ 					goto no_mem;
+-				KASSERT(((*m0)->m_next == NULL), 
+-				    ("(*m0)->m_next != NULL: %s", 
++				KASSERT(((*m0)->m_next == NULL),
++				    ("(*m0)->m_next != NULL: %s",
+ 				    __func__));
+ 				m_adj(m, precut + (h->ip_hl << 2));
+ 				m_cat(*m0, m);
+@@ -1390,7 +1391,7 @@ pf_normalize_tcp_init(struct mbuf *m, int off, struct pf_pdesc *pd,
+ 	u_int8_t hdr[60];
+ 	u_int8_t *opt;
+ 
+-	KASSERT((src->scrub == NULL), 
++	KASSERT((src->scrub == NULL),
+ 	    ("pf_normalize_tcp_init: src->scrub != NULL"));
+ 
+ 	src->scrub = kmalloc(sizeof(struct pf_state_scrub), M_PFSTATESCRUBPL,
+@@ -1489,7 +1490,7 @@ pf_normalize_tcp_stateful(struct mbuf *m, int off, struct pf_pdesc *pd,
+ 	int copyback = 0;
+ 	int got_ts = 0;
+ 
+-	KASSERT((src->scrub || dst->scrub), 
++	KASSERT((src->scrub || dst->scrub),
+ 	    ("pf_normalize_tcp_statefull: src->scrub && dst->scrub!"));
+ 
+ 	tsval = 0;	/* avoid gcc complaint */
+@@ -1644,7 +1645,7 @@ pf_normalize_tcp_stateful(struct mbuf *m, int off, struct pf_pdesc *pd,
+ 		 * measurement of RTT (round trip time) and PAWS
+ 		 * (protection against wrapped sequence numbers).  PAWS
+ 		 * gives us a set of rules for rejecting packets on
+-		 * long fat pipes (packets that were somehow delayed 
++		 * long fat pipes (packets that were somehow delayed
+ 		 * in transit longer than the time it took to send the
+ 		 * full TCP sequence space of 4Gb).  We can use these
+ 		 * rules and infer a few others that will let us treat
+diff --git a/sys/net/pf/pf_osfp.c b/sys/net/pf/pf_osfp.c
+index 56ba8872f5..15d333fd88 100644
+--- a/sys/net/pf/pf_osfp.c
++++ b/sys/net/pf/pf_osfp.c
+@@ -21,6 +21,7 @@
+ #include <sys/socket.h>
+ #ifdef _KERNEL
+ #include <sys/systm.h>
++#include <sys/malloc.h>
+ #endif /* _KERNEL */
+ #include <sys/mbuf.h>
+ 
+diff --git a/sys/net/pf/pf_ruleset.c b/sys/net/pf/pf_ruleset.c
+index 49b9675c1c..8c1db465c5 100644
+--- a/sys/net/pf/pf_ruleset.c
++++ b/sys/net/pf/pf_ruleset.c
+@@ -39,6 +39,7 @@
+ #include <sys/socket.h>
+ #ifdef _KERNEL
+ # include <sys/systm.h>
++# include <sys/malloc.h>
+ #endif /* _KERNEL */
+ #include <sys/mbuf.h>
+ 
+diff --git a/sys/net/pf/pfvar.h b/sys/net/pf/pfvar.h
+index a6e4e2e0b5..aab5e15d9a 100644
+--- a/sys/net/pf/pfvar.h
++++ b/sys/net/pf/pfvar.h
+@@ -200,7 +200,9 @@ struct pf_addr_wrap {
+ 
+ #ifdef _KERNEL
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_PF);
++#endif
+ 
+ struct pfi_dynaddr {
+ 	TAILQ_ENTRY(pfi_dynaddr)	 entry;
+diff --git a/sys/net/raw_usrreq.c b/sys/net/raw_usrreq.c
+index 3945822baa..d4013c4bcd 100644
+--- a/sys/net/raw_usrreq.c
++++ b/sys/net/raw_usrreq.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+@@ -376,7 +377,7 @@ struct pr_usrreqs raw_usrreqs = {
+ 	.pru_connect = raw_uconnect,
+ 	.pru_connect2 = pr_generic_notsupp,
+ 	.pru_control = pr_generic_notsupp,
+-	.pru_detach = raw_udetach, 
++	.pru_detach = raw_udetach,
+ 	.pru_disconnect = raw_udisconnect,
+ 	.pru_listen = pr_generic_notsupp,
+ 	.pru_peeraddr = raw_upeeraddr,
+diff --git a/sys/net/vlan/if_vlan_ether.c b/sys/net/vlan/if_vlan_ether.c
+index ce9d42939b..4272339615 100644
+--- a/sys/net/vlan/if_vlan_ether.c
++++ b/sys/net/vlan/if_vlan_ether.c
+@@ -12,7 +12,7 @@
+  * no representations about the suitability of this software for any
+  * purpose.  It is provided "as is" without express or implied
+  * warranty.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY M.I.T. ``AS IS''.  M.I.T. DISCLAIMS
+  * ALL EXPRESS OR IMPLIED WARRANTIES WITH REGARD TO THIS SOFTWARE,
+  * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+@@ -30,6 +30,7 @@
+  */
+ 
+ #include <sys/param.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/serialize.h>
+ 
+diff --git a/sys/netbt/bluetooth.h b/sys/netbt/bluetooth.h
+index 42d8beb359..54cd927c96 100644
+--- a/sys/netbt/bluetooth.h
++++ b/sys/netbt/bluetooth.h
+@@ -104,10 +104,11 @@ struct sockaddr_bt {
+ #define BDADDR_ANY	((const bdaddr_t *) "\000\000\000\000\000")
+ 
+ #ifdef _KERNEL
+-#include <sys/malloc.h>
+ #include <sys/bus.h>
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_BLUETOOTH);
++#endif
+ 
+ /*
+  * Bluetooth Protocol API callback methods
+diff --git a/sys/netbt/hci_misc.c b/sys/netbt/hci_misc.c
+index 29af609922..7e92564533 100644
+--- a/sys/netbt/hci_misc.c
++++ b/sys/netbt/hci_misc.c
+@@ -1,4 +1,3 @@
+-/* $DragonFly: src/sys/netbt/hci_misc.c,v 1.2 2008/03/18 13:41:42 hasso Exp $ */
+ /* $OpenBSD: src/sys/netbt/hci_misc.c,v 1.2 2008/02/24 21:34:48 uwe Exp $ */
+ /* $NetBSD: hci_misc.c,v 1.3 2007/09/16 19:59:30 plunky Exp $ */
+ 
+diff --git a/sys/netbt/hci_socket.c b/sys/netbt/hci_socket.c
+index bededfc096..a725ea5306 100644
+--- a/sys/netbt/hci_socket.c
++++ b/sys/netbt/hci_socket.c
+@@ -40,6 +40,7 @@
+ #include <sys/param.h>
+ #include <sys/domain.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/priv.h>
+@@ -560,9 +561,9 @@ static void
+ hci_sdetach(netmsg_t msg)
+ {
+ 	struct socket *so = msg->detach.base.nm_so;
+-	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;	
++	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;
+ 	int error;
+-	
++
+ 	if (pcb == NULL) {
+ 		error = EINVAL;
+ 	} else {
+@@ -583,7 +584,7 @@ static void
+ hci_sdisconnect(netmsg_t msg)
+ {
+ 	struct socket *so = msg->disconnect.base.nm_so;
+-	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;	
++	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;
+ 	int error;
+ 
+ 	if (pcb) {
+@@ -751,7 +752,7 @@ hci_ssockaddr(netmsg_t msg)
+ 	struct sockaddr **nam = msg->sockaddr.nm_nam;
+ 	struct hci_pcb *pcb = (struct hci_pcb *)so->so_pcb;
+ 	struct sockaddr_bt *sa;
+-	
++
+ 	KKASSERT(nam != NULL);
+ 	sa = (struct sockaddr_bt *)nam;
+ 
+@@ -872,7 +873,7 @@ hci_ctloutput(netmsg_t msg)
+ 		case SO_HCI_EVT_FILTER:	/* set event filter */
+ 			error = soopt_to_kbuf(sopt, &pcb->hp_efilter,
+ 			    sizeof(struct hci_filter),
+-			    sizeof(struct hci_filter)); 
++			    sizeof(struct hci_filter));
+ 			break;
+ 
+ 		case SO_HCI_PKT_FILTER:	/* set packet filter */
+diff --git a/sys/netbt/l2cap_signal.c b/sys/netbt/l2cap_signal.c
+index 3bf1be478f..149385fb49 100644
+--- a/sys/netbt/l2cap_signal.c
++++ b/sys/netbt/l2cap_signal.c
+@@ -33,6 +33,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/queue.h>
+diff --git a/sys/netbt/l2cap_socket.c b/sys/netbt/l2cap_socket.c
+index 129b66718c..a458ce0c66 100644
+--- a/sys/netbt/l2cap_socket.c
++++ b/sys/netbt/l2cap_socket.c
+@@ -40,6 +40,7 @@
+ #include <sys/param.h>
+ #include <sys/domain.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/protosw.h>
+diff --git a/sys/netbt/l2cap_upper.c b/sys/netbt/l2cap_upper.c
+index b7406e6eef..2b27b726ba 100644
+--- a/sys/netbt/l2cap_upper.c
++++ b/sys/netbt/l2cap_upper.c
+@@ -33,6 +33,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/queue.h>
+diff --git a/sys/netbt/rfcomm_dlc.c b/sys/netbt/rfcomm_dlc.c
+index 904d415bcb..88c7706752 100644
+--- a/sys/netbt/rfcomm_dlc.c
++++ b/sys/netbt/rfcomm_dlc.c
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+diff --git a/sys/netbt/rfcomm_session.c b/sys/netbt/rfcomm_session.c
+index 01d97feb91..135105336d 100644
+--- a/sys/netbt/rfcomm_session.c
++++ b/sys/netbt/rfcomm_session.c
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+diff --git a/sys/netbt/rfcomm_socket.c b/sys/netbt/rfcomm_socket.c
+index 9261284b55..aa5399d9a2 100644
+--- a/sys/netbt/rfcomm_socket.c
++++ b/sys/netbt/rfcomm_socket.c
+@@ -41,6 +41,7 @@
+ #include <sys/param.h>
+ #include <sys/domain.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/protosw.h>
+diff --git a/sys/netbt/rfcomm_upper.c b/sys/netbt/rfcomm_upper.c
+index e04bf3f2c1..387aebf73a 100644
+--- a/sys/netbt/rfcomm_upper.c
++++ b/sys/netbt/rfcomm_upper.c
+@@ -1,4 +1,3 @@
+-/* $DragonFly: src/sys/netbt/rfcomm_upper.c,v 1.3 2008/06/20 20:52:29 aggelos Exp $ */
+ /* $OpenBSD: src/sys/netbt/rfcomm_upper.c,v 1.4 2008/02/24 21:34:48 uwe Exp $ */
+ /* $NetBSD: rfcomm_upper.c,v 1.10 2007/11/20 20:25:57 plunky Exp $ */
+ 
+@@ -35,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+diff --git a/sys/netbt/sco_socket.c b/sys/netbt/sco_socket.c
+index 831c4fc4c9..cf60dee98b 100644
+--- a/sys/netbt/sco_socket.c
++++ b/sys/netbt/sco_socket.c
+@@ -39,6 +39,7 @@
+ #include <sys/param.h>
+ #include <sys/domain.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/protosw.h>
+diff --git a/sys/netbt/sco_upper.c b/sys/netbt/sco_upper.c
+index 0d63a3ef4c..ecbf93d793 100644
+--- a/sys/netbt/sco_upper.c
++++ b/sys/netbt/sco_upper.c
+@@ -34,6 +34,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+diff --git a/sys/netgraph/netgraph.h b/sys/netgraph/netgraph.h
+index 65a2ca8103..010d76b394 100644
+--- a/sys/netgraph/netgraph.h
++++ b/sys/netgraph/netgraph.h
+@@ -4,7 +4,7 @@
+  *
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -15,7 +15,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+@@ -46,9 +46,6 @@
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #ifndef _SYS_MODULE_H_
+ #include <sys/module.h>
+ #endif
+@@ -316,7 +313,9 @@ MODULE_DEPEND(ng_##typename, netgraph,	NG_ABI_VERSION,			\
+ 	NETGRAPH_INIT_ORDERED(tn, tp, SI_SUB_PSEUDO, SI_ORDER_ANY)
+ 
+ /* Special malloc() type for netgraph structs and ctrl messages */
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH);
++#endif
+ 
+ /* declare the base of the netgraph sysctl hierarchy */
+ /* but only if this file cares about sysctls */
+diff --git a/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c b/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c
+index 5d1eb0389f..57666da1ea 100644
+--- a/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c
++++ b/sys/netgraph7/bluetooth/drivers/bt3c/ng_bt3c_pccard.c
+@@ -48,6 +48,7 @@
+ #include <sys/endian.h>
+ #include <sys/interrupt.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/module.h>
+ 
+diff --git a/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h b/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
+index fe8503707d..fa23d824a8 100644
+--- a/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
++++ b/sys/netgraph7/bluetooth/drivers/h4/ng_h4_var.h
+@@ -29,7 +29,7 @@
+  *
+  * $Id: ng_h4_var.h,v 1.5 2005/10/31 17:57:43 max Exp $
+  * $FreeBSD: head/sys/netgraph/bluetooth/drivers/h4/ng_h4_var.h 171818 2007-08-13 17:19:28Z emax $
+- * 
++ *
+  * Based on:
+  * ---------
+  *
+@@ -45,12 +45,14 @@
+  */
+ 
+ #ifndef NG_SEPARATE_MALLOC
++#if MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH_H4);
++#endif
+ #else
+ #define M_NETGRAPH_H4 M_NETGRAPH
+ #endif /* NG_SEPARATE_MALLOC */
+ 
+-/* 
++/*
+  * Debug
+  */
+ 
+@@ -61,8 +63,8 @@ MALLOC_DECLARE(M_NETGRAPH_H4);
+ 
+ #define NG_H4_HIWATER		256	/* High water mark on output */
+ 
+-/* 
+- * Per-node private info 
++/*
++ * Per-node private info
+  */
+ 
+ typedef struct ng_h4_info {
+@@ -71,7 +73,7 @@ typedef struct ng_h4_info {
+ 
+ 	ng_h4_node_debug_ep	 debug;	/* Debug level */
+ 	ng_h4_node_state_ep	 state;	/* State */
+-	
++
+ 	ng_h4_node_stat_ep	 stat;
+ #define NG_H4_STAT_PCKTS_SENT(s)	(s).pckts_sent ++
+ #define NG_H4_STAT_BYTES_SENT(s, n)	(s).bytes_sent += (n)
+@@ -86,7 +88,7 @@ typedef struct ng_h4_info {
+ #define	NG_H4_LOCK(sc)		crit_enter();
+ #define	NG_H4_UNLOCK(sc)	crit_exit();
+ 
+-#define NG_H4_IBUF_SIZE		1024	/* XXX must be big enough to hold full 
++#define NG_H4_IBUF_SIZE		1024	/* XXX must be big enough to hold full
+ 					   frame */
+ 	u_int8_t		 ibuf[NG_H4_IBUF_SIZE];	/* Incoming data */
+ 	u_int32_t		 got;	/* Number of bytes we have received */
+diff --git a/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h b/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
+index 84547164c9..88f22db5be 100644
+--- a/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
++++ b/sys/netgraph7/bluetooth/l2cap/ng_l2cap_var.h
+@@ -36,7 +36,9 @@
+ 
+ /* MALLOC decalation */
+ #ifdef NG_SEPARATE_MALLOC
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH_L2CAP);
++#endif
+ #else
+ #define M_NETGRAPH_L2CAP M_NETGRAPH
+ #endif /* NG_SEPARATE_MALLOC */
+@@ -59,16 +61,16 @@ MALLOC_DECLARE(M_NETGRAPH_L2CAP);
+ 
+ /*
+  * L2CAP signaling command ident's are assigned relative to the connection,
+- * because there is only one signaling channel (cid == 0x01) for every 
+- * connection. So up to 254 (0xff - 0x01) L2CAP commands can be pending at the 
++ * because there is only one signaling channel (cid == 0x01) for every
++ * connection. So up to 254 (0xff - 0x01) L2CAP commands can be pending at the
+  * same time for the same connection.
+  */
+ 
+-#define NG_L2CAP_NULL_IDENT	0x00        /* DO NOT USE THIS IDENT */ 
+-#define NG_L2CAP_FIRST_IDENT	0x01        /* dynamically alloc. (start) */ 
+-#define NG_L2CAP_LAST_IDENT	0xff        /* dynamically alloc. (end) */ 
++#define NG_L2CAP_NULL_IDENT	0x00        /* DO NOT USE THIS IDENT */
++#define NG_L2CAP_FIRST_IDENT	0x01        /* dynamically alloc. (start) */
++#define NG_L2CAP_LAST_IDENT	0xff        /* dynamically alloc. (end) */
+ 
+-/* 
++/*
+  * L2CAP (Node private)
+  */
+ 
+@@ -97,7 +99,7 @@ typedef struct ng_l2cap {
+ } ng_l2cap_t;
+ typedef ng_l2cap_t *			ng_l2cap_p;
+ 
+-/* 
++/*
+  * L2CAP connection descriptor
+  */
+ 
+diff --git a/sys/netgraph7/hub/ng_hub.c b/sys/netgraph7/hub/ng_hub.c
+index 3cce473132..230f176b97 100644
+--- a/sys/netgraph7/hub/ng_hub.c
++++ b/sys/netgraph7/hub/ng_hub.c
+@@ -29,6 +29,7 @@
+ #include <sys/param.h>
+ #include <sys/errno.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/systm.h>
+ 
+diff --git a/sys/netgraph7/netflow/netflow.c b/sys/netgraph7/netflow/netflow.c
+index aab37ec283..842e03d3e8 100644
+--- a/sys/netgraph7/netflow/netflow.c
++++ b/sys/netgraph7/netflow/netflow.c
+@@ -31,6 +31,7 @@
+ #include <sys/param.h>
+ #include <sys/kernel.h>
+ #include <sys/limits.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/syslog.h>
+ #include <sys/systm.h>
+diff --git a/sys/netgraph7/netflow/ng_netflow.c b/sys/netgraph7/netflow/ng_netflow.c
+index 7c1207d5ac..27d13be461 100644
+--- a/sys/netgraph7/netflow/ng_netflow.c
++++ b/sys/netgraph7/netflow/ng_netflow.c
+@@ -32,6 +32,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/limits.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/syslog.h>
+diff --git a/sys/netgraph7/netgraph.h b/sys/netgraph7/netgraph.h
+index 62810b1b15..61092a8f5d 100644
+--- a/sys/netgraph7/netgraph.h
++++ b/sys/netgraph7/netgraph.h
+@@ -5,7 +5,7 @@
+ /*-
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -16,7 +16,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+@@ -49,7 +49,6 @@
+ #endif
+ 
+ #include <sys/queue.h>
+-#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/mutex2.h>
+ #include <netgraph7/ng_message.h>	/* NG_HOOKSIZ, NG_NODESIZ */
+@@ -547,8 +546,8 @@ _ng_node_foreach_hook(node_p node, ng_fn_eachhook *fn, void *arg,
+ 	return (hook);
+ }
+ 
+-#define NG_NODE_NAME(node)		_ng_node_name(node, _NN_)	
+-#define NG_NODE_HAS_NAME(node)		_ng_node_has_name(node, _NN_)	
++#define NG_NODE_NAME(node)		_ng_node_name(node, _NN_)
++#define NG_NODE_HAS_NAME(node)		_ng_node_has_name(node, _NN_)
+ #define NG_NODE_ID(node)		_ng_node_id(node, _NN_)
+ #define NG_NODE_REF(node)		_ng_node_ref(node, _NN_)
+ #define	NG_NODE_UNREF(node)		_ng_node_unref(node, _NN_)
+@@ -568,19 +567,19 @@ _ng_node_foreach_hook(node_p node, ng_fn_eachhook *fn, void *arg,
+ 
+ #else	/* NETGRAPH_DEBUG */ /*----------------------------------------------*/
+ 
+-#define NG_NODE_NAME(node)		_NG_NODE_NAME(node)	
+-#define NG_NODE_HAS_NAME(node)		_NG_NODE_HAS_NAME(node)	
+-#define NG_NODE_ID(node)		_NG_NODE_ID(node)	
+-#define	NG_NODE_REF(node)		_NG_NODE_REF(node)	
+-#define	NG_NODE_UNREF(node)		_NG_NODE_UNREF(node)	
+-#define	NG_NODE_SET_PRIVATE(node, val)	_NG_NODE_SET_PRIVATE(node, val)	
+-#define	NG_NODE_PRIVATE(node)		_NG_NODE_PRIVATE(node)	
+-#define NG_NODE_IS_VALID(node)		_NG_NODE_IS_VALID(node)	
+-#define NG_NODE_NOT_VALID(node)		_NG_NODE_NOT_VALID(node)	
++#define NG_NODE_NAME(node)		_NG_NODE_NAME(node)
++#define NG_NODE_HAS_NAME(node)		_NG_NODE_HAS_NAME(node)
++#define NG_NODE_ID(node)		_NG_NODE_ID(node)
++#define NG_NODE_REF(node)		_NG_NODE_REF(node)
++#define NG_NODE_UNREF(node)		_NG_NODE_UNREF(node)
++#define NG_NODE_SET_PRIVATE(node, val)	_NG_NODE_SET_PRIVATE(node, val)
++#define NG_NODE_PRIVATE(node)		_NG_NODE_PRIVATE(node)
++#define NG_NODE_IS_VALID(node)		_NG_NODE_IS_VALID(node)
++#define NG_NODE_NOT_VALID(node)		_NG_NODE_NOT_VALID(node)
+ #define NG_NODE_FORCE_WRITER(node) 	_NG_NODE_FORCE_WRITER(node)
+ #define NG_NODE_HI_STACK(node) 		_NG_NODE_HI_STACK(node)
+ #define NG_NODE_REALLY_DIE(node) 	_NG_NODE_REALLY_DIE(node)
+-#define NG_NODE_NUMHOOKS(node)		_NG_NODE_NUMHOOKS(node)	
++#define NG_NODE_NUMHOOKS(node)		_NG_NODE_NUMHOOKS(node)
+ #define NG_NODE_REVIVE(node)		_NG_NODE_REVIVE(node)
+ #define NG_NODE_FOREACH_HOOK(node, fn, arg, rethook)			\
+ 		_NG_NODE_FOREACH_HOOK(node, fn, arg, rethook)
+@@ -1099,8 +1098,10 @@ MODULE_DEPEND(ng_##typename, netgraph,	NG_ABI_VERSION,			\
+ 
+ /* Special malloc() type for netgraph structs and ctrl messages */
+ /* Only these two types should be visible to nodes */
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_NETGRAPH);
+ MALLOC_DECLARE(M_NETGRAPH_MSG);
++#endif
+ 
+ /* declare the base of the netgraph sysclt hierarchy */
+ /* but only if this file cares about sysctls */
+diff --git a/sys/netinet/ip_icmp.c b/sys/netinet/ip_icmp.c
+index 28024feeb6..d4882ff898 100644
+--- a/sys/netinet/ip_icmp.c
++++ b/sys/netinet/ip_icmp.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/protosw.h>
+ #include <sys/socket.h>
+@@ -99,7 +100,7 @@ SYSCTL_INT(_net_inet_icmp, ICMPCTL_ICMPLIM, icmplim, CTLFLAG_RW,
+ static int      icmplim = -1;
+ SYSCTL_INT(_net_inet_icmp, ICMPCTL_ICMPLIM, icmplim, CTLFLAG_RD,
+ 	&icmplim, 0, "ICMP bandwidth limit");
+-	
++
+ #endif
+ 
+ static int	icmplim_output = 0;
+diff --git a/sys/netinet/tcp_output.c b/sys/netinet/tcp_output.c
+index 74358b8f04..f5ddc54b2e 100644
+--- a/sys/netinet/tcp_output.c
++++ b/sys/netinet/tcp_output.c
+@@ -70,6 +70,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/sysctl.h>
+ #include <sys/mbuf.h>
+ #include <sys/domain.h>
+@@ -219,7 +220,7 @@ tcp_output(struct tcpcb *tp)
+ 		idle_cwv = TRUE;
+ 
+ 	/*
+-	 * Calculate whether the transmit stream was previously idle 
++	 * Calculate whether the transmit stream was previously idle
+ 	 * and adjust TF_LASTIDLE for the next time.
+ 	 */
+ 	idle = (tp->t_flags & TF_LASTIDLE) || (tp->snd_max == tp->snd_una);
+@@ -1505,7 +1506,7 @@ tcp_output_sched(struct tcpcb *tp)
+  * if others segments and ACKs are queued on to the same hardware transmit
+  * queue; thus cause unfairness between senders and suppress receiving
+  * performance.
+- * 
++ *
+  * Fairsend should be performed at the places that do not affect segment
+  * sending during congestion control, e.g.
+  * - User requested output
+diff --git a/sys/netinet6/mld6.c b/sys/netinet6/mld6.c
+index b8ec812644..d226850c90 100644
+--- a/sys/netinet6/mld6.c
++++ b/sys/netinet6/mld6.c
+@@ -70,6 +70,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/systm.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/socket.h>
+ #include <sys/protosw.h>
+diff --git a/sys/netinet6/udp6_usrreq.c b/sys/netinet6/udp6_usrreq.c
+index d75554d0d9..8f414cb541 100644
+--- a/sys/netinet6/udp6_usrreq.c
++++ b/sys/netinet6/udp6_usrreq.c
+@@ -66,6 +66,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>	/* for M_NOWAIT, XXX legacy m_copy() */
+ #include <sys/mbuf.h>
+ #include <sys/protosw.h>
+ #include <sys/socket.h>
+diff --git a/sys/netproto/802_11/ieee80211_crypto.h b/sys/netproto/802_11/ieee80211_crypto.h
+index cca166d602..98f1d35781 100644
+--- a/sys/netproto/802_11/ieee80211_crypto.h
++++ b/sys/netproto/802_11/ieee80211_crypto.h
+@@ -149,7 +149,9 @@ struct ieee80211vap;
+ struct ieee80211_node;
+ struct mbuf;
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_CRYPTO);
++#endif
+ 
+ void	ieee80211_crypto_attach(struct ieee80211com *);
+ void	ieee80211_crypto_detach(struct ieee80211com *);
+diff --git a/sys/netproto/802_11/ieee80211_mesh.h b/sys/netproto/802_11/ieee80211_mesh.h
+index 9972c93fd5..98c4d1b04a 100644
+--- a/sys/netproto/802_11/ieee80211_mesh.h
++++ b/sys/netproto/802_11/ieee80211_mesh.h
+@@ -400,12 +400,14 @@ enum {
+ };
+ 
+ #ifdef _KERNEL
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_MESH_PREQ);
+ MALLOC_DECLARE(M_80211_MESH_PREP);
+ MALLOC_DECLARE(M_80211_MESH_PERR);
+ 
+ MALLOC_DECLARE(M_80211_MESH_RT);
+ MALLOC_DECLARE(M_80211_MESH_GT_RT);
++#endif
+ /*
+  * Basic forwarding information:
+  * o Destination MAC
+diff --git a/sys/netproto/802_11/ieee80211_node.h b/sys/netproto/802_11/ieee80211_node.h
+index 0faaf35131..1a3d29ad0e 100644
+--- a/sys/netproto/802_11/ieee80211_node.h
++++ b/sys/netproto/802_11/ieee80211_node.h
+@@ -233,8 +233,10 @@ struct ieee80211_node {
+ 	void			*ni_rctls;	/* private ratectl state */
+ 	uint64_t		ni_spare[3];
+ };
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_NODE);
+ MALLOC_DECLARE(M_80211_NODE_IE);
++#endif
+ 
+ #define	IEEE80211_NODE_ATH	(IEEE80211_NODE_FF | IEEE80211_NODE_TURBOP)
+ #define	IEEE80211_NODE_AMPDU \
+diff --git a/sys/netproto/802_11/ieee80211_ratectl.h b/sys/netproto/802_11/ieee80211_ratectl.h
+index 82601c1527..68ad95c898 100644
+--- a/sys/netproto/802_11/ieee80211_ratectl.h
++++ b/sys/netproto/802_11/ieee80211_ratectl.h
+@@ -61,7 +61,9 @@ void	ieee80211_ratectl_unregister(int);
+ void	ieee80211_ratectl_init(struct ieee80211vap *);
+ void	ieee80211_ratectl_set(struct ieee80211vap *, int);
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_RATECTL);
++#endif
+ 
+ static __inline void
+ ieee80211_ratectl_deinit(struct ieee80211vap *vap)
+diff --git a/sys/netproto/802_11/ieee80211_scan.h b/sys/netproto/802_11/ieee80211_scan.h
+index 7ece1c2a42..c7f4c6ed7c 100644
+--- a/sys/netproto/802_11/ieee80211_scan.h
++++ b/sys/netproto/802_11/ieee80211_scan.h
+@@ -283,7 +283,9 @@ struct ieee80211_scan_entry {
+ 	struct ieee80211_ies se_ies;	/* captured ie's */
+ 	u_int		se_age;		/* age of entry (0 on create) */
+ };
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_SCAN);
++#endif
+ 
+ /*
+  * Template for an in-kernel scan policy module.
+diff --git a/sys/netproto/802_11/ieee80211_var.h b/sys/netproto/802_11/ieee80211_var.h
+index cfbcdc4122..826323e49f 100644
+--- a/sys/netproto/802_11/ieee80211_var.h
++++ b/sys/netproto/802_11/ieee80211_var.h
+@@ -536,7 +536,9 @@ struct ieee80211vap {
+ #endif
+ 	uint64_t		iv_spare[6];
+ };
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_80211_VAP);
++#endif
+ 
+ #define	IEEE80211_ADDR_EQ(a1,a2)	(memcmp(a1,a2,IEEE80211_ADDR_LEN) == 0)
+ #define	IEEE80211_ADDR_COPY(dst,src)	memcpy(dst,src,IEEE80211_ADDR_LEN)
+diff --git a/sys/netproto/802_11/wlan/ieee80211_dragonfly.c b/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
+index bc7e5325e2..0dfe630c2d 100644
+--- a/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
++++ b/sys/netproto/802_11/wlan/ieee80211_dragonfly.c
+@@ -32,9 +32,10 @@
+ 
+ #include <sys/param.h>
+ #include <sys/kernel.h>
+-#include <sys/systm.h> 
++#include <sys/systm.h>
+ #include <sys/linker.h>
+-#include <sys/mbuf.h>   
++#include <sys/malloc.h>
++#include <sys/mbuf.h>
+ #include <sys/module.h>
+ #include <sys/proc.h>
+ #include <sys/sysctl.h>
+@@ -69,7 +70,7 @@ SYSCTL_INT(_net_wlan, OID_AUTO, force_swcrypto, CTLFLAG_RW,
+ static int	wlan_clone_destroy(struct ifnet *);
+ static int	wlan_clone_create(struct if_clone *, int, caddr_t);
+ 
+-static struct if_clone wlan_cloner = 
++static struct if_clone wlan_cloner =
+ 	IF_CLONE_INITIALIZER("wlan", wlan_clone_create, wlan_clone_destroy,
+ 	    0, IF_MAXUNIT);
+ 
+@@ -261,7 +262,7 @@ ieee80211_get_rx_params(struct mbuf *m, struct ieee80211_rx_stats *rxs)
+ {
+ 	struct m_tag *mtag;
+ 	struct ieee80211_rx_params *rx;
+- 
++
+ 	mtag = m_tag_locate(m, MTAG_ABI_NET80211, NET80211_TAG_RECV_PARAMS,
+ 	    NULL);
+ 	if (mtag == NULL)
+diff --git a/sys/netproto/802_11/wlan/ieee80211_superg.c b/sys/netproto/802_11/wlan/ieee80211_superg.c
+index 8c86104e47..f5312b4396 100644
+--- a/sys/netproto/802_11/wlan/ieee80211_superg.c
++++ b/sys/netproto/802_11/wlan/ieee80211_superg.c
+@@ -31,13 +31,14 @@ __FBSDID("$FreeBSD$");
+ #ifdef	IEEE80211_SUPPORT_SUPERG
+ 
+ #include <sys/param.h>
+-#include <sys/systm.h> 
+-#include <sys/mbuf.h>   
++#include <sys/systm.h>
++#include <sys/malloc.h>
++#include <sys/mbuf.h>
+ #include <sys/kernel.h>
+ #include <sys/endian.h>
+ 
+ #include <sys/socket.h>
+- 
++
+ #include <net/if.h>
+ #include <net/if_var.h>
+ #include <net/if_llc.h>
+@@ -178,7 +179,7 @@ ieee80211_add_ath(uint8_t *frm, uint8_t caps, ieee80211_keyix defkeyix)
+ 		ath->ath_defkeyix[0] = 0xff;
+ 		ath->ath_defkeyix[1] = 0x7f;
+ 	}
+-	return frm + sizeof(info); 
++	return frm + sizeof(info);
+ }
+ #undef ATH_OUI_BYTES
+ 
+@@ -239,7 +240,7 @@ ieee80211_parse_athparams(struct ieee80211_node *ni, uint8_t *frm,
+ 		 */
+ 		newflags = curflags = vap->iv_ic->ic_bsschan->ic_flags;
+ 		/* NB: BOOST is not in ic_flags, so get it from the ie */
+-		if (ath->ath_capability & ATHEROS_CAP_BOOST) 
++		if (ath->ath_capability & ATHEROS_CAP_BOOST)
+ 			newflags |= IEEE80211_CHAN_TURBO;
+ 		else
+ 			newflags &= ~IEEE80211_CHAN_TURBO;
+diff --git a/sys/netproto/mpls/mpls_output.c b/sys/netproto/mpls/mpls_output.c
+index a1d3785c74..f3198b7f41 100644
+--- a/sys/netproto/mpls/mpls_output.c
++++ b/sys/netproto/mpls/mpls_output.c
+@@ -30,6 +30,7 @@
+  */
+ 
+ #include <sys/param.h>
++#include <sys/malloc.h>	/* for M_NOWAIT */
+ #include <sys/mbuf.h>
+ #include <sys/systm.h>
+ 
+@@ -123,7 +124,7 @@ mpls_output(struct mbuf *m, struct rtentry *rt)
+ 			return (ENOTSUP);
+ 		}
+ 	}
+-	
++
+ 	return (error);
+ }
+ 
+@@ -163,7 +164,7 @@ mpls_push(struct mbuf **m, mpls_label_t label, mpls_s_t s, mpls_exp_t exp, mpls_
+ 	MPLS_SET_TTL(buf, ttl);
+ 	mpls = mtod(*m, struct mpls *);
+ 	mpls->mpls_shim = htonl(buf);
+-	
++
+ 	return (0);
+ }
+ 
+@@ -188,7 +189,7 @@ mpls_swap(struct mbuf *m, mpls_label_t label) {
+ 	MPLS_SET_LABEL(buf, label);
+ 	MPLS_SET_TTL(buf, ttl); /* XXX tunnel mode: uniform, pipe, short pipe */
+ 	mpls->mpls_shim = htonl(buf);
+-	
++
+ 	return (0);
+ }
+ 
+diff --git a/sys/opencrypto/cryptodev.h b/sys/opencrypto/cryptodev.h
+index cbc41753ca..a2cf1cc3b8 100644
+--- a/sys/opencrypto/cryptodev.h
++++ b/sys/opencrypto/cryptodev.h
+@@ -404,7 +404,9 @@ struct cryptkop {
+ #define	CRYPTO_SESID2CAPS(_sid)	(((_sid) >> 32) & 0xff000000)
+ #define	CRYPTO_SESID2LID(_sid)	(((u_int32_t) (_sid)) & 0xffffffff)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_CRYPTO_DATA);
++#endif
+ 
+ extern	int crypto_newsession(u_int64_t *sid, struct cryptoini *cri, int hard);
+ extern	int crypto_freesession(u_int64_t sid);
+diff --git a/sys/opencrypto/xform.h b/sys/opencrypto/xform.h
+index 5100cd5159..a5048aca43 100644
+--- a/sys/opencrypto/xform.h
++++ b/sys/opencrypto/xform.h
+@@ -1,5 +1,4 @@
+ /*	$FreeBSD: src/sys/opencrypto/xform.h,v 1.4 2007/05/09 19:37:02 gnn Exp $	*/
+-/*	$DragonFly: src/sys/opencrypto/xform.h,v 1.2 2003/06/17 04:28:54 dillon Exp $	*/
+ /*	$OpenBSD: xform.h,v 1.8 2001/08/28 12:20:43 ben Exp $	*/
+ 
+ /*-
+@@ -14,7 +13,7 @@
+  * Permission to use, copy, and modify this software without fee
+  * is hereby granted, provided that this entire notice is included in
+  * all source code copies of any software which is or includes a copy or
+- * modification of this software. 
++ * modification of this software.
+  *
+  * THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR
+  * IMPLIED WARRANTY. IN PARTICULAR, NONE OF THE AUTHORS MAKES ANY
+@@ -37,7 +36,7 @@ struct auth_hash {
+ 	int type;
+ 	char *name;
+ 	u_int16_t keysize;
+-	u_int16_t hashsize; 
++	u_int16_t hashsize;
+ 	u_int16_t blocksize;
+ 	u_int16_t ctxsize;
+ 	void (*Init) (void *);
+@@ -112,8 +111,7 @@ extern struct auth_hash auth_hash_gmac_aes_256;
+ 
+ extern struct comp_algo comp_algo_deflate;
+ 
+-#ifdef _KERNEL
+-#include <sys/malloc.h>
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_XDATA);
+ #endif
+ #endif /* _CRYPTO_XFORM_H_ */
+diff --git a/sys/platform/pc64/apic/ioapic.c b/sys/platform/pc64/apic/ioapic.c
+index e92b39cfcc..22bb851303 100644
+--- a/sys/platform/pc64/apic/ioapic.c
++++ b/sys/platform/pc64/apic/ioapic.c
+@@ -30,6 +30,7 @@
+ #include <sys/kernel.h>
+ #include <sys/bus.h>
+ #include <sys/machintr.h>
++#include <sys/malloc.h>
+ #include <sys/thread2.h>
+ 
+ #include <machine/pmap.h>
+@@ -466,9 +467,9 @@ ioapic_pin_setup(void *addr, int pin, int vec,
+ 	 * vector any EOI from pending ints on this pin could be lost and
+ 	 * IRR might never get reset.
+ 	 *
+-	 * To fix this problem, clear the vector and make sure it is 
++	 * To fix this problem, clear the vector and make sure it is
+ 	 * programmed as an edge interrupt.  This should theoretically
+-	 * clear IRR so we can later, safely program it as a level 
++	 * clear IRR so we can later, safely program it as a level
+ 	 * interrupt.
+ 	 */
+ 	ioapic_pin_prog(addr, pin, vec, INTR_TRIGGER_EDGE, INTR_POLARITY_HIGH,
+diff --git a/sys/platform/pc64/apic/lapic.c b/sys/platform/pc64/apic/lapic.c
+index 3c32f42ad3..04ebfd0ed9 100644
+--- a/sys/platform/pc64/apic/lapic.c
++++ b/sys/platform/pc64/apic/lapic.c
+@@ -31,6 +31,7 @@
+ #include <sys/ktr.h>
+ #include <sys/bus.h>
+ #include <sys/machintr.h>
++#include <sys/malloc.h>
+ #include <sys/sysctl.h>
+ #include <machine/globaldata.h>
+ #include <machine/clock.h>
+@@ -271,7 +272,7 @@ lapic_init(boolean_t bsp)
+ 	 * mode we use because we leave it masked.
+ 	 */
+ 	temp = LAPIC_READ(lvt_lint0);
+-	temp &= ~(APIC_LVT_MASKED | APIC_LVT_TRIG_MASK | 
++	temp &= ~(APIC_LVT_MASKED | APIC_LVT_TRIG_MASK |
+ 		  APIC_LVT_POLARITY_MASK | APIC_LVT_DM_MASK);
+ 	if (bsp) {
+ 		temp |= APIC_LVT_DM_EXTINT;
+@@ -292,7 +293,7 @@ lapic_init(boolean_t bsp)
+ 	 * Disable LINT1 on the APs.
+ 	 */
+ 	temp = LAPIC_READ(lvt_lint1);
+-	temp &= ~(APIC_LVT_MASKED | APIC_LVT_TRIG_MASK | 
++	temp &= ~(APIC_LVT_MASKED | APIC_LVT_TRIG_MASK |
+ 		  APIC_LVT_POLARITY_MASK | APIC_LVT_DM_MASK);
+ 	temp |= APIC_LVT_MASKED | APIC_LVT_DM_NMI;
+ 	if (bsp && ioapic_enable)
+@@ -371,8 +372,8 @@ lapic_init(boolean_t bsp)
+ 		}
+ 	}
+ 
+-	/* 
+-	 * Enable the LAPIC 
++	/*
++	 * Enable the LAPIC
+ 	 */
+ 	temp = LAPIC_READ(svr);
+ 	temp |= APIC_SVR_ENABLE;	/* enable the LAPIC */
+@@ -774,7 +775,7 @@ lapic_timer_fixup_handler(void *arg)
+ 		 * the local APIC timer dead, so we disable it by reading
+ 		 * the Interrupt Pending Message register and clearing both
+ 		 * C1eOnCmpHalt (bit 28) and SmiOnCmpHalt (bit 27).
+-		 * 
++		 *
+ 		 * Reference:
+ 		 *   "BIOS and Kernel Developer's Guide for AMD NPT
+ 		 *    Family 0Fh Processors"
+diff --git a/sys/platform/pc64/vmm/vmx.c b/sys/platform/pc64/vmm/vmx.c
+index ffa8558c61..1ea24129b5 100644
+--- a/sys/platform/pc64/vmm/vmx.c
++++ b/sys/platform/pc64/vmm/vmx.c
+@@ -33,10 +33,9 @@
+  * SUCH DAMAGE.
+  */
+ 
+-#include <sys/malloc.h>
+ #include <sys/param.h>
++#include <sys/malloc.h>
+ #include <sys/systm.h>
+-#include <sys/types.h>
+ #include <sys/thread.h>
+ #include <sys/thread2.h>
+ #include <sys/sysctl.h>
+diff --git a/sys/platform/pc64/x86_64/efirt.c b/sys/platform/pc64/x86_64/efirt.c
+index 86678e6a60..e93c737034 100644
+--- a/sys/platform/pc64/x86_64/efirt.c
++++ b/sys/platform/pc64/x86_64/efirt.c
+@@ -36,6 +36,7 @@
+ #include <sys/kernel.h>
+ #include <sys/linker.h>
+ #include <sys/lock.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/proc.h>
+ #include <sys/sched.h>
+diff --git a/sys/platform/vkernel64/platform/cothread.c b/sys/platform/vkernel64/platform/cothread.c
+index 9c4a6c9e9a..1de97e81df 100644
+--- a/sys/platform/vkernel64/platform/cothread.c
++++ b/sys/platform/vkernel64/platform/cothread.c
+@@ -39,11 +39,12 @@
+  * 'mycpu' do not exist for it.
+  */
+ 
++#include <sys/types.h>
+ #include <sys/interrupt.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/memrange.h>
+ #include <sys/tls.h>
+-#include <sys/types.h>
+ #include <sys/bus.h>
+ #include <sys/thread2.h>
+ #include <time.h>
+diff --git a/sys/platform/vkernel64/platform/kqueue.c b/sys/platform/vkernel64/platform/kqueue.c
+index fc6e04a747..dbb83b55e0 100644
+--- a/sys/platform/vkernel64/platform/kqueue.c
++++ b/sys/platform/vkernel64/platform/kqueue.c
+@@ -35,6 +35,7 @@
+ #include <sys/types.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/systimer.h>
+ #include <sys/sysctl.h>
+ #include <sys/signal.h>
+diff --git a/sys/sys/_malloc.h b/sys/sys/_malloc.h
+new file mode 100644
+index 0000000000..e5cdb8a1b7
+--- /dev/null
++++ b/sys/sys/_malloc.h
+@@ -0,0 +1,83 @@
++/*
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
++ *
++ * This code is derived from software contributed to The DragonFly Project
++ * by Matthew Dillon <dillon@backplane.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#ifndef _SYS__MALLOC_H_
++#define	_SYS__MALLOC_H_
++
++/*
++ * Do not include this header outside _KERNEL or _KERNEL_STRUCTURES scopes.
++ * Used in <sys/user.h>.
++ */
++
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++#include <sys/cdefs.h>		/* for __cache_align */
++#include <machine/stdint.h>	/* for __* types */
++#include <machine/param.h>	/* for SMP_MAXCPU */
++
++/*
++ * The malloc tracking structure.  Note that per-cpu entries must be
++ * aggregated for accurate statistics, they do not actually break the
++ * stats down by cpu (e.g. the cpu freeing memory will subtract from
++ * its slot, not the originating cpu's slot).
++ *
++ * SMP_MAXCPU is used so modules which use malloc remain compatible
++ * between UP and SMP.
++ */
++struct kmalloc_use {
++	__size_t	memuse;
++	__size_t	inuse;
++	__int64_t	calls;	/* total packets of this type ever allocated */
++
++	/*
++	 * This value will be added to ks_loosememuse and resetted,
++	 * once it goes above certain threshold (ZoneSize).  This
++	 * is intended to reduce frequency of ks_loosememuse (global)
++	 * updates.
++	 */
++	__size_t	loosememuse;
++} __cachealign;
++
++struct malloc_type {
++	struct malloc_type *ks_next;	/* next in list */
++	__size_t	ks_loosememuse;	/* (inaccurate) aggregate memuse */
++	__size_t	ks_limit;	/* most that are allowed to exist */
++	struct kmalloc_use ks_use[SMP_MAXCPU];
++	__uint32_t	ks_magic;	/* if it's not magic, don't touch it */
++	const char	*ks_shortdesc;	/* short description */
++	__ssize_t	ks_reserved[4];	/* future use (module compatibility) */
++};
++
++typedef	struct malloc_type	*malloc_type_t;
++
++#define	MALLOC_DECLARE(type) \
++	extern struct malloc_type type[1]	/* placed here for portability */
++
++#endif
++
++#endif /* !_SYS__MALLOC_H_ */
+diff --git a/sys/sys/cdefs.h b/sys/sys/cdefs.h
+index fea444908a..2fc1af7227 100644
+--- a/sys/sys/cdefs.h
++++ b/sys/sys/cdefs.h
+@@ -86,7 +86,7 @@
+  * If needed, this value can be TUNED.  Suitable values for this macro
+  * are 32, 64 and 128 bytes.  The unit of measurement for this macro is
+  * bytes.
+- * 
++ *
+  * XXX: This macro and related macros will eventually move to a MD
+  * header, but currently, we do need such a hierarchy.
+  */
+@@ -407,7 +407,7 @@
+  * Handy GCC based macros:
+  *
+  * 	__cachealign:
+- * 	
++ *
+  * 	The __cachealign macro can be used for cache line aligning structures
+  * 	of small to medium size.  It aligns the particular structure or
+  * 	storage type to a system default cache line alignment, thus giving us
+@@ -415,7 +415,7 @@
+  * 	its best burst speeds.
+  *
+  * 	__usereg:
+- * 	
++ *
+  * 	The __usereg macro can/should be used when a function contains
+  * 	arguments not more than 3.  It can be very useful to us due to the
+  * 	message-passing nature of the kernel.
+@@ -545,6 +545,12 @@
+ 				    "compile-time assertion failed")
+ #endif
+ 
++#if defined(_KERNEL) /* || defined(_STANDALONE) */
++#if !__GNUC_PREREQ__(2, 0)
++#define	__builtin_constant_p(x)	0	/* disable dead code */
++#endif
++#endif
++
+ /*
+  * Emulation of C11 _Generic().  Unlike the previously defined C11
+  * keywords, it is not possible to implement this using exactly the same
+diff --git a/sys/sys/dmsg.h b/sys/sys/dmsg.h
+index a2ef762efd..ecc91e3275 100644
+--- a/sys/sys/dmsg.h
++++ b/sys/sys/dmsg.h
+@@ -39,9 +39,6 @@
+ #include <sys/types.h>
+ #endif
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #ifndef _SYS_TREE_H_
+ #include <sys/tree.h>
+ #endif
+@@ -799,6 +796,9 @@ int kdmsg_state_cmp(kdmsg_state_t *state1, kdmsg_state_t *state2);
+ RB_HEAD(kdmsg_state_tree, kdmsg_state);
+ RB_PROTOTYPE(kdmsg_state_tree, kdmsg_state, rbnode, kdmsg_state_cmp);
+ 
++struct file;			/* forward decl */
++struct malloc_type;
++
+ /*
+  * Structure embedded in e.g. mount, master control structure for
+  * DMSG stream handling.
+@@ -838,8 +838,9 @@ typedef struct kdmsg_iocom	kdmsg_iocom_t;
+ 				 KDMSG_IOCOMF_AUTORXSPAN |	\
+ 				 KDMSG_IOCOMF_AUTOTXSPAN)
+ 
+-uint32_t kdmsg_icrc32(const void *buf, size_t size);
+-uint32_t kdmsg_icrc32c(const void *buf, size_t size, uint32_t crc);
++#endif	/* _KERNEL || _KERNEL_STRUCTURES */
++
++#ifdef _KERNEL
+ 
+ /*
+  * kern_dmsg.c
+@@ -866,6 +867,6 @@ void kdmsg_state_result(kdmsg_state_t *state, uint32_t error);
+ void kdmsg_detach_aux_data(kdmsg_msg_t *msg, kdmsg_data_t *data);
+ void kdmsg_free_aux_data(kdmsg_data_t *data);
+ 
+-#endif	/* _KERNEL || _KERNEL_STRUCTURES */
++#endif	/* _KERNEL */
+ 
+ #endif	/* !_SYS_DMSG_H_ */
+diff --git a/sys/sys/event.h b/sys/sys/event.h
+index 71aa7e9ba1..ff82e134ca 100644
+--- a/sys/sys/event.h
++++ b/sys/sys/event.h
+@@ -24,7 +24,6 @@
+  * SUCH DAMAGE.
+  *
+  *	$FreeBSD: src/sys/sys/event.h,v 1.5.2.6 2003/02/09 15:28:13 nectar Exp $
+- *	$DragonFly: src/sys/sys/event.h,v 1.7 2007/01/15 01:26:56 dillon Exp $
+  */
+ 
+ #ifndef _SYS_EVENT_H_
+@@ -165,10 +164,6 @@ struct kqinfo {
+ 
+ #ifdef _KERNEL
+ 
+-#ifdef MALLOC_DECLARE
+-MALLOC_DECLARE(M_KQUEUE);
+-#endif
+-
+ #define KNOTE(list, hint)	if (!SLIST_EMPTY((list))) knote(list, hint)
+ 
+ /*
+diff --git a/sys/sys/idr.h b/sys/sys/idr.h
+index f148eec809..3c7c7aa75f 100644
+--- a/sys/sys/idr.h
++++ b/sys/sys/idr.h
+@@ -50,11 +50,6 @@
+ 
+ #include <sys/thread.h>
+ 
+-#ifndef GFP_KERNEL
+-#include <sys/malloc.h>
+-#define GFP_KERNEL	M_WAITOK
+-#endif
+-
+ struct idr_node {
+ 	void	*data;
+ 	int	 allocated;
+diff --git a/sys/sys/malloc.h b/sys/sys/malloc.h
+index fd572256c6..f85ab2fe05 100644
+--- a/sys/sys/malloc.h
++++ b/sys/sys/malloc.h
+@@ -40,10 +40,6 @@
+ #include <machine/types.h>	/* vm_paddr_t and __* types */
+ #endif
+ 
+-#ifndef _MACHINE_PARAM_H_
+-#include <machine/param.h>	/* for SMP_MAXCPU */
+-#endif
+-
+ /*
+  * flags to malloc.
+  */
+@@ -57,6 +53,7 @@
+ 			0x1000	/* can exhaust free list entirely */
+ #define	M_POWEROF2	0x2000	/* roundup size to the nearest power of 2 */
+ #define	M_CACHEALIGN	0x4000	/* force CPU cache line alignment */
++/* GFP_DMA32 0x10000 reserved for drm layer (not handled by kmalloc) */
+ 
+ /*
+  * M_NOWAIT has to be a set of flags for equivalence to prior use.
+@@ -89,40 +86,12 @@
+ 
+ #define	M_MAGIC		877983977	/* time when first defined :-) */
+ 
+-/*
+- * The malloc tracking structure.  Note that per-cpu entries must be
+- * aggregated for accurate statistics, they do not actually break the
+- * stats down by cpu (e.g. the cpu freeing memory will subtract from
+- * its slot, not the originating cpu's slot).
+- *
+- * SMP_MAXCPU is used so modules which use malloc remain compatible
+- * between UP and SMP.
+- */
+-struct malloc_use {
+-	size_t	memuse;
+-	size_t	inuse;
+-	__int64_t calls;	/* total packets of this type ever allocated */
+-
+-	/*
+-	 * This value will be added to ks_loosememuse and resetted,
+-	 * once it goes above certain threshold (ZoneSize).  This
+-	 * is intended to reduce frequency of ks_loosememuse (global)
+-	 * updates.
+-	 */
+-	size_t	loosememuse;
+-} __cachealign;
+-
+-struct malloc_type {
+-	struct malloc_type *ks_next;	/* next in list */
+-	size_t	ks_loosememuse;		/* (inaccurate) aggregate memuse */
+-	size_t	ks_limit;	/* most that are allowed to exist */
+-	struct malloc_use  ks_use[SMP_MAXCPU];
+-	__uint32_t ks_magic;	/* if it's not magic, don't touch it */
+-	const char *ks_shortdesc;	/* short description */
+-	long	ks_reserved[4];	/* future use (module compatibility) */
+-};
+-
+-typedef struct malloc_type	*malloc_type_t;
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++#include <sys/_malloc.h>		/* struct malloc_type */
++#ifndef NULL
++#include <sys/_null.h>			/* ensure NULL is defined */
++#endif
++#endif
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ #define	MALLOC_DEFINE(type, shortdesc, longdesc)			\
+@@ -142,9 +111,6 @@ typedef struct malloc_type	*malloc_type_t;
+ 	}
+ #endif
+ 
+-#define	MALLOC_DECLARE(type) \
+-	extern struct malloc_type type[1]
+-
+ #ifdef _KERNEL
+ 
+ MALLOC_DECLARE(M_CACHE);
+@@ -195,7 +161,7 @@ char	*kstrdup_debug(const char *, struct malloc_type *,
+ char	*kstrndup_debug(const char *, size_t maxlen, struct malloc_type *,
+ 			const char *file, int line) __malloclike __heedresult;
+ #if 1
+-#define kmalloc(size, type, flags) ({					\
++#define _kmalloc(size, type, flags) ({					\
+ 	void *_malloc_item;						\
+ 	size_t _size = (size);						\
+ 									\
+@@ -207,7 +173,7 @@ char	*kstrndup_debug(const char *, size_t maxlen, struct malloc_type *,
+ 					    __FILE__, __LINE__);	\
+ 		if (((flags) & (M_WAITOK|M_NULLOK)) == M_WAITOK ||	\
+ 		    __predict_true(_malloc_item != NULL)) {		\
+-			bzero(_malloc_item, _size);			\
++			__builtin_memset(_malloc_item, 0, _size);	\
+ 		}							\
+ 	} else {							\
+ 	    _malloc_item = kmalloc_debug(_size, type, flags,		\
+@@ -215,7 +181,11 @@ char	*kstrndup_debug(const char *, size_t maxlen, struct malloc_type *,
+ 	}								\
+ 	_malloc_item;							\
+ })
++#else
++#define _kmalloc(size, type, flags)	\
++	kmalloc_debug(_size, type, flags, __FILE__, __LINE__);
+ #endif
++#define kmalloc(size, type, flags)	_kmalloc(size, type, flags)
+ #define krealloc(addr, size, type, flags)	\
+ 	krealloc_debug(addr, size, type, flags, __FILE__, __LINE__)
+ #define kstrdup(str, type)			\
+@@ -227,25 +197,24 @@ char	*kstrndup_debug(const char *, size_t maxlen, struct malloc_type *,
+ 
+ void	*kmalloc(unsigned long size, struct malloc_type *type, int flags)
+ 		 __malloclike __heedresult __alloc_size(1);
++static __inline __always_inline void *
++_kmalloc(size_t _size, struct malloc_type *_type, int _flags)
++{
+ #if 1
+-#define kmalloc(size, type, flags) ({					\
+-	void *_malloc_item;						\
+-	size_t _size = (size);						\
+-									\
+-	if (__builtin_constant_p(size) &&				\
+-	    __builtin_constant_p(flags) &&				\
+-	    ((flags) & M_ZERO)) {					\
+-		_malloc_item = kmalloc(_size, type, (flags) & ~M_ZERO);	\
+-		if (((flags) & (M_WAITOK|M_NULLOK)) == M_WAITOK ||	\
+-		    __predict_true(_malloc_item != NULL)) {		\
+-			bzero(_malloc_item, _size);			\
+-		}							\
+-	} else {							\
+-	    _malloc_item = kmalloc(_size, type, flags);			\
+-	}								\
+-	_malloc_item;							\
+-})
++	if (__builtin_constant_p(_size) && __builtin_constant_p(_flags) &&
++	    (_flags & M_ZERO)) {
++		void *_malloc_item;
++		_malloc_item = kmalloc(_size, _type, _flags & ~M_ZERO);
++		if ((_flags & (M_WAITOK|M_NULLOK)) == M_WAITOK ||
++		    __predict_true(_malloc_item != NULL)) {
++			__builtin_memset(_malloc_item, 0, _size);
++		}
++		return _malloc_item;
++	}
+ #endif
++	return (kmalloc(_size, _type, _flags));
++}
++#define kmalloc(size, type, flags)	_kmalloc((size), (type), (flags))
+ void	*krealloc(void *addr, unsigned long size, struct malloc_type *type,
+ 		  int flags) __heedresult __alloc_size(2);
+ char	*kstrdup(const char *, struct malloc_type *)
+diff --git a/sys/sys/memrange.h b/sys/sys/memrange.h
+index 86d9f7359c..c8548e3da9 100644
+--- a/sys/sys/memrange.h
++++ b/sys/sys/memrange.h
+@@ -3,7 +3,6 @@
+  * Memory range attribute operations, peformed on /dev/mem
+  *
+  * $FreeBSD: src/sys/sys/memrange.h,v 1.4.2.2 2002/09/16 21:58:37 dwmalone Exp $
+- * $DragonFly: src/sys/sys/memrange.h,v 1.4 2006/12/17 20:07:33 dillon Exp $
+  */
+ 
+ #ifndef _SYS_MEMRANGE_H_
+@@ -16,14 +15,6 @@
+ #include <sys/ioccom.h>
+ #endif
+ 
+-#ifdef _KERNEL
+-
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+-
+-#endif
+-
+ /* Memory range attributes */
+ #define MDF_UNCACHEABLE		(1<<0)	/* region not cached */
+ #define MDF_WRITECOMBINE	(1<<1)	/* region supports "write combine" action */
+@@ -64,19 +55,21 @@ struct mem_range_op
+ 
+ #ifdef _KERNEL
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_MEMDESC);
++#endif
+ 
+ struct mem_range_softc;
+ struct mem_range_ops
+ {
+ 	void	(*init)(struct mem_range_softc *sc);
+ 	int	(*set)(struct mem_range_softc *sc, struct mem_range_desc *mrd, int *arg);
+-    	void	(*initAP)(struct mem_range_softc *sc);
++	void	(*initAP)(struct mem_range_softc *sc);
+ 	void	(*set_iopl)(struct mem_range_softc *sc);
+ 	void	(*clr_iopl)(struct mem_range_softc *sc);
+ };
+ 
+-struct mem_range_softc 
++struct mem_range_softc
+ {
+ 	struct mem_range_ops	*mr_op;
+ 	int			mr_cap;
+@@ -93,4 +86,4 @@ extern int cpu_set_iopl(void);
+ extern int cpu_clr_iopl(void);
+ #endif
+ 
+-#endif
++#endif	/* !_SYS_MEMRANGE_H_ */
+diff --git a/sys/sys/mountctl.h b/sys/sys/mountctl.h
+index 7d1375c436..dc43b9e72d 100644
+--- a/sys/sys/mountctl.h
++++ b/sys/sys/mountctl.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,8 +30,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- *
+- * $DragonFly: src/sys/sys/mountctl.h,v 1.15 2008/06/01 19:27:37 dillon Exp $
+  */
+ 
+ #ifndef _SYS_MOUNTCTL_H_
+@@ -47,15 +45,10 @@
+ #include <sys/queue.h>
+ #endif
+ 
+-#ifdef _KERNEL
+-
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ #ifndef _SYS_THREAD_H_
+ #include <sys/thread.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+-
+ #endif
+ 
+ /*
+@@ -186,7 +179,7 @@ struct journal {
+ 
+ /*
+  * The jrecord structure is used to build a journaling transaction.  Since
+- * a single journaling transaction might encompass very large buffers it 
++ * a single journaling transaction might encompass very large buffers it
+  * is possible for multiple transactions to be written out to the FIFO
+  * in parallel and in peacemeal.
+  */
+@@ -269,8 +262,10 @@ void jrecord_write_uio(struct jrecord *jrec, int16_t rectype, struct uio *uio);
+ void jrecord_file_data(struct jrecord *jrec, struct vnode *vp,
+ 			off_t off, off_t bytes);
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_JOURNAL);
+ MALLOC_DECLARE(M_JFIFO);
++#endif
+ 
+ #else
+ 
+diff --git a/sys/sys/mpipe.h b/sys/sys/mpipe.h
+index 32168d3d51..ceeb0558bc 100644
+--- a/sys/sys/mpipe.h
++++ b/sys/sys/mpipe.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,15 +30,17 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+- * $DragonFly: src/sys/sys/mpipe.h,v 1.4 2004/07/16 05:51:57 dillon Exp $
+  */
+ 
+ #ifndef _SYS_MPIPE_H_
+ #define _SYS_MPIPE_H_
+ 
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
++#ifndef _KERNEL
++#error "This file should not be included by userland programs."
++#endif
++
++#ifndef _SYS__MALLOC_H_
++#include <sys/_malloc.h>
+ #endif
+ #ifndef _SYS_THREAD_H_
+ #include <sys/thread.h>
+@@ -53,7 +55,7 @@
+  * in order to allow memory allocations to block while at the same time
+  * guarenteeing that no deadlocks will occur.
+  *
+- * By default new allocations are zero'd out. 
++ * By default new allocations are zero'd out.
+  *
+  * MPF_NOZERO		If specified the underlying buffers are not zero'd.
+  *			Note this also means you have no way of knowing which
+@@ -99,7 +101,7 @@ struct malloc_pipe {
+     STAILQ_HEAD(, mpipe_callback) queue;
+ };
+ 
+-#define MPF_CACHEDATA		0x0001	/* cache old buffers (do not zero) */ 
++#define MPF_CACHEDATA		0x0001	/* cache old buffers (do not zero) */
+ #define MPF_NOZERO		0x0002	/* do not zero-out new allocations */
+ #define MPF_INT			0x0004	/* use the interrupt memory reserve */
+ #define MPF_QUEUEWAIT		0x0008
+@@ -111,8 +113,8 @@ typedef struct malloc_pipe *malloc_pipe_t;
+ #ifdef _KERNEL
+ 
+ void mpipe_init(malloc_pipe_t mpipe, malloc_type_t type,
+-		int bytes, int nnom, int nmax, 
+-		int mpflags, 
++		int bytes, int nnom, int nmax,
++		int mpflags,
+ 		void (*construct)(void *, void *),
+ 		void (*deconstruct)(void *, void *),
+ 		void *priv);
+@@ -126,5 +128,5 @@ void mpipe_free(malloc_pipe_t mpipe, void *vbuf);
+ 
+ #endif
+ 
+-#endif
++#endif	/* !_SYS_MPIPE_H_ */
+ 
+diff --git a/sys/sys/msgport2.h b/sys/sys/msgport2.h
+index b5e2035cdd..3b0edf9e02 100644
+--- a/sys/sys/msgport2.h
++++ b/sys/sys/msgport2.h
+@@ -14,11 +14,10 @@
+ #ifndef _SYS_SYSTM_H_
+ #include <sys/systm.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_LWKTMSG);
++#endif
+ 
+ /*
+  * Initialize a LWKT message structure.  Note that if the message supports
+diff --git a/sys/sys/objcache.h b/sys/sys/objcache.h
+index 8f334ba3f0..483edc0c7a 100644
+--- a/sys/sys/objcache.h
++++ b/sys/sys/objcache.h
+@@ -33,13 +33,14 @@
+ #ifndef _SYS_OBJCACHE_H_
+ #define _SYS_OBJCACHE_H_
+ 
+-#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+-
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
++
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++
++#ifndef _SYS__MALLOC_H_
++#include <sys/_malloc.h>
+ #endif
+ 
+ #define OC_MFLAGS	0x0000ffff	/* same as malloc flags */
+@@ -79,7 +80,7 @@ void	 objcache_populate_linear(struct objcache *oc, void *elts, int nelts,
+ __boolean_t objcache_reclaimlist(struct objcache *oc[], int nlist, int ocflags);
+ void	 objcache_destroy(struct objcache *oc);
+ 
+-#endif	/* !_KERNEL */
++#endif	/* _KERNEL */
+ 
+ /*
+  * Common underlying allocators.
+diff --git a/sys/sys/posix4.h b/sys/sys/posix4.h
+index f365caf737..0c638773a0 100644
+--- a/sys/sys/posix4.h
++++ b/sys/sys/posix4.h
+@@ -44,13 +44,11 @@
+ #include "opt_posix.h"
+ 
+ #include <sys/param.h>
+-#include <sys/malloc.h>
+ #include <sys/sched.h>
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_P31B);
+-
+-#define p31b_malloc(SIZE) kmalloc((SIZE), M_P31B, M_WAITOK)
+-#define p31b_free(P) kfree((P), M_P31B)
++#endif
+ 
+ struct proc;
+ struct lwp;
+@@ -59,7 +57,7 @@ void p31b_setcfg (int, int);
+ 
+ #ifdef _KPOSIX_PRIORITY_SCHEDULING
+ 
+-/* 
++/*
+  * KSCHED_OP_RW is a vector of read/write flags for each entry indexed
+  * by the enum ksched_op.
+  *
+diff --git a/sys/sys/slaballoc.h b/sys/sys/slaballoc.h
+index ed1df45a5f..21e771e85b 100644
+--- a/sys/sys/slaballoc.h
++++ b/sys/sys/slaballoc.h
+@@ -1,15 +1,15 @@
+ /*
+  * KERN_SLABALLOC.H	- Kernel SLAB memory allocator
+- * 
++ *
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -19,7 +19,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -32,8 +32,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+- * $DragonFly: src/sys/sys/slaballoc.h,v 1.8 2005/06/20 20:49:12 dillon Exp $
+  */
+ 
+ #ifndef _SYS_SLABALLOC_H_
+@@ -44,8 +42,8 @@
+ #ifndef _SYS_STDINT_H_
+ #include <sys/stdint.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
++#ifndef _SYS__MALLOC_H_
++#include <sys/_malloc.h>
+ #endif
+ 
+ /*
+diff --git a/sys/sys/socketvar2.h b/sys/sys/socketvar2.h
+index 1104d5dba0..34c1dc1a2b 100644
+--- a/sys/sys/socketvar2.h
++++ b/sys/sys/socketvar2.h
+@@ -33,15 +33,16 @@
+ #ifndef _SYS_SOCKETVAR2_H_
+ #define _SYS_SOCKETVAR2_H_
+ 
++#ifndef _KERNEL
++#error "This file should not be included by userland programs."
++#endif
++
+ #ifndef _SYS_SOCKETVAR_H_
+ #include <sys/socketvar.h>
+ #endif
+ #ifndef _SYS_SYSTM_H_
+ #include <sys/systm.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #include <machine/atomic.h>
+ 
+ /*
+@@ -53,6 +54,7 @@
+  *
+  * Returns 0 on success, non-zero if the lock could not be acquired.
+  */
++#ifdef MALLOC_DEFINE
+ static __inline int
+ ssb_lock(struct signalsockbuf *ssb, int wf)
+ {
+@@ -72,6 +74,7 @@ ssb_lock(struct signalsockbuf *ssb, int wf)
+ 		}
+ 	}
+ }
++#endif
+ 
+ /*
+  * Release a previously acquired lock on a signalsockbuf.
+diff --git a/sys/sys/sysref.h b/sys/sys/sysref.h
+index e5d05b0bda..5d83971ee4 100644
+--- a/sys/sys/sysref.h
++++ b/sys/sys/sysref.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2007 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,8 +30,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+- * $DragonFly: src/sys/sys/sysref.h,v 1.4 2007/05/29 17:01:02 dillon Exp $
+  */
+ /*
+  * System resource registration, reference counter, and allocation
+@@ -57,16 +55,16 @@
+ #ifndef _SYS_OBJCACHE_H_
+ #include <sys/objcache.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++#ifndef _SYS__MALLOC_H_
++#include <sys/_malloc.h>
++#endif
+ 
+ /*
+  * Register a resource structure type.  Note that the destroy function
+  * will be called on 1->0 transitions (really 1->-0x40000000 transitions),
+- * and the free function 
++ * and the free function
+  * but the free function can be called via an IPI, without the BGL, and
+  * must be carefully coded if it does anything more complex then objcache_put
+  */
+@@ -121,7 +119,7 @@ struct sysref {
+ RB_HEAD(sysref_rb_tree, sysref);
+ RB_PROTOTYPE2(sysref_rb_tree, sysref, rbnode, rb_sysref_compare, sysid_t);
+ 
+-#endif
++#endif	/* _KERNEL || _KERNEL_STRUCTURES */
+ 
+ /*
+  * Protocol numbers
+@@ -145,4 +143,4 @@ sysid_t allocsysid(void);
+ 
+ #endif
+ 
+-#endif
++#endif	/* !_SYS_SYSREF_H_ */
+diff --git a/sys/sys/sysref2.h b/sys/sys/sysref2.h
+index ef9dedcc6e..66b0fe2915 100644
+--- a/sys/sys/sysref2.h
++++ b/sys/sys/sysref2.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2007 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -45,6 +45,10 @@
+ #ifndef _SYS_SYSREF2_H_
+ #define _SYS_SYSREF2_H_
+ 
++#ifndef _KERNEL
++#error "This file should not be included by userland programs."
++#endif
++
+ #ifndef _SYS_SYSREF_H_
+ #include <sys/sysref.h>
+ #endif
+@@ -121,4 +125,4 @@ void sysref_activate(struct sysref *);
+ 
+ #endif
+ 
+-#endif
++#endif	/* !_SYS_SYSREF2_H_ */
+diff --git a/sys/sys/tty.h b/sys/sys/tty.h
+index de90b5e5a7..a0f42a05bd 100644
+--- a/sys/sys/tty.h
++++ b/sys/sys/tty.h
+@@ -231,11 +231,9 @@ struct speedtab {
+ 
+ #ifdef _KERNEL
+ 
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+-
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_TTYS);
++#endif
+ 
+ extern	struct tty *constty;	/* Temporary virtual console. */
+ 
+diff --git a/sys/vfs/autofs/autofs.h b/sys/vfs/autofs/autofs.h
+index 863b960bd6..5c78fd9e31 100644
+--- a/sys/vfs/autofs/autofs.h
++++ b/sys/vfs/autofs/autofs.h
+@@ -54,7 +54,9 @@
+ #define VFSTOAUTOFS(mp)	((struct autofs_mount *)((mp)->mnt_data))
+ #define VTOI(vp)	((struct autofs_node *)((vp)->v_data))
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_AUTOFS);
++#endif
+ 
+ extern struct objcache *autofs_request_objcache;
+ extern struct objcache *autofs_node_objcache;
+diff --git a/sys/vfs/devfs/devfs_core.c b/sys/vfs/devfs/devfs_core.c
+index 07b5c81d86..9ffe7694dd 100644
+--- a/sys/vfs/devfs/devfs_core.c
++++ b/sys/vfs/devfs/devfs_core.c
+@@ -35,9 +35,9 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #include <sys/bus.h>
++#include <sys/malloc.h>
+ #include <sys/mount.h>
+ #include <sys/vnode.h>
+-#include <sys/types.h>
+ #include <sys/lock.h>
+ #include <sys/file.h>
+ #include <sys/msgport.h>
+diff --git a/sys/vfs/devfs/devfs_helper.c b/sys/vfs/devfs/devfs_helper.c
+index 92b10ac6e8..e92e6ad2d6 100644
+--- a/sys/vfs/devfs/devfs_helper.c
++++ b/sys/vfs/devfs/devfs_helper.c
+@@ -34,7 +34,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+-#include <sys/types.h>
++#include <sys/malloc.h>
+ #include <machine/limits.h>
+ #include <sys/devfs.h>
+ 
+diff --git a/sys/vfs/devfs/devfs_rules.c b/sys/vfs/devfs/devfs_rules.c
+index f27e11f8fd..5c31af5644 100644
+--- a/sys/vfs/devfs/devfs_rules.c
++++ b/sys/vfs/devfs/devfs_rules.c
+@@ -34,7 +34,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+-#include <sys/types.h>
++#include <sys/malloc.h>
+ #include <sys/lock.h>
+ #include <sys/spinlock2.h>
+ #include <sys/fcntl.h>
+diff --git a/sys/vfs/devfs/devfs_vfsops.c b/sys/vfs/devfs/devfs_vfsops.c
+index 42b2e25042..3b158ae96d 100644
+--- a/sys/vfs/devfs/devfs_vfsops.c
++++ b/sys/vfs/devfs/devfs_vfsops.c
+@@ -36,6 +36,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mount.h>
+ #include <sys/namecache.h>
+ #include <sys/vnode.h>
+diff --git a/sys/vfs/dirfs/dirfs.h b/sys/vfs/dirfs/dirfs.h
+index ab53a19efc..db5873d320 100644
+--- a/sys/vfs/dirfs/dirfs.h
++++ b/sys/vfs/dirfs/dirfs.h
+@@ -44,9 +44,11 @@
+ #include <sys/vnode.h>
+ #include <sys/file.h>
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_DIRFS);
+ MALLOC_DECLARE(M_DIRFS_NODE);
+ MALLOC_DECLARE(M_DIRFS_MISC);
++#endif
+ 
+ #ifndef KTR_DIRFS
+ #define KTR_DIRFS KTR_ALL
+diff --git a/sys/vfs/hammer/hammer.h b/sys/vfs/hammer/hammer.h
+index b8dc78d0b5..e7f6df151a 100644
+--- a/sys/vfs/hammer/hammer.h
++++ b/sys/vfs/hammer/hammer.h
+@@ -74,7 +74,9 @@
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_HAMMER);
++#endif
+ 
+ /*
+  * Kernel trace
+diff --git a/sys/vfs/hammer2/hammer2.h b/sys/vfs/hammer2/hammer2.h
+index d5e30063d2..3397da303e 100644
+--- a/sys/vfs/hammer2/hammer2.h
++++ b/sys/vfs/hammer2/hammer2.h
+@@ -1323,7 +1323,9 @@ TAILQ_HEAD(hammer2_pfslist, hammer2_pfs);
+ 
+ #if defined(_KERNEL)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_HAMMER2);
++#endif
+ 
+ #define ITOV(ip)	((ip)->vp)
+ 
+diff --git a/sys/vfs/hammer2/hammer2_lz4.c b/sys/vfs/hammer2/hammer2_lz4.c
+index 90b7e4144c..19f88b27d1 100644
+--- a/sys/vfs/hammer2/hammer2_lz4.c
++++ b/sys/vfs/hammer2/hammer2_lz4.c
+@@ -105,14 +105,13 @@ Note : this source file requires "hammer2_lz4_encoder.h"
+ //**************************************
+ // Includes
+ //**************************************
+-#include <sys/malloc.h> //for malloc macros
+ #include "hammer2.h"
+ #include "hammer2_lz4.h"
++#include <sys/malloc.h> //for malloc macros, hammer2.h includes sys/param.h
+ 
+ 
+ //Declaration for kmalloc functions
+-MALLOC_DECLARE(C_HASHTABLE);
+-MALLOC_DEFINE(C_HASHTABLE, "comphashtable",
++static MALLOC_DEFINE(C_HASHTABLE, "comphashtable",
+ 	"A hash table used by LZ4 compression function.");
+ 
+ 
+diff --git a/sys/vfs/hpfs/hpfs.h b/sys/vfs/hpfs/hpfs.h
+index f0c8d88df5..18676af2fe 100644
+--- a/sys/vfs/hpfs/hpfs.h
++++ b/sys/vfs/hpfs/hpfs.h
+@@ -376,8 +376,10 @@ struct hpfid {
+ #define dprintf(a)
+ #define ddprintf(a)
+ #endif
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_HPFSMNT);
+ MALLOC_DECLARE(M_HPFSNO);
++#endif
+ #define VFSTOHPFS(mp)	((struct hpfsmount *)((mp)->mnt_data))
+ #define	VTOHP(v)	((struct hpfsnode *)((v)->v_data))
+ #define	HPTOV(h)	((struct vnode *)((h)->h_vp))
+diff --git a/sys/vfs/isofs/cd9660/cd9660_rrip.c b/sys/vfs/isofs/cd9660/cd9660_rrip.c
+index 6b897a1b58..2281a94ca4 100644
+--- a/sys/vfs/isofs/cd9660/cd9660_rrip.c
++++ b/sys/vfs/isofs/cd9660/cd9660_rrip.c
+@@ -41,6 +41,7 @@
+ #include <sys/vnode.h>
+ #include <sys/mount.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ 
+ #include "iso.h"
+ #include "cd9660_node.h"
+diff --git a/sys/vfs/nfs/nfs_bio.c b/sys/vfs/nfs/nfs_bio.c
+index 2faea0e36e..a6d5ff86b0 100644
+--- a/sys/vfs/nfs/nfs_bio.c
++++ b/sys/vfs/nfs/nfs_bio.c
+@@ -33,7 +33,6 @@
+  * $FreeBSD: /repoman/r/ncvs/src/sys/nfsclient/nfs_bio.c,v 1.130 2004/04/14 23:23:55 peadar Exp $
+  */
+ 
+-
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/uio.h>
+@@ -44,6 +43,7 @@
+ #include <sys/vnode.h>
+ #include <sys/mount.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ 
+ #include <vm/vm.h>
+@@ -213,7 +213,7 @@ nfs_bioread(struct vnode *vp, struct uio *uio, int ioflag)
+ 		/*
+ 		 * Obtain the buffer cache block.  Figure out the buffer size
+ 		 * when we are at EOF.  If we are modifying the size of the
+-		 * buffer based on an EOF condition we need to hold 
++		 * buffer based on an EOF condition we need to hold
+ 		 * nfs_rslock() through obtaining the buffer to prevent
+ 		 * a potential writer-appender from messing with n_size.
+ 		 * Otherwise we may accidently truncate the buffer and
+@@ -388,7 +388,7 @@ nfs_bioread(struct vnode *vp, struct uio *uio, int ioflag)
+ 		 * to EOF.  *BUT* this information is lost if the buffer goes
+ 		 * away and is reconstituted into a B_CACHE state ( due to
+ 		 * being VMIO ) later.  So we keep track of the directory eof
+-		 * in np->n_direofoffset and chop it off as an extra step 
++		 * in np->n_direofoffset and chop it off as an extra step
+ 		 * right here.
+ 		 *
+ 		 * NOTE: boff could already be beyond EOF.
+@@ -698,13 +698,13 @@ nfs_write(struct vop_write_args *ap)
+ 		/*
+ 		 * If dirtyend exceeds file size, chop it down.  This should
+ 		 * not normally occur but there is an append race where it
+-		 * might occur XXX, so we log it. 
++		 * might occur XXX, so we log it.
+ 		 *
+ 		 * If the chopping creates a reverse-indexed or degenerate
+ 		 * situation with dirtyoff/end, we 0 both of them.
+ 		 */
+ 		if (bp->b_dirtyend > bcount) {
+-			kprintf("NFS append race @%08llx:%d\n", 
++			kprintf("NFS append race @%08llx:%d\n",
+ 			    (long long)bp->b_bio2.bio_offset,
+ 			    bp->b_dirtyend - bcount);
+ 			bp->b_dirtyend = bcount;
+@@ -718,9 +718,9 @@ nfs_write(struct vop_write_args *ap)
+ 		 * area, just update the b_dirtyoff and b_dirtyend,
+ 		 * otherwise force a write rpc of the old dirty area.
+ 		 *
+-		 * While it is possible to merge discontiguous writes due to 
++		 * While it is possible to merge discontiguous writes due to
+ 		 * our having a B_CACHE buffer ( and thus valid read data
+-		 * for the hole), we don't because it could lead to 
++		 * for the hole), we don't because it could lead to
+ 		 * significant cache coherency problems with multiple clients,
+ 		 * especially if locking is implemented later on.
+ 		 *
+@@ -756,7 +756,7 @@ nfs_write(struct vop_write_args *ap)
+ 		}
+ 
+ 		/*
+-		 * Only update dirtyoff/dirtyend if not a degenerate 
++		 * Only update dirtyoff/dirtyend if not a degenerate
+ 		 * condition.
+ 		 *
+ 		 * The underlying VM pages have been marked valid by
+@@ -1091,7 +1091,7 @@ nfs_doio(struct vnode *vp, struct bio *bio, struct thread *td)
+ 	 */
+ 	bp->b_flags &= ~(B_ERROR | B_INVAL);
+ 
+-	KASSERT(bp->b_cmd != BUF_CMD_DONE, 
++	KASSERT(bp->b_cmd != BUF_CMD_DONE,
+ 		("nfs_doio: bp %p already marked done!", bp));
+ 
+ 	if (bp->b_cmd == BUF_CMD_READ) {
+@@ -1157,7 +1157,7 @@ nfs_doio(struct vnode *vp, struct bio *bio, struct thread *td)
+ 	    }
+ 	    bp->b_resid = uiop->uio_resid;
+ 	} else {
+-	    /* 
++	    /*
+ 	     * If we only need to commit, try to commit.
+ 	     *
+ 	     * NOTE: The I/O has already been staged for the write and
+diff --git a/sys/vfs/procfs/procfs_map.c b/sys/vfs/procfs/procfs_map.c
+index 690458fb87..959510e117 100644
+--- a/sys/vfs/procfs/procfs_map.c
++++ b/sys/vfs/procfs/procfs_map.c
+@@ -41,6 +41,7 @@
+ #include <sys/proc.h>
+ #include <sys/vnode.h>
+ #include <sys/sbuf.h>
++#include <sys/malloc.h>
+ #include <vfs/procfs/procfs.h>
+ 
+ #include <vm/vm.h>
+diff --git a/sys/vfs/tmpfs/tmpfs.h b/sys/vfs/tmpfs/tmpfs.h
+index 3b53200d47..b24e39d1b2 100644
+--- a/sys/vfs/tmpfs/tmpfs.h
++++ b/sys/vfs/tmpfs/tmpfs.h
+@@ -56,7 +56,9 @@
+ #include <sys/vmmeter.h>
+ #include <vm/swap_pager.h>
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_TMPFSMNT);
++#endif
+ 
+ /* --------------------------------------------------------------------- */
+ 
+diff --git a/sys/vfs/udf/udf.h b/sys/vfs/udf/udf.h
+index d7f71d0ece..ae58552bac 100644
+--- a/sys/vfs/udf/udf.h
++++ b/sys/vfs/udf/udf.h
+@@ -24,7 +24,6 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/fs/udf/udf.h,v 1.6 2003/11/05 06:56:08 scottl Exp $
+- * $DragonFly: src/sys/vfs/udf/udf.h,v 1.3 2006/09/10 01:26:41 dillon Exp $
+  */
+ 
+ #define UDF_HASHTBLSIZE 100
+@@ -88,8 +87,10 @@ struct udf_dirstream {
+ #define	RDSECTOR(devvp, sector, size, bp) \
+ 	bread(devvp, (off_t)(sector) << udfmp->bshift, size, bp)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_UDFFENTRY);
+ MALLOC_DECLARE(M_UDFNODE);
++#endif
+ 
+ static __inline int
+ udf_readlblks(struct udf_mnt *udfmp, int sector, int size, struct buf **bp)
+diff --git a/sys/vfs/ufs/ffs_alloc.c b/sys/vfs/ufs/ffs_alloc.c
+index 61c5265c80..42aaf6e405 100644
+--- a/sys/vfs/ufs/ffs_alloc.c
++++ b/sys/vfs/ufs/ffs_alloc.c
+@@ -36,6 +36,7 @@
+ #include <sys/systm.h>
+ #include <sys/buf.h>
+ #include <sys/conf.h>
++#include <sys/malloc.h>
+ #include <sys/proc.h>
+ #include <sys/vnode.h>
+ #include <sys/mount.h>
+diff --git a/sys/vm/vm_meter.c b/sys/vm/vm_meter.c
+index bd0c67c3e4..73e36f3e5e 100644
+--- a/sys/vm/vm_meter.c
++++ b/sys/vm/vm_meter.c
+@@ -30,13 +30,13 @@
+  *
+  *	@(#)vm_meter.c	8.4 (Berkeley) 1/4/94
+  * $FreeBSD: src/sys/vm/vm_meter.c,v 1.34.2.7 2002/10/10 19:28:22 dillon Exp $
+- * $DragonFly: src/sys/vm/vm_meter.c,v 1.15 2008/04/28 18:04:08 dillon Exp $
+  */
+ 
+ #include <sys/param.h>
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/resource.h>
+ #include <sys/vmmeter.h>
+ #include <sys/kcollect.h>
+@@ -226,7 +226,7 @@ do_vmmeter(SYSCTL_HANDLER_ARGS)
+ 			*(u_int *)((char *)&vmm + off) +=
+ 				*(u_int *)((char *)&gd->gd_cnt + off);
+ 		}
+-		
++
+ 	}
+ 	vmm.v_intr += vmm.v_ipi + vmm.v_timer;
+ 	return (sysctl_handle_opaque(oidp, &vmm, sizeof(vmm), req));
+@@ -280,13 +280,13 @@ vcnt_intr(SYSCTL_HANDLER_ARGS)
+ #define VMMETEROFF(var)	offsetof(struct vmmeter, var)
+ 
+ SYSCTL_PROC(_vm, OID_AUTO, vmtotal, CTLTYPE_OPAQUE|CTLFLAG_RD,
+-    0, sizeof(struct vmtotal), do_vmtotal, "S,vmtotal", 
++    0, sizeof(struct vmtotal), do_vmtotal, "S,vmtotal",
+     "System virtual memory aggregate");
+ SYSCTL_PROC(_vm, OID_AUTO, vmstats, CTLTYPE_OPAQUE|CTLFLAG_RD,
+-    0, sizeof(struct vmstats), do_vmstats, "S,vmstats", 
++    0, sizeof(struct vmstats), do_vmstats, "S,vmstats",
+     "System virtual memory statistics");
+ SYSCTL_PROC(_vm, OID_AUTO, vmmeter, CTLTYPE_OPAQUE|CTLFLAG_RD,
+-    0, sizeof(struct vmmeter), do_vmmeter, "S,vmmeter", 
++    0, sizeof(struct vmmeter), do_vmmeter, "S,vmmeter",
+     "System statistics");
+ SYSCTL_NODE(_vm, OID_AUTO, stats, CTLFLAG_RW, 0, "VM meter stats");
+ SYSCTL_NODE(_vm_stats, OID_AUTO, sys, CTLFLAG_RW, 0, "VM meter sys stats");
+@@ -380,7 +380,7 @@ SYSCTL_UINT(_vm_stats_vm, OID_AUTO,
+ 	v_page_size, CTLFLAG_RD, &vmstats.v_page_size, 0,
+ 	"Page size in bytes");
+ SYSCTL_ULONG(_vm_stats_vm, OID_AUTO,
+-	v_page_count, CTLFLAG_RD, &vmstats.v_page_count, 0, 
++	v_page_count, CTLFLAG_RD, &vmstats.v_page_count, 0,
+ 	"Total number of pages in system");
+ SYSCTL_ULONG(_vm_stats_vm, OID_AUTO,
+ 	v_free_reserved, CTLFLAG_RD, &vmstats.v_free_reserved, 0,
+diff --git a/sys/vm/vm_object.c b/sys/vm/vm_object.c
+index 27b9933021..8493d1eabb 100644
+--- a/sys/vm/vm_object.c
++++ b/sys/vm/vm_object.c
+@@ -73,6 +73,7 @@
+ #include <sys/mman.h>
+ #include <sys/mount.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/sysctl.h>
+ #include <sys/refcount.h>
+ 
+@@ -796,7 +797,7 @@ vm_object_terminate(vm_object_t object)
+ 	/*
+ 	 * Now free any remaining pages. For internal objects, this also
+ 	 * removes them from paging queues. Don't free wired pages, just
+-	 * remove them from the object. 
++	 * remove them from the object.
+ 	 */
+ 	info.count = 0;
+ 	info.object = object;
+@@ -933,14 +934,14 @@ vm_object_page_clean(vm_object_t object, vm_pindex_t start, vm_pindex_t end,
+ 		return;
+ 	}
+ 
+-	pagerflags = (flags & (OBJPC_SYNC | OBJPC_INVAL)) ? 
++	pagerflags = (flags & (OBJPC_SYNC | OBJPC_INVAL)) ?
+ 			VM_PAGER_PUT_SYNC : VM_PAGER_CLUSTER_OK;
+ 	pagerflags |= (flags & OBJPC_INVAL) ? VM_PAGER_PUT_INVAL : 0;
+ 
+ 	vp = object->handle;
+ 
+ 	/*
+-	 * Interlock other major object operations.  This allows us to 
++	 * Interlock other major object operations.  This allows us to
+ 	 * temporarily clear OBJ_WRITEABLE and OBJ_MIGHTBEDIRTY.
+ 	 */
+ 	vm_object_set_flag(object, OBJ_CLEANING);
+@@ -1004,7 +1005,7 @@ vm_object_page_clean(vm_object_t object, vm_pindex_t start, vm_pindex_t end,
+ /*
+  * The caller must hold the object.
+  */
+-static 
++static
+ int
+ vm_object_page_clean_pass1(struct vm_page *p, void *data)
+ {
+@@ -1034,7 +1035,7 @@ vm_object_page_clean_pass1(struct vm_page *p, void *data)
+ /*
+  * The caller must hold the object
+  */
+-static 
++static
+ int
+ vm_object_page_clean_pass2(struct vm_page *p, void *data)
+ {
+@@ -1328,7 +1329,7 @@ vm_object_madvise(vm_object_t object, vm_pindex_t pindex,
+ 				swap_pager_freespace(object, pindex, 1);
+ 		}
+ 		vm_page_wakeup(m);
+-	}	
++	}
+ 	vm_object_drop(object);
+ }
+ 
+@@ -1367,7 +1368,7 @@ vm_object_page_remove(vm_object_t object, vm_pindex_t start, vm_pindex_t end,
+ 	/*
+ 	 * Figure out the actual removal range and whether we are removing
+ 	 * the entire contents of the object or not.  If removing the entire
+-	 * contents, be sure to get all pages, even those that might be 
++	 * contents, be sure to get all pages, even those that might be
+ 	 * beyond the end of the object.
+ 	 */
+ 	info.object = object;
+diff --git a/usr.bin/vmstat/vmstat.c b/usr.bin/vmstat/vmstat.c
+index 06279f0a5c..2b4ab575f1 100644
+--- a/usr.bin/vmstat/vmstat.c
++++ b/usr.bin/vmstat/vmstat.c
+@@ -36,7 +36,6 @@
+ #include <sys/time.h>
+ #include <sys/uio.h>
+ #include <sys/namei.h>
+-#include <sys/malloc.h>
+ #include <sys/objcache.h>
+ #include <sys/signal.h>
+ #include <sys/fcntl.h>
+diff --git a/usr.sbin/fwcontrol/fwcontrol.c b/usr.sbin/fwcontrol/fwcontrol.c
+index 1287051f82..6efb7138bb 100644
+--- a/usr.sbin/fwcontrol/fwcontrol.c
++++ b/usr.sbin/fwcontrol/fwcontrol.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (C) 2002
+  * 	Hidetoshi Shimokawa. All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -18,7 +18,7 @@
+  * 4. Neither the name of the author nor the names of its contributors
+  *    may be used to endorse or promote products derived from this software
+  *    without specific prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+@@ -30,12 +30,11 @@
+  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
++ *
+  * $FreeBSD: src/usr.sbin/fwcontrol/fwcontrol.c,v 1.1.2.8 2003/05/01 06:26:35 simokawa Exp $
+  */
+ 
+ #include <sys/param.h>
+-#include <sys/malloc.h>
+ #include <sys/socket.h>
+ #include <sys/ioctl.h>
+ #include <sys/errno.h>

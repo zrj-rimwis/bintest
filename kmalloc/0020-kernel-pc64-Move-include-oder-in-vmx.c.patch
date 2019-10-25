@@ -1,0 +1,31 @@
+From cb4a21f6f273cac3bc54ec8cf0bc00c2f460bab9 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 25 Oct 2019 11:35:06 +0300
+Subject: [PATCH 20/26] kernel/pc64: Move include oder in vmx.c.
+
+ Include <sys/param.h> first and remove not nessary <sys/types.h>.
+
+ No functional change for generated code.
+---
+ sys/platform/pc64/vmm/vmx.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/sys/platform/pc64/vmm/vmx.c b/sys/platform/pc64/vmm/vmx.c
+index ffa8558c61..1ea24129b5 100644
+--- a/sys/platform/pc64/vmm/vmx.c
++++ b/sys/platform/pc64/vmm/vmx.c
+@@ -33,10 +33,9 @@
+  * SUCH DAMAGE.
+  */
+ 
+-#include <sys/malloc.h>
+ #include <sys/param.h>
++#include <sys/malloc.h>
+ #include <sys/systm.h>
+-#include <sys/types.h>
+ #include <sys/thread.h>
+ #include <sys/thread2.h>
+ #include <sys/sysctl.h>
+-- 
+2.23.0
+

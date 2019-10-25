@@ -1,0 +1,336 @@
+diff --git a/sys/kern/subr_diskiocom.c b/sys/kern/subr_diskiocom.c
+index 03ca4fb8b8..0798e38ace 100644
+--- a/sys/kern/subr_diskiocom.c
++++ b/sys/kern/subr_diskiocom.c
+@@ -87,7 +87,9 @@ static void diskiodone(struct bio *bio);
+ void
+ disk_iocom_init(struct disk *dp)
+ {
+-	kdmsg_iocom_init(&dp->d_iocom, dp,
++	dp->d_iocom = kmalloc(sizeof(kdmsg_iocom_t), M_DMSG_DISK,
++			      M_WAITOK | M_ZERO);
++	kdmsg_iocom_init(dp->d_iocom, dp,
+ 			 KDMSG_IOCOMF_AUTOCONN |
+ 			 KDMSG_IOCOMF_AUTORXSPAN |
+ 			 KDMSG_IOCOMF_AUTOTXSPAN,
+@@ -102,7 +104,9 @@ disk_iocom_update(struct disk *dp)
+ void
+ disk_iocom_uninit(struct disk *dp)
+ {
+-	kdmsg_iocom_uninit(&dp->d_iocom);
++	kdmsg_iocom_uninit(dp->d_iocom);
++	kfree(dp->d_iocom, M_DMSG_DISK);
++	dp->d_iocom = NULL;
+ }
+ 
+ int
+@@ -138,52 +142,52 @@ disk_iocom_reconnect(struct disk *dp, struct file *fp)
+ 	ksnprintf(devname, sizeof(devname), "%s%d",
+ 		  dev_dname(dp->d_rawdev), dkunit(dp->d_rawdev));
+ 
+-	kdmsg_iocom_reconnect(&dp->d_iocom, fp, devname);
++	kdmsg_iocom_reconnect(dp->d_iocom, fp, devname);
+ 
+-	dp->d_iocom.auto_lnk_conn.proto_version = DMSG_SPAN_PROTO_1;
+-	dp->d_iocom.auto_lnk_conn.peer_type = DMSG_PEER_BLOCK;
+-	dp->d_iocom.auto_lnk_conn.peer_mask = 1LLU << DMSG_PEER_BLOCK;
+-	dp->d_iocom.auto_lnk_conn.peer_mask = (uint64_t)-1;
++	dp->d_iocom->auto_lnk_conn.proto_version = DMSG_SPAN_PROTO_1;
++	dp->d_iocom->auto_lnk_conn.peer_type = DMSG_PEER_BLOCK;
++	dp->d_iocom->auto_lnk_conn.peer_mask = 1LLU << DMSG_PEER_BLOCK;
++	dp->d_iocom->auto_lnk_conn.peer_mask = (uint64_t)-1;
+ #if 0
+ 	if (dp->d_info.d_serialno) {
+-		ksnprintf(dp->d_iocom.auto_lnk_conn.peer_label,
+-			  sizeof(dp->d_iocom.auto_lnk_conn.peer_label),
++		ksnprintf(dp->d_iocom->auto_lnk_conn.peer_label,
++			  sizeof(dp->d_iocom->auto_lnk_conn.peer_label),
+ 			  "%s/%s", hostname, dp->d_info.d_serialno);
+ 	} else {
+-		ksnprintf(dp->d_iocom.auto_lnk_conn.peer_label,
+-			  sizeof(dp->d_iocom.auto_lnk_conn.peer_label),
++		ksnprintf(dp->d_iocom->auto_lnk_conn.peer_label,
++			  sizeof(dp->d_iocom->auto_lnk_conn.peer_label),
+ 			  "%s/%s", hostname, devname);
+ 	}
+ #endif
+-	ksnprintf(dp->d_iocom.auto_lnk_conn.peer_label,
+-		  sizeof(dp->d_iocom.auto_lnk_conn.peer_label),
++	ksnprintf(dp->d_iocom->auto_lnk_conn.peer_label,
++		  sizeof(dp->d_iocom->auto_lnk_conn.peer_label),
+ 		  "%s/%s", hostname, devname);
+ 
+-	dp->d_iocom.auto_lnk_span.proto_version = DMSG_SPAN_PROTO_1;
+-	dp->d_iocom.auto_lnk_span.peer_type = DMSG_PEER_BLOCK;
+-	dp->d_iocom.auto_lnk_span.media.block.bytes =
++	dp->d_iocom->auto_lnk_span.proto_version = DMSG_SPAN_PROTO_1;
++	dp->d_iocom->auto_lnk_span.peer_type = DMSG_PEER_BLOCK;
++	dp->d_iocom->auto_lnk_span.media.block.bytes =
+ 						dp->d_info.d_media_size;
+-	dp->d_iocom.auto_lnk_span.media.block.blksize =
++	dp->d_iocom->auto_lnk_span.media.block.blksize =
+ 						dp->d_info.d_media_blksize;
+-	ksnprintf(dp->d_iocom.auto_lnk_span.peer_label,
+-		  sizeof(dp->d_iocom.auto_lnk_span.peer_label),
+-		  "%s", dp->d_iocom.auto_lnk_conn.peer_label);
++	ksnprintf(dp->d_iocom->auto_lnk_span.peer_label,
++		  sizeof(dp->d_iocom->auto_lnk_span.peer_label),
++		  "%s", dp->d_iocom->auto_lnk_conn.peer_label);
+ 	if (dp->d_info.d_serialno) {
+-		ksnprintf(dp->d_iocom.auto_lnk_span.pfs_label,
+-			  sizeof(dp->d_iocom.auto_lnk_span.pfs_label),
++		ksnprintf(dp->d_iocom->auto_lnk_span.pfs_label,
++			  sizeof(dp->d_iocom->auto_lnk_span.pfs_label),
+ 			  "%s", dp->d_info.d_serialno);
+ 	} else {
+-		/* 
++		/*
+ 		 * If no serial number is available generate a dummy serial
+ 		 * number from the host and device name and pray.  This will
+ 		 * allow e.g. /dev/vn* to look meaningful on a remote machine.
+ 		 */
+-		ksnprintf(dp->d_iocom.auto_lnk_span.pfs_label,
+-			  sizeof(dp->d_iocom.auto_lnk_span.pfs_label),
++		ksnprintf(dp->d_iocom->auto_lnk_span.pfs_label,
++			  sizeof(dp->d_iocom->auto_lnk_span.pfs_label),
+ 			  "%s.%s", hostname, devname);
+ 	}
+ 
+-	kdmsg_iocom_autoinitiate(&dp->d_iocom, NULL);
++	kdmsg_iocom_autoinitiate(dp->d_iocom, NULL);
+ 
+ 	return (0);
+ }
+@@ -212,7 +216,7 @@ disk_rcvdmsg(kdmsg_msg_t *msg)
+ 	}
+ 
+ 	/*
+-	 * All remaining messages must be in a transaction. 
++	 * All remaining messages must be in a transaction.
+ 	 *
+ 	 * NOTE!  We currently don't care if the transaction is just
+ 	 *	  the span transaction (for disk probes) or if it is the
+diff --git a/sys/sys/ccdvar.h b/sys/sys/ccdvar.h
+index 445e7ab22d..cac749a79b 100644
+--- a/sys/sys/ccdvar.h
++++ b/sys/sys/ccdvar.h
+@@ -107,6 +107,9 @@
+ #ifndef _SYS_IOCCOM_H_
+ #include <sys/ioccom.h>
+ #endif
++#ifndef _SYS_LOCK_H_
++#include <sys/lock.h>
++#endif
+ 
+ /*
+  * A concatenated disk is described at initialization time by this structure.
+diff --git a/sys/sys/disk.h b/sys/sys/disk.h
+index 37e32441de..275e9b1d9f 100644
+--- a/sys/sys/disk.h
++++ b/sys/sys/disk.h
+@@ -57,9 +57,6 @@
+ #ifndef _SYS_MSGPORT_H_
+ #include <sys/msgport.h>
+ #endif
+-#ifndef _SYS_DMSG_H_
+-#include <sys/dmsg.h>
+-#endif
+ 
+ /*
+  * Media information structure - filled in by the media driver.
+@@ -128,6 +125,7 @@ struct disk_info {
+ #define DSO_RAWPSIZE		0x0100
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++struct kdmsg_iocom;
+ 
+ /*
+  * Disk management structure - automated disklabel support.
+@@ -146,7 +144,7 @@ struct disk {
+ 	void			*d_unused03;
+ 	const char		*d_disktype;	/* Disk type information */
+ 	LIST_ENTRY(disk)	d_list;
+-	kdmsg_iocom_t		d_iocom;	/* cluster import/export */
++	struct kdmsg_iocom	*d_iocom;	/* cluster import/export */
+ 	int			d_refs;		/* interlock destruction */
+ };
+ 
+@@ -187,7 +185,7 @@ void disk_iocom_init(struct disk *dp);
+ void disk_iocom_update(struct disk *dp);
+ void disk_iocom_uninit(struct disk *dp);
+ int disk_iocom_ioctl(struct disk *dp, u_long cmd, void *data);
+-void disk_clusterctl_wakeup(kdmsg_iocom_t *iocom);
++void disk_clusterctl_wakeup(struct kdmsg_iocom *iocom);
+ 
+ typedef struct disk_msg {
+ 	struct lwkt_msg hdr;
+diff --git a/sys/sys/dmsg.h b/sys/sys/dmsg.h
+index ecc91e3275..94c37bd727 100644
+--- a/sys/sys/dmsg.h
++++ b/sys/sys/dmsg.h
+@@ -698,7 +698,7 @@ typedef union dmsg_any dmsg_any_t;
+ /*
+  * Kernel iocom structures and prototypes for kern/kern_dmsg.c
+  */
+-#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++#ifdef _KERNEL
+ 
+ struct hammer2_mount;
+ struct xa_softc;
+diff --git a/sys/vfs/hammer2/hammer2.h b/sys/vfs/hammer2/hammer2.h
+index d5e30063d2..48a4a7c62e 100644
+--- a/sys/vfs/hammer2/hammer2.h
++++ b/sys/vfs/hammer2/hammer2.h
+@@ -87,7 +87,6 @@
+ #include <sys/buf.h>
+ #include <sys/queue.h>
+ #include <sys/limits.h>
+-#include <sys/dmsg.h>
+ #include <sys/mutex.h>
+ #ifdef _KERNEL
+ #include <sys/kern_syscall.h>
+@@ -98,6 +97,7 @@
+ #include <sys/buf2.h>
+ #include <sys/mutex2.h>
+ #include <sys/spinlock2.h>
++#include <sys/dmsg.h>
+ #endif
+ 
+ #include "hammer2_xxhash.h"
+@@ -1136,6 +1136,7 @@ typedef struct hammer2_xop_group hammer2_xop_group_t;
+ #define HAMMER2_XOP_FSSYNC		0x00000010
+ #define HAMMER2_XOP_IROOT		0x00000020
+ 
++struct kdmsg_iocom;			/* forward decl */
+ /*
+  * Global (per partition) management structure, represents a hard block
+  * device.  Typically referenced by hammer2_chain structures when applicable.
+@@ -1156,7 +1157,7 @@ struct hammer2_dev {
+ 	struct malloc_type *mchain;
+ 	int		nipstacks;
+ 	int		maxipstacks;
+-	kdmsg_iocom_t	iocom;		/* volume-level dmsg interface */
++	struct kdmsg_iocom *iocom;		/* volume-level dmsg interface */
+ 	struct spinlock	io_spin;	/* iotree, iolruq access */
+ 	struct hammer2_io_tree iotree;
+ 	int		iofree_count;
+diff --git a/sys/vfs/hammer2/hammer2_iocom.c b/sys/vfs/hammer2/hammer2_iocom.c
+index ccb1852661..5ed74737a2 100644
+--- a/sys/vfs/hammer2/hammer2_iocom.c
++++ b/sys/vfs/hammer2/hammer2_iocom.c
+@@ -51,6 +51,7 @@
+ #include <sys/mountctl.h>
+ #include <sys/dirent.h>
+ #include <sys/uio.h>
++#include <sys/malloc.h>
+ 
+ #include <sys/mutex.h>
+ #include <sys/mutex2.h>
+@@ -72,7 +73,9 @@ hammer2_iocom_init(hammer2_dev_t *hmp)
+ 	 * No automatic LNK_SPAN generation (we generate multiple spans
+ 	 *				     ourselves).
+ 	 */
+-	kdmsg_iocom_init(&hmp->iocom, hmp,
++	hmp->iocom = kmalloc(sizeof(kdmsg_iocom_t), hmp->mchain,
++			     M_WAITOK | M_ZERO);
++	kdmsg_iocom_init(hmp->iocom, hmp,
+ 			 KDMSG_IOCOMF_AUTOCONN |
+ 			 KDMSG_IOCOMF_AUTORXSPAN,
+ 			 hmp->mchain, hammer2_rcvdmsg);
+@@ -82,8 +85,10 @@ void
+ hammer2_iocom_uninit(hammer2_dev_t *hmp)
+ {
+ 	/* XXX chain depend deadlck? */
+-	if (hmp->iocom.mmsg)
+-		kdmsg_iocom_uninit(&hmp->iocom);
++	if (hmp->iocom->mmsg) {
++		kdmsg_iocom_uninit(hmp->iocom);
++		kfree(hmp->iocom, hmp->mchain);
++	}
+ }
+ 
+ /*
+@@ -98,7 +103,7 @@ hammer2_cluster_reconnect(hammer2_dev_t *hmp, struct file *fp)
+ 	 * states, then installs the new descriptor and creates
+ 	 * new threads.
+ 	 */
+-	kdmsg_iocom_reconnect(&hmp->iocom, fp, "hammer2");
++	kdmsg_iocom_reconnect(hmp->iocom, fp, "hammer2");
+ 
+ 	/*
+ 	 * Setup LNK_CONN fields for autoinitiated state machine.  LNK_CONN
+@@ -110,25 +115,25 @@ hammer2_cluster_reconnect(hammer2_dev_t *hmp, struct file *fp)
+ 	 * AUTOTXSPAN, but we do use AUTORXSPAN so kdmsg tracks received
+ 	 * LNK_SPANs, and we simply monitor those messages.
+ 	 */
+-	bzero(&hmp->iocom.auto_lnk_conn.peer_id,
+-	      sizeof(hmp->iocom.auto_lnk_conn.peer_id));
++	bzero(&(hmp->iocom->auto_lnk_conn.peer_id),
++	      sizeof(hmp->iocom->auto_lnk_conn.peer_id));
+ 	/* hmp->iocom.auto_lnk_conn.peer_id = hmp->voldata.fsid; */
+-	hmp->iocom.auto_lnk_conn.proto_version = DMSG_SPAN_PROTO_1;
++	hmp->iocom->auto_lnk_conn.proto_version = DMSG_SPAN_PROTO_1;
+ #if 0
+-	hmp->iocom.auto_lnk_conn.peer_type = hmp->voldata.peer_type;
++	hmp->iocom->auto_lnk_conn.peer_type = hmp->voldata.peer_type;
+ #endif
+-	hmp->iocom.auto_lnk_conn.peer_type = DMSG_PEER_HAMMER2;
++	hmp->iocom->auto_lnk_conn.peer_type = DMSG_PEER_HAMMER2;
+ 
+ 	/*
+ 	 * We just want to receive LNK_SPANs related to HAMMER2 matching
+ 	 * peer_id.
+ 	 */
+-	hmp->iocom.auto_lnk_conn.peer_mask = 1LLU << DMSG_PEER_HAMMER2;
++	hmp->iocom->auto_lnk_conn.peer_mask = 1LLU << DMSG_PEER_HAMMER2;
+ 
+ #if 0
+ 	switch (ipdata->meta.pfs_type) {
+ 	case DMSG_PFSTYPE_CLIENT:
+-		hmp->iocom.auto_lnk_conn.peer_mask &=
++		hmp->iocom->auto_lnk_conn.peer_mask &=
+ 				~(1LLU << DMSG_PFSTYPE_CLIENT);
+ 		break;
+ 	default:
+@@ -136,13 +141,13 @@ hammer2_cluster_reconnect(hammer2_dev_t *hmp, struct file *fp)
+ 	}
+ #endif
+ 
+-	bzero(&hmp->iocom.auto_lnk_conn.peer_label,
+-	      sizeof(hmp->iocom.auto_lnk_conn.peer_label));
+-	ksnprintf(hmp->iocom.auto_lnk_conn.peer_label,
+-		  sizeof(hmp->iocom.auto_lnk_conn.peer_label),
++	bzero(&hmp->iocom->auto_lnk_conn.peer_label,
++	      sizeof(hmp->iocom->auto_lnk_conn.peer_label));
++	ksnprintf(hmp->iocom->auto_lnk_conn.peer_label,
++		  sizeof(hmp->iocom->auto_lnk_conn.peer_label),
+ 		  "%s/%s",
+ 		  hostname, "hammer2-mount");
+-	kdmsg_iocom_autoinitiate(&hmp->iocom, hammer2_autodmsg);
++	kdmsg_iocom_autoinitiate(hmp->iocom, hammer2_autodmsg);
+ }
+ 
+ static int
+@@ -334,7 +339,7 @@ hammer2_update_spans(hammer2_dev_t *hmp, kdmsg_state_t *state)
+ 		kprintf("UPDATE SPANS: %s\n", ripdata->filename);
+ #endif
+ 
+-		rmsg = kdmsg_msg_alloc(&hmp->iocom.state0,
++		rmsg = kdmsg_msg_alloc(&(hmp->iocom->state0),
+ 				       DMSG_LNK_SPAN | DMSGF_CREATE,
+ 				       hammer2_lnk_span_reply, NULL);
+ 		rmsg->any.lnk_span.peer_id = ripdata->meta.pfs_clid;
+@@ -389,10 +394,10 @@ hammer2_volconf_update(hammer2_dev_t *hmp, int index)
+ 	kdmsg_msg_t *msg;
+ 
+ 	/* XXX interlock against connection state termination */
+-	kprintf("volconf update %p\n", hmp->iocom.conn_state);
+-	if (hmp->iocom.conn_state) {
++	kprintf("volconf update %p\n", hmp->iocom->conn_state);
++	if (hmp->iocom->conn_state) {
+ 		kprintf("TRANSMIT VOLCONF VIA OPEN CONN TRANSACTION\n");
+-		msg = kdmsg_msg_alloc(hmp->iocom.conn_state,
++		msg = kdmsg_msg_alloc(hmp->iocom->conn_state,
+ 				      DMSG_LNK_HAMMER2_VOLCONF,
+ 				      NULL, NULL);
+ 		H2_LNK_VOLCONF(msg)->copy = hmp->voldata.copyinfo[index];

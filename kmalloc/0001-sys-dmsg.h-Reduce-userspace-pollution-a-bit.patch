@@ -1,0 +1,63 @@
+From f312996ccab19cf8af16dadeb5efde3cda83d6ee Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 18 Oct 2019 15:39:40 +0300
+Subject: [PATCH 01/26] <sys/dmsg.h>: Reduce userspace pollution a bit.
+
+ Kernel only prototypes where exposed after buildworld fixup in
+  840d1679a5091e5e53566251299413a8e90f4cb9
+ The 'struct kdmsg_iocom' is embedded in 'struct disk' (sys/disk.h).
+ Also forward declare few structs to reduce dependencies.
+
+ While there, remove kdmsg_icrc32*() prototypes that where added in:
+  3a5aa68f9b693d86f3b5d5ac9191035f09d18b3e
+---
+ sys/sys/dmsg.h | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/sys/sys/dmsg.h b/sys/sys/dmsg.h
+index a2ef762efd..ecc91e3275 100644
+--- a/sys/sys/dmsg.h
++++ b/sys/sys/dmsg.h
+@@ -39,9 +39,6 @@
+ #include <sys/types.h>
+ #endif
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
+-#endif
+ #ifndef _SYS_TREE_H_
+ #include <sys/tree.h>
+ #endif
+@@ -799,6 +796,9 @@ int kdmsg_state_cmp(kdmsg_state_t *state1, kdmsg_state_t *state2);
+ RB_HEAD(kdmsg_state_tree, kdmsg_state);
+ RB_PROTOTYPE(kdmsg_state_tree, kdmsg_state, rbnode, kdmsg_state_cmp);
+ 
++struct file;			/* forward decl */
++struct malloc_type;
++
+ /*
+  * Structure embedded in e.g. mount, master control structure for
+  * DMSG stream handling.
+@@ -838,8 +838,9 @@ typedef struct kdmsg_iocom	kdmsg_iocom_t;
+ 				 KDMSG_IOCOMF_AUTORXSPAN |	\
+ 				 KDMSG_IOCOMF_AUTOTXSPAN)
+ 
+-uint32_t kdmsg_icrc32(const void *buf, size_t size);
+-uint32_t kdmsg_icrc32c(const void *buf, size_t size, uint32_t crc);
++#endif	/* _KERNEL || _KERNEL_STRUCTURES */
++
++#ifdef _KERNEL
+ 
+ /*
+  * kern_dmsg.c
+@@ -866,6 +867,6 @@ void kdmsg_state_result(kdmsg_state_t *state, uint32_t error);
+ void kdmsg_detach_aux_data(kdmsg_msg_t *msg, kdmsg_data_t *data);
+ void kdmsg_free_aux_data(kdmsg_data_t *data);
+ 
+-#endif	/* _KERNEL || _KERNEL_STRUCTURES */
++#endif	/* _KERNEL */
+ 
+ #endif	/* !_SYS_DMSG_H_ */
+-- 
+2.23.0
+

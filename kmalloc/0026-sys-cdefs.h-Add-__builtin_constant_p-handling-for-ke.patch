@@ -1,0 +1,60 @@
+From 53311a4adbdfa45892a56697e7c6bb22a7f3ef72 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 25 Oct 2019 21:28:05 +0300
+Subject: [PATCH 26/26] <sys/cdefs.h>: Add __builtin_constant_p() handling for
+ kernel.
+
+ Do not set it for userland, it would break clever ports!
+
+ To handle code in sys/boot, first -D_STANDALONE needs to be added.
+---
+ sys/sys/cdefs.h | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/sys/sys/cdefs.h b/sys/sys/cdefs.h
+index fea444908a..2fc1af7227 100644
+--- a/sys/sys/cdefs.h
++++ b/sys/sys/cdefs.h
+@@ -86,7 +86,7 @@
+  * If needed, this value can be TUNED.  Suitable values for this macro
+  * are 32, 64 and 128 bytes.  The unit of measurement for this macro is
+  * bytes.
+- * 
++ *
+  * XXX: This macro and related macros will eventually move to a MD
+  * header, but currently, we do need such a hierarchy.
+  */
+@@ -407,7 +407,7 @@
+  * Handy GCC based macros:
+  *
+  * 	__cachealign:
+- * 	
++ *
+  * 	The __cachealign macro can be used for cache line aligning structures
+  * 	of small to medium size.  It aligns the particular structure or
+  * 	storage type to a system default cache line alignment, thus giving us
+@@ -415,7 +415,7 @@
+  * 	its best burst speeds.
+  *
+  * 	__usereg:
+- * 	
++ *
+  * 	The __usereg macro can/should be used when a function contains
+  * 	arguments not more than 3.  It can be very useful to us due to the
+  * 	message-passing nature of the kernel.
+@@ -545,6 +545,12 @@
+ 				    "compile-time assertion failed")
+ #endif
+ 
++#if defined(_KERNEL) /* || defined(_STANDALONE) */
++#if !__GNUC_PREREQ__(2, 0)
++#define	__builtin_constant_p(x)	0	/* disable dead code */
++#endif
++#endif
++
+ /*
+  * Emulation of C11 _Generic().  Unlike the previously defined C11
+  * keywords, it is not possible to implement this using exactly the same
+-- 
+2.23.0
+

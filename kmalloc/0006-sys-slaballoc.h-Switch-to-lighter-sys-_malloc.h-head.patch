@@ -1,0 +1,297 @@
+From 5c4b0bb85b720e8ff1f5c26d6e97528e41770bb1 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 20 Oct 2019 18:57:32 +0300
+Subject: [PATCH 06/26] <sys/slaballoc.h>: Switch to lighter <sys/_malloc.h>
+ header.
+
+ The <sys/globaldata.h> embeds SLGlobalData that in turn embeds the
+ "struct malloc_type".  Adjust several kernel sources for missing
+ includes where memory allocation is performed.  Try to use alphabetical
+ include order.
+
+ After this most of <sys/malloc.h> is included after <sys/objcache.h>.
+ Once it gets cleaned up, the <sys/malloc.h> inclusion could be moved
+ out of <sys/idr.h> to drm Linux compat layer linux/slab.h without side
+ effects.
+---
+ sys/bus/gpio/gpio_acpi/gpio_acpi.c       | 1 +
+ sys/dev/virtual/hyperv/vmbus/vmbus.c     | 1 +
+ sys/kern/imgact_resident.c               | 1 +
+ sys/kern/kern_collect.c                  | 1 +
+ sys/kern/kern_plimit.c                   | 1 +
+ sys/kern/kern_slaballoc.c                | 1 +
+ sys/kern/kern_synch.c                    | 1 +
+ sys/kern/kern_timeout.c                  | 1 +
+ sys/kern/libmchain/subr_mchain.c         | 1 +
+ sys/kern/subr_busdma.c                   | 1 +
+ sys/kern/subr_cpu_topology.c             | 1 +
+ sys/platform/pc64/apic/ioapic.c          | 1 +
+ sys/platform/pc64/apic/lapic.c           | 1 +
+ sys/platform/pc64/x86_64/efirt.c         | 1 +
+ sys/platform/vkernel64/platform/kqueue.c | 1 +
+ sys/sys/slaballoc.h                      | 4 ++--
+ sys/vfs/isofs/cd9660/cd9660_rrip.c       | 1 +
+ sys/vfs/nfs/nfs_bio.c                    | 1 +
+ sys/vfs/procfs/procfs_map.c              | 1 +
+ sys/vm/vm_meter.c                        | 1 +
+ sys/vm/vm_object.c                       | 1 +
+ 21 files changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/sys/bus/gpio/gpio_acpi/gpio_acpi.c b/sys/bus/gpio/gpio_acpi/gpio_acpi.c
+index b86ac27801..a92c9e365f 100644
+--- a/sys/bus/gpio/gpio_acpi/gpio_acpi.c
++++ b/sys/bus/gpio/gpio_acpi/gpio_acpi.c
+@@ -37,6 +37,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/errno.h>
+ #include <sys/lock.h>
+diff --git a/sys/dev/virtual/hyperv/vmbus/vmbus.c b/sys/dev/virtual/hyperv/vmbus/vmbus.c
+index 2cfcbbf1f8..62c59804bd 100644
+--- a/sys/dev/virtual/hyperv/vmbus/vmbus.c
++++ b/sys/dev/virtual/hyperv/vmbus/vmbus.c
+@@ -31,6 +31,7 @@
+ #include <sys/param.h>
+ #include <sys/bus.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/rman.h>
+ #include <sys/systimer.h>
+diff --git a/sys/kern/imgact_resident.c b/sys/kern/imgact_resident.c
+index 20a94c6137..1ba7a98577 100644
+--- a/sys/kern/imgact_resident.c
++++ b/sys/kern/imgact_resident.c
+@@ -51,6 +51,7 @@
+ #include <sys/sysctl.h>
+ #include <sys/lock.h>
+ #include <sys/resident.h>
++#include <sys/malloc.h>
+ 
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+diff --git a/sys/kern/kern_collect.c b/sys/kern/kern_collect.c
+index c4b42f6129..6e603ffcaf 100644
+--- a/sys/kern/kern_collect.c
++++ b/sys/kern/kern_collect.c
+@@ -45,6 +45,7 @@
+ #include <sys/lock.h>
+ #include <sys/spinlock.h>
+ #include <sys/kcollect.h>
++#include <sys/malloc.h>
+ 
+ #include <sys/thread2.h>
+ #include <sys/spinlock2.h>
+diff --git a/sys/kern/kern_plimit.c b/sys/kern/kern_plimit.c
+index 6742478cb3..0800435b60 100644
+--- a/sys/kern/kern_plimit.c
++++ b/sys/kern/kern_plimit.c
+@@ -73,6 +73,7 @@
+ #include <sys/file.h>
+ #include <sys/lockf.h>
+ #include <sys/kern_syscall.h>
++#include <sys/malloc.h>
+ 
+ #include <vm/vm_param.h>
+ #include <vm/vm.h>
+diff --git a/sys/kern/kern_slaballoc.c b/sys/kern/kern_slaballoc.c
+index 8751d10c83..092b1cc4ba 100644
+--- a/sys/kern/kern_slaballoc.c
++++ b/sys/kern/kern_slaballoc.c
+@@ -107,6 +107,7 @@
+ #include <sys/globaldata.h>
+ #include <sys/sysctl.h>
+ #include <sys/ktr.h>
++#include <sys/malloc.h>
+ 
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+diff --git a/sys/kern/kern_synch.c b/sys/kern/kern_synch.c
+index 943108121b..3cfe07b9e5 100644
+--- a/sys/kern/kern_synch.c
++++ b/sys/kern/kern_synch.c
+@@ -48,6 +48,7 @@
+ #include <sys/lock.h>
+ #include <sys/priv.h>
+ #include <sys/kcollect.h>
++#include <sys/malloc.h>
+ #ifdef KTRACE
+ #include <sys/ktrace.h>
+ #endif
+diff --git a/sys/kern/kern_timeout.c b/sys/kern/kern_timeout.c
+index 11b3a635fc..7cbdb36396 100644
+--- a/sys/kern/kern_timeout.c
++++ b/sys/kern/kern_timeout.c
+@@ -81,6 +81,7 @@
+ #include <sys/spinlock.h>
+ #include <sys/callout.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/interrupt.h>
+ #include <sys/thread.h>
+ #include <sys/sysctl.h>
+diff --git a/sys/kern/libmchain/subr_mchain.c b/sys/kern/libmchain/subr_mchain.c
+index c5cf83da33..c038982810 100644
+--- a/sys/kern/libmchain/subr_mchain.c
++++ b/sys/kern/libmchain/subr_mchain.c
+@@ -35,6 +35,7 @@
+ #include <sys/kernel.h>
+ #include <sys/endian.h>
+ #include <sys/errno.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ #include <sys/module.h>
+ #include <sys/uio.h>
+diff --git a/sys/kern/subr_busdma.c b/sys/kern/subr_busdma.c
+index 41a015b8f5..84e82c6c75 100644
+--- a/sys/kern/subr_busdma.c
++++ b/sys/kern/subr_busdma.c
+@@ -36,6 +36,7 @@
+ #include <sys/systm.h>
+ #include <sys/bus_dma.h>
+ #include <sys/mbuf.h>
++#include <sys/malloc.h>
+ 
+ static void
+ _bus_dmamem_coherent_cb(void *arg, bus_dma_segment_t *segs, int nseg, int error)
+diff --git a/sys/kern/subr_cpu_topology.c b/sys/kern/subr_cpu_topology.c
+index 420202aef4..c471919387 100644
+--- a/sys/kern/subr_cpu_topology.c
++++ b/sys/kern/subr_cpu_topology.c
+@@ -32,6 +32,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/sysctl.h>
+ #include <sys/sbuf.h>
+ #include <sys/cpu_topology.h>
+diff --git a/sys/platform/pc64/apic/ioapic.c b/sys/platform/pc64/apic/ioapic.c
+index c72ed1f177..22bb851303 100644
+--- a/sys/platform/pc64/apic/ioapic.c
++++ b/sys/platform/pc64/apic/ioapic.c
+@@ -30,6 +30,7 @@
+ #include <sys/kernel.h>
+ #include <sys/bus.h>
+ #include <sys/machintr.h>
++#include <sys/malloc.h>
+ #include <sys/thread2.h>
+ 
+ #include <machine/pmap.h>
+diff --git a/sys/platform/pc64/apic/lapic.c b/sys/platform/pc64/apic/lapic.c
+index cc34f92d68..04ebfd0ed9 100644
+--- a/sys/platform/pc64/apic/lapic.c
++++ b/sys/platform/pc64/apic/lapic.c
+@@ -31,6 +31,7 @@
+ #include <sys/ktr.h>
+ #include <sys/bus.h>
+ #include <sys/machintr.h>
++#include <sys/malloc.h>
+ #include <sys/sysctl.h>
+ #include <machine/globaldata.h>
+ #include <machine/clock.h>
+diff --git a/sys/platform/pc64/x86_64/efirt.c b/sys/platform/pc64/x86_64/efirt.c
+index 86678e6a60..e93c737034 100644
+--- a/sys/platform/pc64/x86_64/efirt.c
++++ b/sys/platform/pc64/x86_64/efirt.c
+@@ -36,6 +36,7 @@
+ #include <sys/kernel.h>
+ #include <sys/linker.h>
+ #include <sys/lock.h>
++#include <sys/malloc.h>
+ #include <sys/module.h>
+ #include <sys/proc.h>
+ #include <sys/sched.h>
+diff --git a/sys/platform/vkernel64/platform/kqueue.c b/sys/platform/vkernel64/platform/kqueue.c
+index fc6e04a747..dbb83b55e0 100644
+--- a/sys/platform/vkernel64/platform/kqueue.c
++++ b/sys/platform/vkernel64/platform/kqueue.c
+@@ -35,6 +35,7 @@
+ #include <sys/types.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/systimer.h>
+ #include <sys/sysctl.h>
+ #include <sys/signal.h>
+diff --git a/sys/sys/slaballoc.h b/sys/sys/slaballoc.h
+index cbd3bc9ca6..21e771e85b 100644
+--- a/sys/sys/slaballoc.h
++++ b/sys/sys/slaballoc.h
+@@ -42,8 +42,8 @@
+ #ifndef _SYS_STDINT_H_
+ #include <sys/stdint.h>
+ #endif
+-#ifndef _SYS_MALLOC_H_
+-#include <sys/malloc.h>
++#ifndef _SYS__MALLOC_H_
++#include <sys/_malloc.h>
+ #endif
+ 
+ /*
+diff --git a/sys/vfs/isofs/cd9660/cd9660_rrip.c b/sys/vfs/isofs/cd9660/cd9660_rrip.c
+index 6b897a1b58..2281a94ca4 100644
+--- a/sys/vfs/isofs/cd9660/cd9660_rrip.c
++++ b/sys/vfs/isofs/cd9660/cd9660_rrip.c
+@@ -41,6 +41,7 @@
+ #include <sys/vnode.h>
+ #include <sys/mount.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ 
+ #include "iso.h"
+ #include "cd9660_node.h"
+diff --git a/sys/vfs/nfs/nfs_bio.c b/sys/vfs/nfs/nfs_bio.c
+index 9b4d98e49d..a6d5ff86b0 100644
+--- a/sys/vfs/nfs/nfs_bio.c
++++ b/sys/vfs/nfs/nfs_bio.c
+@@ -43,6 +43,7 @@
+ #include <sys/vnode.h>
+ #include <sys/mount.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/mbuf.h>
+ 
+ #include <vm/vm.h>
+diff --git a/sys/vfs/procfs/procfs_map.c b/sys/vfs/procfs/procfs_map.c
+index 690458fb87..959510e117 100644
+--- a/sys/vfs/procfs/procfs_map.c
++++ b/sys/vfs/procfs/procfs_map.c
+@@ -41,6 +41,7 @@
+ #include <sys/proc.h>
+ #include <sys/vnode.h>
+ #include <sys/sbuf.h>
++#include <sys/malloc.h>
+ #include <vfs/procfs/procfs.h>
+ 
+ #include <vm/vm.h>
+diff --git a/sys/vm/vm_meter.c b/sys/vm/vm_meter.c
+index 7ec9fe3f4a..73e36f3e5e 100644
+--- a/sys/vm/vm_meter.c
++++ b/sys/vm/vm_meter.c
+@@ -36,6 +36,7 @@
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/resource.h>
+ #include <sys/vmmeter.h>
+ #include <sys/kcollect.h>
+diff --git a/sys/vm/vm_object.c b/sys/vm/vm_object.c
+index bcd36175f3..8493d1eabb 100644
+--- a/sys/vm/vm_object.c
++++ b/sys/vm/vm_object.c
+@@ -73,6 +73,7 @@
+ #include <sys/mman.h>
+ #include <sys/mount.h>
+ #include <sys/kernel.h>
++#include <sys/malloc.h>
+ #include <sys/sysctl.h>
+ #include <sys/refcount.h>
+ 
+-- 
+2.23.0
+

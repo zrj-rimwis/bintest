@@ -1,0 +1,131 @@
+From 8bb5b2332a804c181567abbcbd9a08037ca9d356 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 22 Oct 2019 14:12:48 +0300
+Subject: [PATCH 12/26] kernel/vfs: Consistently check if MALLOC_DECLARE was
+ defined.
+
+ Keep these checks even in _KERNEL context and even if <sys/malloc.h>
+ is included before.  Helps a lot for userland testing.
+---
+ sys/vfs/autofs/autofs.h   | 2 ++
+ sys/vfs/dirfs/dirfs.h     | 2 ++
+ sys/vfs/hammer/hammer.h   | 2 ++
+ sys/vfs/hammer2/hammer2.h | 2 ++
+ sys/vfs/hpfs/hpfs.h       | 2 ++
+ sys/vfs/tmpfs/tmpfs.h     | 2 ++
+ sys/vfs/udf/udf.h         | 3 ++-
+ 7 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/sys/vfs/autofs/autofs.h b/sys/vfs/autofs/autofs.h
+index 863b960bd6..5c78fd9e31 100644
+--- a/sys/vfs/autofs/autofs.h
++++ b/sys/vfs/autofs/autofs.h
+@@ -54,7 +54,9 @@
+ #define VFSTOAUTOFS(mp)	((struct autofs_mount *)((mp)->mnt_data))
+ #define VTOI(vp)	((struct autofs_node *)((vp)->v_data))
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_AUTOFS);
++#endif
+ 
+ extern struct objcache *autofs_request_objcache;
+ extern struct objcache *autofs_node_objcache;
+diff --git a/sys/vfs/dirfs/dirfs.h b/sys/vfs/dirfs/dirfs.h
+index ab53a19efc..db5873d320 100644
+--- a/sys/vfs/dirfs/dirfs.h
++++ b/sys/vfs/dirfs/dirfs.h
+@@ -44,9 +44,11 @@
+ #include <sys/vnode.h>
+ #include <sys/file.h>
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_DIRFS);
+ MALLOC_DECLARE(M_DIRFS_NODE);
+ MALLOC_DECLARE(M_DIRFS_MISC);
++#endif
+ 
+ #ifndef KTR_DIRFS
+ #define KTR_DIRFS KTR_ALL
+diff --git a/sys/vfs/hammer/hammer.h b/sys/vfs/hammer/hammer.h
+index b8dc78d0b5..e7f6df151a 100644
+--- a/sys/vfs/hammer/hammer.h
++++ b/sys/vfs/hammer/hammer.h
+@@ -74,7 +74,9 @@
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_HAMMER);
++#endif
+ 
+ /*
+  * Kernel trace
+diff --git a/sys/vfs/hammer2/hammer2.h b/sys/vfs/hammer2/hammer2.h
+index d5e30063d2..3397da303e 100644
+--- a/sys/vfs/hammer2/hammer2.h
++++ b/sys/vfs/hammer2/hammer2.h
+@@ -1323,7 +1323,9 @@ TAILQ_HEAD(hammer2_pfslist, hammer2_pfs);
+ 
+ #if defined(_KERNEL)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_HAMMER2);
++#endif
+ 
+ #define ITOV(ip)	((ip)->vp)
+ 
+diff --git a/sys/vfs/hpfs/hpfs.h b/sys/vfs/hpfs/hpfs.h
+index f0c8d88df5..18676af2fe 100644
+--- a/sys/vfs/hpfs/hpfs.h
++++ b/sys/vfs/hpfs/hpfs.h
+@@ -376,8 +376,10 @@ struct hpfid {
+ #define dprintf(a)
+ #define ddprintf(a)
+ #endif
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_HPFSMNT);
+ MALLOC_DECLARE(M_HPFSNO);
++#endif
+ #define VFSTOHPFS(mp)	((struct hpfsmount *)((mp)->mnt_data))
+ #define	VTOHP(v)	((struct hpfsnode *)((v)->v_data))
+ #define	HPTOV(h)	((struct vnode *)((h)->h_vp))
+diff --git a/sys/vfs/tmpfs/tmpfs.h b/sys/vfs/tmpfs/tmpfs.h
+index 3b53200d47..b24e39d1b2 100644
+--- a/sys/vfs/tmpfs/tmpfs.h
++++ b/sys/vfs/tmpfs/tmpfs.h
+@@ -56,7 +56,9 @@
+ #include <sys/vmmeter.h>
+ #include <vm/swap_pager.h>
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_TMPFSMNT);
++#endif
+ 
+ /* --------------------------------------------------------------------- */
+ 
+diff --git a/sys/vfs/udf/udf.h b/sys/vfs/udf/udf.h
+index d7f71d0ece..ae58552bac 100644
+--- a/sys/vfs/udf/udf.h
++++ b/sys/vfs/udf/udf.h
+@@ -24,7 +24,6 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/fs/udf/udf.h,v 1.6 2003/11/05 06:56:08 scottl Exp $
+- * $DragonFly: src/sys/vfs/udf/udf.h,v 1.3 2006/09/10 01:26:41 dillon Exp $
+  */
+ 
+ #define UDF_HASHTBLSIZE 100
+@@ -88,8 +87,10 @@ struct udf_dirstream {
+ #define	RDSECTOR(devvp, sector, size, bp) \
+ 	bread(devvp, (off_t)(sector) << udfmp->bshift, size, bp)
+ 
++#ifdef MALLOC_DECLARE
+ MALLOC_DECLARE(M_UDFFENTRY);
+ MALLOC_DECLARE(M_UDFNODE);
++#endif
+ 
+ static __inline int
+ udf_readlblks(struct udf_mnt *udfmp, int sector, int size, struct buf **bp)
+-- 
+2.23.0
+
