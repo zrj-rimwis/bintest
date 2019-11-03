@@ -1,0 +1,174 @@
+From 02009033f6122f069fff06a3a0e8875b28c980d0 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 3 Nov 2019 17:03:35 +0200
+Subject: [PATCH 1/4] <stdint.h>: Move out non ptrdiff_t type.
+
+ The ISO C does not specify that <stdint.h> should provide this type,
+ this type should be declared in <stddef.h> for use by userland.
+
+ Since we do not want to create a separate header for this useful type
+ to be used by kernel, move it to <sys/types.h> under _KERNEL visibility.
+
+ Adjust few places to include <stddef.h> with a minor whitespace cleanup.
+---
+ include/stdint.h          |  5 -----
+ lib/libevtr/evtr.c        | 13 +++++++------
+ lib/libstand/printf.c     |  1 +
+ sys/sys/types.h           |  5 +++++
+ usr.bin/ktrdump/ktrdump.c | 11 ++++++-----
+ 5 files changed, 19 insertions(+), 16 deletions(-)
+
+diff --git a/include/stdint.h b/include/stdint.h
+index 5af4e612c3..dc18c7bb84 100644
+--- a/include/stdint.h
++++ b/include/stdint.h
+@@ -48,11 +48,6 @@ typedef __uintptr_t	uintptr_t;
+ typedef __intmax_t	intmax_t;
+ typedef __uintmax_t	uintmax_t;
+ 
+-#ifndef _PTRDIFF_T_DECLARED
+-#define _PTRDIFF_T_DECLARED
+-typedef __ptrdiff_t		ptrdiff_t;            /* ptr1 - ptr2 */
+-#endif
+-
+ typedef __int_fast8_t		int_fast8_t;
+ typedef __int_fast16_t		int_fast16_t;
+ typedef __int_fast32_t		int_fast32_t;
+diff --git a/lib/libevtr/evtr.c b/lib/libevtr/evtr.c
+index 5e6daf4efe..8160f36b7b 100644
+--- a/lib/libevtr/evtr.c
++++ b/lib/libevtr/evtr.c
+@@ -1,10 +1,10 @@
+ /*
+  * Copyright (c) 2009, 2010 Aggelos Economopoulos.  All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -14,7 +14,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -35,6 +35,7 @@
+ #include <errno.h>
+ #include <limits.h>
+ #include <stdarg.h>
++#include <stddef.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -1030,7 +1031,7 @@ evtr_dump_fmt(evtr_t evtr, uint64_t ts, const evtr_event_t ev)
+ 
+ /*
+  * Replace string pointers or string ids in fmtdata
+- */ 
++ */
+ static
+ int
+ mangle_string_ptrs(const char *fmt, uint8_t *fmtdata,
+@@ -1684,7 +1685,7 @@ int
+ evtr_skip_to_record(evtr_t evtr)
+ {
+ 	int skip;
+-	
++
+ 	skip = REC_ALIGN - (evtr->bytes % REC_ALIGN);
+ 	if (skip > 0) {
+ 		if (fseek(evtr->f, skip, SEEK_CUR)) {
+@@ -1955,7 +1956,7 @@ void
+ evtr_query_destroy(struct evtr_query *q)
+ {
+ 	evtr_deregister_filters(q, q->filt, q->nfilt);
+-		
++
+ 	free(q->buf);
+ 	free(q);
+ }
+diff --git a/lib/libstand/printf.c b/lib/libstand/printf.c
+index fdc9858249..030f738700 100644
+--- a/lib/libstand/printf.c
++++ b/lib/libstand/printf.c
+@@ -42,6 +42,7 @@
+ #include <sys/types.h>
+ #include <sys/stdint.h>
+ #include <limits.h>
++#include <stddef.h>
+ #include <string.h>
+ #include "stand.h"
+ 
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index a69e675983..db9cbc854f 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -156,6 +156,11 @@ typedef	int	_Bool;
+ #endif
+ typedef	_Bool	bool;
+ #endif /* !__bool_true_false_are_defined && !__cplusplus */
++
++#ifndef _PTRDIFF_T_DECLARED
++typedef	__ptrdiff_t	ptrdiff_t;	/* ptr1 - ptr2 for kernel */
++#define	_PTRDIFF_T_DECLARED
++#endif
+ #endif /* _KERNEL */
+ 
+ #endif /* _KERNEL || _KERNEL_STRUCTURES */
+diff --git a/usr.bin/ktrdump/ktrdump.c b/usr.bin/ktrdump/ktrdump.c
+index 9cb66d28f1..850625aa7a 100644
+--- a/usr.bin/ktrdump/ktrdump.c
++++ b/usr.bin/ktrdump/ktrdump.c
+@@ -40,6 +40,7 @@
+ #include <kvm.h>
+ #include <limits.h>
+ #include <nlist.h>
++#include <stddef.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -469,12 +470,12 @@ print_entry(FILE *fo, int n, int row, struct ktr_entry *entry,
+ 	}
+ 	if (xflag) {
+ 		if (nflag) {
+-		    fprintf(fo, "%p %p ", 
++		    fprintf(fo, "%p %p ",
+ 			    entry->ktr_caller2, entry->ktr_caller1);
+ 		} else {
+-		    fprintf(fo, "%-25s ", 
++		    fprintf(fo, "%-25s ",
+ 			    address_to_symbol(entry->ktr_caller2, &symctx));
+-		    fprintf(fo, "%-25s ", 
++		    fprintf(fo, "%-25s ",
+ 			    address_to_symbol(entry->ktr_caller1, &symctx));
+ 		}
+ 	}
+@@ -627,7 +628,7 @@ mangle_string_ptrs(const char *fmt, uint8_t *fmtdata, int dofree)
+ 			  char *t = strdup(kvm_string(((char **)fmtdata)[0],
+ 							  &strctx));
+ 			  ((const char **)fmtdata)[0] = t;
+-					
++
+ 				skipsize = sizeof(char *);
+ 			}
+ 			++ret;
+@@ -796,7 +797,7 @@ read_symbols(const char *file)
+ 		pclose(fp);
+ 	}
+ 	if (symend == NULL) {
+-		if (sym != NULL) 
++		if (sym != NULL)
+ 			symend = sym->symaddr;
+ 		else
+ 			symend = (char *)-1;
+-- 
+2.23.0
+

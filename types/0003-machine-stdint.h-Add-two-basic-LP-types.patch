@@ -1,0 +1,49 @@
+From f662b659cd81664ad076df45fc59c68e171b3a4f Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 3 Nov 2019 18:37:57 +0200
+Subject: [PATCH 3/4] <machine/stdint.h>: Add two basic LP types.
+
+ These will be used to derive types that depend on data type models.
+ On x64_64 is is very simple.  Non ILP32/LP64 model usage on UNIX-like
+ systems is rather exception.  For example if we would support LLP64
+ data type model, we would declare these types as follows:
+   typedef long long __bslp_t;
+   typedef unsigned long long __bulp_t;
+---
+ sys/cpu/x86_64/include/stdint.h | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
+index fc310e14b0..829c2fe3ec 100644
+--- a/sys/cpu/x86_64/include/stdint.h
++++ b/sys/cpu/x86_64/include/stdint.h
+@@ -1,7 +1,7 @@
+ /*-
+  * Copyright (c) 2001, 2002 Mike Barcroft <mike@FreeBSD.org>
+  * Copyright (c) 2001 The NetBSD Foundation, Inc.  All rights reserved.
+- * Copyright (c) 1990, 1993 The Regents of the University of California. 
++ * Copyright (c) 1990, 1993 The Regents of the University of California.
+  *		All rights reserved.
+  *
+  * This code is derived from software contributed to The NetBSD Foundation
+@@ -68,6 +68,17 @@ __extension__
+ typedef	unsigned long long __uint64_t;
+ #endif
+ 
++/*
++ * Basic signed and unsigned LP types.  We support LP64 and ILP32 models only.
++ */
++#ifdef __LP64__
++typedef	long		__bslp_t;
++typedef	unsigned long	__bulp_t;
++#else
++typedef	int		__bslp_t;
++typedef	unsigned int	__bulp_t;
++#endif
++
+ /*
+  * Standard type definitions.
+  */
+-- 
+2.23.0
+
