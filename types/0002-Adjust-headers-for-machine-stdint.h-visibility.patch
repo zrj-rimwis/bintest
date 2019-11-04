@@ -1,0 +1,525 @@
+From 4585b4ca7b658429d4042f26ad5ef5fb39a603f9 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 3 Nov 2019 22:32:58 +0200
+Subject: [PATCH 2/4] Adjust headers for <machine/stdint.h> visibility.
+
+ This also reduces namespace pollution a bit.
+---
+ include/arpa/inet.h             |  3 +--
+ include/ctype.h                 |  2 +-
+ include/netdb.h                 |  1 +
+ include/runetype.h              |  2 +-
+ include/spawn.h                 |  2 +-
+ include/stddef.h                |  4 +---
+ include/stdint.h                |  2 +-
+ include/termios.h               |  2 +-
+ include/time.h                  |  2 +-
+ include/uchar.h                 |  2 +-
+ include/wchar.h                 |  2 +-
+ include/wctype.h                |  2 --
+ lib/libc/include/libc_private.h |  2 +-
+ sys/sys/aio.h                   |  2 +-
+ sys/sys/globaldata.h            | 14 ++++++--------
+ sys/sys/ipc.h                   | 22 +++++++++++++++++++++-
+ sys/sys/mman.h                  |  2 +-
+ sys/sys/msg.h                   |  1 +
+ sys/sys/msgport.h               |  4 +---
+ sys/sys/sem.h                   |  1 +
+ sys/sys/shm.h                   |  1 +
+ sys/sys/signal.h                |  2 +-
+ sys/sys/slaballoc.h             |  4 +---
+ sys/sys/thread.h                |  8 +++-----
+ sys/sys/types.h                 |  7 ++++---
+ sys/sys/uio.h                   |  3 ++-
+ sys/sys/wait.h                  |  2 +-
+ 27 files changed, 57 insertions(+), 44 deletions(-)
+
+diff --git a/include/arpa/inet.h b/include/arpa/inet.h
+index 871956f297..108f2e61e3 100644
+--- a/include/arpa/inet.h
++++ b/include/arpa/inet.h
+@@ -51,7 +51,6 @@
+  *	@(#)inet.h	8.1 (Berkeley) 6/2/93
+  *	$Id: inet.h,v 1.2.18.1 2005/04/27 05:00:50 sra Exp $
+  * $FreeBSD: src/include/arpa/inet.h,v 1.30 2007/08/24 20:25:52 bms Exp $
+- * $DragonFly: src/include/arpa/inet.h,v 1.5 2005/07/13 12:49:56 joerg Exp $
+  */
+ 
+ #ifndef _ARPA_INET_H_
+@@ -60,7 +59,7 @@
+ /* External definitions for functions in inet(3) */
+ 
+ #include <sys/cdefs.h>
+-#include <stdint.h>
++#include <machine/stdint.h>
+ 
+ /* Required for byteorder(3) functions. */
+ #include <machine/endian.h>
+diff --git a/include/ctype.h b/include/ctype.h
+index 5a85be9263..a42bd88aed 100644
+--- a/include/ctype.h
++++ b/include/ctype.h
+@@ -42,7 +42,7 @@
+ #define _CTYPE_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
++#include <machine/stdint.h>
+ 
+ #define	_CTYPE_A	0x00000100L		/* Alpha */
+ #define	_CTYPE_C	0x00000200L		/* Control */
+diff --git a/include/netdb.h b/include/netdb.h
+index 141503f139..c8708d0630 100644
+--- a/include/netdb.h
++++ b/include/netdb.h
+@@ -58,6 +58,7 @@
+ #define _NETDB_H_
+ 
+ #include <sys/cdefs.h>
++#include <machine/stdint.h>
+ #include <stdint.h>
+ 
+ #ifndef _IN_ADDR_T_DECLARED
+diff --git a/include/runetype.h b/include/runetype.h
+index da5954fe94..9a3c7316fb 100644
+--- a/include/runetype.h
++++ b/include/runetype.h
+@@ -37,7 +37,7 @@
+ #define	_RUNETYPE_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
++#include <machine/stdint.h>
+ 
+ #define	_CACHED_RUNES	(1 <<8 )	/* Must be a power of 2 */
+ #define	_CRMASK		(~(_CACHED_RUNES - 1))
+diff --git a/include/spawn.h b/include/spawn.h
+index 149d18738b..f0dbf709a0 100644
+--- a/include/spawn.h
++++ b/include/spawn.h
+@@ -30,8 +30,8 @@
+ #define _SPAWN_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/stdint.h>
+ #include <sys/_sigset.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _MODE_T_DECLARED
+ typedef	__uint16_t	mode_t;
+diff --git a/include/stddef.h b/include/stddef.h
+index 97d513063c..5c29e9a33e 100644
+--- a/include/stddef.h
++++ b/include/stddef.h
+@@ -36,12 +36,10 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_null.h>
++#include <machine/stdint.h>
+ #ifndef __cplusplus
+ #include <machine/wchar.h>		/* for ___wchar_t */
+ #endif
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>			/* __rune_t and friends */
+-#endif
+ 
+ #ifndef _SIZE_T_DECLARED
+ #define _SIZE_T_DECLARED
+diff --git a/include/stdint.h b/include/stdint.h
+index dc18c7bb84..4a3d37376f 100644
+--- a/include/stdint.h
++++ b/include/stdint.h
+@@ -27,7 +27,7 @@
+ #ifndef _STDINT_H_
+ #define _STDINT_H_
+ 
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ typedef __int8_t	int8_t;
+ typedef __int16_t	int16_t;
+diff --git a/include/termios.h b/include/termios.h
+index 3c77d3f327..beae79a749 100644
+--- a/include/termios.h
++++ b/include/termios.h
+@@ -36,7 +36,7 @@
+ #include <sys/cdefs.h>
+ #include <sys/_termios.h>
+ /* Needed by tcgetsid(3). */
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _PID_T_DECLARED
+ typedef	__pid_t	pid_t;
+diff --git a/include/time.h b/include/time.h
+index 1825f454b8..54fa2c0af2 100644
+--- a/include/time.h
++++ b/include/time.h
+@@ -43,7 +43,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_null.h>
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ #if __BSD_VISIBLE || (__POSIX_VISIBLE && __POSIX_VISIBLE < 200112)
+ /*
+diff --git a/include/uchar.h b/include/uchar.h
+index 4866f15b42..87f7b4f772 100644
+--- a/include/uchar.h
++++ b/include/uchar.h
+@@ -30,7 +30,7 @@
+ #define	_UCHAR_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
++#include <machine/stdint.h>
+ #include <machine/wchar.h>	/* for __mbstate_t */
+ 
+ #if !defined(__cplusplus) || __cplusplus < 201103
+diff --git a/include/wchar.h b/include/wchar.h
+index b37c7e498d..81b7d3cd9a 100644
+--- a/include/wchar.h
++++ b/include/wchar.h
+@@ -62,8 +62,8 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_null.h>
+-#include <sys/types.h>
+ #include <machine/stdarg.h>	/* for __va_list */
++#include <machine/stdint.h>
+ #include <machine/wchar_limits.h>
+ #include <machine/wchar.h>
+ #include <ctype.h>		/* for __wcwidth() */
+diff --git a/include/wctype.h b/include/wctype.h
+index be61aa6ee5..24da2bb692 100644
+--- a/include/wctype.h
++++ b/include/wctype.h
+@@ -32,9 +32,7 @@
+ #define	_WCTYPE_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
+ #include <machine/wchar.h>		/* for __wint_t */
+-
+ #include <ctype.h>
+ 
+ #ifndef _WCTRANS_T
+diff --git a/lib/libc/include/libc_private.h b/lib/libc/include/libc_private.h
+index c3459e2a57..895b67b67f 100644
+--- a/lib/libc/include/libc_private.h
++++ b/lib/libc/include/libc_private.h
+@@ -35,8 +35,8 @@
+ #ifndef _LIBC_PRIVATE_H_
+ #define _LIBC_PRIVATE_H_
+ 
+-#include <machine/types.h>
+ #include <sys/_pthreadtypes.h>
++#include <machine/stdint.h>
+ 
+ /*
+  * This global flag is non-zero when a process has created one
+diff --git a/sys/sys/aio.h b/sys/sys/aio.h
+index aca1f5a55d..f0e854c1ba 100644
+--- a/sys/sys/aio.h
++++ b/sys/sys/aio.h
+@@ -22,7 +22,7 @@
+ #include <sys/_pthreadtypes.h>
+ #include <sys/_timespec.h>
+ #include <sys/signal.h>
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _OFF_T_DECLARED
+ typedef	__off_t		off_t;
+diff --git a/sys/sys/globaldata.h b/sys/sys/globaldata.h
+index 704daa6fd2..26d45d4484 100644
+--- a/sys/sys/globaldata.h
++++ b/sys/sys/globaldata.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2003-2011 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,7 +30,7 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
++ *
+  * Copyright (c) Peter Wemm <peter@netplex.com.au> All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -60,9 +60,6 @@
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>		/* __int types */
+-#endif
+ #ifndef _SYS_TIME_H_
+ #include <sys/time.h>		/* struct timeval */
+ #endif
+@@ -93,6 +90,7 @@
+ #ifndef _SYS_LOCK_H_
+ #include <sys/lock.h>
+ #endif
++#include <machine/stdint.h>
+ 
+ /*
+  * This structure maps out the global data that needs to be kept on a
+diff --git a/sys/sys/ipc.h b/sys/sys/ipc.h
+index 06c34b9615..613f78e0ba 100644
+--- a/sys/sys/ipc.h
++++ b/sys/sys/ipc.h
+@@ -47,7 +47,27 @@
+ #define	_SYS_IPC_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
++#include <machine/stdint.h>
++
++#ifndef _GID_T_DECLARED
++typedef	__uint32_t	gid_t;	/* group id */
++#define	_GID_T_DECLARED
++#endif
++
++#ifndef _KEY_T_DECLARED
++typedef	long		key_t;	/* IPC key (for Sys V IPC) */
++#define _KEY_T_DECLARED
++#endif
++
++#ifndef _MODE_T_DECLARED
++typedef	__uint16_t	mode_t;	/* permissions */
++#define	_MODE_T_DECLARED
++#endif
++
++#ifndef _UID_T_DECLARED
++typedef	__uint32_t	uid_t;	/* user id */
++#define	_UID_T_DECLARED
++#endif
+ 
+ struct ipc_perm {
+ 	uid_t		cuid;	/* creator user id */
+diff --git a/sys/sys/mman.h b/sys/sys/mman.h
+index c2bacacdd8..f50f9fbe60 100644
+--- a/sys/sys/mman.h
++++ b/sys/sys/mman.h
+@@ -34,7 +34,7 @@
+ #define	_SYS_MMAN_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _MODE_T_DECLARED
+ #define	_MODE_T_DECLARED
+diff --git a/sys/sys/msg.h b/sys/sys/msg.h
+index 7a60b9c76e..4c016af2a7 100644
+--- a/sys/sys/msg.h
++++ b/sys/sys/msg.h
+@@ -25,6 +25,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/ipc.h>
++#include <machine/stdint.h>
+ 
+ /*
+  * The MSG_NOERROR identifier value, the msqid_ds struct and the msg struct
+diff --git a/sys/sys/msgport.h b/sys/sys/msgport.h
+index 9917555d56..524331c1d2 100644
+--- a/sys/sys/msgport.h
++++ b/sys/sys/msgport.h
+@@ -10,12 +10,10 @@
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>		/* TAILQ_* macros */
+ #endif
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>
+-#endif
+ #ifndef _SYS_SPINLOCK_H_
+ #include <sys/spinlock.h>
+ #endif
++#include <machine/stdint.h>
+ 
+ struct lwkt_msg;
+ struct lwkt_port;
+diff --git a/sys/sys/sem.h b/sys/sys/sem.h
+index e228cdd901..21a87a7a1e 100644
+--- a/sys/sys/sem.h
++++ b/sys/sys/sem.h
+@@ -12,6 +12,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/ipc.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _PID_T_DECLARED
+ typedef	__pid_t		pid_t;
+diff --git a/sys/sys/shm.h b/sys/sys/shm.h
+index d65135a031..fd8ab47af9 100644
+--- a/sys/sys/shm.h
++++ b/sys/sys/shm.h
+@@ -41,6 +41,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/ipc.h>
++#include <machine/stdint.h>
+ 
+ #define	SHM_RDONLY  010000  /* Attach read-only (else read-write) */
+ #define	SHM_RND     020000  /* Round attach address to SHMLBA */
+diff --git a/sys/sys/signal.h b/sys/sys/signal.h
+index 2c04ef1cc8..098b6bce76 100644
+--- a/sys/sys/signal.h
++++ b/sys/sys/signal.h
+@@ -41,7 +41,7 @@
+ #include <sys/cdefs.h>
+ #include <sys/_pthreadtypes.h>
+ #include <sys/_sigset.h>
+-#include <sys/stdint.h>		/* for __ types */
++#include <machine/stdint.h>
+ 
+ #ifndef _PID_T_DECLARED
+ typedef	__pid_t		pid_t;
+diff --git a/sys/sys/slaballoc.h b/sys/sys/slaballoc.h
+index 21e771e85b..d778ea885e 100644
+--- a/sys/sys/slaballoc.h
++++ b/sys/sys/slaballoc.h
+@@ -39,12 +39,10 @@
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>
+-#endif
+ #ifndef _SYS__MALLOC_H_
+ #include <sys/_malloc.h>
+ #endif
++#include <machine/stdint.h>
+ 
+ /*
+  * Note that any allocations which are exact multiples of PAGE_SIZE, or
+diff --git a/sys/sys/thread.h b/sys/sys/thread.h
+index b60502843b..3a99d0c64b 100644
+--- a/sys/sys/thread.h
++++ b/sys/sys/thread.h
+@@ -1,7 +1,7 @@
+ /*
+  * SYS/THREAD.H
+  *
+- *	Implements the architecture independant portion of the LWKT 
++ *	Implements the architecture independant portion of the LWKT
+  *	subsystem.
+  *
+  * Types which must already be defined when this header is included by
+@@ -11,9 +11,6 @@
+ #ifndef _SYS_THREAD_H_
+ #define _SYS_THREAD_H_
+ 
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>		/* __int types */
+-#endif
+ #ifndef _SYS_PARAM_H_
+ #include <sys/param.h>		/* MAXCOMLEN */
+ #endif
+@@ -36,6 +33,7 @@
+ #include <sys/iosched.h>
+ #endif
+ #include <machine/thread.h>
++#include <machine/stdint.h>
+ 
+ struct globaldata;
+ struct lwp;
+@@ -300,7 +298,7 @@ struct thread {
+ #define CRIT_DEBUG_ARRAY_MASK   (CRIT_DEBUG_ARRAY_SIZE - 1)
+     const char	*td_crit_debug_array[CRIT_DEBUG_ARRAY_SIZE];
+     int		td_crit_debug_index;
+-    int		td_in_crit_report;	
++    int		td_in_crit_report;
+ #endif
+     struct md_thread td_mach;
+ #ifdef DEBUG_LOCKS
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index db9cbc854f..8ec0f80476 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -48,9 +48,7 @@
+ #ifndef _MACHINE_TYPES_H_
+ #include <machine/types.h>
+ #endif
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>
+-#endif
++#include <machine/stdint.h>
+ #ifndef _SYS__PTHREADTYPES_H_
+ #include <sys/_pthreadtypes.h>
+ #endif
+@@ -108,7 +106,10 @@ typedef	__uint16_t	in_port_t;
+ #define	_IN_PORT_T_DECLARED
+ #endif
+ typedef	__uint64_t	ino_t;		/* inode number */
++#ifndef _KEY_T_DECLARED
+ typedef	long		key_t;		/* IPC key (for Sys V IPC) */
++#define	_KEY_T_DECLARED
++#endif
+ #ifndef _MODE_T_DECLARED
+ typedef	__uint16_t	mode_t;		/* permissions */
+ #define	_MODE_T_DECLARED
+diff --git a/sys/sys/uio.h b/sys/sys/uio.h
+index 5083afc27f..f06dd1b955 100644
+--- a/sys/sys/uio.h
++++ b/sys/sys/uio.h
+@@ -35,6 +35,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_iovec.h>
++#include <machine/stdint.h>
+ 
+ #ifdef __BSD_VISIBLE
+ #ifndef _OFF_T_DECLARED
+@@ -43,7 +44,7 @@ typedef	__off_t		off_t;
+ #endif
+ #endif
+ 
+-/* The size_t and __ types are expected to be provided by <sys/_iovec.h> */
++/* The size_t is expected to be provided by <sys/_iovec.h> */
+ 
+ #ifndef _SSIZE_T_DECLARED
+ typedef	__ssize_t	ssize_t;
+diff --git a/sys/sys/wait.h b/sys/sys/wait.h
+index a4960d2132..1d8acd05d2 100644
+--- a/sys/sys/wait.h
++++ b/sys/sys/wait.h
+@@ -139,7 +139,7 @@ typedef	enum
+ #endif
+ 
+ #if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _PID_T_DECLARED
+ typedef	__pid_t		pid_t;		/* process id */
+-- 
+2.23.0
+

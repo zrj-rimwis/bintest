@@ -1,4 +1,4 @@
-From 02009033f6122f069fff06a3a0e8875b28c980d0 Mon Sep 17 00:00:00 2001
+From 608e582449b4df7eff9303cebe822f241df9973f Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 3 Nov 2019 17:03:35 +0200
 Subject: [PATCH 1/4] <stdint.h>: Move out non ptrdiff_t type.

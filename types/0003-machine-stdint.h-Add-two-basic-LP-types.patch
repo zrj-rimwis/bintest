@@ -1,4 +1,4 @@
-From f662b659cd81664ad076df45fc59c68e171b3a4f Mon Sep 17 00:00:00 2001
+From 9378de53104c992c8604dc786f03ce09d524e5fe Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 3 Nov 2019 18:37:57 +0200
 Subject: [PATCH 3/4] <machine/stdint.h>: Add two basic LP types.
