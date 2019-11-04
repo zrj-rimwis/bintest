@@ -1,0 +1,46 @@
+From 582962b529b2dc641be1730afb8ff4e3ac4970a5 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 4 Nov 2019 09:48:16 +0200
+Subject: [PATCH 06/10] <sys/types.h>: Adjust visibility of segsz_t.
+
+ It is a historic BSD type used in "struct vmspace", "struct kinfo_lwp".
+ Remove no longer needed __ intermediate type.
+---
+ sys/cpu/x86_64/include/types.h | 2 --
+ sys/sys/types.h                | 4 +++-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index ef124646d8..91d7af23b8 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -37,11 +37,9 @@
+ #include <machine/stdint.h>
+ 
+ #if defined(__x86_64__)
+-typedef	__int64_t	__segsz_t;	/* segment size */
+ typedef	__int64_t	register_t;
+ typedef	__uint64_t	u_register_t;
+ #elif defined(__i386__)
+-typedef	__int32_t	__segsz_t;	/* segment size */
+ typedef	__int32_t	register_t;
+ typedef	__uint32_t	u_register_t;
+ #endif
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index 8ec0f80476..8630b3d4a6 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -127,7 +127,9 @@ typedef	__pid_t		pid_t;		/* process id */
+ typedef	__rlim_t	rlim_t;		/* resource limit */
+ #define	_RLIM_T_DECLARED
+ #endif
+-typedef	__segsz_t	segsz_t;	/* segment size */
++#ifdef __BSD_VISIBLE
++typedef	__bslp_t	segsz_t;	/* segment size */
++#endif
+ #ifndef _SUSECONDS_T_DECLARED
+ typedef	__suseconds_t	suseconds_t;	/* microseconds (signed) */
+ #define	_SUSECONDS_T_DECLARED
+-- 
+2.23.0
+

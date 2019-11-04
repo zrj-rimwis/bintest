@@ -1,0 +1,71 @@
+From eb23926f527df5dfc62c3747dd316b4e498cd73e Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 4 Nov 2019 10:47:21 +0200
+Subject: [PATCH 07/10] <sys/types.h>: Add register_t type directly.
+
+ It is expected by some of the ports.  Use compiler attribute to select
+ correct word size if supported.  Use LP types in <machine/stdint.h> for
+ __register_t, remove unsed u_register_t.
+---
+ sys/cpu/x86_64/include/stdint.h | 9 ++++-----
+ sys/cpu/x86_64/include/types.h  | 8 --------
+ sys/sys/types.h                 | 3 +++
+ 3 files changed, 7 insertions(+), 13 deletions(-)
+
+diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
+index 57928e86e0..b0dac8f7d8 100644
+--- a/sys/cpu/x86_64/include/stdint.h
++++ b/sys/cpu/x86_64/include/stdint.h
+@@ -124,12 +124,11 @@ typedef	long		__suseconds_t;	/* microseconds (signed) */
+ typedef	__int64_t	__time_t;	/* epoch time */
+ typedef	int		__timer_t;	/* POSIX timer identifiers */
+ 
+-#ifdef __LP64__
+-typedef __int64_t	__register_t;
+-typedef __uint64_t	__u_register_t;
++/* misc types */
++#if __GNUC_PREREQ__(2, 7)
++typedef	int		__register_t __attribute__((__mode__(__word__)));
+ #else
+-typedef __int32_t	__register_t;
+-typedef __uint32_t	__u_register_t;
++typedef	__bslp_t	__register_t;
+ #endif
+ 
+ typedef __int32_t	__sig_atomic_t;	/* XXX */
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index 91d7af23b8..aa5f23a5c2 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -36,14 +36,6 @@
+ 
+ #include <machine/stdint.h>
+ 
+-#if defined(__x86_64__)
+-typedef	__int64_t	register_t;
+-typedef	__uint64_t	u_register_t;
+-#elif defined(__i386__)
+-typedef	__int32_t	register_t;
+-typedef	__uint32_t	u_register_t;
+-#endif
+-
+ typedef unsigned long	vm_offset_t;    /* address space bounded offset */
+ typedef unsigned long	vm_size_t;      /* address space bounded size */
+ 
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index 8630b3d4a6..615a6fd1e7 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -123,6 +123,9 @@ typedef	__off_t		off_t;		/* file offset */
+ typedef	__pid_t		pid_t;		/* process id */
+ #define	_PID_T_DECLARED
+ #endif
++#ifdef __BSD_VISIBLE
++typedef	__register_t	register_t;	/* register-sized type */
++#endif
+ #ifndef _RLIM_T_DECLARED
+ typedef	__rlim_t	rlim_t;		/* resource limit */
+ #define	_RLIM_T_DECLARED
+-- 
+2.23.0
+

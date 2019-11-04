@@ -1,0 +1,25 @@
+From 5c61c262ebebe30abd3d2eb4bdb1050bb8b6ce9c Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 4 Nov 2019 09:28:11 +0200
+Subject: [PATCH 05/10] <sys/sem.h>: Use generic types.
+
+---
+ sys/sys/sem.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sys/sys/sem.h b/sys/sys/sem.h
+index 21a87a7a1e..3b84428f40 100644
+--- a/sys/sys/sem.h
++++ b/sys/sys/sem.h
+@@ -75,7 +75,7 @@ struct sembuf {
+ union semun {
+ 	int	val;		/* value for SETVAL */
+ 	struct	semid_ds *buf;	/* buffer for IPC_STAT & IPC_SET */
+-	u_short	*array;		/* array for GETALL & SETALL */
++	unsigned short	*array;	/* array for GETALL & SETALL */
+ };
+ #endif /* __BSD_VISIBLE */
+ 
+-- 
+2.23.0
+

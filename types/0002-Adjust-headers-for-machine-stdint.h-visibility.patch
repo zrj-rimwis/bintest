@@ -1,7 +1,7 @@
-From 4585b4ca7b658429d4042f26ad5ef5fb39a603f9 Mon Sep 17 00:00:00 2001
+From b6490976e48b76c19c925787dd0984381d1163cc Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 3 Nov 2019 22:32:58 +0200
-Subject: [PATCH 2/4] Adjust headers for <machine/stdint.h> visibility.
+Subject: [PATCH 02/10] Adjust headers for <machine/stdint.h> visibility.
 
  This also reduces namespace pollution a bit.
 ---

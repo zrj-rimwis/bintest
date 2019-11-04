@@ -1,7 +1,7 @@
-From 227eca61dafa639e87775d2a16a7d0ef32749762 Mon Sep 17 00:00:00 2001
+From 48dc3e27658872bdb61d9f8fe66c05d8a956682a Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 3 Nov 2019 23:00:04 +0200
-Subject: [PATCH 4/4] <machine/stdint.h>: Adjust basic types to be more
+Subject: [PATCH 04/10] <machine/stdint.h>: Adjust basic types to be more
  generic.
 
 ---
