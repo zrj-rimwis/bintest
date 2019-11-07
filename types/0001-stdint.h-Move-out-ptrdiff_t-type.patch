@@ -1,7 +1,7 @@
-From 61dc67cdfef5b2080eeec83a3a355b6d7c9eff6f Mon Sep 17 00:00:00 2001
+From 401c5a6d9b673241f11aeaf4dfc28d391a33bd1e Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 3 Nov 2019 17:03:35 +0200
-Subject: [PATCH 01/10] <stdint.h>: Move out non ptrdiff_t type.
+Subject: [PATCH 01/19] <stdint.h>: Move out ptrdiff_t type.
 
  The ISO C does not specify that <stdint.h> should provide this type,
  this type should be declared in <stddef.h> for use by userland.

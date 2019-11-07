@@ -1,7 +1,7 @@
-From 9d9ee247c549dfa0426632e49236447d28cb8022 Mon Sep 17 00:00:00 2001
+From 6c03030b9cbd48f2baf3b5369db7e80346f3a437 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Mon, 4 Nov 2019 16:46:30 +0200
-Subject: [PATCH 10/10] Add <sys/cpumask.h>.
+Subject: [PATCH 10/19] Add <sys/cpumask.h>.
 
  Collect and gather all scatter cpumask bits to correct headers. This
  cleans up the namespace and simplifies platform handling in asm macros.
@@ -12,7 +12,7 @@ Subject: [PATCH 10/10] Add <sys/cpumask.h>.
  While there, fix an issue in ports that set POSIX env, but has
  implementation of setting thread names through pthread_set_name_np().
 ---
- include/pthread_np.h                  | 13 +++++-
+ include/pthread_np.h                  | 15 ++++++-
  lib/libthread_xu/thread/thr_private.h |  2 +-
  sbin/usched/usched.c                  |  2 +-
  sys/cpu/x86_64/include/cpumask.h      | 65 ++++++++++++++++++++++++---
@@ -29,17 +29,17 @@ Subject: [PATCH 10/10] Add <sys/cpumask.h>.
  sys/sys/cpumask.h                     | 60 +++++++++++++++++++++++++
  sys/sys/lwp.h                         |  2 +-
  sys/sys/proc.h                        |  1 +
- sys/sys/sched.h                       | 50 ++-------------------
+ sys/sys/sched.h                       | 52 +++------------------
  sys/sys/sysproto.h                    |  1 +
  sys/sys/thread.h                      |  3 ++
  sys/sys/thread2.h                     | 10 +++--
  sys/sys/usched.h                      |  7 +--
  usr.sbin/powerd/powerd.c              |  2 +-
- 23 files changed, 169 insertions(+), 95 deletions(-)
+ 23 files changed, 171 insertions(+), 97 deletions(-)
  create mode 100644 sys/sys/cpumask.h
 
 diff --git a/include/pthread_np.h b/include/pthread_np.h
-index 28d0ebb117..53fac749d6 100644
+index 28d0ebb117..3e3754683e 100644
 --- a/include/pthread_np.h
 +++ b/include/pthread_np.h
 @@ -31,7 +31,18 @@
@@ -54,14 +54,20 @@ index 28d0ebb117..53fac749d6 100644
 +#include <time.h>
 +
 +/* In case <sched.h> has limited visibility. */
-+#ifndef __CPU_SET_T_DECLARED
-+#define	__CPU_SET_T_DECLARED
++#ifndef _CPU_SET_T_DECLARED
++#define	_CPU_SET_T_DECLARED
 +typedef	cpumask_t		cpu_set_t;
 +typedef	cpumask_t		cpuset_t;	/* FreeBSD compat */
 +#endif
  
  /*
   * Non-POSIX type definitions:
+@@ -64,4 +75,4 @@ int pthread_switch_delete_np(pthread_switch_routine_t);
+ int pthread_timedjoin_np(pthread_t, void **, const struct timespec *);
+ __END_DECLS
+ 
+-#endif
++#endif /* !_PTHREAD_NP_H_ */
 diff --git a/lib/libthread_xu/thread/thr_private.h b/lib/libthread_xu/thread/thr_private.h
 index 72e5afa9dc..86edcd88d3 100644
 --- a/lib/libthread_xu/thread/thr_private.h
@@ -444,7 +450,7 @@ index 69e550df72..7de4905a7b 100644
  #include <sys/queue.h>
  #include <sys/tree.h>
 diff --git a/sys/sys/sched.h b/sys/sys/sched.h
-index 3f3e3b901f..54602901e2 100644
+index 3f3e3b901f..38566d3203 100644
 --- a/sys/sys/sched.h
 +++ b/sys/sys/sched.h
 @@ -56,55 +56,13 @@ struct sched_param
@@ -454,8 +460,8 @@ index 3f3e3b901f..54602901e2 100644
 -#include <machine/cpumask.h>
 +#include <sys/cpumask.h>
  
-+#ifndef __CPU_SET_T_DECLARED
-+#define	__CPU_SET_T_DECLARED
++#ifndef _CPU_SET_T_DECLARED
++#define	_CPU_SET_T_DECLARED
  typedef	cpumask_t		cpu_set_t;
  typedef	cpumask_t		cpuset_t;	/* FreeBSD compat */
 -
@@ -507,6 +513,14 @@ index 3f3e3b901f..54602901e2 100644
  #endif /* __BSD_VISIBLE */
  
  __BEGIN_DECLS
+@@ -127,6 +85,6 @@ int sched_getcpu(void);
+ #endif
+ __END_DECLS
+ 
+-#endif
++#endif /* !_KERNEL */
+ 
+ #endif /* _SCHED_H_ */
 diff --git a/sys/sys/sysproto.h b/sys/sys/sysproto.h
 index 01e8ff65cd..5d2ccac780 100644
 --- a/sys/sys/sysproto.h

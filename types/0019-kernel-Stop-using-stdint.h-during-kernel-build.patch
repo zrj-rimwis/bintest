@@ -1,0 +1,165 @@
+From 534d1f6609212fb27f9040f46237ce118eb3ecf7 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 6 Nov 2019 20:43:44 +0200
+Subject: [PATCH 19/19] kernel: Stop using <stdint.h> during kernel build.
+
+ This includes VKERNEL too.  Now it should be possible to fully build
+ kernel with headers only from src/sys/ (except VKERNEL that is using
+ userland headers for obvious reasons, prominently the <signal.h>).
+
+ Now <stdint.h> seperation from <sys/types.h> could begin.
+---
+ include/arpa/inet.h             |  2 ++
+ sys/cpu/x86_64/include/npx.h    |  2 +-
+ sys/libprop/prop_number.h       |  4 +---
+ sys/sys/stdint.h                | 27 +++++++++++++++++++++++++++
+ sys/sys/types.h                 |  2 +-
+ sys/vfs/fuse/fuse_abi.h         |  4 +++-
+ sys/vfs/hammer2/hammer2_lz4.c   |  2 +-
+ sys/vfs/hammer2/xxhash/xxhash.c |  2 +-
+ 8 files changed, 37 insertions(+), 8 deletions(-)
+
+diff --git a/include/arpa/inet.h b/include/arpa/inet.h
+index 2f7481498f..b0277f030c 100644
+--- a/include/arpa/inet.h
++++ b/include/arpa/inet.h
+@@ -61,7 +61,9 @@
+ #include <sys/cdefs.h>
+ #include <machine/endian.h>	/* Required for byteorder(3) functions. */
+ #include <machine/stdint.h>	/* for __size_t, __socklen_t */
++#ifndef _KERNEL
+ #include <stdint.h>		/* for uint16_t, uint32_t as per POSIX */
++#endif
+ 
+ #define	INET_ADDRSTRLEN		16
+ #define	INET6_ADDRSTRLEN	46
+diff --git a/sys/cpu/x86_64/include/npx.h b/sys/cpu/x86_64/include/npx.h
+index 56c76a559b..c8e678f040 100644
+--- a/sys/cpu/x86_64/include/npx.h
++++ b/sys/cpu/x86_64/include/npx.h
+@@ -42,7 +42,7 @@
+ #ifndef _CPU_NPX_H_
+ #define	_CPU_NPX_H_
+ 
+-#include <stdint.h>
++#include <sys/stdint.h>
+ 
+ /* Environment information of floating point unit */
+ struct	env87 {
+diff --git a/sys/libprop/prop_number.h b/sys/libprop/prop_number.h
+index 17cec6908a..2a1e503b06 100644
+--- a/sys/libprop/prop_number.h
++++ b/sys/libprop/prop_number.h
+@@ -32,9 +32,7 @@
+ #ifndef _PROPLIB_PROP_NUMBER_H_
+ #define	_PROPLIB_PROP_NUMBER_H_
+ 
+-#if !defined(_KERNEL) && !defined(_STANDALONE)
+-#include <stdint.h>
+-#endif
++#include <sys/stdint.h>
+ #include <libprop/prop_object.h>
+ 
+ typedef struct _prop_number *prop_number_t;
+diff --git a/sys/sys/stdint.h b/sys/sys/stdint.h
+index 3dad400b58..400d7d34a8 100644
+--- a/sys/sys/stdint.h
++++ b/sys/sys/stdint.h
+@@ -38,6 +38,8 @@
+  */
+ 
+ #ifdef _KERNEL
++#include <machine/int_limits.h>
++
+ typedef	__boolean_t	boolean_t;		/* kernel only */
+ 
+ #if !defined(__bool_true_false_are_defined) && !defined(__cplusplus)
+@@ -56,6 +58,31 @@ typedef	_Bool	bool;
+ typedef	__ptrdiff_t	ptrdiff_t;	/* ptr1 - ptr2 for kernel */
+ #define	_PTRDIFF_T_DECLARED
+ #endif
++
++typedef	__int8_t	int8_t;
++typedef	__int16_t	int16_t;
++typedef	__int32_t	int32_t;
++typedef	__int64_t	int64_t;
++
++typedef	__uint8_t	uint8_t;
++typedef	__uint16_t	uint16_t;
++typedef	__uint32_t	uint32_t;
++typedef	__uint64_t	uint64_t;
++
++#ifndef _INTPTR_T_DECLARED
++typedef	__intptr_t	intptr_t;	/* VKERNEL uses <unistd.h> */
++#define	_INTPTR_T_DECLARED
++#endif
++typedef	__uintptr_t	uintptr_t;
++
++typedef	__intmax_t	intmax_t;
++typedef	__uintmax_t	uintmax_t;
+ #endif /* _KERNEL */
+ 
++#ifndef _KERNEL
++#ifndef _STDINT_H_
++#include <stdint.h>			/* in case we still need it */
++#endif
++#endif /* !_KERNEL */
++
+ #endif /* SYS_STDINT_H */
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index a309717945..078d84e66d 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -202,7 +202,7 @@ typedef	__time_t	time_t;
+ typedef	__timer_t	timer_t;
+ #endif
+ 
+-#ifndef _STDINT_H_
++#ifndef _KERNEL
+ #include <stdint.h>			/* XXX */
+ #endif
+ 
+diff --git a/sys/vfs/fuse/fuse_abi.h b/sys/vfs/fuse/fuse_abi.h
+index b4967d48bf..6a42eb9165 100644
+--- a/sys/vfs/fuse/fuse_abi.h
++++ b/sys/vfs/fuse/fuse_abi.h
+@@ -127,7 +127,9 @@
+ #ifndef _LINUX_FUSE_H
+ #define _LINUX_FUSE_H
+ 
+-#ifdef __KERNEL__
++#if defined(_KERNEL)
++#include <sys/stdint.h>
++#elif defined(__KERNEL__)
+ #include <linux/types.h>
+ #else
+ #include <stdint.h>
+diff --git a/sys/vfs/hammer2/hammer2_lz4.c b/sys/vfs/hammer2/hammer2_lz4.c
+index 19f88b27d1..80180ed791 100644
+--- a/sys/vfs/hammer2/hammer2_lz4.c
++++ b/sys/vfs/hammer2/hammer2_lz4.c
+@@ -119,7 +119,7 @@ static MALLOC_DEFINE(C_HASHTABLE, "comphashtable",
+ // Basic Types
+ //**************************************
+ #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   // C99
+-# include <stdint.h>
++# include <sys/stdint.h>
+   typedef uint8_t  BYTE;
+   typedef uint16_t U16;
+   typedef uint32_t U32;
+diff --git a/sys/vfs/hammer2/xxhash/xxhash.c b/sys/vfs/hammer2/xxhash/xxhash.c
+index 8289f4b240..14d4dcc78f 100644
+--- a/sys/vfs/hammer2/xxhash/xxhash.c
++++ b/sys/vfs/hammer2/xxhash/xxhash.c
+@@ -139,7 +139,7 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size) { return memcp
+ #ifndef MEM_MODULE
+ # define MEM_MODULE
+ # if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* C99 */
+-#   include <stdint.h>
++#   include <sys/stdint.h>
+     typedef uint8_t  BYTE;
+     typedef uint16_t U16;
+     typedef uint32_t U32;
+-- 
+2.23.0
+

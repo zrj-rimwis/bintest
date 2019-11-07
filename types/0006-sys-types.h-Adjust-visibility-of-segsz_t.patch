@@ -1,7 +1,7 @@
-From 582962b529b2dc641be1730afb8ff4e3ac4970a5 Mon Sep 17 00:00:00 2001
+From 41ac06f2d3b9765115d17f7f33f9f2c3cb16c24b Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Mon, 4 Nov 2019 09:48:16 +0200
-Subject: [PATCH 06/10] <sys/types.h>: Adjust visibility of segsz_t.
+Subject: [PATCH 06/19] <sys/types.h>: Adjust visibility of segsz_t.
 
  It is a historic BSD type used in "struct vmspace", "struct kinfo_lwp".
  Remove no longer needed __ intermediate type.
@@ -27,7 +27,7 @@ index ef124646d8..91d7af23b8 100644
  typedef	__uint32_t	u_register_t;
  #endif
 diff --git a/sys/sys/types.h b/sys/sys/types.h
-index 8ec0f80476..8630b3d4a6 100644
+index 8ec0f80476..685b35f07b 100644
 --- a/sys/sys/types.h
 +++ b/sys/sys/types.h
 @@ -127,7 +127,9 @@ typedef	__pid_t		pid_t;		/* process id */
@@ -35,7 +35,7 @@ index 8ec0f80476..8630b3d4a6 100644
  #define	_RLIM_T_DECLARED
  #endif
 -typedef	__segsz_t	segsz_t;	/* segment size */
-+#ifdef __BSD_VISIBLE
++#if __BSD_VISIBLE
 +typedef	__bslp_t	segsz_t;	/* segment size */
 +#endif
  #ifndef _SUSECONDS_T_DECLARED

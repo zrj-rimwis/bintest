@@ -1,15 +1,20 @@
-From 48dc3e27658872bdb61d9f8fe66c05d8a956682a Mon Sep 17 00:00:00 2001
+From ec8f6f3bd959da41476bb3f1d014dabbfd89d2c3 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 3 Nov 2019 23:00:04 +0200
-Subject: [PATCH 04/10] <machine/stdint.h>: Adjust basic types to be more
+Subject: [PATCH 04/19] <machine/stdint.h>: Adjust basic types to be more
  generic.
 
+ Use basic LP types for time_t to avoid need to use cast (uintmax_t) in
+ debug prints.  The clock_t could be adjusted too, but previously on i386
+ DragonFly used int for this type.
+
+ The same could be done for vm_offset_t and vm_size_t.
 ---
  sys/cpu/x86_64/include/stdint.h | 34 ++++++++++++++-------------------
  1 file changed, 14 insertions(+), 20 deletions(-)
 
 diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
-index 829c2fe3ec..57928e86e0 100644
+index 829c2fe3ec..e08045d806 100644
 --- a/sys/cpu/x86_64/include/stdint.h
 +++ b/sys/cpu/x86_64/include/stdint.h
 @@ -85,15 +85,9 @@ typedef	unsigned int	__bulp_t;
@@ -36,14 +41,14 @@ index 829c2fe3ec..57928e86e0 100644
   */
  
 +/* <sys/types.h> */
-+typedef	__int64_t	__clock_t;	/* ticks in CLOCKS_PER_SEC */
++typedef	unsigned long	__clock_t;	/* ticks in CLOCKS_PER_SEC */
 +typedef	unsigned long	__clockid_t;	/* CLOCK_* identifiers */
 +typedef	__int64_t	__off_t;	/* file offset or size */
 +typedef	__int32_t	__pid_t;	/* process [group] id */
 +typedef	__bulp_t	__size_t;	/* sizes of objects */
 +typedef	__bslp_t	__ssize_t;	/* byte counts or error status */
 +typedef	long		__suseconds_t;	/* microseconds (signed) */
-+typedef	__int64_t	__time_t;	/* epoch time */
++typedef	__bslp_t	__time_t;	/* epoch time */
 +typedef	int		__timer_t;	/* POSIX timer identifiers */
 +
  #ifdef __LP64__

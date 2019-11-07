@@ -1,0 +1,46 @@
+From 684beed4b51354b11ac75763b01b7677ab17773d Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 5 Nov 2019 17:19:04 +0200
+Subject: [PATCH 11/19] <cpu/types.h>: Use basic LP types for vm_offset_t and
+ vm_size_t.
+
+ Adjust PRI in biosacpi.c to use natural "%08x" specifier. The
+ sys/boot/pc32/libi386/biosacpi.c is only used in 32bit loader.
+
+ No other functional differences in both kernel and world.
+---
+ sys/boot/pc32/libi386/biosacpi.c | 2 +-
+ sys/cpu/x86_64/include/types.h   | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sys/boot/pc32/libi386/biosacpi.c b/sys/boot/pc32/libi386/biosacpi.c
+index 2c46eb8253..90f9b1e9a5 100644
+--- a/sys/boot/pc32/libi386/biosacpi.c
++++ b/sys/boot/pc32/libi386/biosacpi.c
+@@ -60,7 +60,7 @@ biosacpi_detect(void)
+ 	return;
+ 
+     /* export values from the RSDP */
+-    sprintf(buf, "0x%08lx", VTOP(rsdp));
++    sprintf(buf, "0x%08x", VTOP(rsdp));
+     setenv("hint.acpi.0.rsdp", buf, 1);
+     revision = rsdp->Revision;
+     if (revision == 0)
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index c365d02b63..c96de60ece 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -36,8 +36,8 @@
+ 
+ #include <machine/stdint.h>
+ 
+-typedef unsigned long	vm_offset_t;    /* address space bounded offset */
+-typedef unsigned long	vm_size_t;      /* address space bounded size */
++typedef __bulp_t	vm_offset_t;	/* address space bounded offset */
++typedef __bulp_t	vm_size_t;	/* address space bounded size */
+ 
+ typedef __uint64_t	vm_pindex_t;    /* physical page index */
+ typedef __uint64_t	vm_spindex_t;   /* physical page index (signed) */
+-- 
+2.23.0
+

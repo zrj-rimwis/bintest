@@ -1,7 +1,7 @@
-From c47b6ff91662c0e8b681abd277e357d515286fc5 Mon Sep 17 00:00:00 2001
+From 11716573fff880b4190c793c9f293c66a84c316c Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Mon, 4 Nov 2019 11:48:04 +0200
-Subject: [PATCH 08/10] cpu/x64_64: Move MMU page table types back to
+Subject: [PATCH 08/19] cpu/x64_64: Move MMU page table types back to
  <cpu/pmap.h>.
 
  Reduce namespace pollution.  These types are common for both

@@ -1,11 +1,14 @@
-From b6490976e48b76c19c925787dd0984381d1163cc Mon Sep 17 00:00:00 2001
+From 7d578ae4b9932696b1f925efa4e7b66cf5c37f8c Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 3 Nov 2019 22:32:58 +0200
-Subject: [PATCH 02/10] Adjust headers for <machine/stdint.h> visibility.
+Subject: [PATCH 02/19] Adjust headers for <machine/stdint.h> visibility.
 
- This also reduces namespace pollution a bit.
+ This also reduces namespace pollution a bit.  Include <machine/stdint.h>
+ where <stdint.h> is used too.  External compiler under -ffreestanding
+ (__STDC_HOSTED__ == 0) will use their own <stdint.h> version and will
+ not include <machine/stdint.h>.
 ---
- include/arpa/inet.h             |  3 +--
+ include/arpa/inet.h             |  8 +++-----
  include/ctype.h                 |  2 +-
  include/netdb.h                 |  1 +
  include/runetype.h              |  2 +-
@@ -30,12 +33,12 @@ Subject: [PATCH 02/10] Adjust headers for <machine/stdint.h> visibility.
  sys/sys/slaballoc.h             |  4 +---
  sys/sys/thread.h                |  8 +++-----
  sys/sys/types.h                 |  7 ++++---
- sys/sys/uio.h                   |  3 ++-
+ sys/sys/uio.h                   |  5 +++--
  sys/sys/wait.h                  |  2 +-
- 27 files changed, 57 insertions(+), 44 deletions(-)
+ 27 files changed, 60 insertions(+), 48 deletions(-)
 
 diff --git a/include/arpa/inet.h b/include/arpa/inet.h
-index 871956f297..108f2e61e3 100644
+index 871956f297..2f7481498f 100644
 --- a/include/arpa/inet.h
 +++ b/include/arpa/inet.h
 @@ -51,7 +51,6 @@
@@ -46,15 +49,20 @@ index 871956f297..108f2e61e3 100644
   */
  
  #ifndef _ARPA_INET_H_
-@@ -60,7 +59,7 @@
+@@ -60,10 +59,9 @@
  /* External definitions for functions in inet(3) */
  
  #include <sys/cdefs.h>
 -#include <stdint.h>
-+#include <machine/stdint.h>
+-
+-/* Required for byteorder(3) functions. */
+-#include <machine/endian.h>
++#include <machine/endian.h>	/* Required for byteorder(3) functions. */
++#include <machine/stdint.h>	/* for __size_t, __socklen_t */
++#include <stdint.h>		/* for uint16_t, uint32_t as per POSIX */
  
- /* Required for byteorder(3) functions. */
- #include <machine/endian.h>
+ #define	INET_ADDRSTRLEN		16
+ #define	INET6_ADDRSTRLEN	46
 diff --git a/include/ctype.h b/include/ctype.h
 index 5a85be9263..a42bd88aed 100644
 --- a/include/ctype.h
@@ -69,14 +77,14 @@ index 5a85be9263..a42bd88aed 100644
  #define	_CTYPE_A	0x00000100L		/* Alpha */
  #define	_CTYPE_C	0x00000200L		/* Control */
 diff --git a/include/netdb.h b/include/netdb.h
-index 141503f139..c8708d0630 100644
+index 141503f139..19aa7b6548 100644
 --- a/include/netdb.h
 +++ b/include/netdb.h
 @@ -58,6 +58,7 @@
  #define _NETDB_H_
  
  #include <sys/cdefs.h>
-+#include <machine/stdint.h>
++#include <machine/stdint.h>	/* for __size_t, __socklen_t */
  #include <stdint.h>
  
  #ifndef _IN_ADDR_T_DECLARED
@@ -487,18 +495,20 @@ index db9cbc854f..8ec0f80476 100644
  typedef	__uint16_t	mode_t;		/* permissions */
  #define	_MODE_T_DECLARED
 diff --git a/sys/sys/uio.h b/sys/sys/uio.h
-index 5083afc27f..f06dd1b955 100644
+index 5083afc27f..6f8d29afad 100644
 --- a/sys/sys/uio.h
 +++ b/sys/sys/uio.h
-@@ -35,6 +35,7 @@
+@@ -35,15 +35,16 @@
  
  #include <sys/cdefs.h>
  #include <sys/_iovec.h>
 +#include <machine/stdint.h>
  
- #ifdef __BSD_VISIBLE
+-#ifdef __BSD_VISIBLE
++#if __BSD_VISIBLE
  #ifndef _OFF_T_DECLARED
-@@ -43,7 +44,7 @@ typedef	__off_t		off_t;
+ typedef	__off_t		off_t;
+ #define	_OFF_T_DECLARED
  #endif
  #endif
  

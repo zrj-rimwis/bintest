@@ -1,7 +1,7 @@
-From 5c61c262ebebe30abd3d2eb4bdb1050bb8b6ce9c Mon Sep 17 00:00:00 2001
+From cbc3d431b5609770d664100f919d87d224ef13d3 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Mon, 4 Nov 2019 09:28:11 +0200
-Subject: [PATCH 05/10] <sys/sem.h>: Use generic types.
+Subject: [PATCH 05/19] <sys/sem.h>: Use generic types.
 
 ---
  sys/sys/sem.h | 2 +-

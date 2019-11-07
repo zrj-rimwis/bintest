@@ -1,0 +1,205 @@
+From f16f0f3d19bd076c41f12319f66cf77406cacdff Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 5 Nov 2019 19:40:49 +0200
+Subject: [PATCH 12/19] <sys/types.h>: Reduce vm_* types pollution in userland.
+
+ Userland should not be using these types outside kernel structures or
+ <vm/*.h> scope.  Adjust several userland and boot code sources to
+ include <machine/types.h> where they use them (mainly for vm_offset_t).
+ * sys/fbio.h: Used in several world utilities and libvgl.
+ * sys/kinfo.h: Use size_t for kp_vm_map_size (header used in userland).
+ * sys/emulation/ndis/pe_var.h: Used in ndiscvt(8).
+ * bus/firewire/fwcrom.c: Compiled directly in fwcontrol(8).
+ * mptable(1): include <machine/types.h>, should really not be using
+   vm_offset_t and looks to be suspiciously broken.
+ * sys/boot: For now include <machine/types.h> for vm_offset_t in
+   several headers, should really not be using vm types.
+
+ Rest of world utilities get vm types through <sys/user.h>.
+
+ While there, move pthread type inclusion to the very end of the source,
+ doing so improves readability of compiler intermediates a lot.
+
+ Strictly visibility changes only.
+---
+ sys/boot/common/bootstrap.h      |  1 +
+ sys/boot/efi/loader/loader_efi.h |  1 +
+ sys/boot/pc32/btx/lib/btxv86.h   |  2 +-
+ sys/boot/pc32/libi386/libi386.h  |  1 +
+ sys/bus/firewire/fwcrom.c        |  1 +
+ sys/emulation/ndis/pe_var.h      |  2 ++
+ sys/sys/fbio.h                   |  1 +
+ sys/sys/kinfo.h                  |  4 ++--
+ sys/sys/types.h                  | 12 ++++++------
+ usr.sbin/mptable/mptable.c       |  2 +-
+ 10 files changed, 17 insertions(+), 10 deletions(-)
+
+diff --git a/sys/boot/common/bootstrap.h b/sys/boot/common/bootstrap.h
+index 45ed5fd2e5..60429155d9 100644
+--- a/sys/boot/common/bootstrap.h
++++ b/sys/boot/common/bootstrap.h
+@@ -29,6 +29,7 @@
+ #include <sys/types.h>
+ #include <sys/queue.h>
+ #include <sys/linker_set.h>
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ 
+ struct stat;
+ 
+diff --git a/sys/boot/efi/loader/loader_efi.h b/sys/boot/efi/loader/loader_efi.h
+index 12ab7b8e1d..364a5e5572 100644
+--- a/sys/boot/efi/loader/loader_efi.h
++++ b/sys/boot/efi/loader/loader_efi.h
+@@ -32,6 +32,7 @@
+ #define	_LOADER_EFI_COPY_H_
+ 
+ #include <stand.h>
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ 
+ int	efi_autoload(void);
+ 
+diff --git a/sys/boot/pc32/btx/lib/btxv86.h b/sys/boot/pc32/btx/lib/btxv86.h
+index 061762df13..a299d92ba7 100644
+--- a/sys/boot/pc32/btx/lib/btxv86.h
++++ b/sys/boot/pc32/btx/lib/btxv86.h
+@@ -15,13 +15,13 @@
+ 
+ /*
+  * $FreeBSD: src/sys/boot/i386/btx/lib/btxv86.h,v 1.5 1999/08/28 00:40:08 peter Exp $
+- * $DragonFly: src/sys/boot/pc32/btx/lib/btxv86.h,v 1.3 2003/11/10 06:08:35 dillon Exp $
+  */
+ 
+ #ifndef _BTXV86_H_
+ #define _BTXV86_H_
+ 
+ #include <sys/types.h>
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ 
+ #define V86_ADDR   0x10000	/* Segment:offset address */
+ #define V86_CALLF  0x20000	/* Emulate far call */
+diff --git a/sys/boot/pc32/libi386/libi386.h b/sys/boot/pc32/libi386/libi386.h
+index a15905d11b..6c71d89807 100644
+--- a/sys/boot/pc32/libi386/libi386.h
++++ b/sys/boot/pc32/libi386/libi386.h
+@@ -26,6 +26,7 @@
+  * $FreeBSD: src/sys/boot/i386/libi386/libi386.h,v 1.16 2003/05/01 03:56:29 peter Exp $
+  */
+ 
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ 
+ /*
+  * i386 fully-qualified device descriptor.
+diff --git a/sys/bus/firewire/fwcrom.c b/sys/bus/firewire/fwcrom.c
+index fcf9e8d505..e4ad766414 100644
+--- a/sys/bus/firewire/fwcrom.c
++++ b/sys/bus/firewire/fwcrom.c
+@@ -42,6 +42,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #else
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ #include <netinet/in.h>
+ #include <fcntl.h>
+ #include <stdio.h>
+diff --git a/sys/emulation/ndis/pe_var.h b/sys/emulation/ndis/pe_var.h
+index 0ac691cf36..4c13a7a09b 100644
+--- a/sys/emulation/ndis/pe_var.h
++++ b/sys/emulation/ndis/pe_var.h
+@@ -35,6 +35,8 @@
+ #ifndef _PE_VAR_H_
+ #define	_PE_VAR_H_
+ 
++#include <machine/types.h>	/* XXX for vm_offset_t */
++
+ /*
+  *  Image Format
+  */
+diff --git a/sys/sys/fbio.h b/sys/sys/fbio.h
+index e1264c3771..3d8c9e7c83 100644
+--- a/sys/sys/fbio.h
++++ b/sys/sys/fbio.h
+@@ -44,6 +44,7 @@
+ #ifndef _SYS_IOCCOM_H_
+ #include <sys/ioccom.h>
+ #endif
++#include <machine/types.h>	/* for vm_offset_t */
+ 
+ /*
+  * Frame buffer ioctls (from Sprite, trimmed to essentials for X11).
+diff --git a/sys/sys/kinfo.h b/sys/sys/kinfo.h
+index 98b6b24b8a..aad1b7a1cb 100644
+--- a/sys/sys/kinfo.h
++++ b/sys/sys/kinfo.h
+@@ -192,13 +192,13 @@ struct kinfo_proc {
+ 	int		kp_nice;
+ 	unsigned int	kp_swtime;
+ 
+-	vm_size_t	kp_vm_map_size;	/* vmmap virtual size in bytes */
++	size_t		kp_vm_map_size;		/* vmmap virtual size in bytes */
+ 	segsz_t		kp_vm_rssize;		/* resident set size in pages */
+ 	segsz_t		kp_vm_swrss;		/* rss before last swap in pages */
+ 	segsz_t		kp_vm_tsize;		/* text size in pages */
+ 	segsz_t		kp_vm_dsize;		/* data size in pages */
+ 	segsz_t		kp_vm_ssize;		/* stack size in pages */
+-        u_int		kp_vm_prssize;		/* proportional rss in pages */
++	u_int		kp_vm_prssize;		/* proportional rss in pages */
+ 
+ 	int		kp_jailid;
+ 
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index f002b59210..30a15a71df 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -45,13 +45,7 @@
+ #include <stdint.h>
+ #endif
+ #include <machine/endian.h>
+-#ifndef _MACHINE_TYPES_H_
+-#include <machine/types.h>
+-#endif
+ #include <machine/stdint.h>
+-#ifndef _SYS__PTHREADTYPES_H_
+-#include <sys/_pthreadtypes.h>
+-#endif
+ 
+ #if __BSD_VISIBLE
+ typedef	unsigned char	u_char;
+@@ -253,9 +247,15 @@ typedef	__time_t	time_t;
+ typedef	__timer_t	timer_t;
+ #endif
+ 
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++#include <machine/types.h>		/* for vm_offet_t */
++#endif
++
+ #if __BSD_VISIBLE
+ #include <sys/_fd_set.h>
+ #include <sys/_timeval.h>
+ #endif /* __BSD_VISIBLE */
+ 
++#include <sys/_pthreadtypes.h>		/* now POSIX thread types */
++
+ #endif /* !_SYS_TYPES_H_ */
+diff --git a/usr.sbin/mptable/mptable.c b/usr.sbin/mptable/mptable.c
+index 94cdfd138c..fdcaaf71e2 100644
+--- a/usr.sbin/mptable/mptable.c
++++ b/usr.sbin/mptable/mptable.c
+@@ -23,7 +23,6 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/mptable/mptable.c,v 1.12.2.3 2000/12/11 01:03:34 obrien Exp $
+- * $DragonFly: src/usr.sbin/mptable/mptable.c,v 1.4 2008/04/20 13:44:26 swildner Exp $
+  */
+ 
+ /*
+@@ -39,6 +38,7 @@
+ #define OEM_PROCESSING_READY_NOT
+ 
+ #include <sys/types.h>
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ #include <err.h>
+ #include <fcntl.h>
+ #include <inttypes.h>
+-- 
+2.23.0
+

@@ -1,0 +1,27 @@
+From 54421c4b75079be2725590ebe9eb90d4c6ab4428 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 6 Nov 2019 09:07:27 +0200
+Subject: [PATCH 13/19] sys/sglist.h: Mark as kernel only header.
+
+---
+ sys/sys/sglist.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/sys/sys/sglist.h b/sys/sys/sglist.h
+index ee5b894e8b..2f0e32bde2 100644
+--- a/sys/sys/sglist.h
++++ b/sys/sys/sglist.h
+@@ -39,6 +39,10 @@
+ #ifndef __SGLIST_H__
+ #define	__SGLIST_H__
+ 
++#ifndef _KERNEL
++#error "This file should not be included by userland programs."
++#endif
++
+ #include <sys/refcount.h>
+ 
+ struct sglist_seg {
+-- 
+2.23.0
+
