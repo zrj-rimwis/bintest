@@ -1,0 +1,3401 @@
+From e977678af9ebe747aab722329e7a4eacf709a21e Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 7 Nov 2019 18:25:59 +0000
+Subject: <sys/types.h>: Stop including <stdint.h>.
+
+ This header should really not include this another standard header.
+ Just make everything build.  The <sys/stat.h> was holding quite a few
+ things hostage.  Keep _WANT_STDINT for ports benefits.
+---
+ bin/dd/conv.c                                 |  1 +
+ bin/dd/conv_tab.c                             |  1 +
+ bin/dd/dd.h                                   |  1 +
+ bin/pax/cpio.c                                |  2 +-
+ bin/pax/gen_subs.c                            |  3 +-
+ contrib/openbsd_libm/src/math_private.h       |  3 +-
+ contrib/openbsd_libm/src/s_rintl.c            |  1 +
+ contrib/smbfs/lib/smb/nls.c                   |  1 +
+ contrib/smbfs/smbutil/dumptree.c              |  1 +
+ contrib/smbfs/smbutil/smbutil.c               |  1 +
+ games/fish/fish.c                             |  1 +
+ games/hack/hack.h                             |  1 +
+ games/morse/morse.c                           |  1 +
+ games/tetris/screen.c                         |  1 +
+ .../binutils225/block1/libbfd/Makefile        |  2 +-
+ .../binutils225/block2/Makefile.block2        |  2 +-
+ .../binutils227/block1/libbfd/Makefile        |  2 +-
+ .../binutils227/block2/Makefile.block2        |  2 +-
+ gnu/usr.bin/gdb/libbfd/Makefile               |  2 +-
+ lib/csu/common/crtbrand.c                     |  1 +
+ lib/csu/common/initfini.c                     |  1 +
+ lib/libc/citrus/citrus_bcs.h                  |  1 +
+ lib/libc/citrus/citrus_iconv_local.h          |  1 +
+ lib/libc/citrus/citrus_types.h                |  2 +-
+ lib/libc/db/btree/btree.h                     |  1 +
+ lib/libc/gen/arc4random.c                     |  1 +
+ lib/libc/gen/disklabel.c                      |  2 +-
+ lib/libc/gen/disktab.c                        | 10 ++--
+ lib/libc/gen/exec.c                           |  1 +
+ lib/libc/gen/ldexp.c                          |  1 +
+ lib/libc/gen/modf.c                           |  1 +
+ lib/libc/gen/popen.c                          |  2 +-
+ lib/libc/gen/ucontext.c                       |  1 +
+ lib/libc/gen/vis.c                            |  1 +
+ lib/libc/locale/rune.c                        |  1 +
+ lib/libc/net/nsdispatch.c                     |  1 +
+ lib/libc/net/ntoh.c                           |  1 +
+ lib/libc/stdio/mktemp.c                       |  2 +-
+ lib/libc/stdlib/bsearch.c                     |  2 +-
+ lib/libc/stdlib/getopt_long.c                 |  2 +-
+ lib/libc/stdlib/hcreate.c                     | 10 ++--
+ lib/libc/stdlib/tsearch.c                     |  1 +
+ lib/libc/string/bcopy.c                       |  1 +
+ lib/libc/upmap/upmap.h                        |  5 +-
+ lib/libcam/camlib.c                           |  1 +
+ lib/libcompat/4.3/re_comp.c                   |  1 +
+ lib/libcrypt/crypt-des.c                      |  1 +
+ lib/libcrypt/deprecated-crypt-sha256.c        | 17 +++----
+ lib/libcrypt/deprecated-crypt-sha512.c        | 21 +++++----
+ lib/libfsid/libfsid.h                         |  1 +
+ lib/libhammer/libhammer.h                     |  1 +
+ lib/libkiconv/quirks.c                        |  3 +-
+ lib/libkiconv/xlat16_iconv.c                  |  1 +
+ libexec/bootpd/bptypes.h                      |  2 +-
+ libexec/talkd/announce.c                      |  1 +
+ libexec/talkd/print.c                         |  3 +-
+ libexec/talkd/table.c                         |  3 +-
+ libexec/talkd/talkd.c                         |  3 +-
+ sbin/badsect/badsect.c                        |  2 +-
+ sbin/camcontrol/modeedit.c                    | 11 +++--
+ sbin/clri/clri.c                              |  2 +-
+ sbin/disklabel64/crc32.c                      |  2 +-
+ sbin/dump/cache.c                             |  1 +
+ sbin/dump/itime.c                             |  1 +
+ sbin/dump/main.c                              |  1 +
+ sbin/dump/optr.c                              |  3 +-
+ sbin/dump/tape.c                              |  1 +
+ sbin/dump/traverse.c                          |  1 +
+ sbin/dump/unctime.c                           |  2 +-
+ sbin/dumpfs/dumpfs.c                          |  1 +
+ sbin/fsck/dir.c                               |  1 +
+ sbin/fsck/fsck.h                              |  1 +
+ sbin/fsck/inode.c                             |  1 +
+ sbin/fsck/pass1.c                             |  1 +
+ sbin/fsck/pass1b.c                            |  1 +
+ sbin/fsck/pass2.c                             |  1 +
+ sbin/fsck/pass3.c                             |  1 +
+ sbin/fsck/pass4.c                             |  1 +
+ sbin/fsck/pass5.c                             |  1 +
+ sbin/fsck/preen.c                             |  1 +
+ sbin/fsck/setup.c                             |  1 +
+ sbin/fsck/utilities.c                         |  1 +
+ sbin/fsck_msdosfs/ext.h                       |  1 +
+ sbin/fsdb/fsdb.c                              | 47 ++++++++++---------
+ sbin/fsdb/fsdbutil.c                          |  7 +--
+ sbin/fsirand/fsirand.c                        |  1 +
+ sbin/growfs/debug.c                           | 17 +++----
+ sbin/growfs/debug.h                           |  7 +--
+ sbin/growfs/growfs.c                          |  1 +
+ sbin/ifconfig/regdomain.h                     |  1 +
+ sbin/jscan/jscan.c                            | 30 ++++++------
+ sbin/jscan/jscan.h                            | 13 ++---
+ sbin/md5/md5.c                                |  1 +
+ sbin/natacontrol/natacontrol.c                |  1 +
+ sbin/newfs/defs.h                             |  3 +-
+ sbin/newfs_msdos/mkfs_msdos.h                 |  1 +
+ sbin/nvmectl/nvmectl.h                        |  1 +
+ sbin/quotacheck/quotacheck.c                  |  1 +
+ sbin/restore/dirs.c                           |  1 +
+ sbin/restore/interactive.c                    |  1 +
+ sbin/restore/main.c                           |  1 +
+ sbin/restore/restore.c                        |  1 +
+ sbin/restore/symtab.c                         |  1 +
+ sbin/restore/utilities.c                      |  1 +
+ sbin/savecore/zopen.c                         |  1 +
+ sbin/usched/usched.c                          |  1 +
+ sbin/vinum/vinumutil.c                        |  2 +-
+ sys/boot/common/ls.c                          |  5 +-
+ sys/boot/pc32/boot2/scrc32.c                  |  1 +
+ .../source/include/platform/acdragonfly.h     |  5 ++
+ sys/emulation/ndis/pe_var.h                   |  1 +
+ sys/libkern/crc32.c                           |  2 +-
+ sys/libkern/icrc32.c                          |  1 +
+ sys/net/if.h                                  |  1 +
+ sys/netproto/smb/smb.h                        |  7 +--
+ sys/sys/types.h                               |  4 +-
+ sys/vfs/ufs/ffs_subr.c                        |  1 +
+ usr.bin/c89/c89.c                             |  2 +-
+ usr.bin/cksum/cksum.c                         |  2 +-
+ usr.bin/cksum/extern.h                        |  1 -
+ usr.bin/hexdump/display.c                     |  2 +-
+ usr.bin/kcollect/kcollect.h                   |  1 +
+ usr.bin/limits/limits.c                       |  1 +
+ usr.bin/localedef/localedef.h                 |  1 +
+ usr.bin/m4/extern.h                           |  2 +
+ usr.bin/ruptime/ruptime.c                     |  1 +
+ usr.bin/rwho/rwho.c                           |  1 +
+ usr.bin/sort/mem.c                            |  1 +
+ usr.bin/strfile/strfile.h                     |  2 +-
+ usr.bin/tail/misc.c                           |  1 +
+ usr.bin/tail/reverse.c                        |  2 +-
+ usr.bin/talk/invite.c                         |  1 +
+ usr.bin/talk/look_up.c                        |  1 +
+ usr.bin/window/string.c                       |  1 +
+ usr.bin/window/ttgeneric.c                    |  1 +
+ usr.bin/xargs/strnsubst.c                     |  2 +-
+ usr.sbin/cdcontrol/cdcontrol.c                |  1 +
+ usr.sbin/clog/clog.c                          | 33 +++++++------
+ usr.sbin/clog/clog.h                          | 22 ++++-----
+ usr.sbin/cpucontrol/amd.c                     |  1 +
+ usr.sbin/cpucontrol/amd10h.c                  |  1 +
+ usr.sbin/cpucontrol/intel.c                   |  1 +
+ usr.sbin/cpucontrol/via.c                     |  1 +
+ usr.sbin/edquota/edquota.c                    |  1 +
+ usr.sbin/fstyp/fstyp.c                        |  1 +
+ usr.sbin/fstyp/msdosfs.h                      |  2 +-
+ usr.sbin/makefs/ffs/ffs_subr.c                |  3 +-
+ usr.sbin/makefs/makefs.h                      |  3 +-
+ usr.sbin/memcontrol/memcontrol.c              | 25 +++++-----
+ usr.sbin/mfiutil/mfiutil.c                    |  1 +
+ usr.sbin/mfiutil/mfiutil.h                    |  1 +
+ usr.sbin/mpsutil/mpr_ioctl.h                  |  2 +
+ usr.sbin/mpsutil/mps_ioctl.h                  |  2 +
+ usr.sbin/mpsutil/mpsutil.h                    |  1 +
+ usr.sbin/mptutil/mptutil.h                    |  1 +
+ usr.sbin/mtree/pack_dev.c                     |  1 +
+ usr.sbin/ndiscvt/inf.c                        |  1 +
+ usr.sbin/ngctl/ngctl.h                        |  6 +--
+ usr.sbin/ngctl/show.c                         |  5 +-
+ usr.sbin/ppp/acf.c                            |  2 +-
+ usr.sbin/ppp/async.c                          |  2 +-
+ usr.sbin/ppp/hdlc.c                           |  1 +
+ usr.sbin/ppp/sync.c                           |  2 +-
+ usr.sbin/ppp/tty.c                            |  2 +-
+ usr.sbin/repquota/repquota.c                  |  1 +
+ usr.sbin/rtadvd/advcap.c                      |  1 +
+ usr.sbin/sdpd/log.c                           |  2 +-
+ 167 files changed, 315 insertions(+), 192 deletions(-)
+
+diff --git a/bin/dd/conv.c b/bin/dd/conv.c
+index 3ddde5c641..0440a12732 100644
+--- a/bin/dd/conv.c
++++ b/bin/dd/conv.c
+@@ -39,6 +39,7 @@
+ #include <sys/param.h>
+ 
+ #include <err.h>
++#include <stdint.h>
+ #include <string.h>
+ 
+ #include "dd.h"
+diff --git a/bin/dd/conv_tab.c b/bin/dd/conv_tab.c
+index 5aebe1e475..a1f5175a1e 100644
+--- a/bin/dd/conv_tab.c
++++ b/bin/dd/conv_tab.c
+@@ -37,6 +37,7 @@
+  */
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ #include "dd.h"
+ #include "extern.h"
+diff --git a/bin/dd/dd.h b/bin/dd/dd.h
+index a0a55d545b..6f742b5841 100644
+--- a/bin/dd/dd.h
++++ b/bin/dd/dd.h
+@@ -37,6 +37,7 @@
+  */
+ 
+ #include <sys/time.h>
++#include <stdint.h>
+ 
+ /* Input/output stream state. */
+ typedef struct {
+diff --git a/bin/pax/cpio.c b/bin/pax/cpio.c
+index f73037d82a..d0ca1ab175 100644
+--- a/bin/pax/cpio.c
++++ b/bin/pax/cpio.c
+@@ -32,13 +32,13 @@
+  *
+  * @(#)cpio.c	8.1 (Berkeley) 5/31/93
+  * $FreeBSD: src/bin/pax/cpio.c,v 1.12.2.1 2001/08/01 05:03:11 obrien Exp $
+- * $DragonFly: src/bin/pax/cpio.c,v 1.8 2006/09/27 21:58:08 pavalos Exp $
+  */
+ 
+ #include <sys/types.h>
+ #include <sys/time.h>
+ #include <sys/stat.h>
+ #include <string.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <stdlib.h>
+diff --git a/bin/pax/gen_subs.c b/bin/pax/gen_subs.c
+index fcfb362c58..e4b00121ce 100644
+--- a/bin/pax/gen_subs.c
++++ b/bin/pax/gen_subs.c
+@@ -40,6 +40,7 @@
+ #include <grp.h>
+ #include <langinfo.h>
+ #include <pwd.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -171,7 +172,7 @@ ls_tty(ARCHD *arcn)
+ /*
+  * l_strncpy()
+  *	copy src to dest up to len chars (stopping at first '\0').
+- *	when src is shorter than len, pads to len with '\0'. 
++ *	when src is shorter than len, pads to len with '\0'.
+  * Return:
+  *	number of chars copied. (Note this is a real performance win over
+  *	doing a strncpy(), a strlen(), and then a possible memset())
+diff --git a/contrib/openbsd_libm/src/math_private.h b/contrib/openbsd_libm/src/math_private.h
+index 5bece0cbe6..64f1e58adb 100644
+--- a/contrib/openbsd_libm/src/math_private.h
++++ b/contrib/openbsd_libm/src/math_private.h
+@@ -5,7 +5,7 @@
+  *
+  * Developed at SunPro, a Sun Microsystems, Inc. business.
+  * Permission to use, copy, modify, and distribute this
+- * software is freely granted, provided that this notice 
++ * software is freely granted, provided that this notice
+  * is preserved.
+  * ====================================================
+  */
+@@ -18,6 +18,7 @@
+ #define _MATH_PRIVATE_H_
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ /* The original fdlibm code used statements like:
+ 	n0 = ((*(int*)&one)>>29)^1;		* index of high word *
+diff --git a/contrib/openbsd_libm/src/s_rintl.c b/contrib/openbsd_libm/src/s_rintl.c
+index 55ebca5ba0..b627cbc9c8 100644
+--- a/contrib/openbsd_libm/src/s_rintl.c
++++ b/contrib/openbsd_libm/src/s_rintl.c
+@@ -29,6 +29,7 @@
+ #include <machine/ieee.h>
+ #include <float.h>
+ #include <math.h>
++#include <stdint.h>
+ 
+ #if LDBL_MAX_EXP != 0x4000
+ /* We also require the usual bias, min exp and expsign packing. */
+diff --git a/contrib/smbfs/lib/smb/nls.c b/contrib/smbfs/lib/smb/nls.c
+index abd831f3b8..b45631334a 100644
+--- a/contrib/smbfs/lib/smb/nls.c
++++ b/contrib/smbfs/lib/smb/nls.c
+@@ -40,6 +40,7 @@
+ #include <dlfcn.h>
+ #endif
+ #include <errno.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+ #include <strings.h>
+diff --git a/contrib/smbfs/smbutil/dumptree.c b/contrib/smbfs/smbutil/dumptree.c
+index 2ae383318e..6325405c47 100644
+--- a/contrib/smbfs/smbutil/dumptree.c
++++ b/contrib/smbfs/smbutil/dumptree.c
+@@ -2,6 +2,7 @@
+ #include <sys/time.h>
+ #include <grp.h>
+ #include <pwd.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+ #include <unistd.h>
+diff --git a/contrib/smbfs/smbutil/smbutil.c b/contrib/smbfs/smbutil/smbutil.c
+index 4d14f9e4a3..3a3460d5d0 100644
+--- a/contrib/smbfs/smbutil/smbutil.c
++++ b/contrib/smbfs/smbutil/smbutil.c
+@@ -1,5 +1,6 @@
+ #include <sys/param.h>
+ #include <sys/time.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+ #include <unistd.h>
+diff --git a/games/fish/fish.c b/games/fish/fish.c
+index b31d4b068a..b2c6fdf47b 100644
+--- a/games/fish/fish.c
++++ b/games/fish/fish.c
+@@ -39,6 +39,7 @@
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <spawn.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/games/hack/hack.h b/games/hack/hack.h
+index 0d3868ecab..82e385ddb2 100644
+--- a/games/hack/hack.h
++++ b/games/hack/hack.h
+@@ -6,6 +6,7 @@
+ #include <signal.h>
+ #include <stdarg.h>
+ #include <stdbool.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/games/morse/morse.c b/games/morse/morse.c
+index 21a9eee660..78fce2ed1a 100644
+--- a/games/morse/morse.c
++++ b/games/morse/morse.c
+@@ -47,6 +47,7 @@
+ #include <locale.h>
+ #include <math.h>
+ #include <signal.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/games/tetris/screen.c b/games/tetris/screen.c
+index bbcc9f1faa..026267022f 100644
+--- a/games/tetris/screen.c
++++ b/games/tetris/screen.c
+@@ -44,6 +44,7 @@
+ #include <err.h>
+ #include <setjmp.h>
+ #include <signal.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/gnu/usr.bin/binutils225/block1/libbfd/Makefile b/gnu/usr.bin/binutils225/block1/libbfd/Makefile
+index c686c47eea..3b23f7e77a 100644
+--- a/gnu/usr.bin/binutils225/block1/libbfd/Makefile
++++ b/gnu/usr.bin/binutils225/block1/libbfd/Makefile
+@@ -74,7 +74,7 @@ elf64-gen.c elf64-x86-64.c: elf64-target.h
+ cache.c elf32-i386.c elf64-x86-64.c: bfd_stdint.h
+ 
+ bfd_stdint.h:
+-	touch ${.TARGET}
++	echo "#include <stdint.h>" > ${.TARGET}
+ 
+ targmatch.h: config.bfd targmatch.sed
+ 	sed -f ${CONTRIBDIR}/targmatch.sed < ${CONTRIBDIR}/config.bfd \
+diff --git a/gnu/usr.bin/binutils225/block2/Makefile.block2 b/gnu/usr.bin/binutils225/block2/Makefile.block2
+index caf70abec1..14c8c92bf0 100644
+--- a/gnu/usr.bin/binutils225/block2/Makefile.block2
++++ b/gnu/usr.bin/binutils225/block2/Makefile.block2
+@@ -29,4 +29,4 @@ LDADD_OPCODE=	${OBJTOP}/block1/libopcodes/libopcodes.a
+ STD_LDADD=	${LDADD_BU} ${LDADD_BFD} ${LDADD_IBERTY}
+ 
+ bfd_stdint.h:
+-	touch ${.TARGET}
++	echo "#include <stdint.h>" > ${.TARGET}
+diff --git a/gnu/usr.bin/binutils227/block1/libbfd/Makefile b/gnu/usr.bin/binutils227/block1/libbfd/Makefile
+index 3d0a7892da..4d31547107 100644
+--- a/gnu/usr.bin/binutils227/block1/libbfd/Makefile
++++ b/gnu/usr.bin/binutils227/block1/libbfd/Makefile
+@@ -75,7 +75,7 @@ elf64-gen.c elf64-x86-64.c: elf64-target.h
+ cache.c elf32-i386.c elf64-x86-64.c: bfd_stdint.h
+ 
+ bfd_stdint.h:
+-	touch ${.TARGET}
++	echo "#include <stdint.h>" > ${.TARGET}
+ 
+ targmatch.h: config.bfd targmatch.sed
+ 	sed -f ${CONTRIBDIR}/targmatch.sed < ${CONTRIBDIR}/config.bfd \
+diff --git a/gnu/usr.bin/binutils227/block2/Makefile.block2 b/gnu/usr.bin/binutils227/block2/Makefile.block2
+index 5e151f55a2..b26bd030b7 100644
+--- a/gnu/usr.bin/binutils227/block2/Makefile.block2
++++ b/gnu/usr.bin/binutils227/block2/Makefile.block2
+@@ -29,4 +29,4 @@ LDADD_OPCODE=	${OBJTOP}/block1/libopcodes/libopcodes.a
+ STD_LDADD=	${LDADD_BU} ${LDADD_BFD} ${LDADD_IBERTY}
+ 
+ bfd_stdint.h:
+-	touch ${.TARGET}
++	echo "#include <stdint.h>" > ${.TARGET}
+diff --git a/gnu/usr.bin/gdb/libbfd/Makefile b/gnu/usr.bin/gdb/libbfd/Makefile
+index 37755e1eea..e66e17d297 100644
+--- a/gnu/usr.bin/gdb/libbfd/Makefile
++++ b/gnu/usr.bin/gdb/libbfd/Makefile
+@@ -74,6 +74,6 @@ SRCS+=		bfd_stdint.h
+ CLEANFILES+=	bfd_stdint.h
+ 
+ bfd_stdint.h:
+-	touch ${.TARGET}
++	echo "#include <stdint.h>" > ${.TARGET}
+ 
+ .include <bsd.lib.mk>
+diff --git a/lib/csu/common/crtbrand.c b/lib/csu/common/crtbrand.c
+index 82142a462c..59631d6ffa 100644
+--- a/lib/csu/common/crtbrand.c
++++ b/lib/csu/common/crtbrand.c
+@@ -26,6 +26,7 @@
+  */
+ 
+ #include <sys/param.h>
++#include <stdint.h>
+ #include "notes.h"
+ 
+ /*
+diff --git a/lib/csu/common/initfini.c b/lib/csu/common/initfini.c
+index 48dd815ad2..b0caa10e08 100644
+--- a/lib/csu/common/initfini.c
++++ b/lib/csu/common/initfini.c
+@@ -23,6 +23,7 @@
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include <stdint.h>
+ #include "notes.h"
+ 
+ extern int main(int, char **, char **);
+diff --git a/lib/libc/citrus/citrus_bcs.h b/lib/libc/citrus/citrus_bcs.h
+index 10afacdb98..db0dffc671 100644
+--- a/lib/libc/citrus/citrus_bcs.h
++++ b/lib/libc/citrus/citrus_bcs.h
+@@ -28,6 +28,7 @@
+  */
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ #ifndef _CITRUS_BCS_H_
+ #define _CITRUS_BCS_H_
+diff --git a/lib/libc/citrus/citrus_iconv_local.h b/lib/libc/citrus/citrus_iconv_local.h
+index 4335ca3a52..7102b78d42 100644
+--- a/lib/libc/citrus/citrus_iconv_local.h
++++ b/lib/libc/citrus/citrus_iconv_local.h
+@@ -32,6 +32,7 @@
+ 
+ #include <iconv.h>
+ #include <stdbool.h>
++#include <stdint.h>
+ 
+ #define _CITRUS_ICONV_GETOPS_FUNC_BASE(_n_)				\
+     int _n_(struct _citrus_iconv_ops *)
+diff --git a/lib/libc/citrus/citrus_types.h b/lib/libc/citrus/citrus_types.h
+index e691219eab..f50d194cd0 100644
+--- a/lib/libc/citrus/citrus_types.h
++++ b/lib/libc/citrus/citrus_types.h
+@@ -27,7 +27,7 @@
+  * SUCH DAMAGE.
+  */
+ 
+-#include <sys/types.h>
++#include <stdint.h>
+ 
+ #ifndef _CITRUS_TYPES_H_
+ #define _CITRUS_TYPES_H_
+diff --git a/lib/libc/db/btree/btree.h b/lib/libc/db/btree/btree.h
+index 41cad14f2c..8faaf42529 100644
+--- a/lib/libc/db/btree/btree.h
++++ b/lib/libc/db/btree/btree.h
+@@ -39,6 +39,7 @@
+ #define	F_ISSET(p, f)	((p)->flags & (f))
+ 
+ #include <mpool.h>
++#include <stdint.h>
+ 
+ #define	DEFMINKEYPAGE	(2)		/* Minimum keys per page */
+ #define	MINCACHE	(5)		/* Minimum cached pages */
+diff --git a/lib/libc/gen/arc4random.c b/lib/libc/gen/arc4random.c
+index 13ad9ce4b0..9146fc513e 100644
+--- a/lib/libc/gen/arc4random.c
++++ b/lib/libc/gen/arc4random.c
+@@ -34,6 +34,7 @@
+ #include <sys/types.h>
+ #include <sys/time.h>
+ #include <sys/sysctl.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <fcntl.h>
+ #include <unistd.h>
+diff --git a/lib/libc/gen/disklabel.c b/lib/libc/gen/disklabel.c
+index 79fc8b7651..01351a554c 100644
+--- a/lib/libc/gen/disklabel.c
++++ b/lib/libc/gen/disklabel.c
+@@ -28,13 +28,13 @@
+  *
+  * @(#)disklabel.c	8.2 (Berkeley) 5/3/95
+  * $FreeBSD: src/lib/libc/gen/disklabel.c,v 1.9.2.1 2001/03/05 08:40:47 obrien Exp $
+- * $DragonFly: src/lib/libc/gen/disklabel.c,v 1.13 2007/06/18 05:13:34 dillon Exp $
+  */
+ 
+ #include <sys/param.h>
+ #define DKTYPENAMES
+ #include <sys/disklabel32.h>
+ #include <sys/dtype.h>
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/lib/libc/gen/disktab.c b/lib/libc/gen/disktab.c
+index 1aeab1ea09..e5711787fb 100644
+--- a/lib/libc/gen/disktab.c
++++ b/lib/libc/gen/disktab.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2007 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -60,7 +60,6 @@
+  * SUCH DAMAGE.
+  */
+ /*
+- * $DragonFly: src/lib/libc/gen/disktab.c,v 1.11 2007/06/17 23:50:13 dillon Exp $
+  * @(#)disklabel.c     8.2 (Berkeley) 5/3/95
+  * $FreeBSD: src/lib/libc/gen/disklabel.c,v 1.9.2.1 2001/03/05 08:40:47 obrien
+  */
+@@ -69,6 +68,7 @@
+ #define DKTYPENAMES
+ #include <sys/disklabel.h>
+ #include <sys/dtype.h>
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/lib/libc/gen/exec.c b/lib/libc/gen/exec.c
+index 487b2df2bf..cae99bce86 100644
+--- a/lib/libc/gen/exec.c
++++ b/lib/libc/gen/exec.c
+@@ -36,6 +36,7 @@
+ #include <sys/stat.h>
+ #include <errno.h>
+ #include <unistd.h>
++#include <stdint.h>	/* for uintptr_t in __DECONST() */
+ #include <stdlib.h>
+ #include <string.h>
+ #include <stdio.h>
+diff --git a/lib/libc/gen/ldexp.c b/lib/libc/gen/ldexp.c
+index 87d3dd8ab0..12776f312e 100644
+--- a/lib/libc/gen/ldexp.c
++++ b/lib/libc/gen/ldexp.c
+@@ -15,6 +15,7 @@
+ #include <sys/types.h>
+ #include <machine/endian.h>
+ #include <math.h>
++#include <stdint.h>
+ 
+ /* Bit fiddling routines copied from msun/src/math_private.h,v 1.15 */
+ 
+diff --git a/lib/libc/gen/modf.c b/lib/libc/gen/modf.c
+index 4e1b80599b..4b8d26e904 100644
+--- a/lib/libc/gen/modf.c
++++ b/lib/libc/gen/modf.c
+@@ -24,6 +24,7 @@
+ #include <sys/types.h>
+ #include <machine/endian.h>
+ #include <math.h>
++#include <stdint.h>
+ 
+ /* Bit fiddling routines copied from msun/src/math_private.h,v 1.15 */
+ 
+diff --git a/lib/libc/gen/popen.c b/lib/libc/gen/popen.c
+index 2e016780b8..a0d5c83cc5 100644
+--- a/lib/libc/gen/popen.c
++++ b/lib/libc/gen/popen.c
+@@ -31,7 +31,6 @@
+  *
+  * @(#)popen.c	8.3 (Berkeley) 5/3/95
+  * $FreeBSD: src/lib/libc/gen/popen.c,v 1.20 2008/07/29 16:29:59 ed Exp $
+- * $DragonFly: src/lib/libc/gen/popen.3,v 1.4 2006/04/08 08:17:06 swildner Exp $
+  */
+ 
+ #include "namespace.h"
+@@ -42,6 +41,7 @@
+ #include <signal.h>
+ #include <errno.h>
+ #include <unistd.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/lib/libc/gen/ucontext.c b/lib/libc/gen/ucontext.c
+index b193ef87c8..02a2f53785 100644
+--- a/lib/libc/gen/ucontext.c
++++ b/lib/libc/gen/ucontext.c
+@@ -31,6 +31,7 @@
+ 
+ #include <errno.h>
+ #include <stdarg.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <signal.h>
+diff --git a/lib/libc/gen/vis.c b/lib/libc/gen/vis.c
+index 42f6d03df3..4f8658773f 100644
+--- a/lib/libc/gen/vis.c
++++ b/lib/libc/gen/vis.c
+@@ -63,6 +63,7 @@
+ #include <assert.h>
+ #include <vis.h>
+ #include <errno.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <wchar.h>
+ #include <wctype.h>
+diff --git a/lib/libc/locale/rune.c b/lib/libc/locale/rune.c
+index 0641cea956..dcd5e3ffb2 100644
+--- a/lib/libc/locale/rune.c
++++ b/lib/libc/locale/rune.c
+@@ -38,6 +38,7 @@
+ #include "namespace.h"
+ #include <errno.h>
+ #include <runetype.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+ #include <stdlib.h>
+diff --git a/lib/libc/net/nsdispatch.c b/lib/libc/net/nsdispatch.c
+index 897a1f78a7..c8b68bece1 100644
+--- a/lib/libc/net/nsdispatch.c
++++ b/lib/libc/net/nsdispatch.c
+@@ -79,6 +79,7 @@
+ #define _NS_PRIVATE
+ #include <nsswitch.h>
+ #include <pthread.h>
++#include <stdint.h>	/* for uinptr_t in __DECONST() */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/lib/libc/net/ntoh.c b/lib/libc/net/ntoh.c
+index be0c51b165..fd212beb1b 100644
+--- a/lib/libc/net/ntoh.c
++++ b/lib/libc/net/ntoh.c
+@@ -27,6 +27,7 @@
+  */
+ 
+ #include <sys/endian.h>
++#include <stdint.h>
+ 
+ uint32_t
+ htonl(uint32_t hl)
+diff --git a/lib/libc/stdio/mktemp.c b/lib/libc/stdio/mktemp.c
+index 28d70021db..4470d9df5e 100644
+--- a/lib/libc/stdio/mktemp.c
++++ b/lib/libc/stdio/mktemp.c
+@@ -28,7 +28,6 @@
+  *
+  * @(#)mktemp.c	8.1 (Berkeley) 6/4/93
+  * $FreeBSD: src/lib/libc/stdio/mktemp.c,v 1.31 2008/07/28 21:18:59 jhb Exp $
+- * $DragonFly: src/lib/libc/stdio/mktemp.c,v 1.7 2005/11/20 11:07:30 swildner Exp $
+  */
+ 
+ #include "namespace.h"
+@@ -36,6 +35,7 @@
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ #include <errno.h>
++#include <stdint.h>	/* for uint32_t */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/lib/libc/stdlib/bsearch.c b/lib/libc/stdlib/bsearch.c
+index 10fd11a6d4..92769de50f 100644
+--- a/lib/libc/stdlib/bsearch.c
++++ b/lib/libc/stdlib/bsearch.c
+@@ -28,10 +28,10 @@
+  *
+  * @(#)bsearch.c	8.1 (Berkeley) 6/4/93
+  * $FreeBSD: src/lib/libc/stdlib/bsearch.c,v 1.4 2007/01/09 00:28:09 imp Exp $
+- * $DragonFly: src/lib/libc/stdlib/bsearch.c,v 1.5 2005/11/20 12:37:48 swildner Exp $
+  */
+ 
+ #include <stddef.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ 
+ /*
+diff --git a/lib/libc/stdlib/getopt_long.c b/lib/libc/stdlib/getopt_long.c
+index e27326f231..fdf13e7ef7 100644
+--- a/lib/libc/stdlib/getopt_long.c
++++ b/lib/libc/stdlib/getopt_long.c
+@@ -56,12 +56,12 @@
+  * POSSIBILITY OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libc/stdlib/getopt_long.c,v 1.15 2006/09/23 14:48:31 ache Exp $
+- * $DragonFly: src/lib/libc/stdlib/getopt_long.c,v 1.14 2005/11/20 12:37:48 swildner Exp $
+  */
+ 
+ #include <err.h>
+ #include <errno.h>
+ #include <getopt.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
+ 
+diff --git a/lib/libc/stdlib/hcreate.c b/lib/libc/stdlib/hcreate.c
+index 2d542e8818..b662359598 100644
+--- a/lib/libc/stdlib/hcreate.c
++++ b/lib/libc/stdlib/hcreate.c
+@@ -1,7 +1,7 @@
+ /*
+  * Copyright (c) 2001 Christopher G. Demetriou
+  * All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -17,7 +17,7 @@
+  *          information about NetBSD.
+  * 4. The name of the author may not be used to endorse or promote products
+  *    derived from this software without specific prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+@@ -28,12 +28,11 @@
+  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+- * 
++ *
+  * <<Id: LICENSE,v 1.2 2000/06/14 15:57:33 cgd Exp>>
+  *
+  * $NetBSD: hcreate.c,v 1.2 2001/02/19 21:26:04 ross Exp $
+  * $FreeBSD: src/lib/libc/stdlib/hcreate.c,v 1.4 2008/07/06 11:31:20 danger Exp $
+- * $DragonFly: src/lib/libc/stdlib/hcreate.c,v 1.2 2003/06/17 04:26:46 dillon Exp $
+  */
+ 
+ /*
+@@ -52,6 +51,7 @@
+ #include <sys/queue.h>
+ #include <errno.h>
+ #include <search.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
+ 
+@@ -107,7 +107,7 @@ hcreate(size_t nel)
+ 			nel >>= 1;
+ 		nel = 1 << p2;
+ 	}
+-	
++
+ 	/* Allocate the table. */
+ 	htablesize = nel;
+ 	htable = malloc(htablesize * sizeof htable[0]);
+diff --git a/lib/libc/stdlib/tsearch.c b/lib/libc/stdlib/tsearch.c
+index 94615257aa..2dc2264991 100644
+--- a/lib/libc/stdlib/tsearch.c
++++ b/lib/libc/stdlib/tsearch.c
+@@ -14,6 +14,7 @@
+ 
+ #define _SEARCH_PRIVATE
+ #include <search.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ 
+ /*
+diff --git a/lib/libc/string/bcopy.c b/lib/libc/string/bcopy.c
+index 91acab54d2..7c4fc66dbf 100644
+--- a/lib/libc/string/bcopy.c
++++ b/lib/libc/string/bcopy.c
+@@ -34,6 +34,7 @@
+  */
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ /*
+  * sizeof(word) MUST BE A POWER OF TWO
+diff --git a/lib/libc/upmap/upmap.h b/lib/libc/upmap/upmap.h
+index 99d2cc5b8a..3d57448361 100644
+--- a/lib/libc/upmap/upmap.h
++++ b/lib/libc/upmap/upmap.h
+@@ -35,9 +35,8 @@
+ #ifndef	_UPMAP_H_
+ #define	_UPMAP_H_
+ 
+-#ifndef _SYS_TYPES_H_
+-#include <sys/types.h>
+-#endif
++#include <stdarg.h>
++#include <stdint.h>
+ 
+ void __kpmap_map(void *datap, int *state, uint16_t type);
+ void __upmap_map(void *datap, int *state, uint16_t type);
+diff --git a/lib/libcam/camlib.c b/lib/libcam/camlib.c
+index febd00d96a..7ca3112e07 100644
+--- a/lib/libcam/camlib.c
++++ b/lib/libcam/camlib.c
+@@ -27,6 +27,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/param.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/lib/libcompat/4.3/re_comp.c b/lib/libcompat/4.3/re_comp.c
+index eebf068e3b..5cdc8c0648 100644
+--- a/lib/libcompat/4.3/re_comp.c
++++ b/lib/libcompat/4.3/re_comp.c
+@@ -42,6 +42,7 @@
+ 
+ #include <regex.h>
+ #include <stddef.h>
++#include <stdint.h>
+ #include <unistd.h>
+ 
+ static regex_t re_regexp;
+diff --git a/lib/libcrypt/crypt-des.c b/lib/libcrypt/crypt-des.c
+index 2189a82ca9..d7ab6ac69b 100644
+--- a/lib/libcrypt/crypt-des.c
++++ b/lib/libcrypt/crypt-des.c
+@@ -60,6 +60,7 @@
+ #include <sys/types.h>
+ #include <sys/param.h>
+ #include <pwd.h>
++#include <stdint.h>
+ #include <string.h>
+ #include "crypt.h"
+ #include "local_xsi.h"
+diff --git a/lib/libcrypt/deprecated-crypt-sha256.c b/lib/libcrypt/deprecated-crypt-sha256.c
+index dc4b2d6911..35d1194d01 100644
+--- a/lib/libcrypt/deprecated-crypt-sha256.c
++++ b/lib/libcrypt/deprecated-crypt-sha256.c
+@@ -34,6 +34,7 @@
+  */
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ #include <string.h>
+ 
+ #include "crypt.h"
+@@ -44,7 +45,7 @@
+  */
+ 
+ #define SHA256_SIZE 32
+- 
++
+ char*
+ crypt_deprecated_sha256(const char *pw, const char *salt)
+ {
+@@ -79,30 +80,30 @@ crypt_deprecated_sha256(const char *pw, const char *salt)
+ 
+ 	/* Get the actual salt length. */
+ 	sl = ep - sp;
+-	
++
+ 	__crypt__sha256_init_ctx(&ctx);
+ 
+ 	/* Hash in the password first. */
+ 	__crypt__sha256_process_bytes(pw, strlen(pw), &ctx);
+-	
++
+         /*
+          * Then the magic string
+          *
+          * XXX: sizeof instead of strlen, must retain
+          */
+ 	__crypt__sha256_process_bytes(magic, sizeof(magic), &ctx);
+-	
++
+ 	/* Then the raw salt. */
+ 	__crypt__sha256_process_bytes(sp, sl, &ctx);
+-	
++
+ 	/* Finish and create the output string. */
+ 	__crypt__sha256_finish_ctx(&ctx, final);
+ 	strcpy(passwd, magic);
+ 	strncat(passwd, sp, sl);
+ 	strcat(passwd, "$");
+-	
++
+ 	p = passwd + strlen(passwd);
+-	
++
+ 	l = (final[ 0] << 16) | (final[11] << 8) | final[21];
+ 	_crypt_to64(p, l, 4); p += 4;
+ 	l = (final[ 1] << 16) | (final[12] << 8) | final[22];
+@@ -126,7 +127,7 @@ crypt_deprecated_sha256(const char *pw, const char *salt)
+ 	l = (final[10] << 16) | (final[31] << 8);
+ 	_crypt_to64(p, l, 4); p += 4;
+ 	*p = '\0';
+-	
++
+ 	/* Clear memory. */
+ 	memset(final, 0, sizeof(final));
+ 
+diff --git a/lib/libcrypt/deprecated-crypt-sha512.c b/lib/libcrypt/deprecated-crypt-sha512.c
+index f710eeec3b..0f992be269 100644
+--- a/lib/libcrypt/deprecated-crypt-sha512.c
++++ b/lib/libcrypt/deprecated-crypt-sha512.c
+@@ -34,6 +34,7 @@
+  */
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ #include <string.h>
+ 
+ #include "crypt.h"
+@@ -44,7 +45,7 @@
+  */
+ 
+ #define SHA512_SIZE 64
+- 
++
+ char*
+ crypt_deprecated_sha512(const char *pw, const char *salt)
+ {
+@@ -79,30 +80,30 @@ crypt_deprecated_sha512(const char *pw, const char *salt)
+ 
+ 	/* Get the actual salt length. */
+ 	sl = ep - sp;
+-	
++
+ 	__crypt__sha512_init_ctx(&ctx);
+-	
++
+ 	/* Hash in the password first. */
+ 	__crypt__sha512_process_bytes(pw, strlen(pw), &ctx);
+-	
++
+ 	/*
+ 	 * Then the magic string
+ 	 *
+ 	 * XXX: sizeof instead of strlen, must retain
+ 	 */
+ 	__crypt__sha512_process_bytes(magic, sizeof(magic), &ctx);
+-	
++
+ 	/* Then the raw salt. */
+ 	__crypt__sha512_process_bytes(sp, sl, &ctx);
+-	
++
+ 	/* Finish and create the output string. */
+ 	__crypt__sha512_finish_ctx(&ctx, final);
+ 	strcpy(passwd, magic);
+ 	strncat(passwd, sp, sl);
+ 	strcat(passwd, "$");
+-	
++
+ 	p = passwd + strlen(passwd);
+-	
++
+ 	/*
+ 	 * For-loop form of the algorithm in sha256.c;
+ 	 * breaks the final output up into 3cols and then base64's each row.
+@@ -114,9 +115,9 @@ crypt_deprecated_sha512(const char *pw, const char *salt)
+ 	l = (final[20] << 16) | (final[41] << 8);
+ 	_crypt_to64(p, l, 4); p += 4;
+ 	*p = '\0';
+-	
++
+ 	/* Clear memory. */
+ 	memset(final, 0, sizeof(final));
+-	
++
+ 	return (passwd);
+ }
+diff --git a/lib/libfsid/libfsid.h b/lib/libfsid/libfsid.h
+index 9649a4a1fd..50e587116b 100644
+--- a/lib/libfsid/libfsid.h
++++ b/lib/libfsid/libfsid.h
+@@ -40,6 +40,7 @@
+ 
+ #include <err.h>
+ #include <fcntl.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/lib/libhammer/libhammer.h b/lib/libhammer/libhammer.h
+index 522f1e76c9..ba6ca069b0 100644
+--- a/lib/libhammer/libhammer.h
++++ b/lib/libhammer/libhammer.h
+@@ -39,6 +39,7 @@
+ 
+ #include <sys/queue.h>
+ #include <sys/param.h>
++#include <stdint.h>
+ 
+ #include <vfs/hammer/hammer_disk.h>
+ #include <vfs/hammer/hammer_ioctl.h>
+diff --git a/lib/libkiconv/quirks.c b/lib/libkiconv/quirks.c
+index a502c784b1..24ddc03a5b 100644
+--- a/lib/libkiconv/quirks.c
++++ b/lib/libkiconv/quirks.c
+@@ -38,7 +38,7 @@
+  * Since each vendors has their own Unicode mapping rules,
+  * we need some quirks until iconv(3) supports them.
+  * We can define Microsoft mappings here.
+- * 
++ *
+  * For example, the eucJP and Unocode mapping rule is based on
+  * the JIS standard. Since Microsoft uses cp932 for Unicode mapping
+  * which is not truly based on the JIS standard, reading a file
+@@ -55,6 +55,7 @@
+ #include <sys/types.h>
+ #include <sys/iconv.h>
+ 
++#include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+ 
+diff --git a/lib/libkiconv/xlat16_iconv.c b/lib/libkiconv/xlat16_iconv.c
+index c843e7c377..9b2aeebd49 100644
+--- a/lib/libkiconv/xlat16_iconv.c
++++ b/lib/libkiconv/xlat16_iconv.c
+@@ -43,6 +43,7 @@
+ #include <errno.h>
+ #include <iconv.h>
+ #include <locale.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/libexec/bootpd/bptypes.h b/libexec/bootpd/bptypes.h
+index 0783009f59..08c08e14f1 100644
+--- a/libexec/bootpd/bptypes.h
++++ b/libexec/bootpd/bptypes.h
+@@ -1,11 +1,11 @@
+ /* $FreeBSD: src/libexec/bootpd/bptypes.h,v 1.2 1999/11/12 10:11:48 marcel Exp $
+- * $DragonFly: src/libexec/bootpd/bptypes.h,v 1.3 2008/08/22 14:47:47 swildner Exp $
+  */
+ 
+ #ifndef	BPTYPES_H
+ #define	BPTYPES_H
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ /*
+  * 32 bit integers are different types on various architectures
+diff --git a/libexec/talkd/announce.c b/libexec/talkd/announce.c
+index 568d2248c1..6f87831e9f 100644
+--- a/libexec/talkd/announce.c
++++ b/libexec/talkd/announce.c
+@@ -37,6 +37,7 @@
+ #include <sys/wait.h>
+ #include <sys/socket.h>
+ 
++#include <stdint.h>
+ #include <protocols/talkd.h>
+ 
+ #include <errno.h>
+diff --git a/libexec/talkd/print.c b/libexec/talkd/print.c
+index faf6c8a300..6b06311263 100644
+--- a/libexec/talkd/print.c
++++ b/libexec/talkd/print.c
+@@ -35,9 +35,10 @@
+ #include <sys/param.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+-#include <protocols/talkd.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <syslog.h>
++#include <protocols/talkd.h>
+ 
+ #include "extern.h"
+ 
+diff --git a/libexec/talkd/table.c b/libexec/talkd/table.c
+index 1c3472c98b..69b188a18d 100644
+--- a/libexec/talkd/table.c
++++ b/libexec/talkd/table.c
+@@ -41,12 +41,13 @@
+ #include <sys/param.h>
+ #include <sys/time.h>
+ #include <sys/socket.h>
+-#include <protocols/talkd.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <syslog.h>
+ #include <unistd.h>
++#include <protocols/talkd.h>
+ 
+ #include "extern.h"
+ 
+diff --git a/libexec/talkd/talkd.c b/libexec/talkd/talkd.c
+index f1e1c46f7b..c05536eff9 100644
+--- a/libexec/talkd/talkd.c
++++ b/libexec/talkd/talkd.c
+@@ -40,17 +40,18 @@
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <sys/param.h>
+-#include <protocols/talkd.h>
+ #include <err.h>
+ #include <errno.h>
+ #include <paths.h>
+ #include <signal.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <syslog.h>
+ #include <time.h>
+ #include <unistd.h>
++#include <protocols/talkd.h>
+ 
+ #include "extern.h"
+ 
+diff --git a/sbin/badsect/badsect.c b/sbin/badsect/badsect.c
+index aa054ed722..eb262a0135 100644
+--- a/sbin/badsect/badsect.c
++++ b/sbin/badsect/badsect.c
+@@ -29,7 +29,6 @@
+  * @(#) Copyright (c) 1981, 1983, 1993 The Regents of the University of California.  All rights reserved.
+  * @(#)badsect.c	8.1 (Berkeley) 6/5/93
+  * $FreeBSD: src/sbin/badsect/badsect.c,v 1.7.2.2 2001/07/30 10:30:04 dd Exp $
+- * $DragonFly: src/sbin/badsect/badsect.c,v 1.11 2006/04/03 01:58:46 dillon Exp $
+  */
+ 
+ /*
+@@ -45,6 +44,7 @@
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/camcontrol/modeedit.c b/sbin/camcontrol/modeedit.c
+index 335873ec90..a3582b7f1e 100644
+--- a/sbin/camcontrol/modeedit.c
++++ b/sbin/camcontrol/modeedit.c
+@@ -12,16 +12,16 @@
+  *    without modification, immediately at the beginning of the file.
+  * 2. Redistributions in binary form must reproduce the above copyright
+  *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution. 
+- *    
++ *    documentation and/or other materials provided with the distribution.
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT  
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+@@ -35,6 +35,7 @@
+ #include <ctype.h>
+ #include <err.h>
+ #include <errno.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <stdio.h>
+@@ -899,7 +900,7 @@ mode_list(struct cam_device *device, int page_control, int dbd,
+ 			printf("0x%02x\n", mph->page_code);
+ 		else
+ 			printf("0x%02x\t%s\n", mph->page_code,
+-			    nameentry->name); 
++			    nameentry->name);
+ 		len += mph->page_length + sizeof(*mph);
+ 	}
+ }
+diff --git a/sbin/clri/clri.c b/sbin/clri/clri.c
+index 0e8a87b464..d920ebd5c1 100644
+--- a/sbin/clri/clri.c
++++ b/sbin/clri/clri.c
+@@ -32,11 +32,11 @@
+  * @(#) Copyright (c) 1990, 1993 The Regents of the University of California.  All rights reserved.
+  * @(#)clri.c	8.2 (Berkeley) 9/23/93
+  * $FreeBSD: src/sbin/clri/clri.c,v 1.4 1999/08/28 00:12:32 peter Exp $
+- * $DragonFly: src/sbin/clri/clri.c,v 1.8 2006/04/03 01:58:48 dillon Exp $
+  */
+ 
+ #include <sys/param.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/disklabel64/crc32.c b/sbin/disklabel64/crc32.c
+index e3d6fbed68..75c5f30c4c 100644
+--- a/sbin/disklabel64/crc32.c
++++ b/sbin/disklabel64/crc32.c
+@@ -26,10 +26,10 @@
+  * CRC32 code derived from work by Gary S. Brown.
+  *
+  * $FreeBSD: src/sbin/gpt/gpt.c,v 1.16 2006/07/07 02:44:23 marcel Exp $
+- * $DragonFly: src/sbin/disklabel64/crc32.c,v 1.2 2008/11/03 00:25:45 pavalos Exp $
+  */
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ uint32_t	crc32(const void *, size_t);
+ 
+diff --git a/sbin/dump/cache.c b/sbin/dump/cache.c
+index c68de27d92..18388251b9 100644
+--- a/sbin/dump/cache.c
++++ b/sbin/dump/cache.c
+@@ -41,6 +41,7 @@
+ #include <sys/stat.h>
+ #include <sys/mman.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dir.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+diff --git a/sbin/dump/itime.c b/sbin/dump/itime.c
+index 0074086a5b..bb5cc90836 100644
+--- a/sbin/dump/itime.c
++++ b/sbin/dump/itime.c
+@@ -34,6 +34,7 @@
+ #include <sys/queue.h>
+ #include <sys/time.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/dump/main.c b/sbin/dump/main.c
+index 5134c04bb2..5366998615 100644
+--- a/sbin/dump/main.c
++++ b/sbin/dump/main.c
+@@ -34,6 +34,7 @@
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/dump/optr.c b/sbin/dump/optr.c
+index cc9f0c0eba..380966b174 100644
+--- a/sbin/dump/optr.c
++++ b/sbin/dump/optr.c
+@@ -38,6 +38,7 @@
+ #include <errno.h>
+ #include <fstab.h>
+ #include <grp.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -345,7 +346,7 @@ fstabsearch(const char *key)
+ /*
+  *	Tell the operator what to do
+  *
+- * char arg: w ==> just what to do; W ==> most recent dumps 
++ * char arg: w ==> just what to do; W ==> most recent dumps
+  */
+ void
+ lastdump(int arg)
+diff --git a/sbin/dump/tape.c b/sbin/dump/tape.c
+index 6856da5e29..8ab5b48b4c 100644
+--- a/sbin/dump/tape.c
++++ b/sbin/dump/tape.c
+@@ -35,6 +35,7 @@
+ #include <sys/time.h>
+ #include <sys/wait.h>
+ #include <sys/stat.h>
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/dump/traverse.c b/sbin/dump/traverse.c
+index e606be014a..810bb4c3eb 100644
+--- a/sbin/dump/traverse.c
++++ b/sbin/dump/traverse.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/stat.h>
++#include <stdint.h>
+ #include <vfs/ufs/dir.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+diff --git a/sbin/dump/unctime.c b/sbin/dump/unctime.c
+index 8915788368..7871876e0b 100644
+--- a/sbin/dump/unctime.c
++++ b/sbin/dump/unctime.c
+@@ -28,11 +28,11 @@
+  *
+  * @(#)unctime.c	8.2 (Berkeley) 6/14/94
+  * $FreeBSD: src/sbin/dump/unctime.c,v 1.3.2.1 2001/09/19 09:29:39 ru Exp $
+- * $DragonFly: src/sbin/dump/unctime.c,v 1.6 2005/08/28 04:35:12 dillon Exp $
+  */
+ 
+ #include <sys/types.h>
+ #include <time.h>
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ 
+ #include "dump.h"
+diff --git a/sbin/dumpfs/dumpfs.c b/sbin/dumpfs/dumpfs.c
+index 13c7dce7f3..22cf6235d0 100644
+--- a/sbin/dumpfs/dumpfs.c
++++ b/sbin/dumpfs/dumpfs.c
+@@ -34,6 +34,7 @@
+ #include <sys/param.h>
+ #include <sys/time.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/fsck/dir.c b/sbin/fsck/dir.c
+index 95a556171c..1d7cf8a720 100644
+--- a/sbin/fsck/dir.c
++++ b/sbin/fsck/dir.c
+@@ -33,6 +33,7 @@
+ #include <sys/param.h>
+ #include <sys/time.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/dir.h>
+ #include <vfs/ufs/fs.h>
+diff --git a/sbin/fsck/fsck.h b/sbin/fsck/fsck.h
+index 7d5c78dba9..b90ae39a03 100644
+--- a/sbin/fsck/fsck.h
++++ b/sbin/fsck/fsck.h
+@@ -32,6 +32,7 @@
+ 
+ #include <unistd.h>
+ #include <stdlib.h>
++#include <stdint.h>
+ #include <stdio.h>
+ 
+ #define	MAXDUP		10	/* limit on dup blks (per inode) */
+diff --git a/sbin/fsck/inode.c b/sbin/fsck/inode.c
+index f19d0d7920..8ea95fd36f 100644
+--- a/sbin/fsck/inode.c
++++ b/sbin/fsck/inode.c
+@@ -33,6 +33,7 @@
+ #include <sys/param.h>
+ #include <sys/time.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/dir.h>
+ #include <vfs/ufs/fs.h>
+diff --git a/sbin/fsck/pass1.c b/sbin/fsck/pass1.c
+index efa9d9ec67..bd7067a5f1 100644
+--- a/sbin/fsck/pass1.c
++++ b/sbin/fsck/pass1.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/dir.h>
+ #include <vfs/ufs/fs.h>
+diff --git a/sbin/fsck/pass1b.c b/sbin/fsck/pass1b.c
+index 19239df610..24132ceaf4 100644
+--- a/sbin/fsck/pass1b.c
++++ b/sbin/fsck/pass1b.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ 
++#include <sys/stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/fsck/pass2.c b/sbin/fsck/pass2.c
+index b713b505df..734f6915b2 100644
+--- a/sbin/fsck/pass2.c
++++ b/sbin/fsck/pass2.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/dir.h>
+ 
+diff --git a/sbin/fsck/pass3.c b/sbin/fsck/pass3.c
+index ddde30e455..819bc0dde0 100644
+--- a/sbin/fsck/pass3.c
++++ b/sbin/fsck/pass3.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/dir.h>
+ #include <vfs/ufs/fs.h>
+diff --git a/sbin/fsck/pass4.c b/sbin/fsck/pass4.c
+index a8fdb75f52..00603f4a7d 100644
+--- a/sbin/fsck/pass4.c
++++ b/sbin/fsck/pass4.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/fsck/pass5.c b/sbin/fsck/pass5.c
+index c91a674bdd..6cab406d59 100644
+--- a/sbin/fsck/pass5.c
++++ b/sbin/fsck/pass5.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/fsck/preen.c b/sbin/fsck/preen.c
+index e5676f22dd..b6d4dfb6e9 100644
+--- a/sbin/fsck/preen.c
++++ b/sbin/fsck/preen.c
+@@ -34,6 +34,7 @@
+ #include <sys/stat.h>
+ #include <sys/wait.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ 
+ #include <ctype.h>
+diff --git a/sbin/fsck/setup.c b/sbin/fsck/setup.c
+index 3c2126cacb..fe517a3c71 100644
+--- a/sbin/fsck/setup.c
++++ b/sbin/fsck/setup.c
+@@ -36,6 +36,7 @@
+ #include <sys/diskslice.h>
+ #include <sys/file.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/fsck/utilities.c b/sbin/fsck/utilities.c
+index da7181f413..d3c1ea385d 100644
+--- a/sbin/fsck/utilities.c
++++ b/sbin/fsck/utilities.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/dir.h>
+ #include <vfs/ufs/fs.h>
+diff --git a/sbin/fsck_msdosfs/ext.h b/sbin/fsck_msdosfs/ext.h
+index c7e3dc6fe6..a6d095602a 100644
+--- a/sbin/fsck_msdosfs/ext.h
++++ b/sbin/fsck_msdosfs/ext.h
+@@ -31,6 +31,7 @@
+ #define	EXT_H
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ #include "dosfs.h"
+ 
+diff --git a/sbin/fsdb/fsdb.c b/sbin/fsdb/fsdb.c
+index 482ec1080c..2215117fb6 100644
+--- a/sbin/fsdb/fsdb.c
++++ b/sbin/fsdb/fsdb.c
+@@ -3,7 +3,7 @@
+ /*
+  *  Copyright (c) 1995 John T. Kohl
+  *  All rights reserved.
+- * 
++ *
+  *  Redistribution and use in source and binary forms, with or without
+  *  modification, are permitted provided that the following conditions
+  *  are met:
+@@ -14,7 +14,7 @@
+  *     documentation and/or other materials provided with the distribution.
+  *  3. The name of the author may not be used to endorse or promote products
+  *     derived from this software without specific prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR `AS IS'' AND ANY EXPRESS OR
+  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+@@ -37,6 +37,7 @@
+ #include <grp.h>
+ #include <histedit.h>
+ #include <pwd.h>
++#include <stdint.h>
+ #include <string.h>
+ 
+ #include <vfs/ufs/dinode.h>
+@@ -49,7 +50,7 @@
+ static void usage(void);
+ int cmdloop(void);
+ 
+-static void 
++static void
+ usage(void)
+ {
+ 	fprintf(stderr, "usage: fsdb [-d] [-f] [-r] fsname\n");
+@@ -184,7 +185,7 @@ helpfn(int argc, char **argv)
+ 
+     printf("Commands are:\n%-10s %5s %5s   %s\n",
+ 	   "command", "min argc", "max argc", "what");
+-    
++
+     for (cmdtp = cmds; cmdtp->cmd; cmdtp++)
+ 	printf("%-10s %5u %5u   %s\n",
+ 	       cmdtp->cmd, cmdtp->minargc, cmdtp->maxargc, cmdtp->helptxt);
+@@ -376,7 +377,7 @@ const char *typename[] = {
+     "unregistered #13",
+     "whiteout",
+ };
+-    
++
+ int slot;
+ 
+ int
+@@ -440,7 +441,7 @@ CMDFUNCSTART(focusname)
+ 	return 1;
+ 
+     ocurrent = curinum;
+-    
++
+     if (argv[1][0] == '/') {
+ 	curinum = UFS_ROOTINO;
+ 	curinode = ginode(UFS_ROOTINO);
+@@ -516,7 +517,7 @@ CMDFUNCSTART(chinum)
+     char *cp;
+     ino_t inum;
+     struct inodesc idesc;
+-    
++
+     slotcount = 0;
+     if (!checkactivedir())
+ 	return 1;
+@@ -566,7 +567,7 @@ CMDFUNCSTART(chname)
+     int rval;
+     char *cp;
+     struct inodesc idesc;
+-    
++
+     slotcount = 0;
+     if (!checkactivedir())
+ 	return 1;
+@@ -642,11 +643,11 @@ CMDFUNCSTART(chlen)
+ 	return 1;
+ 
+     len = strtol(argv[1], &cp, 0);
+-    if (cp == argv[1] || *cp != '\0' || len < 0) { 
++    if (cp == argv[1] || *cp != '\0' || len < 0) {
+ 	warnx("bad length `%s'", argv[1]);
+ 	return 1;
+     }
+-    
++
+     curinode->di_size = len;
+     inodirty();
+     printactive(0);
+@@ -663,11 +664,11 @@ CMDFUNCSTART(chmode)
+ 	return 1;
+ 
+     modebits = strtol(argv[1], &cp, 8);
+-    if (cp == argv[1] || *cp != '\0' || (modebits & ~07777)) { 
++    if (cp == argv[1] || *cp != '\0' || (modebits & ~07777)) {
+ 	warnx("bad modebits `%s'", argv[1]);
+ 	return 1;
+     }
+-    
++
+     curinode->di_mode &= ~07777;
+     curinode->di_mode |= modebits;
+     inodirty();
+@@ -685,11 +686,11 @@ CMDFUNCSTART(chaflags)
+ 	return 1;
+ 
+     flags = strtoul(argv[1], &cp, 0);
+-    if (cp == argv[1] || *cp != '\0' ) { 
++    if (cp == argv[1] || *cp != '\0' ) {
+ 	warnx("bad flags `%s'", argv[1]);
+ 	return 1;
+     }
+-    
++
+     if (flags > UINT_MAX) {
+ 	warnx("flags set beyond 32-bit range of field (%lx)\n", flags);
+ 	return(1);
+@@ -710,11 +711,11 @@ CMDFUNCSTART(chgen)
+ 	return 1;
+ 
+     gen = strtol(argv[1], &cp, 0);
+-    if (cp == argv[1] || *cp != '\0' ) { 
++    if (cp == argv[1] || *cp != '\0' ) {
+ 	warnx("bad gen `%s'", argv[1]);
+ 	return 1;
+     }
+-    
++
+     if (gen > INT_MAX || gen < INT_MIN) {
+ 	warnx("gen set beyond 32-bit range of field (%lx)\n", gen);
+ 	return(1);
+@@ -735,7 +736,7 @@ CMDFUNCSTART(linkcount)
+ 	return 1;
+ 
+     lcnt = strtol(argv[1], &cp, 0);
+-    if (cp == argv[1] || *cp != '\0' ) { 
++    if (cp == argv[1] || *cp != '\0' ) {
+ 	warnx("bad link count `%s'", argv[1]);
+ 	return 1;
+     }
+@@ -743,7 +744,7 @@ CMDFUNCSTART(linkcount)
+ 	warnx("max link count is %d\n", USHRT_MAX);
+ 	return 1;
+     }
+-    
++
+     curinode->di_nlink = lcnt;
+     inodirty();
+     printactive(0);
+@@ -761,7 +762,7 @@ CMDFUNCSTART(chowner)
+ 	return 1;
+ 
+     uid = strtoul(argv[1], &cp, 0);
+-    if (cp == argv[1] || *cp != '\0' ) { 
++    if (cp == argv[1] || *cp != '\0' ) {
+ 	/* try looking up name */
+ 	if ((pwd = getpwnam(argv[1]))) {
+ 	    uid = pwd->pw_uid;
+@@ -770,7 +771,7 @@ CMDFUNCSTART(chowner)
+ 	    return 1;
+ 	}
+     }
+-    
++
+     curinode->di_uid = uid;
+     inodirty();
+     printactive(0);
+@@ -788,7 +789,7 @@ CMDFUNCSTART(chgroup)
+ 	return 1;
+ 
+     gid = strtoul(argv[1], &cp, 0);
+-    if (cp == argv[1] || *cp != '\0' ) { 
++    if (cp == argv[1] || *cp != '\0' ) {
+ 	if ((grp = getgrnam(argv[1]))) {
+ 	    gid = grp->gr_gid;
+ 	} else {
+@@ -796,7 +797,7 @@ CMDFUNCSTART(chgroup)
+ 	    return 1;
+ 	}
+     }
+-    
++
+     curinode->di_gid = gid;
+     inodirty();
+     printactive(0);
+@@ -829,7 +830,7 @@ dotime(char *name, int32_t *rts)
+     for (p = name; *p; p++)
+ 	if (*p < '0' || *p > '9')
+ 	    goto badformat;
+-    
++
+     p = name;
+ #define VAL() ((*p++) - '0')
+     t.tm_year = VAL();
+diff --git a/sbin/fsdb/fsdbutil.c b/sbin/fsdb/fsdbutil.c
+index 8457843db2..9fe2834b10 100644
+--- a/sbin/fsdb/fsdbutil.c
++++ b/sbin/fsdb/fsdbutil.c
+@@ -3,7 +3,7 @@
+ /*
+  *  Copyright (c) 1995 John T. Kohl
+  *  All rights reserved.
+- * 
++ *
+  *  Redistribution and use in source and binary forms, with or without
+  *  modification, are permitted provided that the following conditions
+  *  are met:
+@@ -14,7 +14,7 @@
+  *     documentation and/or other materials provided with the distribution.
+  *  3. The name of the author may not be used to endorse or promote products
+  *     derived from this software without specific prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR `AS IS'' AND ANY EXPRESS OR
+  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+@@ -35,6 +35,7 @@
+ #include <err.h>
+ #include <grp.h>
+ #include <pwd.h>
++#include <stdint.h>
+ #include <string.h>
+ #include <time.h>
+ 
+@@ -76,7 +77,7 @@ argcount(struct cmdtable *cmdp, int argc, char **argv)
+     else
+ 	warnx("command `%s' takes from %u to %u arguments",
+ 	      cmdp->cmd, cmdp->minargc-1, cmdp->maxargc-1);
+-	    
++
+     warnx("usage: %s: %s", cmdp->cmd, cmdp->helptxt);
+     return 1;
+ }
+diff --git a/sbin/fsirand/fsirand.c b/sbin/fsirand/fsirand.c
+index 9f7536d91f..9eea9e7f1d 100644
+--- a/sbin/fsirand/fsirand.c
++++ b/sbin/fsirand/fsirand.c
+@@ -37,6 +37,7 @@
+ #include <sys/time.h>
+ #include <sys/resource.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/growfs/debug.c b/sbin/growfs/debug.c
+index 0ad3004f5b..a5a6cc1cc5 100644
+--- a/sbin/growfs/debug.c
++++ b/sbin/growfs/debug.c
+@@ -2,10 +2,10 @@
+  * Copyright (c) 2000 Christoph Herrmann, Thomas-Henning von Kamptz
+  * Copyright (c) 1980, 1989, 1993 The Regents of the University of California.
+  * All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to Berkeley by
+  * Christoph Herrmann and Thomas-Henning von Kamptz, Munich and Frankfurt.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -22,7 +22,7 @@
+  * 4. Neither the name of the University nor the names of its contributors
+  *    may be used to endorse or promote products derived from this software
+  *    without specific prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+@@ -42,6 +42,7 @@
+ /* ********************************************************** INCLUDES ***** */
+ #include <sys/param.h>
+ 
++#include <stdint.h>
+ #include <stdio.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+@@ -414,7 +415,7 @@ dbg_dump_inmap(struct fs *sb, const char *comment, struct cg *cgr)
+ 		for(k=0; k<32; k+=8) {
+ 			if(j+k+8<e) {
+ 				fprintf(dbg_log,
+-				    "%02x%02x%02x%02x%02x%02x%02x%02x ", 
++				    "%02x%02x%02x%02x%02x%02x%02x%02x ",
+ 				    cp[0], cp[1], cp[2], cp[3],
+ 				    cp[4], cp[5], cp[6], cp[7]);
+ 			} else {
+@@ -459,7 +460,7 @@ dbg_dump_frmap(struct fs *sb, const char *comment, struct cg *cgr)
+ 		for(k=0; k<32; k+=8) {
+ 			if(j+k+8<e) {
+ 				fprintf(dbg_log,
+-				    "%02x%02x%02x%02x%02x%02x%02x%02x ", 
++				    "%02x%02x%02x%02x%02x%02x%02x%02x ",
+ 				    cp[0], cp[1], cp[2], cp[3],
+ 				    cp[4], cp[5], cp[6], cp[7]);
+ 			} else {
+@@ -503,7 +504,7 @@ dbg_dump_clmap(struct fs *sb, const char *comment, struct cg *cgr)
+ 		for(k=0; k<32; k+=8) {
+ 			if(j+k+8<e) {
+ 				fprintf(dbg_log,
+-				    "%02x%02x%02x%02x%02x%02x%02x%02x ", 
++				    "%02x%02x%02x%02x%02x%02x%02x%02x ",
+ 				    cp[0], cp[1], cp[2], cp[3],
+ 				    cp[4], cp[5], cp[6], cp[7]);
+ 			} else {
+@@ -597,7 +598,7 @@ dbg_dump_ino(struct fs *sb, const char *comment, struct ufs1_dinode *ino)
+ {
+ 	int ictr;
+ 	int remaining_blocks;
+-	
++
+ 	if(!dbg_log) {
+ 		return;
+ 	}
+@@ -608,7 +609,7 @@ dbg_dump_ino(struct fs *sb, const char *comment, struct ufs1_dinode *ino)
+ 
+ 	fprintf(dbg_log, "mode       u_int16_t      0%o\n", ino->di_mode);
+ 	fprintf(dbg_log, "nlink      int16_t        0x%04x\n", ino->di_nlink);
+-	fprintf(dbg_log, "size       u_int64_t      0x%08x%08x\n", 
++	fprintf(dbg_log, "size       u_int64_t      0x%08x%08x\n",
+ 	    ((unsigned int *)&(ino->di_size))[1],
+ 	    ((unsigned int *)&(ino->di_size))[0]);
+ 	fprintf(dbg_log, "atime      int32_t        0x%08x\n", ino->di_atime);
+diff --git a/sbin/growfs/debug.h b/sbin/growfs/debug.h
+index 702184626c..033f63f64c 100644
+--- a/sbin/growfs/debug.h
++++ b/sbin/growfs/debug.h
+@@ -2,10 +2,10 @@
+  * Copyright (c) 2000 Christoph Herrmann, Thomas-Henning von Kamptz
+  * Copyright (c) 1980, 1989, 1993 The Regents of the University of California.
+  * All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to Berkeley by
+  * Christoph Herrmann and Thomas-Henning von Kamptz, Munich and Frankfurt.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+@@ -22,7 +22,7 @@
+  * 4. Neither the name of the University nor the names of its contributors
+  *    may be used to endorse or promote products derived from this software
+  *    without specific prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+@@ -44,6 +44,7 @@
+ /* ********************************************************** INCLUDES ***** */
+ #include <sys/param.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/growfs/growfs.c b/sbin/growfs/growfs.c
+index adbd66e40a..f4becdca22 100644
+--- a/sbin/growfs/growfs.c
++++ b/sbin/growfs/growfs.c
+@@ -55,6 +55,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/fs.h>
+ 
+diff --git a/sbin/ifconfig/regdomain.h b/sbin/ifconfig/regdomain.h
+index cf6b4b37b6..6302ceb883 100644
+--- a/sbin/ifconfig/regdomain.h
++++ b/sbin/ifconfig/regdomain.h
+@@ -29,6 +29,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/queue.h>
++#include <stdint.h>
+ 
+ #include <netproto/802_11/ieee80211_regdomain.h>
+ 
+diff --git a/sbin/jscan/jscan.c b/sbin/jscan/jscan.c
+index d3cd8f6db0..d1730991a8 100644
+--- a/sbin/jscan/jscan.c
++++ b/sbin/jscan/jscan.c
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,8 +30,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+- * $DragonFly: src/sbin/jscan/jscan.c,v 1.13 2008/06/05 18:06:30 swildner Exp $
+  */
+ 
+ #include "jscan.h"
+@@ -47,7 +45,7 @@ off_t prefix_file_size = 100 * 1024 * 1024;
+ off_t trans_count;
+ static enum jdirection jdirection = JD_FORWARDS;
+ 
+-static void jscan_do_output(struct jfile *, const char *, 
++static void jscan_do_output(struct jfile *, const char *,
+ 			    const char *, int64_t);
+ static void jscan_do_mirror(struct jfile *, const char *,
+ 			    const char *, int64_t);
+@@ -209,7 +207,7 @@ main(int ac, char **av)
+     /*
+      * STEP1 - OPEN INPUT
+      *
+-     * The input will either be a pipe, a regular file, or a journaling 
++     * The input will either be a pipe, a regular file, or a journaling
+      * file prefix.
+      */
+     jf = NULL;
+@@ -237,7 +235,7 @@ main(int ac, char **av)
+ 	jmodes |= JMODEF_INPUT_PREFIX;
+     }
+     if (jf == NULL) {
+-	fprintf(stderr, "Unable to open input %s: %s\n", 
++	fprintf(stderr, "Unable to open input %s: %s\n",
+ 		input_prefix, strerror(errno));
+ 	exit(1);
+     }
+@@ -254,9 +252,9 @@ main(int ac, char **av)
+      */
+     get_transid_from_file(output_transid_file, &output_transid,
+ 			  JMODEF_OUTPUT_TRANSID_GOOD);
+-    get_transid_from_file(mirror_transid_file, &mirror_transid, 
++    get_transid_from_file(mirror_transid_file, &mirror_transid,
+ 			  JMODEF_MIRROR_TRANSID_GOOD);
+-    get_transid_from_file(record_transid_file, &record_transid, 
++    get_transid_from_file(record_transid_file, &record_transid,
+ 			  JMODEF_RECORD_TRANSID_GOOD);
+     transid = LLONG_MAX;
+     if ((jmodes & JMODEF_OUTPUT_TRANSID_GOOD) && output_transid < transid)
+@@ -301,12 +299,12 @@ main(int ac, char **av)
+      */
+     if (jmodes & JMODEF_RECORD) {
+ 	if (jrecord_init(record_prefix) < 0) {
+-	    fprintf(stderr, "Unable to initialize file set for: %s\n", 
++	    fprintf(stderr, "Unable to initialize file set for: %s\n",
+ 		    record_prefix);
+ 	    exit(1);
+ 	}
+ 	if (jmodes & JMODEF_MIRROR) {
+-	    fork_subprocess(jf, jscan_do_mirror, record_prefix, 
++	    fork_subprocess(jf, jscan_do_mirror, record_prefix,
+ 			    mirror_transid_file,
+ 			    mirror_directory, mirror_transid);
+ 	    /* XXX ack stream for temporary record file removal */
+@@ -329,7 +327,7 @@ main(int ac, char **av)
+      */
+     if (jmodes & JMODEF_INPUT_PREFIX) {
+ 	if ((jmodes & JMODEF_OUTPUT) && (jmodes & JMODEF_MIRROR)) {
+-	    fork_subprocess(jf, jscan_do_mirror, input_prefix, 
++	    fork_subprocess(jf, jscan_do_mirror, input_prefix,
+ 			    mirror_transid_file,
+ 			    mirror_directory, mirror_transid);
+ 	    jscan_do_output(jf, output_transid_file, NULL, output_transid);
+@@ -364,7 +362,7 @@ main(int ac, char **av)
+ 
+     jsession_init(&jsdebug, jf, jdirection,
+ 		  NULL, 0);
+-    jsession_init(&jsoutput, jf, jdirection, 
++    jsession_init(&jsoutput, jf, jdirection,
+ 		  output_transid_file, output_transid);
+     jsession_init(&jsmirror, jf, jdirection,
+ 		  mirror_transid_file, mirror_transid);
+@@ -561,7 +559,7 @@ jscan_do_debug(struct jfile *jf, const char *dummy1 __unused,
+ static void
+ usage(const char *av0)
+ {
+-    fprintf(stderr, 
++    fprintf(stderr,
+ 	"%s [-2dfuvF] [-D dir] [-m mirror_transid_file/none]\n"
+ 	"\t[-o/O output_transid_file/none]\n"
+ 	"\t[-s size[kmgt]] -w/W record_prefix] [input_file/input_prefix]\n",
+diff --git a/sbin/jscan/jscan.h b/sbin/jscan/jscan.h
+index 1e86fd565a..d2356f35db 100644
+--- a/sbin/jscan/jscan.h
++++ b/sbin/jscan/jscan.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2004,2005 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -36,6 +36,7 @@
+ #include <sys/time.h>
+ #include <sys/journal.h>
+ #include <sys/stat.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdarg.h>
+ #include <stdlib.h>
+@@ -164,7 +165,7 @@ char *dupdatastr(const void *buf, int bytes);
+ char *dupdatapath(const void *buf, int bytes);
+ void get_transid_from_file(const char *path, int64_t *transid, int flags);
+ 
+-void jsession_init(struct jsession *ss, struct jfile *jfin, 
++void jsession_init(struct jsession *ss, struct jfile *jfin,
+ 		   enum jdirection direction,
+ 		   const char *transid_file, int64_t transid);
+ void jsession_update_transid(struct jsession *ss, int64_t transid);
+@@ -174,7 +175,7 @@ void jsession_term(struct jsession *ss);
+ struct jfile *jopen_fd(int fd);
+ struct jfile *jopen_prefix(const char *prefix, int rw);
+ void jclose(struct jfile *jf);
+-struct jdata *jread(struct jfile *jf, struct jdata *jd, 
++struct jdata *jread(struct jfile *jf, struct jdata *jd,
+ 		    enum jdirection direction);
+ struct jdata *jseek(struct jfile *jf, int64_t transid,
+ 		    enum jdirection direction);
+diff --git a/sbin/md5/md5.c b/sbin/md5/md5.c
+index 7632488e31..30d24eb729 100644
+--- a/sbin/md5/md5.c
++++ b/sbin/md5/md5.c
+@@ -26,6 +26,7 @@
+ #include <sys/resource.h>
+ #include <err.h>
+ #include <sys/mman.h>
++#include <stdint.h>		/* for (intmax_t) */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/sbin/natacontrol/natacontrol.c b/sbin/natacontrol/natacontrol.c
+index afadbb070d..a7da4299d7 100644
+--- a/sbin/natacontrol/natacontrol.c
++++ b/sbin/natacontrol/natacontrol.c
+@@ -28,6 +28,7 @@
+ 
+ #include <sys/nata.h>
+ 
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/sbin/newfs/defs.h b/sbin/newfs/defs.h
+index 1e097e8d00..0dd1b4276a 100644
+--- a/sbin/newfs/defs.h
++++ b/sbin/newfs/defs.h
+@@ -22,8 +22,6 @@
+  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- *
+- * $DragonFly: src/sbin/newfs/defs.h,v 1.3 2007/05/20 23:21:36 dillon Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -32,6 +30,7 @@
+ #include <sys/wait.h>
+ #include <sys/resource.h>
+ #include <sys/stat.h>
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/dir.h>
+ #include <vfs/ufs/fs.h>
+diff --git a/sbin/newfs_msdos/mkfs_msdos.h b/sbin/newfs_msdos/mkfs_msdos.h
+index d94e77052f..5199fbee52 100644
+--- a/sbin/newfs_msdos/mkfs_msdos.h
++++ b/sbin/newfs_msdos/mkfs_msdos.h
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/types.h>
+ #include <stdbool.h>
++#include <stdint.h>
+ 
+ #define ALLOPTS \
+ AOPT('@', off_t, offset, 0, "Offset in device") \
+diff --git a/sbin/nvmectl/nvmectl.h b/sbin/nvmectl/nvmectl.h
+index bf7a39d76b..a43d9a2679 100644
+--- a/sbin/nvmectl/nvmectl.h
++++ b/sbin/nvmectl/nvmectl.h
+@@ -35,6 +35,7 @@
+ #include <sys/types.h>
+ #include <sys/file.h>
+ #include <sys/ioctl.h>
++#include <stdint.h>
+ #include <dev/disk/nvme/nvme_fw.h>
+ #include <dev/disk/nvme/nvme_log.h>
+ #include <dev/disk/nvme/nvme_ident.h>
+diff --git a/sbin/quotacheck/quotacheck.c b/sbin/quotacheck/quotacheck.c
+index 230f0c4104..2573a39024 100644
+--- a/sbin/quotacheck/quotacheck.c
++++ b/sbin/quotacheck/quotacheck.c
+@@ -40,6 +40,7 @@
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/quota.h>
+ #include <vfs/ufs/fs.h>
+diff --git a/sbin/restore/dirs.c b/sbin/restore/dirs.c
+index 9bf8b26444..c560df9d54 100644
+--- a/sbin/restore/dirs.c
++++ b/sbin/restore/dirs.c
+@@ -40,6 +40,7 @@
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/dir.h>
+ #include <protocols/dumprestore.h>
+diff --git a/sbin/restore/interactive.c b/sbin/restore/interactive.c
+index 0faa267003..d952d443d4 100644
+--- a/sbin/restore/interactive.c
++++ b/sbin/restore/interactive.c
+@@ -33,6 +33,7 @@
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/dir.h>
+ #include <protocols/dumprestore.h>
+diff --git a/sbin/restore/main.c b/sbin/restore/main.c
+index f7efc9c3fa..7f0049bd2c 100644
+--- a/sbin/restore/main.c
++++ b/sbin/restore/main.c
+@@ -34,6 +34,7 @@
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <protocols/dumprestore.h>
+ 
+diff --git a/sbin/restore/restore.c b/sbin/restore/restore.c
+index 36573e3b7c..84f8bb37f2 100644
+--- a/sbin/restore/restore.c
++++ b/sbin/restore/restore.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/types.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ 
+ #include <stdio.h>
+diff --git a/sbin/restore/symtab.c b/sbin/restore/symtab.c
+index e041c866d9..5f83281193 100644
+--- a/sbin/restore/symtab.c
++++ b/sbin/restore/symtab.c
+@@ -42,6 +42,7 @@
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ 
+ #include <errno.h>
+diff --git a/sbin/restore/utilities.c b/sbin/restore/utilities.c
+index cbfc50b027..2ef0f175de 100644
+--- a/sbin/restore/utilities.c
++++ b/sbin/restore/utilities.c
+@@ -33,6 +33,7 @@
+ #include <sys/param.h>
+ #include <sys/stat.h>
+ 
++#include <stdint.h>
+ #include <vfs/ufs/dinode.h>
+ #include <vfs/ufs/dir.h>
+ 
+diff --git a/sbin/savecore/zopen.c b/sbin/savecore/zopen.c
+index aa68e27aa2..1e7c8d18b5 100644
+--- a/sbin/savecore/zopen.c
++++ b/sbin/savecore/zopen.c
+@@ -4,6 +4,7 @@
+  * $FreeBSD: src/lib/libz/zopen.c,v 1.2.2.2 2003/02/01 13:33:12 sobomax Exp $
+  */
+ 
++#include <stdint.h>
+ #include <stdio.h>
+ #include <zlib.h>
+ 
+diff --git a/sbin/usched/usched.c b/sbin/usched/usched.c
+index df8ed00e1d..1a58a3fe62 100644
+--- a/sbin/usched/usched.c
++++ b/sbin/usched/usched.c
+@@ -36,6 +36,7 @@
+ #include <sys/types.h>
+ #include <sys/usched.h>
+ #include <sys/cpumask.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+diff --git a/sbin/vinum/vinumutil.c b/sbin/vinum/vinumutil.c
+index 98925f9b59..ae00ab4c15 100644
+--- a/sbin/vinum/vinumutil.c
++++ b/sbin/vinum/vinumutil.c
+@@ -33,11 +33,11 @@
+  *
+  * $Id: vinumutil.c,v 1.14 1999/12/30 07:04:02 grog Exp grog $
+  * $FreeBSD: src/sys/dev/vinum/vinumutil.c,v 1.15 2000/02/29 06:16:44 grog Exp $
+- * $DragonFly: src/sbin/vinum/vinumutil.c,v 1.7 2007/01/20 19:20:39 dillon Exp $
+  */
+ 
+ /* This file contains utility routines used both in kernel and user context */
+ 
++#include <stdint.h>
+ #include <dev/raid/vinum/vinumhdr.h>
+ #include <dev/raid/vinum/statetexts.h>
+ #include <stdio.h>
+diff --git a/sys/boot/common/ls.c b/sys/boot/common/ls.c
+index 1bc3bdd450..c60bdc0a95 100644
+--- a/sys/boot/common/ls.c
++++ b/sys/boot/common/ls.c
+@@ -36,6 +36,7 @@
+  */
+ 
+ #include <sys/param.h>
++#include <stdint.h>
+ #include <ufs/ufs/dinode.h>
+ #include <ufs/ufs/dir.h>
+ 
+@@ -60,7 +61,7 @@ command_ls(int argc, char *argv[])
+     char	lbuf[128];		/* one line */
+     int		result, ch;
+     int		verbose;
+-	
++
+     result = CMD_OK;
+     fd = -1;
+     verbose = 0;
+@@ -151,7 +152,7 @@ ls_getdir(char **pathp)
+ 	    "bad path '%s'", path);
+ 	goto out;
+     }
+-    
++
+     fd = rel_open(cp, NULL, O_RDONLY);
+     if (fd < 0) {
+ 	snprintf(command_errbuf, sizeof(command_errbuf),
+diff --git a/sys/boot/pc32/boot2/scrc32.c b/sys/boot/pc32/boot2/scrc32.c
+index a818250ebe..16478e7348 100644
+--- a/sys/boot/pc32/boot2/scrc32.c
++++ b/sys/boot/pc32/boot2/scrc32.c
+@@ -34,6 +34,7 @@
+ #include <sys/systm.h>
+ #else
+ #include <sys/types.h>
++#include <stdint.h>
+ #endif
+ 
+ #ifndef _KERNEL
+diff --git a/sys/contrib/dev/acpica/source/include/platform/acdragonfly.h b/sys/contrib/dev/acpica/source/include/platform/acdragonfly.h
+index 318110edc1..2a014942e8 100644
+--- a/sys/contrib/dev/acpica/source/include/platform/acdragonfly.h
++++ b/sys/contrib/dev/acpica/source/include/platform/acdragonfly.h
+@@ -153,6 +153,11 @@
+ #define __ACDRAGONFLY_H_
+ 
+ #include <sys/types.h>
++#ifdef _KERNEL
++#include <sys/stdint.h>
++#else
++#include <stdint.h>
++#endif
+ 
+ #ifdef __LP64__
+ #define ACPI_MACHINE_WIDTH              64
+diff --git a/sys/emulation/ndis/pe_var.h b/sys/emulation/ndis/pe_var.h
+index 4c13a7a09b..25f3957596 100644
+--- a/sys/emulation/ndis/pe_var.h
++++ b/sys/emulation/ndis/pe_var.h
+@@ -35,6 +35,7 @@
+ #ifndef _PE_VAR_H_
+ #define	_PE_VAR_H_
+ 
++#include <sys/stdint.h>		/* for uint16_t, uint32_t */
+ #include <machine/types.h>	/* XXX for vm_offset_t */
+ 
+ /*
+diff --git a/sys/libkern/crc32.c b/sys/libkern/crc32.c
+index 056cdd7bc6..fb0c20883c 100644
+--- a/sys/libkern/crc32.c
++++ b/sys/libkern/crc32.c
+@@ -39,7 +39,6 @@
+  * CRC32 code derived from work by Gary S. Brown.
+  *
+  * $FreeBSD: src/sys/libkern/crc32.c,v 1.1.2.1 2002/07/31 09:08:34 imp Exp $
+- * $DragonFly: src/sys/libkern/crc32.c,v 1.7 2008/11/03 08:41:31 swildner Exp $
+  */
+ 
+ /*
+@@ -52,6 +51,7 @@
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #else
++#include <sys/stdint.h>
+ #include <sys/types.h>
+ #endif
+ 
+diff --git a/sys/libkern/icrc32.c b/sys/libkern/icrc32.c
+index 9cc892e461..f14c21e617 100644
+--- a/sys/libkern/icrc32.c
++++ b/sys/libkern/icrc32.c
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include <sys/param.h>
++#include <sys/stdint.h>
+ #ifdef _KERNEL
+ #include <sys/systm.h>
+ #endif
+diff --git a/sys/net/if.h b/sys/net/if.h
+index f49603fd69..0d526fda9d 100644
+--- a/sys/net/if.h
++++ b/sys/net/if.h
+@@ -43,6 +43,7 @@
+ #include <sys/socket.h>
+ #ifndef _KERNEL
+ #include <sys/time.h>
++#include <sys/stdint.h>
+ #endif /* !_KERNEL */
+ #endif /* __BSD_VISIBLE */
+ 
+diff --git a/sys/netproto/smb/smb.h b/sys/netproto/smb/smb.h
+index 1620f94bc9..782b52f8b2 100644
+--- a/sys/netproto/smb/smb.h
++++ b/sys/netproto/smb/smb.h
+@@ -30,13 +30,14 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/netsmb/smb.h,v 1.1.2.3 2002/04/23 03:45:01 bp Exp $
+- * $DragonFly: src/sys/netproto/smb/smb.h,v 1.2 2003/06/17 04:28:54 dillon Exp $
+  */
+ 
++#include <sys/stdint.h>
++
+ /*
+  * Common definintions and structures for SMB/CIFS protocol
+  */
+- 
++
+ #ifndef _NETSMB_SMB_H_
+ #define _NETSMB_SMB_H_
+ 
+@@ -44,7 +45,7 @@
+ /*
+  * SMB dialects that we have to deal with.
+  */
+-enum smb_dialects { 
++enum smb_dialects {
+ 	SMB_DIALECT_NONE,
+ 	SMB_DIALECT_CORE,		/* PC NETWORK PROGRAM 1.0, PCLAN1.0 */
+ 	SMB_DIALECT_COREPLUS,		/* MICROSOFT NETWORKS 1.03 */
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index e6a3698aa0..02ba00c859 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -203,8 +203,8 @@ typedef	__timer_t	timer_t;
+ #endif
+ 
+ #ifndef _KERNEL
+-#if __BSD_VISIBLE
+-#include <stdint.h>			/* XXX */
++#ifdef _WANT_STDINT
++#include <stdint.h>			/* XXX used by certain ports */
+ #endif
+ #endif
+ 
+diff --git a/sys/vfs/ufs/ffs_subr.c b/sys/vfs/ufs/ffs_subr.c
+index 5de6c4897d..7a60602365 100644
+--- a/sys/vfs/ufs/ffs_subr.c
++++ b/sys/vfs/ufs/ffs_subr.c
+@@ -33,6 +33,7 @@
+ #include <sys/param.h>
+ 
+ #ifndef _KERNEL
++#include <stdint.h>
+ #include "dinode.h"
+ #include "fs.h"
+ extern void panic(const char *, ...) __printflike(1, 2) __dead2;
+diff --git a/usr.bin/c89/c89.c b/usr.bin/c89/c89.c
+index 486461b362..2024365bb7 100644
+--- a/usr.bin/c89/c89.c
++++ b/usr.bin/c89/c89.c
+@@ -26,10 +26,10 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.bin/c89/c89.c,v 1.5 2005/05/21 09:55:04 ru Exp $
+- * $DragonFly: src/usr.bin/c89/c89.c,v 1.5 2008/05/25 08:18:26 swildner Exp $
+  */
+ 
+ #include <err.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.bin/cksum/cksum.c b/usr.bin/cksum/cksum.c
+index 0e45cfc251..816dfd011e 100644
+--- a/usr.bin/cksum/cksum.c
++++ b/usr.bin/cksum/cksum.c
+@@ -31,13 +31,13 @@
+  *
+  * @(#)cksum.c	8.2 (Berkeley) 4/28/95
+  * $FreeBSD: src/usr.bin/cksum/cksum.c,v 1.18 2008/05/15 20:04:36 brooks Exp $
+- * $DragonFly: src/usr.bin/cksum/cksum.c,v 1.6 2005/04/10 20:55:38 drhodus Exp $
+  */
+ 
+ #include <sys/types.h>
+ 
+ #include <err.h>
+ #include <fcntl.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.bin/cksum/extern.h b/usr.bin/cksum/extern.h
+index 677dc676b9..aaf03c083f 100644
+--- a/usr.bin/cksum/extern.h
++++ b/usr.bin/cksum/extern.h
+@@ -28,7 +28,6 @@
+  *
+  *	@(#)extern.h	8.1 (Berkeley) 6/6/93
+  * $FreeBSD: src/usr.bin/cksum/extern.h,v 1.6 2003/03/13 23:32:28 robert Exp $
+- * $DragonFly: src/usr.bin/cksum/extern.h,v 1.3 2003/11/03 19:31:28 eirikn Exp $
+  */
+ 
+ #include <sys/cdefs.h>
+diff --git a/usr.bin/hexdump/display.c b/usr.bin/hexdump/display.c
+index eec71fd934..aa3551a647 100644
+--- a/usr.bin/hexdump/display.c
++++ b/usr.bin/hexdump/display.c
+@@ -28,7 +28,6 @@
+  *
+  * @(#)display.c	8.1 (Berkeley) 6/6/93
+  * $FreeBSD: src/usr.bin/hexdump/display.c,v 1.4.2.2 2002/07/23 14:27:06 tjr Exp $
+- * $DragonFly: src/usr.bin/hexdump/display.c,v 1.6 2005/04/10 20:55:38 drhodus Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -36,6 +35,7 @@
+ 
+ #include <ctype.h>
+ #include <err.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.bin/kcollect/kcollect.h b/usr.bin/kcollect/kcollect.h
+index 0e3504dd07..68789a6177 100644
+--- a/usr.bin/kcollect/kcollect.h
++++ b/usr.bin/kcollect/kcollect.h
+@@ -31,6 +31,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/sysctl.h>
++#include <stdint.h>
+ #include <sys/kcollect.h>
+ #include <time.h>
+ #include <stdio.h>
+diff --git a/usr.bin/limits/limits.c b/usr.bin/limits/limits.c
+index 9c916983f3..30c3384170 100644
+--- a/usr.bin/limits/limits.c
++++ b/usr.bin/limits/limits.c
+@@ -29,6 +29,7 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <sys/param.h>
++#include <stdint.h>		/* for (intmax_t) */
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <stdarg.h>
+diff --git a/usr.bin/localedef/localedef.h b/usr.bin/localedef/localedef.h
+index 28736f8582..bc326b4dd8 100644
+--- a/usr.bin/localedef/localedef.h
++++ b/usr.bin/localedef/localedef.h
+@@ -33,6 +33,7 @@
+  */
+ 
+ /* Common header files. */
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdarg.h>
+diff --git a/usr.bin/m4/extern.h b/usr.bin/m4/extern.h
+index 82ccd6da6b..5ef1875e30 100644
+--- a/usr.bin/m4/extern.h
++++ b/usr.bin/m4/extern.h
+@@ -36,6 +36,8 @@
+  * $FreeBSD: src/usr.bin/m4/extern.h,v 1.17 2012/11/17 01:54:24 svnexp Exp $
+  */
+ 
++#include <stdint.h>
++
+ /* eval.c */
+ extern void	eval(const char *[], int, int, int);
+ extern void	dodefine(const char *, const char *);
+diff --git a/usr.bin/ruptime/ruptime.c b/usr.bin/ruptime/ruptime.c
+index 23d758b9cf..5702c41b68 100644
+--- a/usr.bin/ruptime/ruptime.c
++++ b/usr.bin/ruptime/ruptime.c
+@@ -33,6 +33,7 @@
+ 
+ #include <sys/param.h>
+ 
++#include <stdint.h>
+ #include <protocols/rwhod.h>
+ 
+ #include <dirent.h>
+diff --git a/usr.bin/rwho/rwho.c b/usr.bin/rwho/rwho.c
+index 9520224937..7f2e9f6499 100644
+--- a/usr.bin/rwho/rwho.c
++++ b/usr.bin/rwho/rwho.c
+@@ -34,6 +34,7 @@
+ #include <sys/param.h>
+ #include <sys/file.h>
+ 
++#include <stdint.h>
+ #include <protocols/rwhod.h>
+ 
+ #include <dirent.h>
+diff --git a/usr.bin/sort/mem.c b/usr.bin/sort/mem.c
+index c8e9546006..6e0669ec8f 100644
+--- a/usr.bin/sort/mem.c
++++ b/usr.bin/sort/mem.c
+@@ -29,6 +29,7 @@
+ 
+ 
+ #include <err.h>
++#include <stdint.h>	/* for uintptr in __DECONST() */
+ #include <stdlib.h>
+ #include <string.h>
+ 
+diff --git a/usr.bin/strfile/strfile.h b/usr.bin/strfile/strfile.h
+index a64f46b3a2..3110464aff 100644
+--- a/usr.bin/strfile/strfile.h
++++ b/usr.bin/strfile/strfile.h
+@@ -33,7 +33,7 @@
+  */
+ /* $FreeBSD: head/usr.bin/fortune/strfile/strfile.h 203926 2010-02-15 15:10:21Z uqs $ */
+ 
+-#include <sys/types.h>
++#include <stdint.h>
+ 
+ #define	STR_ENDSTRING(line,tbl) \
+ 	(((unsigned char)(line)[0]) == (tbl).str_delim && (line)[1] == '\n')
+diff --git a/usr.bin/tail/misc.c b/usr.bin/tail/misc.c
+index 202e9bc0ce..16f42cd5fc 100644
+--- a/usr.bin/tail/misc.c
++++ b/usr.bin/tail/misc.c
+@@ -38,6 +38,7 @@
+ #include <sys/mman.h>
+ #include <errno.h>
+ #include <unistd.h>
++#include <stdint.h>		/* for (intmax_t) */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.bin/tail/reverse.c b/usr.bin/tail/reverse.c
+index 496ac605e7..8f6eef49fc 100644
+--- a/usr.bin/tail/reverse.c
++++ b/usr.bin/tail/reverse.c
+@@ -31,7 +31,6 @@
+  *
+  * @(#)reverse.c	8.1 (Berkeley) 6/6/93
+  * $FreeBSD: src/usr.bin/tail/reverse.c,v 1.9.2.3 2001/12/19 20:29:31 iedowse Exp $
+- * $DragonFly: src/usr.bin/tail/reverse.c,v 1.5 2006/08/13 02:12:18 swildner Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -41,6 +40,7 @@
+ #include <limits.h>
+ #include <errno.h>
+ #include <unistd.h>
++#include <stdint.h>		/* for (intmax_t) */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.bin/talk/invite.c b/usr.bin/talk/invite.c
+index c2607bb39d..f08e0d969a 100644
+--- a/usr.bin/talk/invite.c
++++ b/usr.bin/talk/invite.c
+@@ -36,6 +36,7 @@
+ #include <errno.h>
+ #include <setjmp.h>
+ #include <signal.h>
++#include <stdint.h>
+ #include <protocols/talkd.h>
+ #include "talk_ctl.h"
+ #include "talk.h"
+diff --git a/usr.bin/talk/look_up.c b/usr.bin/talk/look_up.c
+index e1554e155f..3a19597ab1 100644
+--- a/usr.bin/talk/look_up.c
++++ b/usr.bin/talk/look_up.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/socket.h>
++#include <stdint.h>
+ #include <protocols/talkd.h>
+ #include <errno.h>
+ #include "talk_ctl.h"
+diff --git a/usr.bin/window/string.c b/usr.bin/window/string.c
+index d4104f5477..83fc888313 100644
+--- a/usr.bin/window/string.c
++++ b/usr.bin/window/string.c
+@@ -33,6 +33,7 @@
+  * SUCH DAMAGE.
+  */
+ 
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.bin/window/ttgeneric.c b/usr.bin/window/ttgeneric.c
+index 5decc8f77b..b57e2b89ca 100644
+--- a/usr.bin/window/ttgeneric.c
++++ b/usr.bin/window/ttgeneric.c
+@@ -33,6 +33,7 @@
+  * SUCH DAMAGE.
+  */
+ 
++#include <stdint.h>	/* fr uintptr_t in __DECONST() */
+ #include <stdlib.h>
+ #include <string.h>
+ #include <termcap.h>
+diff --git a/usr.bin/xargs/strnsubst.c b/usr.bin/xargs/strnsubst.c
+index a22d0a40c8..6bc199853b 100644
+--- a/usr.bin/xargs/strnsubst.c
++++ b/usr.bin/xargs/strnsubst.c
+@@ -8,10 +8,10 @@
+  * 	For the man who taught me vi, and who got too old, too young.
+  *
+  * $FreeBSD: src/usr.bin/xargs/strnsubst.c,v 1.5.2.1 2002/06/17 04:44:46 jmallett Exp $
+- * $DragonFly: src/usr.bin/xargs/strnsubst.c,v 1.2 2003/06/17 04:29:34 dillon Exp $
+  */
+ 
+ #include <err.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
+diff --git a/usr.sbin/cdcontrol/cdcontrol.c b/usr.sbin/cdcontrol/cdcontrol.c
+index d60dbe1e90..cf57386198 100644
+--- a/usr.sbin/cdcontrol/cdcontrol.c
++++ b/usr.sbin/cdcontrol/cdcontrol.c
+@@ -31,6 +31,7 @@
+ #include <histedit.h>
+ #include <limits.h>
+ #include <paths.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.sbin/clog/clog.c b/usr.sbin/clog/clog.c
+index 7f5df6050e..12cfeecf18 100644
+--- a/usr.sbin/clog/clog.c
++++ b/usr.sbin/clog/clog.c
+@@ -3,24 +3,24 @@
+  *     Jeff Wheelhouse (jdw@wwwi.com)
+  *
+  * This code was originally developed by Jeff Wheelhouse (jdw@wwwi.com).
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 1. Redistribution of source code must retail the above copyright 
++ * 1. Redistribution of source code must retail the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+  *    notice, this list of conditions and the following disclaimer in the
+  *    documentation and/or other materials provided with the distribution.
+  *
+- * THIS SOFTWARE IS PROVIDED BY JEFF WHEELHOUSE ``AS IS'' AND ANY EXPRESS OR 
+- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES 
+- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN 
+- * NO EVENT SHALL JEFF WHEELHOUSE BE LIABLE FOR ANY DIRECT, INDIRECT, 
+- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING BUT NOT 
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
+- * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
++ * THIS SOFTWARE IS PROVIDED BY JEFF WHEELHOUSE ``AS IS'' AND ANY EXPRESS OR
++ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
++ * NO EVENT SHALL JEFF WHEELHOUSE BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
++ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+@@ -33,6 +33,7 @@
+ #include <fcntl.h>
+ #include <poll.h>
+ #include <signal.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -43,12 +44,10 @@
+ #include <sys/stat.h>
+ #include <sys/uio.h>
+ 
+-
+ #include "clog.h"
+ 
+-
+ /*
+- *  The BUFFER_SIZE value is just used to allocate a buffer full of NULLs 
++ *  The BUFFER_SIZE value is just used to allocate a buffer full of NULLs
+  *  so that a new logfile can be extended to its full size.
+  *
+  *  Compiling with -pedantic complains when the buffer array is declared
+@@ -105,7 +104,7 @@ main(int argc, char **argv)
+ 	if (init==1) init_log(argv[optind],size);
+ 	/* if (optf==1) follow_log(artv[optind]); */
+ 	read_log(argv[optind],optf);
+-		
++
+ 	return 0;
+ }
+ 
+@@ -173,7 +172,7 @@ read_log(const char *lname, int optf)
+ 			exit(16);
+ 		}
+ 	}
+-	
++
+ 	munmap(pbuffer,sb.st_size);
+ 	close(fd);
+ 
+@@ -194,7 +193,7 @@ init_log(const char *lname, size_t size)
+ 
+ 	memset(buffer,0,BUFFER_SIZE);
+ 
+-	fd = open(lname,O_RDWR|O_CREAT,0666); 
++	fd = open(lname,O_RDWR|O_CREAT,0666);
+ 	if (fd==-1) {
+ 		fprintf(stderr,"%s: ERROR: could not open %s (%s)\n",pname,lname,strerror(errno));
+ 		exit(2);
+@@ -203,7 +202,7 @@ init_log(const char *lname, size_t size)
+ 		fprintf(stderr,"%s: ERROR: could not truncate %s (%s)\n",pname,lname,strerror(errno));
+ 		exit(3);
+ 	}
+-	
++
+ 	while(fill>BUFFER_SIZE) {
+ 		if (write(fd,buffer,BUFFER_SIZE)==-1){
+ 			fprintf(stderr,"%s: ERROR: could not write %s (%s)\n",pname,lname,strerror(errno));
+diff --git a/usr.sbin/clog/clog.h b/usr.sbin/clog/clog.h
+index 14189c317f..ed9e7a2b0f 100644
+--- a/usr.sbin/clog/clog.h
++++ b/usr.sbin/clog/clog.h
+@@ -3,24 +3,24 @@
+  *     Jeff Wheelhouse (jdw@wwwi.com)
+  *
+  * This code was originally developed by Jeff Wheelhouse (jdw@wwwi.com).
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 1. Redistribution of source code must retail the above copyright 
++ * 1. Redistribution of source code must retail the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+  *    notice, this list of conditions and the following disclaimer in the
+  *    documentation and/or other materials provided with the distribution.
+  *
+- * THIS SOFTWARE IS PROVIDED BY JEFF WHEELHOUSE ``AS IS'' AND ANY EXPRESS OR 
+- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES 
+- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN 
+- * NO EVENT SHALL JEFF WHEELHOUSE BE LIABLE FOR ANY DIRECT, INDIRECT, 
+- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING BUT NOT 
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
+- * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
++ * THIS SOFTWARE IS PROVIDED BY JEFF WHEELHOUSE ``AS IS'' AND ANY EXPRESS OR
++ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
++ * NO EVENT SHALL JEFF WHEELHOUSE BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
++ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+@@ -50,5 +50,3 @@ struct clog_footer {
+ 
+ 
+ #endif  /* _CLOG_H_ */
+-	
+-
+diff --git a/usr.sbin/cpucontrol/amd.c b/usr.sbin/cpucontrol/amd.c
+index a875afd853..7cc99bbb79 100644
+--- a/usr.sbin/cpucontrol/amd.c
++++ b/usr.sbin/cpucontrol/amd.c
+@@ -41,6 +41,7 @@ __FBSDID("$FreeBSD$");
+ #include <sys/mman.h>
+ #include <sys/ioctl.h>
+ #include <sys/ioccom.h>
++#include <stdint.h>
+ #include <sys/cpuctl.h>
+ 
+ #include <machine/cpufunc.h>
+diff --git a/usr.sbin/cpucontrol/amd10h.c b/usr.sbin/cpucontrol/amd10h.c
+index fe7deffdbc..7434685f43 100644
+--- a/usr.sbin/cpucontrol/amd10h.c
++++ b/usr.sbin/cpucontrol/amd10h.c
+@@ -31,6 +31,7 @@ __FBSDID("$FreeBSD$");
+ #include <sys/mman.h>
+ #include <sys/ioctl.h>
+ #include <sys/ioccom.h>
++#include <stdint.h>
+ #include <sys/cpuctl.h>
+ 
+ #include <machine/cpufunc.h>
+diff --git a/usr.sbin/cpucontrol/intel.c b/usr.sbin/cpucontrol/intel.c
+index 7eca224e1e..39e3a0fe14 100644
+--- a/usr.sbin/cpucontrol/intel.c
++++ b/usr.sbin/cpucontrol/intel.c
+@@ -42,6 +42,7 @@ __FBSDID("$FreeBSD$");
+ #include <sys/mman.h>
+ #include <sys/ioctl.h>
+ #include <sys/ioccom.h>
++#include <stdint.h>
+ #include <sys/cpuctl.h>
+ 
+ #include <machine/cpufunc.h>
+diff --git a/usr.sbin/cpucontrol/via.c b/usr.sbin/cpucontrol/via.c
+index 354817edf8..c04ab5ef03 100644
+--- a/usr.sbin/cpucontrol/via.c
++++ b/usr.sbin/cpucontrol/via.c
+@@ -42,6 +42,7 @@ __FBSDID("$FreeBSD$");
+ #include <sys/mman.h>
+ #include <sys/ioctl.h>
+ #include <sys/ioccom.h>
++#include <stdint.h>
+ #include <sys/cpuctl.h>
+ 
+ #include <machine/cpufunc.h>
+diff --git a/usr.sbin/edquota/edquota.c b/usr.sbin/edquota/edquota.c
+index 7f9ea31deb..180188c98d 100644
+--- a/usr.sbin/edquota/edquota.c
++++ b/usr.sbin/edquota/edquota.c
+@@ -41,6 +41,7 @@
+ #include <sys/stat.h>
+ #include <sys/file.h>
+ #include <sys/wait.h>
++#include <stdint.h>
+ #include <vfs/ufs/quota.h>
+ #include <ctype.h>
+ #include <err.h>
+diff --git a/usr.sbin/fstyp/fstyp.c b/usr.sbin/fstyp/fstyp.c
+index 719bd998ba..f2793aadbe 100644
+--- a/usr.sbin/fstyp/fstyp.c
++++ b/usr.sbin/fstyp/fstyp.c
+@@ -37,6 +37,7 @@
+ #include <errno.h>
+ #include <stdbool.h>
+ #include <stddef.h>
++#include <stdint.h>		/* for (uintmax_t) */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.sbin/fstyp/msdosfs.h b/usr.sbin/fstyp/msdosfs.h
+index bd0abcef60..dd9ee6f20e 100644
+--- a/usr.sbin/fstyp/msdosfs.h
++++ b/usr.sbin/fstyp/msdosfs.h
+@@ -27,7 +27,7 @@
+  * $FreeBSD$
+  */
+ 
+-#include <sys/types.h>
++#include <stdint.h>
+ 
+ /*
+  * Conversion macros for little endian encoded unsigned integers
+diff --git a/usr.sbin/makefs/ffs/ffs_subr.c b/usr.sbin/makefs/ffs/ffs_subr.c
+index 45dda21917..9def3bbff4 100644
+--- a/usr.sbin/makefs/ffs/ffs_subr.c
++++ b/usr.sbin/makefs/ffs/ffs_subr.c
+@@ -36,6 +36,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ #include <ufs/ufs/dinode.h>
+ #include <ufs/ffs/fs.h>
+@@ -43,7 +44,7 @@
+ #include "ffs/ufs_bswap.h"
+ 
+ /*
+- * Update the frsum fields to reflect addition or deletion 
++ * Update the frsum fields to reflect addition or deletion
+  * of some frags.
+  */
+ void
+diff --git a/usr.sbin/makefs/makefs.h b/usr.sbin/makefs/makefs.h
+index 968331b957..d1a6c62ef7 100644
+--- a/usr.sbin/makefs/makefs.h
++++ b/usr.sbin/makefs/makefs.h
+@@ -44,13 +44,14 @@
+ 
+ #include <sys/stat.h>
+ #include <err.h>
++#include <stdint.h>		/* for uint32_t */
+ 
+ /*
+  * fsnode -
+  *	a component of the tree; contains a filename, a pointer to
+  *	fsinode, optional symlink name, and tree pointers
+  *
+- * fsinode - 
++ * fsinode -
+  *	equivalent to an inode, containing target file system inode number,
+  *	refcount (nlink), and stat buffer
+  *
+diff --git a/usr.sbin/memcontrol/memcontrol.c b/usr.sbin/memcontrol/memcontrol.c
+index 750d4ef283..4672494363 100644
+--- a/usr.sbin/memcontrol/memcontrol.c
++++ b/usr.sbin/memcontrol/memcontrol.c
+@@ -33,6 +33,7 @@
+ #include <err.h>
+ #include <fcntl.h>
+ #include <paths.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -66,18 +67,18 @@ static void	clearfunc(int memfd, int argc, char *argv[]);
+ static void	helpfunc(int memfd, int argc, char *argv[]);
+ static void	help(const char *what);
+ 
+-struct 
++struct
+ {
+     const char	*cmd;
+     const char	*desc;
+     void	(*func)(int memfd, int argc, char *argv[]);
+ } functions[] = {
+-    {"list",	
++    {"list",
+      "List current memory range attributes\n"
+      "    list [-a]\n"
+      "        -a    list all range slots, even those that are inactive",
+      listfunc},
+-    {"set",	
++    {"set",
+      "Set memory range attributes\n"
+      "    set -b <base> -l <length> -o <owner> <attribute>\n"
+      "        <base>      memory range base address\n"
+@@ -90,7 +91,7 @@ struct
+      "                        write-back\n"
+      "                        write-protect",
+      setfunc},
+-    {"clear",	
++    {"clear",
+      "Clear memory range attributes\n"
+      "    clear -o <owner>\n"
+      "        <owner>     all ranges with this owner will be cleared\n"
+@@ -131,7 +132,7 @@ mrgetall(int memfd, int *nmr)
+     mro.mo_arg[0] = 0;
+     if (ioctl(memfd, MEMRANGE_GET, &mro))
+ 	err(1, "can't size range descriptor array");
+-    
++
+     *nmr = mro.mo_arg[0];
+     mrd = malloc(*nmr * sizeof(struct mem_range_desc));
+     if (mrd == NULL)
+@@ -171,7 +172,7 @@ listfunc(int memfd, int argc, char *argv[])
+ 	}
+ 
+     mrd = mrgetall(memfd, &nd);
+-    
++
+     for (i = 0; i < nd; i++) {
+ 	if (!showall && !(mrd[i].mr_flags & MDF_ACTIVE))
+ 	    continue;
+@@ -220,7 +221,7 @@ setfunc(int memfd, int argc, char *argv[])
+ 		help("set");
+ 	    strcpy(mrd.mr_owner, optarg);
+ 	    break;
+-	    
++
+ 	case '?':
+ 	default:
+ 	    help("set");
+@@ -231,7 +232,7 @@ setfunc(int memfd, int argc, char *argv[])
+ 
+     argc -= optind;
+     argv += optind;
+-    
++
+     while(argc--) {
+ 	for (i = 0; attrnames[i].name != NULL; i++) {
+ 	    if (!strcmp(attrnames[i].name, argv[0])) {
+@@ -281,7 +282,7 @@ clearfunc(int memfd, int argc, char *argv[])
+ 		help("clear");
+ 	    owner = strdup(optarg);
+ 	    break;
+-	    
++
+ 	case '?':
+ 	default:
+ 	    help("clear");
+@@ -295,10 +296,10 @@ clearfunc(int memfd, int argc, char *argv[])
+ 	mrdp = mrgetall(memfd, &nd);
+ 	mro.mo_arg[0] = MEMRANGE_SET_REMOVE;
+ 	for (i = 0; i < nd; i++) {
+-	    if (!strcmp(owner, mrdp[i].mr_owner) && 
++	    if (!strcmp(owner, mrdp[i].mr_owner) &&
+ 		(mrdp[i].mr_flags & MDF_ACTIVE) &&
+ 		!(mrdp[i].mr_flags & MDF_FIXACTIVE)) {
+-		
++
+ 		mro.mo_desc = mrdp + i;
+ 		if (ioctl(memfd, MEMRANGE_SET, &mro))
+ 		    warn("couldn't clear range owned by '%s'", owner);
+@@ -335,7 +336,7 @@ help(const char *what)
+ 	    }
+ 	fprintf(stderr, "Unknown command '%s'\n", what);
+     }
+-    
++
+     /* print general help */
+     fprintf(stderr, "Valid commands are :\n");
+     for (i = 0; functions[i].cmd != NULL; i++)
+diff --git a/usr.sbin/mfiutil/mfiutil.c b/usr.sbin/mfiutil/mfiutil.c
+index 55ed3e162d..ff43959980 100644
+--- a/usr.sbin/mfiutil/mfiutil.c
++++ b/usr.sbin/mfiutil/mfiutil.c
+@@ -31,6 +31,7 @@
+ 
+ #include <sys/errno.h>
+ #include <err.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.sbin/mfiutil/mfiutil.h b/usr.sbin/mfiutil/mfiutil.h
+index fc849358d5..9eb70a1370 100644
+--- a/usr.sbin/mfiutil/mfiutil.h
++++ b/usr.sbin/mfiutil/mfiutil.h
+@@ -33,6 +33,7 @@
+ #define	__MFIUTIL_H__
+ 
+ #include <sys/linker_set.h>
++#include <stdint.h>
+ 
+ #include <dev/raid/mfi/mfireg.h>
+ 
+diff --git a/usr.sbin/mpsutil/mpr_ioctl.h b/usr.sbin/mpsutil/mpr_ioctl.h
+index cb47d5a826..bedd7f31c0 100644
+--- a/usr.sbin/mpsutil/mpr_ioctl.h
++++ b/usr.sbin/mpsutil/mpr_ioctl.h
+@@ -64,6 +64,8 @@
+ #ifndef _MPR_IOCTL_H_
+ #define	_MPR_IOCTL_H_
+ 
++#include <stdint.h>
++
+ #include <dev/raid/mpr/mpi/mpi2_type.h>
+ #include <dev/raid/mpr/mpi/mpi2.h>
+ #include <dev/raid/mpr/mpi/mpi2_cnfg.h>
+diff --git a/usr.sbin/mpsutil/mps_ioctl.h b/usr.sbin/mpsutil/mps_ioctl.h
+index b3e78ea39f..dfdf4cf0aa 100644
+--- a/usr.sbin/mpsutil/mps_ioctl.h
++++ b/usr.sbin/mpsutil/mps_ioctl.h
+@@ -64,6 +64,8 @@
+ #ifndef _MPS_IOCTL_H_
+ #define	_MPS_IOCTL_H_
+ 
++#include <stdint.h>
++
+ #include <dev/raid/mps/mpi/mpi2_type.h>
+ #include <dev/raid/mps/mpi/mpi2.h>
+ #include <dev/raid/mps/mpi/mpi2_cnfg.h>
+diff --git a/usr.sbin/mpsutil/mpsutil.h b/usr.sbin/mpsutil/mpsutil.h
+index d9a96aa7f8..190dc04677 100644
+--- a/usr.sbin/mpsutil/mpsutil.h
++++ b/usr.sbin/mpsutil/mpsutil.h
+@@ -36,6 +36,7 @@
+ #include <sys/cdefs.h>
+ #include <sys/linker_set.h>
+ #include <stdbool.h>
++#include <stdint.h>
+ 
+ #include <dev/raid/mps/mpi/mpi2_type.h>
+ #include <dev/raid/mps/mpi/mpi2.h>
+diff --git a/usr.sbin/mptutil/mptutil.h b/usr.sbin/mptutil/mptutil.h
+index d38987a044..74a50f43bb 100644
+--- a/usr.sbin/mptutil/mptutil.h
++++ b/usr.sbin/mptutil/mptutil.h
+@@ -34,6 +34,7 @@
+ #define	__MPTUTIL_H__
+ 
+ #include <sys/linker_set.h>
++#include <stdint.h>
+ 
+ #include <dev/disk/mpt/mpilib/mpi_type.h>
+ #include <dev/disk/mpt/mpilib/mpi.h>
+diff --git a/usr.sbin/mtree/pack_dev.c b/usr.sbin/mtree/pack_dev.c
+index 42f6fa16cf..2c7ec2bd1e 100644
+--- a/usr.sbin/mtree/pack_dev.c
++++ b/usr.sbin/mtree/pack_dev.c
+@@ -37,6 +37,7 @@
+ #include <sys/stat.h>
+ 
+ #include <limits.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.sbin/ndiscvt/inf.c b/usr.sbin/ndiscvt/inf.c
+index ca04328e1c..4839dbb481 100644
+--- a/usr.sbin/ndiscvt/inf.c
++++ b/usr.sbin/ndiscvt/inf.c
+@@ -32,6 +32,7 @@
+  * $FreeBSD: src/usr.sbin/ndiscvt/inf.c,v 1.19 2008/12/27 08:03:32 weongyo Exp $
+  */
+ 
++#include <stdint.h>		/* for uintptr in __DECONST() */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.sbin/ngctl/ngctl.h b/usr.sbin/ngctl/ngctl.h
+index e8a12ec0e8..42b624ee44 100644
+--- a/usr.sbin/ngctl/ngctl.h
++++ b/usr.sbin/ngctl/ngctl.h
+@@ -3,7 +3,7 @@
+  *
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -14,7 +14,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+@@ -34,7 +34,6 @@
+  * OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/ngctl/ngctl.h,v 1.6.2.3 2002/02/01 18:17:43 archie Exp $
+- * $DragonFly: src/usr.sbin/ngctl/ngctl.h,v 1.4 2005/03/16 04:45:07 joerg Exp $
+  */
+ 
+ #include <sys/types.h>
+@@ -43,6 +42,7 @@
+ #include <sys/socket.h>
+ #include <sys/select.h>
+ 
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.sbin/ngctl/show.c b/usr.sbin/ngctl/show.c
+index 341ee40693..99cd4477b2 100644
+--- a/usr.sbin/ngctl/show.c
++++ b/usr.sbin/ngctl/show.c
+@@ -3,7 +3,7 @@
+  *
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -14,7 +14,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+@@ -34,7 +34,6 @@
+  * OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/ngctl/show.c,v 1.2 1999/11/30 02:45:31 archie Exp $
+- * $DragonFly: src/usr.sbin/ngctl/show.c,v 1.5 2008/07/10 18:29:52 swildner Exp $
+  */
+ 
+ #include "ngctl.h"
+diff --git a/usr.sbin/ppp/acf.c b/usr.sbin/ppp/acf.c
+index 65854782f9..c2ef270d76 100644
+--- a/usr.sbin/ppp/acf.c
++++ b/usr.sbin/ppp/acf.c
+@@ -24,12 +24,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/ppp/acf.c,v 1.4.2.1 2000/08/19 09:29:59 brian Exp $
+- * $DragonFly: src/usr.sbin/ppp/acf.c,v 1.3 2008/05/19 10:19:49 corecode Exp $
+  */
+ 
+ #include <sys/types.h>
+ #include <sys/select.h>
+ 
++#include <stdint.h>
+ #include <stdio.h>
+ #include <termios.h>
+ 
+diff --git a/usr.sbin/ppp/async.c b/usr.sbin/ppp/async.c
+index 4c3c284d81..f275f58e3e 100644
+--- a/usr.sbin/ppp/async.c
++++ b/usr.sbin/ppp/async.c
+@@ -26,12 +26,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/ppp/async.c,v 1.23.2.3 2002/09/01 02:12:22 brian Exp $
+- * $DragonFly: src/usr.sbin/ppp/async.c,v 1.3 2008/05/19 10:19:49 corecode Exp $
+  */
+ 
+ #include <sys/types.h>
+ #include <sys/select.h>
+ 
++#include <stdint.h>
+ #include <string.h>
+ #include <termios.h>
+ 
+diff --git a/usr.sbin/ppp/hdlc.c b/usr.sbin/ppp/hdlc.c
+index 7487b4cd0a..782667d02e 100644
+--- a/usr.sbin/ppp/hdlc.c
++++ b/usr.sbin/ppp/hdlc.c
+@@ -32,6 +32,7 @@
+ #include <sys/un.h>
+ 
+ #include <stdarg.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <string.h>
+ #include <termios.h>
+diff --git a/usr.sbin/ppp/sync.c b/usr.sbin/ppp/sync.c
+index fca8315055..bffd53d7e3 100644
+--- a/usr.sbin/ppp/sync.c
++++ b/usr.sbin/ppp/sync.c
+@@ -24,12 +24,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/ppp/sync.c,v 1.6 1999/12/20 20:29:47 brian Exp $
+- * $DragonFly: src/usr.sbin/ppp/sync.c,v 1.3 2008/05/19 10:19:49 corecode Exp $
+  */
+ 
+ #include <sys/types.h>
+ #include <sys/select.h>
+ 
++#include <stdint.h>
+ #include <stdio.h>
+ #include <termios.h>
+ 
+diff --git a/usr.sbin/ppp/tty.c b/usr.sbin/ppp/tty.c
+index 395c03b57d..47cc4df59c 100644
+--- a/usr.sbin/ppp/tty.c
++++ b/usr.sbin/ppp/tty.c
+@@ -24,7 +24,6 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/ppp/tty.c,v 1.21.2.3 2002/09/01 02:12:32 brian Exp $
+- * $DragonFly: src/usr.sbin/ppp/tty.c,v 1.4 2007/06/04 00:40:32 swildner Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -35,6 +34,7 @@
+ 
+ #include <errno.h>
+ #include <fcntl.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.sbin/repquota/repquota.c b/usr.sbin/repquota/repquota.c
+index 2fceec7626..54692073f8 100644
+--- a/usr.sbin/repquota/repquota.c
++++ b/usr.sbin/repquota/repquota.c
+@@ -39,6 +39,7 @@
+  */
+ #include <sys/param.h>
+ #include <sys/stat.h>
++#include <stdint.h>
+ #include <vfs/ufs/quota.h>
+ #include <err.h>
+ #include <errno.h>
+diff --git a/usr.sbin/rtadvd/advcap.c b/usr.sbin/rtadvd/advcap.c
+index efeec4baf6..f6875b76ad 100644
+--- a/usr.sbin/rtadvd/advcap.c
++++ b/usr.sbin/rtadvd/advcap.c
+@@ -40,6 +40,7 @@
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <ctype.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <syslog.h>
+diff --git a/usr.sbin/sdpd/log.c b/usr.sbin/sdpd/log.c
+index 33f9bf10ab..a9f29d586f 100644
+--- a/usr.sbin/sdpd/log.c
++++ b/usr.sbin/sdpd/log.c
+@@ -1,5 +1,4 @@
+ /* $NetBSD: log.c,v 1.1 2006/06/19 15:44:56 gdamore Exp $ */
+-/* $DragonFly: src/usr.sbin/sdpd/log.c,v 1.1 2008/01/06 21:51:30 hasso Exp $ */
+ 
+ /*
+  * log.c
+@@ -34,6 +33,7 @@
+ 
+ #include <sys/types.h>
+ #include <stdarg.h>
++#include <stdint.h>
+ #include <syslog.h>
+ 
+ #include "log.h"
+-- 
+2.23.0
+

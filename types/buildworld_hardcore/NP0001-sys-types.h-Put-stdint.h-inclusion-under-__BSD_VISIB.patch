@@ -1,0 +1,1725 @@
+From c4842d7b626de7c83e41d272b9eec350d0d00ee4 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 7 Nov 2019 14:31:19 +0000
+Subject: <sys/types.h>: Put <stdint.h> inclusion under __BSD_VISIBLE.
+
+ There are a lot of pollution that hide issues under other headers and
+ source codes because of this shortcut.  This is a first step trying to
+ reduce this pollution.  The <sys/types.h> is a standard defined header
+ and presence of these integral types is a namespace pollution.
+
+ The <sys/stdint.h> was converted to be a proxy header separating the
+ userland and kernel scopes.  Under _KERNEL it acts as subset of three
+ userland headers: <stdint.h>, <stddef.h>, <stdbool.h> + boolean_t to be
+ suitable for kernel compilation to use only headers in /usr/src/sys/.
+ In non _KERNEL case the <sys/stdint.h> just includes whatever is
+ considered to be <stdint.h> + <machine/stdint.h>.  Note that <stdint.h>
+ might not be base header because of compilers are handling a non
+ __STDC_HOSTED__ case in -ffreestandig compilation.
+
+ Making <stdint.h> inclusion in <sys/types.h> under __BSD_VISIBLE opens
+ up a can of worms of deficiencies in our publicly installed headers in
+ /usr/include/ that assume default BSD visibility and expose portability
+ issues to other setups using different <sys/types.h> variants.  It is
+ visible in ports where extra headers needed to be added just to use
+ certain of base headers.
+
+ To ease up base header usability by third party software codes, reduce
+ deficiences of standard defined uint*_t int*_t types as follows:
+ * if it is a kernel header use <sys/stdint.h> (handled by _KERNEL);
+ * in userland only headers include <stdint.h> unless any standards
+   have stricter requirements and this would create pollution issues;
+ * if integral types are used in structures to declare spare, reserved or
+   pad fields, then use __ types if header does not use integral types;
+ * in certain cases where u_long/u_int are needed, use u_int*_t types.
+
+ These changes keeps the same usuability of our base headers when
+ __BSD_VISIBILE == 0 while it has no effect on our default environment.
+ Next step is to reduce other deficiencies created by assumptions.
+---
+ include/db.h                           |  1 +
+ include/resolv.h                       |  2 +-
+ include/rpc/auth.h                     |  1 +
+ include/rpc/types.h                    |  1 +
+ include/utmpx.h                        |  1 +
+ include/uuid.h                         |  1 +
+ lib/libdevinfo/devinfo.h               | 10 ++++-----
+ lib/libsdp/sdp.h                       |  2 +-
+ lib/libutil/libutil.h                  |  1 +
+ sys/bus/cam/scsi/scsi_all.h            |  3 +++
+ sys/bus/pci/pcivar.h                   |  3 +++
+ sys/bus/u4b/usb_dev.h                  |  1 +
+ sys/cpu/x86_64/include/frame.h         |  3 +--
+ sys/cpu/x86_64/include/segments.h      |  4 ++++
+ sys/cpu/x86_64/include/tls.h           |  3 +++
+ sys/dev/acpica/acpiio.h                |  1 +
+ sys/dev/misc/evdev/input.h             |  1 +
+ sys/gnu/vfs/ext2fs/ext2_fs.h           |  1 +
+ sys/libprop/prop_object.h              |  1 +
+ sys/libprop/prop_rb_impl.h             |  1 +
+ sys/net/altq/if_altq.h                 |  2 ++
+ sys/net/bpf.h                          |  1 +
+ sys/net/ethernet.h                     |  3 +++
+ sys/net/if.h                           |  2 +-
+ sys/net/if_media.h                     |  3 +++
+ sys/netbt/bluetooth.h                  |  2 +-
+ sys/netbt/l2cap.h                      |  2 +-
+ sys/netbt/rfcomm.h                     |  2 +-
+ sys/netgraph/ksocket/ng_ksocket.h      | 10 ++++-----
+ sys/netgraph7/ksocket/ng_ksocket.h     |  8 +++----
+ sys/netgraph7/ng_message.h             |  6 +++---
+ sys/netinet/in.h                       |  4 ++++
+ sys/netinet/pim.h                      |  8 +++----
+ sys/netproto/802_11/ieee80211_input.h  |  1 +
+ sys/platform/pc64/include/clock.h      |  8 +++----
+ sys/platform/pc64/include/msi_var.h    |  4 ++--
+ sys/platform/vkernel64/include/clock.h |  8 +++----
+ sys/sys/bio.h                          |  6 ++++--
+ sys/sys/blist.h                        | 22 ++++++++++---------
+ sys/sys/callout.h                      |  3 +++
+ sys/sys/cdrio.h                        |  4 +++-
+ sys/sys/devicestat.h                   |  1 +
+ sys/sys/dirent.h                       |  1 +
+ sys/sys/diskmbr.h                      |  1 +
+ sys/sys/dmsg.h                         |  3 +++
+ sys/sys/efi.h                          |  2 ++
+ sys/sys/elf32.h                        |  3 +++
+ sys/sys/elf64.h                        |  4 +++-
+ sys/sys/event.h                        |  4 ++++
+ sys/sys/gpt.h                          |  1 +
+ sys/sys/hash.h                         |  1 +
+ sys/sys/jail.h                         |  6 +++---
+ sys/sys/journal.h                      | 29 +++++++++++++-------------
+ sys/sys/kinfo.h                        | 14 ++++++-------
+ sys/sys/ktr.h                          | 11 +++++-----
+ sys/sys/lock.h                         |  4 ++--
+ sys/sys/mount.h                        |  1 +
+ sys/sys/mountctl.h                     |  3 +++
+ sys/sys/mpt_ioctl.h                    |  1 +
+ sys/sys/mtio.h                         |  6 ++++--
+ sys/sys/pciio.h                        |  8 ++++---
+ sys/sys/procctl.h                      |  1 +
+ sys/sys/resident.h                     |  8 +++----
+ sys/sys/rman.h                         |  5 ++++-
+ sys/sys/sensors.h                      |  4 +++-
+ sys/sys/stat.h                         |  6 +++---
+ sys/sys/systimer.h                     |  2 +-
+ sys/sys/types.h                        |  2 ++
+ sys/sys/upmap.h                        |  3 +++
+ sys/sys/vfscache.h                     | 10 ++++-----
+ sys/sys/vmm.h                          |  2 +-
+ sys/sys/vmmeter.h                      |  3 +++
+ sys/sys/vnioctl.h                      |  3 +++
+ sys/sys/xdiskioctl.h                   |  2 +-
+ sys/vfs/hammer/hammer_disk.h           |  1 +
+ sys/vfs/hammer2/hammer2_ccms.h         |  3 +++
+ sys/vfs/hammer2/hammer2_disk.h         |  3 +++
+ sys/vfs/msdosfs/bpb.h                  |  2 ++
+ 78 files changed, 206 insertions(+), 109 deletions(-)
+
+diff --git a/include/db.h b/include/db.h
+index 20cd9955e4..315220eca6 100644
+--- a/include/db.h
++++ b/include/db.h
+@@ -37,6 +37,7 @@
+ #include <sys/cdefs.h>
+ 
+ #include <limits.h>
++#include <stdint.h>
+ 
+ #define	RET_ERROR	-1		/* Return values. */
+ #define	RET_SUCCESS	 0
+diff --git a/include/resolv.h b/include/resolv.h
+index 9c632b1110..a0268ea1a5 100644
+--- a/include/resolv.h
++++ b/include/resolv.h
+@@ -48,7 +48,6 @@
+  *	@(#)resolv.h	8.1 (Berkeley) 6/2/93
+  *	$Id: resolv.h,v 1.19.18.4 2008/04/03 23:15:15 marka Exp $
+  * $FreeBSD: src/include/resolv.h,v 1.33 2008/12/14 19:39:53 ume Exp $
+- * $DragonFly: src/include/resolv.h,v 1.4 2004/02/26 13:58:25 joerg Exp $
+  */
+ 
+ #ifndef _RESOLV_H_
+@@ -58,6 +57,7 @@
+ #include <sys/types.h>
+ #include <sys/cdefs.h>
+ #include <sys/socket.h>
++#include <stdint.h>
+ #include <stdio.h>
+ #include <arpa/nameser.h>
+ 
+diff --git a/include/rpc/auth.h b/include/rpc/auth.h
+index baea8ca6c4..13e983afe4 100644
+--- a/include/rpc/auth.h
++++ b/include/rpc/auth.h
+@@ -49,6 +49,7 @@
+ #include <rpc/clnt_stat.h>
+ #include <sys/cdefs.h>
+ #include <sys/socket.h>
++#include <stdint.h>
+ 
+ #define MAX_AUTH_BYTES	400
+ #define MAXNETNAMELEN	255	/* maximum length of network user's name */
+diff --git a/include/rpc/types.h b/include/rpc/types.h
+index 89c0b700c7..702e467b04 100644
+--- a/include/rpc/types.h
++++ b/include/rpc/types.h
+@@ -40,6 +40,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/_null.h>
++#include <stdint.h>
+ 
+ typedef int32_t bool_t;
+ typedef int32_t enum_t;
+diff --git a/include/utmpx.h b/include/utmpx.h
+index 845c7bee40..08675de441 100644
+--- a/include/utmpx.h
++++ b/include/utmpx.h
+@@ -33,6 +33,7 @@
+ #include <sys/cdefs.h>
+ #include <sys/socket.h>
+ #include <sys/time.h>
++#include <stdint.h>
+ 
+ #define	_PATH_UTMPX		"/var/run/utmpx"
+ #define	_PATH_WTMPX		"/var/log/wtmpx"
+diff --git a/include/uuid.h b/include/uuid.h
+index 20eb9a5943..077f18077b 100644
+--- a/include/uuid.h
++++ b/include/uuid.h
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/uuid.h>
++#include <stdint.h>
+ 
+ /*
+  * This implementation mostly conforms to the DCE 1.1 specification.
+diff --git a/lib/libdevinfo/devinfo.h b/lib/libdevinfo/devinfo.h
+index 9723f7cd57..923d42a0dd 100644
+--- a/lib/libdevinfo/devinfo.h
++++ b/lib/libdevinfo/devinfo.h
+@@ -25,7 +25,6 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/lib/libdevinfo/devinfo.h,v 1.5 2005/08/31 14:57:39 rodrigc Exp $
+- * $DragonFly: src/lib/libdevinfo/devinfo.h,v 1.1 2008/09/30 12:20:29 hasso Exp $
+  */
+ 
+ #ifndef _DEVINFO_H_INCLUDED
+@@ -33,6 +32,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ typedef __uintptr_t	devinfo_handle_t;
+ #define DEVINFO_ROOT_DEVICE	((devinfo_handle_t)0)
+@@ -69,7 +69,7 @@ struct devinfo_rman {
+ 
+ 	unsigned long		dm_start;	/* resource start */
+ 	unsigned long		dm_size;	/* resource size */
+-    
++
+ 	char			*dm_desc;	/* resource description */
+ };
+ 
+@@ -114,8 +114,8 @@ extern struct devinfo_rman
+  * (fn) returns nonzero, abort the scan and return.
+  */
+ extern int
+-	devinfo_foreach_device_child(struct devinfo_dev *parent, 
+-	    int (* fn)(struct devinfo_dev *child, void *arg), 
++	devinfo_foreach_device_child(struct devinfo_dev *parent,
++	    int (* fn)(struct devinfo_dev *child, void *arg),
+ 	    void *arg);
+ 
+ /*
+@@ -124,7 +124,7 @@ extern int
+  */
+ extern int
+ 	devinfo_foreach_device_resource(struct devinfo_dev *dev,
+-	    int (* fn)(struct devinfo_dev *dev, 
++	    int (* fn)(struct devinfo_dev *dev,
+ 	    struct devinfo_res *res, void *arg),
+ 	    void *arg);
+ 
+diff --git a/lib/libsdp/sdp.h b/lib/libsdp/sdp.h
+index a54fac7872..d8fa7bd26f 100644
+--- a/lib/libsdp/sdp.h
++++ b/lib/libsdp/sdp.h
+@@ -1,5 +1,4 @@
+ /* $NetBSD: sdp.h,v 1.2 2006/08/17 20:13:31 plunky Exp $ */
+-/* $DragonFly: src/lib/libsdp/sdp.h,v 1.2 2008/09/30 16:57:05 swildner Exp $ */
+ 
+ /*-
+  * Copyright (c) 2006 Itronix Inc.
+@@ -66,6 +65,7 @@
+ #define _SDP_H_
+ 
+ #include <string.h>
++#include <stdint.h>
+ 
+ __BEGIN_DECLS
+ 
+diff --git a/lib/libutil/libutil.h b/lib/libutil/libutil.h
+index f501a5d81a..d3d6bb0f8b 100644
+--- a/lib/libutil/libutil.h
++++ b/lib/libutil/libutil.h
+@@ -40,6 +40,7 @@
+ #define	_LIBUTIL_H_
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ #ifdef _PWD_H_
+ #define	_PWSCAN_MASTER	0x01
+diff --git a/sys/bus/cam/scsi/scsi_all.h b/sys/bus/cam/scsi/scsi_all.h
+index 6d84f55ab9..0cd44cad2e 100644
+--- a/sys/bus/cam/scsi/scsi_all.h
++++ b/sys/bus/cam/scsi/scsi_all.h
+@@ -27,6 +27,9 @@
+ #ifndef _SYS_CDEFS_H_
+ #include <sys/cdefs.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #if !defined(_KERNEL) && !defined(_STDIO_H_)
+ #include <stdio.h>	/* FILE for userland protos */
+ #endif
+diff --git a/sys/bus/pci/pcivar.h b/sys/bus/pci/pcivar.h
+index 9dff3a358d..958035a312 100644
+--- a/sys/bus/pci/pcivar.h
++++ b/sys/bus/pci/pcivar.h
+@@ -32,6 +32,9 @@
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ 
+ /* some PCI bus constants */
+ 
+diff --git a/sys/bus/u4b/usb_dev.h b/sys/bus/u4b/usb_dev.h
+index d084353fce..26016c386f 100644
+--- a/sys/bus/u4b/usb_dev.h
++++ b/sys/bus/u4b/usb_dev.h
+@@ -27,6 +27,7 @@
+ #ifndef _USB_DEV_H_
+ #define	_USB_DEV_H_
+ 
++#include <sys/stdint.h>
+ #include <sys/file.h>
+ #include <sys/poll.h>
+ #include <sys/signalvar.h>
+diff --git a/sys/cpu/x86_64/include/frame.h b/sys/cpu/x86_64/include/frame.h
+index fe4df3eba8..b5262d25c8 100644
+--- a/sys/cpu/x86_64/include/frame.h
++++ b/sys/cpu/x86_64/include/frame.h
+@@ -38,7 +38,6 @@
+ #ifndef _CPU_FRAME_H_
+ #define _CPU_FRAME_H_
+ 
+-/* JG? */
+ #include <sys/types.h>
+ 
+ /*
+@@ -144,7 +143,7 @@ struct trampframe {
+ 	register_t	tr_pcb_flags;	/* copy of pcb control flags */
+ 	register_t	tr_pcb_cr3_iso;	/* copy of isolated pml4e */
+ 	register_t	tr_pcb_cr3;	/* copy of primary pml4e */
+-	uint32_t	tr_pcb_spec_ctrl[2];/* SPEC_CTRL + ficticious flags */
++	u_int32_t	tr_pcb_spec_ctrl[2];/* SPEC_CTRL + ficticious flags */
+ 	register_t	tr_pcb_gs_kernel; /* (used by nmi, dbg) */
+ 	register_t	tr_pcb_gs_saved;  /* (used by nmi) */
+ 	register_t	tr_pcb_cr3_saved; /* (used by nmi) */
+diff --git a/sys/cpu/x86_64/include/segments.h b/sys/cpu/x86_64/include/segments.h
+index 0aa64af912..537ca19339 100644
+--- a/sys/cpu/x86_64/include/segments.h
++++ b/sys/cpu/x86_64/include/segments.h
+@@ -38,6 +38,10 @@
+ #ifndef _CPU_SEGMENTS_H_
+ #define	_CPU_SEGMENTS_H_
+ 
++#ifndef _KERNEL
++#include <sys/stdint.h>		/* for uint64_t */
++#endif
++
+ /*
+  * x86_64 Segmentation Data Structures and definitions
+  */
+diff --git a/sys/cpu/x86_64/include/tls.h b/sys/cpu/x86_64/include/tls.h
+index 8a924feb59..cb799efc68 100644
+--- a/sys/cpu/x86_64/include/tls.h
++++ b/sys/cpu/x86_64/include/tls.h
+@@ -35,6 +35,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>			/* for uintptr_t */
++#endif
+ #ifndef _SYS_TLS_H_
+ #include <sys/tls.h>
+ #endif
+diff --git a/sys/dev/acpica/acpiio.h b/sys/dev/acpica/acpiio.h
+index 7829438182..b9d1d23717 100644
+--- a/sys/dev/acpica/acpiio.h
++++ b/sys/dev/acpica/acpiio.h
+@@ -31,6 +31,7 @@
+ #define _ACPIIO_H_
+ 
+ #include <sys/ioccom.h>
++#include <sys/stdint.h>
+ 
+ /*
+  * Core ACPI subsystem ioctls
+diff --git a/sys/dev/misc/evdev/input.h b/sys/dev/misc/evdev/input.h
+index c3f1a07832..35891bcf97 100644
+--- a/sys/dev/misc/evdev/input.h
++++ b/sys/dev/misc/evdev/input.h
+@@ -33,6 +33,7 @@
+ #include <sys/ioccom.h>
+ #include <sys/time.h>
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ 
+ #include "input-event-codes.h"
+ 
+diff --git a/sys/gnu/vfs/ext2fs/ext2_fs.h b/sys/gnu/vfs/ext2fs/ext2_fs.h
+index 0a5ca16d43..6b08e36d91 100644
+--- a/sys/gnu/vfs/ext2fs/ext2_fs.h
++++ b/sys/gnu/vfs/ext2fs/ext2_fs.h
+@@ -25,6 +25,7 @@
+ #define _LINUX_EXT2_FS_H
+ 
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ #include <sys/ioccom.h>
+ 
+ #define __u32 u_int32_t
+diff --git a/sys/libprop/prop_object.h b/sys/libprop/prop_object.h
+index e7e3682168..09409e7450 100644
+--- a/sys/libprop/prop_object.h
++++ b/sys/libprop/prop_object.h
+@@ -36,6 +36,7 @@
+ 
+ #ifndef _KERNEL
+ #include <stdbool.h>
++#include <stdint.h>
+ #endif
+ 
+ typedef void *prop_object_t;
+diff --git a/sys/libprop/prop_rb_impl.h b/sys/libprop/prop_rb_impl.h
+index 814ba7d350..5826802c04 100644
+--- a/sys/libprop/prop_rb_impl.h
++++ b/sys/libprop/prop_rb_impl.h
+@@ -47,6 +47,7 @@
+ #else	/* __NetBSD__ */
+ 
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ #include <sys/queue.h>
+ #include <machine/endian.h>
+ 
+diff --git a/sys/net/altq/if_altq.h b/sys/net/altq/if_altq.h
+index 51da040076..80f07d0238 100644
+--- a/sys/net/altq/if_altq.h
++++ b/sys/net/altq/if_altq.h
+@@ -29,6 +29,8 @@
+ #define	_NET_ALTQ_IF_ALTQ_H_
+ 
+ #include <sys/mbuf.h>
++#include <sys/queue.h>
++#include <sys/stdint.h>
+ #include <sys/serialize.h>
+ #include <net/altq/if_classq.h>
+ 
+diff --git a/sys/net/bpf.h b/sys/net/bpf.h
+index 1c9f40c023..f12a32cd44 100644
+--- a/sys/net/bpf.h
++++ b/sys/net/bpf.h
+@@ -42,6 +42,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/time.h>
++#include <sys/stdint.h>
+ #include <sys/ioccom.h>
+ 
+ __BEGIN_DECLS
+diff --git a/sys/net/ethernet.h b/sys/net/ethernet.h
+index 749aa50954..84dc884c08 100644
+--- a/sys/net/ethernet.h
++++ b/sys/net/ethernet.h
+@@ -11,6 +11,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ 
+ /*
+  * The number of bytes in an ethernet (MAC) address.
+diff --git a/sys/net/if.h b/sys/net/if.h
+index 769ec2e599..f49603fd69 100644
+--- a/sys/net/if.h
++++ b/sys/net/if.h
+@@ -70,7 +70,7 @@ struct if_data {
+ 	u_long	ifi_mtu;		/* maximum transmission unit */
+ 	u_long	ifi_metric;		/* routing metric (external only) */
+ 	u_long  ifi_link_state;		/* current link state */
+-	uint64_t ifi_baudrate;		/* linespeed */
++	u_int64_t ifi_baudrate;		/* linespeed */
+ 	/* volatile statistics */
+ 	u_long	ifi_ipackets;		/* packets received on interface */
+ 	u_long	ifi_ierrors;		/* input errors on interface */
+diff --git a/sys/net/if_media.h b/sys/net/if_media.h
+index 25d68c83e6..a40df8dae5 100644
+--- a/sys/net/if_media.h
++++ b/sys/net/if_media.h
+@@ -41,6 +41,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ 
+ /*
+  * Prototypes and definitions for BSD/OS-compatible network interface
+diff --git a/sys/netbt/bluetooth.h b/sys/netbt/bluetooth.h
+index 54cd927c96..a5a059e881 100644
+--- a/sys/netbt/bluetooth.h
++++ b/sys/netbt/bluetooth.h
+@@ -1,4 +1,3 @@
+-/* $DragonFly: src/sys/netbt/bluetooth.h,v 1.2 2008/03/18 13:41:42 hasso Exp $ */
+ /* $OpenBSD: src/sys/netbt/bluetooth.h,v 1.5 2008/02/24 21:34:48 uwe Exp $ */
+ /* $NetBSD: bluetooth.h,v 1.6 2007/09/17 01:23:17 rillig Exp $ */
+ 
+@@ -37,6 +36,7 @@
+ 
+ #include <sys/socket.h>
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ 
+ /*
+  * Bluetooth Address Family Protocol Numbers
+diff --git a/sys/netbt/l2cap.h b/sys/netbt/l2cap.h
+index fe2286a48e..1b6440466e 100644
+--- a/sys/netbt/l2cap.h
++++ b/sys/netbt/l2cap.h
+@@ -1,4 +1,3 @@
+-/* $DragonFly: src/sys/netbt/l2cap.h,v 1.2 2008/03/18 13:41:42 hasso Exp $ */
+ /* $OpenBSD: src/sys/netbt/l2cap.h,v 1.5 2008/02/24 21:34:48 uwe Exp $ */
+ /* $NetBSD: l2cap.h,v 1.6 2007/11/03 17:20:17 plunky Exp $ */
+ 
+@@ -72,6 +71,7 @@
+ #define _NETBT_L2CAP_H_
+ 
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ 
+ /**************************************************************************
+  **************************************************************************
+diff --git a/sys/netbt/rfcomm.h b/sys/netbt/rfcomm.h
+index ff9c324ad5..d9d5c92e23 100644
+--- a/sys/netbt/rfcomm.h
++++ b/sys/netbt/rfcomm.h
+@@ -1,4 +1,3 @@
+-/* $DragonFly: src/sys/netbt/rfcomm.h,v 1.2 2008/03/18 13:41:42 hasso Exp $ */
+ /* $OpenBSD: src/sys/netbt/rfcomm.h,v 1.2 2008/02/24 21:34:48 uwe Exp $ */
+ /* $NetBSD: rfcomm.h,v 1.6 2007/11/20 20:25:58 plunky Exp $ */
+ 
+@@ -65,6 +64,7 @@
+ #define _NETBT_RFCOMM_H_
+ 
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ 
+ /*************************************************************************
+  *************************************************************************
+diff --git a/sys/netgraph/ksocket/ng_ksocket.h b/sys/netgraph/ksocket/ng_ksocket.h
+index 6077b8f9ce..b27058e42a 100644
+--- a/sys/netgraph/ksocket/ng_ksocket.h
++++ b/sys/netgraph/ksocket/ng_ksocket.h
+@@ -4,7 +4,7 @@
+  *
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -15,7 +15,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+@@ -37,7 +37,6 @@
+  * Author: Archie Cobbs <archie@freebsd.org>
+  *
+  * $FreeBSD: src/sys/netgraph/ng_ksocket.h,v 1.2.2.5 2002/07/02 23:44:02 archie Exp $
+- * $DragonFly: src/sys/netgraph/ksocket/ng_ksocket.h,v 1.2 2003/06/17 04:28:50 dillon Exp $
+  * $Whistle: ng_ksocket.h,v 1.1 1999/11/16 20:04:40 archie Exp $
+  */
+ 
+@@ -45,6 +44,7 @@
+ #define _NETGRAPH_KSOCKET_H_
+ 
+ #include <sys/socket.h>
++#include <sys/stdint.h>
+ 
+ /* Node type name and magic cookie */
+ #define NG_KSOCKET_NODE_TYPE	"ksocket"
+@@ -54,7 +54,7 @@
+ struct ng_ksocket_sockopt {
+ 	int32_t		level;		/* second arg of [gs]etsockopt() */
+ 	int32_t		name;		/* third arg of [gs]etsockopt() */
+-	u_char		value[0];	/* fourth arg of [gs]etsockopt() */
++	unsigned char	value[0];	/* fourth arg of [gs]etsockopt() */
+ };
+ 
+ /* Max length socket option we can return via NGM_KSOCKET_GETOPT
+@@ -72,7 +72,7 @@ struct ng_ksocket_sockopt {
+ 
+ /* For NGM_KSOCKET_ACCEPT control message responses */
+ struct ng_ksocket_accept {
+-	u_int32_t	nodeid;		/* node ID of connected ksocket */
++	uint32_t	nodeid;		/* node ID of connected ksocket */
+ 	struct sockaddr	addr;		/* peer's address (variable length) */
+ };
+ 
+diff --git a/sys/netgraph7/ksocket/ng_ksocket.h b/sys/netgraph7/ksocket/ng_ksocket.h
+index d266177099..463bcfac1f 100644
+--- a/sys/netgraph7/ksocket/ng_ksocket.h
++++ b/sys/netgraph7/ksocket/ng_ksocket.h
+@@ -5,7 +5,7 @@
+ /*-
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -16,7 +16,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+@@ -38,7 +38,6 @@
+  * Author: Archie Cobbs <archie@freebsd.org>
+  *
+  * $FreeBSD: src/sys/netgraph/ng_ksocket.h,v 1.13 2005/10/28 14:41:28 ru Exp $
+- * $DragonFly: src/sys/netgraph7/ng_ksocket.h,v 1.2 2008/06/26 23:05:35 dillon Exp $
+  * $Whistle: ng_ksocket.h,v 1.1 1999/11/16 20:04:40 archie Exp $
+  */
+ 
+@@ -46,6 +45,7 @@
+ #define _NETGRAPH_NG_KSOCKET_H_
+ 
+ #include <sys/socket.h>
++#include <sys/stdint.h>
+ 
+ /* Node type name and magic cookie */
+ #define NG_KSOCKET_NODE_TYPE	"ksocket"
+@@ -55,7 +55,7 @@
+ struct ng_ksocket_sockopt {
+ 	int32_t		level;		/* second arg of [gs]etsockopt() */
+ 	int32_t		name;		/* third arg of [gs]etsockopt() */
+-	u_char		value[];	/* fourth arg of [gs]etsockopt() */
++	unsigned char	value[];	/* fourth arg of [gs]etsockopt() */
+ };
+ 
+ /* Max length socket option we can return via NGM_KSOCKET_GETOPT
+diff --git a/sys/netgraph7/ng_message.h b/sys/netgraph7/ng_message.h
+index a40851d14f..f0475d999d 100644
+--- a/sys/netgraph7/ng_message.h
++++ b/sys/netgraph7/ng_message.h
+@@ -5,7 +5,7 @@
+ /*-
+  * Copyright (c) 1996-1999 Whistle Communications, Inc.
+  * All rights reserved.
+- * 
++ *
+  * Subject to the following obligations and disclaimer of warranty, use and
+  * redistribution of this software, in source or object code forms, with or
+  * without modifications are expressly permitted by Whistle Communications;
+@@ -16,7 +16,7 @@
+  *    Communications, Inc. trademarks, including the mark "WHISTLE
+  *    COMMUNICATIONS" on advertising, endorsements, or otherwise except as
+  *    such appears in the above copyright notice or in the software.
+- * 
++ *
+  * THIS SOFTWARE IS BEING PROVIDED BY WHISTLE COMMUNICATIONS "AS IS", AND
+  * TO THE MAXIMUM EXTENT PERMITTED BY LAW, WHISTLE COMMUNICATIONS MAKES NO
+  * REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, REGARDING THIS SOFTWARE,
+@@ -113,7 +113,7 @@ struct ng_mesg {
+ #define NGF_RESP	0x00000001	/* the message is a response */
+ 
+ /* Type of a unique node ID. */
+-#define ng_ID_t uint32_t
++#define ng_ID_t u_int32_t
+ 
+ /*
+  * Here we describe the "generic" messages that all nodes inherently
+diff --git a/sys/netinet/in.h b/sys/netinet/in.h
+index 24c77dfc87..3de257e2cd 100644
+--- a/sys/netinet/in.h
++++ b/sys/netinet/in.h
+@@ -51,6 +51,10 @@
+ #endif
+ #endif
+ 
++#ifndef _KERNEL
++#include <stdint.h>	/* for uint8_t uint32_t as in <inttypes.h> */
++#endif
++
+ /*
+  * Constants and structures defined by the internet system,
+  * Per RFC 790, September 1981, and numerous additions.
+diff --git a/sys/netinet/pim.h b/sys/netinet/pim.h
+index 7051d1d660..194320fae6 100644
+--- a/sys/netinet/pim.h
++++ b/sys/netinet/pim.h
+@@ -42,8 +42,8 @@
+  * Modified by Pavlin Radoslavov, USC/ISI, May 1998, October 2000.
+  */
+ 
+-#ifndef _SYS_TYPES_H_
+-#include <sys/types.h>
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
+ #endif
+ #include <machine/endian.h>
+ 
+@@ -55,10 +55,10 @@ struct pim {
+ #ifdef _PIM_VT
+ 	uint8_t		pim_vt;		/* PIM version and message type	*/
+ #elif _BYTE_ORDER == _BIG_ENDIAN
+-	u_int		pim_vers:4,	/* PIM protocol version		*/
++	unsigned int	pim_vers:4,	/* PIM protocol version		*/
+ 			pim_type:4;	/* PIM message type		*/
+ #elif _BYTE_ORDER == _LITTLE_ENDIAN
+-	u_int		pim_type:4,	/* PIM message type		*/
++	unsigned int	pim_type:4,	/* PIM message type		*/
+ 			pim_vers:4;	/* PIM protocol version		*/
+ #else
+ #error "Byte order not implemented"
+diff --git a/sys/netproto/802_11/ieee80211_input.h b/sys/netproto/802_11/ieee80211_input.h
+index eea667d7bf..c96929bd9e 100644
+--- a/sys/netproto/802_11/ieee80211_input.h
++++ b/sys/netproto/802_11/ieee80211_input.h
+@@ -80,6 +80,7 @@ void	ieee80211_ssid_mismatch(struct ieee80211vap *, const char *tag,
+ #endif /* !IEEE80211_DEBUG */
+ 
+ #include <sys/endian.h>		/* For le16toh() / le32dec() */
++#include <sys/stdint.h>
+ 
+ static __inline int
+ iswpaoui(const uint8_t *frm)
+diff --git a/sys/platform/pc64/include/clock.h b/sys/platform/pc64/include/clock.h
+index 07eecbd5fa..7795722a00 100644
+--- a/sys/platform/pc64/include/clock.h
++++ b/sys/platform/pc64/include/clock.h
+@@ -9,9 +9,7 @@
+ #ifndef _MACHINE_CLOCK_H_
+ #define	_MACHINE_CLOCK_H_
+ 
+-#ifndef _SYS_TYPES_H_
+-#include <sys/types.h>
+-#endif
++#include <machine/stdint.h>
+ 
+ #ifdef _KERNEL
+ 
+@@ -27,8 +25,8 @@ typedef struct TOTALDELAY {
+ 
+ #endif
+ 
+-typedef uint64_t tsc_uclock_t;
+-typedef int64_t	tsc_sclock_t;
++typedef __uint64_t	tsc_uclock_t;
++typedef __int64_t	tsc_sclock_t;
+ 
+ #ifdef _KERNEL
+ 
+diff --git a/sys/platform/pc64/include/msi_var.h b/sys/platform/pc64/include/msi_var.h
+index ea8ca1f61a..e59392cefd 100644
+--- a/sys/platform/pc64/include/msi_var.h
++++ b/sys/platform/pc64/include/msi_var.h
+@@ -1,8 +1,8 @@
+ #ifndef _ARCH_MSI_VAR_H_
+ #define _ARCH_MSI_VAR_H_
+ 
+-#ifndef _SYS_TYPES_H_
+-#include <sys/types.h>
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
+ #endif
+ 
+ void	msi_setup(int intr, int cpuid);
+diff --git a/sys/platform/vkernel64/include/clock.h b/sys/platform/vkernel64/include/clock.h
+index 6de7454cdd..d565a8e79e 100644
+--- a/sys/platform/vkernel64/include/clock.h
++++ b/sys/platform/vkernel64/include/clock.h
+@@ -11,12 +11,10 @@
+ 
+ #ifdef _KERNEL
+ 
+-#ifndef _SYS_TYPES_H_
+-#include <sys/types.h>
+-#endif
++#include <machine/stdint.h>
+ 
+-typedef uint64_t tsc_uclock_t;
+-typedef int64_t tsc_sclock_t;
++typedef __uint64_t tsc_uclock_t;
++typedef __int64_t tsc_sclock_t;
+ 
+ /*
+  * x86 to clock driver interface.
+diff --git a/sys/sys/bio.h b/sys/sys/bio.h
+index bb40a3c2e7..e619757d2d 100644
+--- a/sys/sys/bio.h
++++ b/sys/sys/bio.h
+@@ -30,8 +30,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- *
+- * $DragonFly: src/sys/sys/bio.h,v 1.6 2008/07/14 03:08:58 dillon Exp $
+  */
+ 
+ #ifndef _SYS_BIO_H_
+@@ -40,9 +38,13 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
++#include <sys/_timeval.h>
+ 
+ struct bio;
+ struct bio_track;
+diff --git a/sys/sys/blist.h b/sys/sys/blist.h
+index d5a9dce221..63d972dcea 100644
+--- a/sys/sys/blist.h
++++ b/sys/sys/blist.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,7 +30,7 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
++ *
+  * Implements bitmap resource lists.
+  *
+  *	Usage:
+@@ -40,7 +40,7 @@
+  *		(void)  blist_free(blist, blkno, count)
+  *		nblks = blist_fill(blist, blkno, count)
+  *		(void)  blist_resize(&blist, count, freeextra)
+- *		
++ *
+  *
+  *	Notes:
+  *		on creation, the entire list is marked reserved.  You should
+@@ -51,19 +51,21 @@
+  *		SWAPBLK_NONE is returned on failure.  This module is typically
+  *		capable of managing up to (2^31) blocks per blist, though
+  *		the memory utilization would be insane if you actually did
+- *		that.  Managing something like 512MB worth of 4K blocks 
+- *		eats around 32 KBytes of memory. 
++ *		that.  Managing something like 512MB worth of 4K blocks
++ *		eats around 32 KBytes of memory.
+  *
+  * $FreeBSD: src/sys/sys/blist.h,v 1.2.2.1 2003/01/12 09:23:12 dillon Exp $
+- * $DragonFly: src/sys/sys/blist.h,v 1.7 2008/08/10 22:09:51 dillon Exp $
+  */
+ 
+ #ifndef _SYS_BLIST_H_
+ #define _SYS_BLIST_H_
+ 
+-#ifndef _SYS_TYPES_H_ 
++#ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ 
+ #define SWBLK_BITS	64
+ typedef int64_t		swblk_t;
+diff --git a/sys/sys/callout.h b/sys/sys/callout.h
+index 3db4d26a62..ec858e22a0 100644
+--- a/sys/sys/callout.h
++++ b/sys/sys/callout.h
+@@ -44,6 +44,9 @@
+ #ifndef _SYS_SPINLOCK_H_
+ #include <sys/spinlock.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ 
+ /*
+  * WITH TYPESTABLE (currently disabled)
+diff --git a/sys/sys/cdrio.h b/sys/sys/cdrio.h
+index 19ffcc9a03..da0b223a92 100644
+--- a/sys/sys/cdrio.h
++++ b/sys/sys/cdrio.h
+@@ -26,7 +26,6 @@
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/sys/cdrio.h,v 1.1.2.3 2002/11/20 00:26:18 njl Exp $
+- * $DragonFly: src/sys/sys/cdrio.h,v 1.3 2006/05/20 02:42:13 dillon Exp $
+  */
+ 
+ #ifndef	_SYS_CDRIO_H_
+@@ -35,6 +34,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #ifndef _SYS_IOCCOM_H_
+ #include <sys/ioccom.h>
+ #endif
+diff --git a/sys/sys/devicestat.h b/sys/sys/devicestat.h
+index 7fce134847..29c135c62e 100644
+--- a/sys/sys/devicestat.h
++++ b/sys/sys/devicestat.h
+@@ -34,6 +34,7 @@
+ #include <sys/queue.h>
+ #include <sys/time.h>
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ 
+ #define DEVSTAT_NAME_LEN  16
+ 
+diff --git a/sys/sys/dirent.h b/sys/sys/dirent.h
+index 4bd1ef7368..496d0d7474 100644
+--- a/sys/sys/dirent.h
++++ b/sys/sys/dirent.h
+@@ -55,6 +55,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ 
+ struct dirent {
+ #if defined(_KERNEL) || !__BSD_VISIBLE
+diff --git a/sys/sys/diskmbr.h b/sys/sys/diskmbr.h
+index 32c962e937..242458e3f5 100644
+--- a/sys/sys/diskmbr.h
++++ b/sys/sys/diskmbr.h
+@@ -33,6 +33,7 @@
+ #define	_SYS_DISKMBR_H_
+ 
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ 
+ #define	DOSBBSECTOR	0	/* DOS boot block relative sector number */
+ #define	DOSPARTOFF	446
+diff --git a/sys/sys/dmsg.h b/sys/sys/dmsg.h
+index ecc91e3275..337de5a937 100644
+--- a/sys/sys/dmsg.h
++++ b/sys/sys/dmsg.h
+@@ -38,6 +38,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ #ifndef _SYS_TREE_H_
+ #include <sys/tree.h>
+diff --git a/sys/sys/efi.h b/sys/sys/efi.h
+index 946b191fcb..2419537e78 100644
+--- a/sys/sys/efi.h
++++ b/sys/sys/efi.h
+@@ -29,6 +29,8 @@
+ #ifndef _SYS_EFI_H_
+ #define _SYS_EFI_H_
+ 
++#include <sys/types.h>
++#include <sys/stdint.h>
+ #include <sys/uuid.h>
+ 
+ #define	EFI_PAGE_SHIFT		12
+diff --git a/sys/sys/elf32.h b/sys/sys/elf32.h
+index 8f89193585..17d0147ee4 100644
+--- a/sys/sys/elf32.h
++++ b/sys/sys/elf32.h
+@@ -32,6 +32,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>		/* for int32_t */
++#endif
+ #ifndef _SYS_ELF_COMMON_H_
+ #include <sys/elf_common.h>
+ #endif
+diff --git a/sys/sys/elf64.h b/sys/sys/elf64.h
+index 5a352798b7..2a88715e5e 100644
+--- a/sys/sys/elf64.h
++++ b/sys/sys/elf64.h
+@@ -24,7 +24,6 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/sys/sys/elf64.h,v 1.17 2006/10/17 05:43:30 jkoshy Exp $
+- * $DragonFly: src/sys/sys/elf64.h,v 1.10 2008/08/30 17:07:17 swildner Exp $
+  */
+ 
+ #ifndef _SYS_ELF64_H_
+@@ -33,6 +32,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>		/* for int32_t, int64_t, uint64_t, uint64_t */
++#endif
+ #ifndef _SYS_ELF_COMMON_H_
+ #include <sys/elf_common.h>
+ #endif
+diff --git a/sys/sys/event.h b/sys/sys/event.h
+index ff82e134ca..af71a32734 100644
+--- a/sys/sys/event.h
++++ b/sys/sys/event.h
+@@ -32,9 +32,13 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ #include <sys/queue.h>
+ #endif
++#include <sys/_timespec.h>
+ 
+ #define EVFILT_READ		(-1)
+ #define EVFILT_WRITE		(-2)
+diff --git a/sys/sys/gpt.h b/sys/sys/gpt.h
+index 4a7f189ff7..a586ee36fa 100644
+--- a/sys/sys/gpt.h
++++ b/sys/sys/gpt.h
+@@ -29,6 +29,7 @@
+ #ifndef _SYS_GPT_H_
+ #define	_SYS_GPT_H_
+ 
++#include <sys/stdint.h>
+ #include <sys/uuid.h>
+ 
+ struct gpt_hdr {
+diff --git a/sys/sys/hash.h b/sys/sys/hash.h
+index 3428259f17..4169f1c895 100644
+--- a/sys/sys/hash.h
++++ b/sys/sys/hash.h
+@@ -29,6 +29,7 @@
+ #ifndef _SYS_HASH_H_
+ #define	_SYS_HASH_H_
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ 
+ /* Convenience */
+ #ifndef	HASHINIT
+diff --git a/sys/sys/jail.h b/sys/sys/jail.h
+index 0811cf47bf..3574b9aa70 100644
+--- a/sys/sys/jail.h
++++ b/sys/sys/jail.h
+@@ -12,12 +12,12 @@
+ #ifndef _SYS_JAIL_H_
+ #define _SYS_JAIL_H_
+ 
+-#ifndef _SYS_TYPES_H_
+-#include <sys/types.h>
+-#endif
+ #ifndef _SYS_PARAM_H_
+ #include <sys/param.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+diff --git a/sys/sys/journal.h b/sys/sys/journal.h
+index cdeab9baea..4dfca9ef30 100644
+--- a/sys/sys/journal.h
++++ b/sys/sys/journal.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,8 +30,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- *
+- * $DragonFly: src/sys/sys/journal.h,v 1.13 2007/05/09 00:53:35 dillon Exp $
+  */
+ 
+ #ifndef _SYS_JOURNAL_H_
+@@ -40,6 +38,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #ifndef _SYS_TIME_H_
+ #include <sys/time.h>
+ #endif
+@@ -67,7 +68,7 @@
+  * plus a transaction start bit, end bit, and abort bit.
+  *
+  * Stream identifiers in the 0x00-0xFF range are special and not used for
+- * normal transactional commands. 
++ * normal transactional commands.
+  *
+  * Stream id 0x00 indicates that no other streams should be active at that
+  * point in the journal, which helps the journaling code detect corruption.
+@@ -105,7 +106,7 @@
+  * The journal_rawrecend structure MUST be a multiple of 8 bytes.
+  *
+  * NOTE: PAD RECORD SPECIAL CASE.  Pad records can be 16 bytes and have the
+- * rawrecend structure overlayed on the sequence number field of the 
++ * rawrecend structure overlayed on the sequence number field of the
+  * rawrecbeg structure.  This is necessary because stream records are
+  * 16 byte aligned, not 24 byte aligned, and dead space is not allowed.
+  * So the pad record must fit into any dead space.  THEREFORE, THE TRANSID
+@@ -181,10 +182,10 @@ struct journal_ackrecord {
+ 
+ /*
+  * Each logical journaling stream typically represents a transaction...
+- * that is, a VFS operation.  The VFS operation is written out using 
++ * that is, a VFS operation.  The VFS operation is written out using
+  * sub-records and may contain multiple, possibly nested sub-transactions.
+  * multiple sub-transactions occur when a VFS operation cannot be represented
+- * by a single command.  This is typically the case when a journal is 
++ * by a single command.  This is typically the case when a journal is
+  * configured to be reversable because UNDO sequences almost always have to
+  * be specified in such cases.  For example, if you ftruncate() a file the
+  * journal might have to write out a sequence of WRITE records representing
+@@ -198,7 +199,7 @@ struct journal_ackrecord {
+  * If this case occurs a scanner can determine that the recursion has ended
+  * by detecting a nested subrecord with the JMASK_LAST bit set.  A scanner
+  * may also set the field to the proper value after the fact to make later
+- * operations more efficient. 
++ * operations more efficient.
+  *
+  * Note that this bit must be properly set even if the recsize field is
+  * non-zero.  The recsize must always be properly specified for 'leaf'
+@@ -213,7 +214,7 @@ struct journal_ackrecord {
+  * hundreds of megabytes of data (e.g. if a program were to do a
+  * multi-megabyte write()) and be split up across thousands of raw streaming
+  * records, possibly interlaced with other unrelated streams from other
+- * unrelated processes.  
++ * unrelated processes.
+  *
+  * If a large sub-transaction is aborted the logical stream may be
+  * terminated without writing out all the expected data.  When this occurs
+@@ -221,12 +222,12 @@ struct journal_ackrecord {
+  * set.  However, scanners should still be robust enough to detect such
+  * overflows even if the aborted bit is not set and consider them data
+  * corruption.
+- * 
++ *
+  * Aborts may also occur in the normal course of operations, especially once
+  * the journaling API is integrated into the cache coherency API.  A normal
+  * abort is issued by emplacing a JLEAF_ABORT record within the transaction
+  * being aborted.  Such records must be the last record in the sub-transaction,
+- * so JLEAF_LAST is also usually set.  In a transaction with many 
++ * so JLEAF_LAST is also usually set.  In a transaction with many
+  * sub-transactions only those sub-transactions with an abort record are
+  * aborted, the rest remain valid.  Abort records are considered S.O.P. for
+  * two reasons:  First, limited memory buffer space may make it impossible
+diff --git a/sys/sys/kinfo.h b/sys/sys/kinfo.h
+index 2039246d15..bf5d5f43d5 100644
+--- a/sys/sys/kinfo.h
++++ b/sys/sys/kinfo.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Joerg Sonnenberger <joerg@bec.de>.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -35,12 +35,12 @@
+ #ifndef _SYS_KINFO_H_
+ #define _SYS_KINFO_H_
+ 
+-#ifndef _SYS_TYPES_H_
+-#include <sys/types.h>
+-#endif
+ #ifndef _SYS_PARAM_H_
+ #include <sys/param.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #include <sys/resource.h>
+ #include <sys/rtprio.h>
+ #ifdef _KERNEL
+diff --git a/sys/sys/ktr.h b/sys/sys/ktr.h
+index 076a9f0f20..f9ccdba89c 100644
+--- a/sys/sys/ktr.h
++++ b/sys/sys/ktr.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2005 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -32,7 +32,7 @@
+  * SUCH DAMAGE.
+  */
+ /*
+- * Generic Kernel trace buffer support.  
++ * Generic Kernel trace buffer support.
+  *
+  */
+ 
+@@ -40,6 +40,7 @@
+ #define	_SYS_KTR_H_
+ 
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ #include <sys/sysctl.h>
+ #include <sys/cpputil.h>
+ 
+diff --git a/sys/sys/lock.h b/sys/sys/lock.h
+index 8f6dabde6d..64cea933a0 100644
+--- a/sys/sys/lock.h
++++ b/sys/sys/lock.h
+@@ -41,7 +41,7 @@
+ 
+ /*
+  * A number of third party programs #include <sys/lock.h> for no good
+- * reason.  Don't actually include anything unless we are the kernel. 
++ * reason.  Don't actually include anything unless we are the kernel.
+  */
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
+@@ -67,7 +67,7 @@ struct thread;
+ struct lock {
+ 	u_int	lk_flags;		/* see below */
+ 	int	lk_timo;		/* maximum sleep time (for tsleep) */
+-	uint64_t lk_count;		/* see LKC_* bits */
++	u_int64_t lk_count;		/* see LKC_* bits */
+ 	const char *lk_wmesg;		/* resource sleeping (for tsleep) */
+ 	struct thread *lk_lockholder;	/* thread of excl lock holder */
+ };
+diff --git a/sys/sys/mount.h b/sys/sys/mount.h
+index 794f68cf75..f1a23bc9c2 100644
+--- a/sys/sys/mount.h
++++ b/sys/sys/mount.h
+@@ -34,6 +34,7 @@
+ #define _SYS_MOUNT_H_
+ 
+ #include <sys/queue.h>
++#include <sys/stdint.h>
+ #include <sys/tree.h>
+ #include <sys/ucred.h>
+ 
+diff --git a/sys/sys/mountctl.h b/sys/sys/mountctl.h
+index dc43b9e72d..b6cc6b56ab 100644
+--- a/sys/sys/mountctl.h
++++ b/sys/sys/mountctl.h
+@@ -38,6 +38,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #ifndef _SYS_TIME_H_
+ #include <sys/time.h>
+ #endif
+diff --git a/sys/sys/mpt_ioctl.h b/sys/sys/mpt_ioctl.h
+index 063fa1b065..2f1723c1f0 100644
+--- a/sys/sys/mpt_ioctl.h
++++ b/sys/sys/mpt_ioctl.h
+@@ -36,6 +36,7 @@
+ #define	_MPT_IOCTL_H_
+ 
+ #include <sys/ioccom.h>
++#include <sys/stdint.h>
+ 
+ #include <dev/disk/mpt/mpilib/mpi_type.h>
+ #include <dev/disk/mpt/mpilib/mpi.h>
+diff --git a/sys/sys/mtio.h b/sys/sys/mtio.h
+index a704a0db29..77e2095af2 100644
+--- a/sys/sys/mtio.h
++++ b/sys/sys/mtio.h
+@@ -28,7 +28,6 @@
+  *
+  *	@(#)mtio.h	8.1 (Berkeley) 6/2/93
+  * $FreeBSD: src/sys/sys/mtio.h,v 1.20.2.2 2001/01/22 18:02:47 mjacob Exp $
+- * $DragonFly: src/sys/sys/mtio.h,v 1.4 2006/05/20 02:42:13 dillon Exp $
+  */
+ 
+ #ifndef	_SYS_MTIO_H_
+@@ -37,6 +36,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #ifndef _SYS_IOCCOM_H_
+ #include <sys/ioccom.h>
+ #endif
+@@ -173,7 +175,7 @@ struct scsi_tape_errors {
+ 		u_int64_t nbytes;	/* total # bytes processed */
+ 	} wterr, rderr;
+ };
+-	
++
+ union mterrstat {
+ 	struct scsi_tape_errors scsi_errstat;
+ 	char _reserved_padding[256];
+diff --git a/sys/sys/pciio.h b/sys/sys/pciio.h
+index 1667c69b7d..128604263e 100644
+--- a/sys/sys/pciio.h
++++ b/sys/sys/pciio.h
+@@ -25,7 +25,6 @@
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  *	$FreeBSD: src/sys/sys/pciio.h,v 1.5 1999/12/08 17:44:04 ken Exp $
+- *	$DragonFly: src/sys/sys/pciio.h,v 1.3 2006/05/20 02:42:13 dillon Exp $
+  *
+  */
+ 
+@@ -35,6 +34,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #ifndef _SYS_IOCCOM_H_
+ #include <sys/ioccom.h>
+ #endif
+@@ -72,10 +74,10 @@ struct	pci_conf {
+ 	struct pcisel	pc_sel;		/* bus+slot+function */
+ 	u_int8_t	pc_hdr;		/* PCI header type */
+ 	u_int16_t	pc_subvendor;	/* card vendor ID */
+-	u_int16_t	pc_subdevice;	/* card device ID, assigned by 
++	u_int16_t	pc_subdevice;	/* card device ID, assigned by
+ 					   card vendor */
+ 	u_int16_t	pc_vendor;	/* chip vendor ID */
+-	u_int16_t	pc_device;	/* chip device ID, assigned by 
++	u_int16_t	pc_device;	/* chip device ID, assigned by
+ 					   chip vendor */
+ 	u_int8_t	pc_class;	/* chip PCI class */
+ 	u_int8_t	pc_subclass;	/* chip PCI subclass */
+diff --git a/sys/sys/procctl.h b/sys/sys/procctl.h
+index f13629649a..94c7d28dd4 100644
+--- a/sys/sys/procctl.h
++++ b/sys/sys/procctl.h
+@@ -39,6 +39,7 @@
+ #include <sys/lock.h>
+ #else
+ #include <sys/types.h>
++#include <sys/stdint.h>
+ #endif
+ 
+ #ifndef _IDTYPE_T_DECLARED
+diff --git a/sys/sys/resident.h b/sys/sys/resident.h
+index 5b79bcca48..d487c07647 100644
+--- a/sys/sys/resident.h
++++ b/sys/sys/resident.h
+@@ -2,22 +2,20 @@
+  * SYS/RESIDENT.H
+  *
+  *	Userland system calls for resident executable support.
+- *
+- * $DragonFly: src/sys/sys/resident.h,v 1.4 2006/05/20 02:42:13 dillon Exp $
+  */
+ 
+ #ifndef _SYS_RESIDENT_H_
+ #define _SYS_RESIDENT_H_
+ 
+-#ifndef _SYS_TYPES_H_
+-#include <sys/types.h>
+-#endif
+ #ifndef _SYS_PARAM_H_
+ #include <sys/param.h>
+ #endif
+ #ifndef _SYS_STAT_H_
+ #include <sys/stat.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ 
+ #if !defined(_KERNEL)
+ 
+diff --git a/sys/sys/rman.h b/sys/sys/rman.h
+index 184c8c1bf8..b9f1b89fad 100644
+--- a/sys/sys/rman.h
++++ b/sys/sys/rman.h
+@@ -12,7 +12,7 @@
+  * no representations about the suitability of this software for any
+  * purpose.  It is provided "as is" without express or implied
+  * warranty.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY M.I.T. ``AS IS''.  M.I.T. DISCLAIMS
+  * ALL EXPRESS OR IMPLIED WARRANTIES WITH REGARD TO THIS SOFTWARE,
+  * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+@@ -35,6 +35,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+diff --git a/sys/sys/sensors.h b/sys/sys/sensors.h
+index 6e76d30bba..ec3bfc1d38 100644
+--- a/sys/sys/sensors.h
++++ b/sys/sys/sensors.h
+@@ -1,5 +1,4 @@
+ /* $OpenBSD: sensors.h,v 1.23 2007/03/22 16:55:31 deraadt Exp $ */
+-/* $DragonFly: src/sys/sys/sensors.h,v 1.1 2007/10/02 12:57:01 hasso Exp $ */
+ 
+ /*
+  * Copyright (c) 2003, 2004 Alexander Yurchenko <grange@openbsd.org>
+@@ -30,6 +29,9 @@
+ #ifndef _SYS_SENSORS_H_
+ #define _SYS_SENSORS_H_
+ 
++#include <sys/stdint.h>
++#include <sys/_timeval.h>
++
+ #define SENSORS_DEBUG
+ 
+ /* Sensor types */
+diff --git a/sys/sys/stat.h b/sys/sys/stat.h
+index c6db2fc66f..1b422de6b9 100644
+--- a/sys/sys/stat.h
++++ b/sys/sys/stat.h
+@@ -66,7 +66,7 @@ struct stat {
+ 	nlink_t	  st_nlink;		/* number of hard links */
+ 	__dev_t	  st_dev;		/* inode's device */
+ 	mode_t	  st_mode;		/* inode protection mode */
+-	uint16_t  st_padding1;
++	__uint16_t st_padding1;
+ 	uid_t	  st_uid;		/* user ID of the file's owner */
+ 	gid_t	  st_gid;		/* group ID of the file's group */
+ 	__dev_t	  st_rdev;		/* device type */
+@@ -78,9 +78,9 @@ struct stat {
+ 	u_int32_t __old_st_blksize;	/* old ABI compatibility only */
+ 	u_int32_t st_flags;		/* user defined flags for file */
+ 	u_int32_t st_gen;		/* file generation number */
+-	int32_t	  st_lspare;
++	__int32_t st_lspare;
+ 	blksize_t st_blksize;		/* optimal blocksize for I/O */
+-	int64_t	  st_qspare2;
++	__int64_t st_qspare2;
+ };
+ 
+ /*#define _ST_FSMID_PRESENT_*/
+diff --git a/sys/sys/systimer.h b/sys/sys/systimer.h
+index 4a7167db1f..b7f909801b 100644
+--- a/sys/sys/systimer.h
++++ b/sys/sys/systimer.h
+@@ -49,7 +49,7 @@
+ struct intrframe;
+ 
+ typedef __uint32_t	sysclock_t;
+-typedef int32_t		ssysclock_t;
++typedef __int32_t	ssysclock_t;
+ typedef TAILQ_HEAD(systimerq, systimer) *systimerq_t;
+ typedef void (*systimer_func_t)(struct systimer *, int, struct intrframe *);
+ 
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index 078d84e66d..e6a3698aa0 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -203,8 +203,10 @@ typedef	__timer_t	timer_t;
+ #endif
+ 
+ #ifndef _KERNEL
++#if __BSD_VISIBLE
+ #include <stdint.h>			/* XXX */
+ #endif
++#endif
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ #include <sys/stdint.h>			/* kernel int types */
+diff --git a/sys/sys/upmap.h b/sys/sys/upmap.h
+index da1697e26c..a97440e7da 100644
+--- a/sys/sys/upmap.h
++++ b/sys/sys/upmap.h
+@@ -41,6 +41,9 @@
+ #ifndef _SYS_TIME_H_
+ #include <sys/time.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ 
+ #define UPMAP_MAXPROCTITLE	1024
+ #define UPMAP_MAPSIZE		65536
+diff --git a/sys/sys/vfscache.h b/sys/sys/vfscache.h
+index c0b9ee512d..2ba7f7ccb7 100644
+--- a/sys/sys/vfscache.h
++++ b/sys/sys/vfscache.h
+@@ -3,11 +3,11 @@
+  *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -138,8 +138,8 @@ struct vattr {
+ 	u_quad_t	va_filerev;	/* file modification number */
+ 	u_int		va_vaflags;	/* operations flags, see below */
+ 	long		va_spare;	/* remain quad aligned */
+-	uint32_t	va_fuseflags;	/* used by FUSE */
+-	uint32_t	va_unused01;
++	u_int32_t	va_fuseflags;	/* used by FUSE */
++	u_int32_t	va_unused01;
+ 	uuid_t		va_uid_uuid;	/* native uuids if available */
+ 	uuid_t		va_gid_uuid;
+ 	uuid_t		va_fsid_uuid;
+diff --git a/sys/sys/vmm.h b/sys/sys/vmm.h
+index 3f85440c2c..8ef75ad8d0 100644
+--- a/sys/sys/vmm.h
++++ b/sys/sys/vmm.h
+@@ -51,7 +51,7 @@ struct vmm_guest_options {
+ 	register_t vmm_cr3;
+ 	register_t new_stack;
+ 	struct trapframe tf;
+-	uint8_t master;
++	u_int8_t master;
+ };
+ 
+ 
+diff --git a/sys/sys/vmmeter.h b/sys/sys/vmmeter.h
+index 536ef748cf..5f7e30a06d 100644
+--- a/sys/sys/vmmeter.h
++++ b/sys/sys/vmmeter.h
+@@ -36,6 +36,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ 
+ struct globaldata;
+ 
+diff --git a/sys/sys/vnioctl.h b/sys/sys/vnioctl.h
+index ee23edc16c..2c744c7094 100644
+--- a/sys/sys/vnioctl.h
++++ b/sys/sys/vnioctl.h
+@@ -47,6 +47,9 @@
+ #ifndef _SYS_PARAM_H_
+ #include <sys/param.h>		/* PATH_MAX */
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ 
+ /*
+  * Ioctl definitions for file (vnode) disk pseudo-device.
+diff --git a/sys/sys/xdiskioctl.h b/sys/sys/xdiskioctl.h
+index 4282da42ff..2daef179a8 100644
+--- a/sys/sys/xdiskioctl.h
++++ b/sys/sys/xdiskioctl.h
+@@ -48,7 +48,7 @@
+ struct xdisk_attach_ioctl {
+ 	int	fd;
+ 	int	unused01;
+-	int32_t	reserved02[8];
++	__int32_t reserved02[8];
+ };
+ 
+ #define XDISKIOCATTACH	_IOWR('X', 0, struct xdisk_attach_ioctl)
+diff --git a/sys/vfs/hammer/hammer_disk.h b/sys/vfs/hammer/hammer_disk.h
+index 6527f1092a..0572713198 100644
+--- a/sys/vfs/hammer/hammer_disk.h
++++ b/sys/vfs/hammer/hammer_disk.h
+@@ -38,6 +38,7 @@
+ #define VFS_HAMMER_DISK_H_
+ 
+ #include <sys/endian.h>
++#include <sys/stdint.h>
+ 
+ #ifndef _SYS_UUID_H_
+ #include <sys/uuid.h>
+diff --git a/sys/vfs/hammer2/hammer2_ccms.h b/sys/vfs/hammer2/hammer2_ccms.h
+index 8585e52a36..e3ad4684b1 100644
+--- a/sys/vfs/hammer2/hammer2_ccms.h
++++ b/sys/vfs/hammer2/hammer2_ccms.h
+@@ -72,6 +72,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #ifndef _SYS_PARAM_H_
+ #include <sys/param.h>
+ #endif
+diff --git a/sys/vfs/hammer2/hammer2_disk.h b/sys/vfs/hammer2/hammer2_disk.h
+index f57b94101f..4726b76a1f 100644
+--- a/sys/vfs/hammer2/hammer2_disk.h
++++ b/sys/vfs/hammer2/hammer2_disk.h
+@@ -36,6 +36,9 @@
+ #ifndef _VFS_HAMMER2_DISK_H_
+ #define _VFS_HAMMER2_DISK_H_
+ 
++#ifndef _SYS_STDINT_H_
++#include <sys/stdint.h>
++#endif
+ #ifndef _SYS_UUID_H_
+ #include <sys/uuid.h>
+ #endif
+diff --git a/sys/vfs/msdosfs/bpb.h b/sys/vfs/msdosfs/bpb.h
+index 682974fb78..77fba0c088 100644
+--- a/sys/vfs/msdosfs/bpb.h
++++ b/sys/vfs/msdosfs/bpb.h
+@@ -20,6 +20,8 @@
+ #ifndef _FS_MSDOSFS_BPB_H_
+ #define	_FS_MSDOSFS_BPB_H_
+ 
++#include <sys/stdint.h>
++
+ /*
+  * BIOS Parameter Block (BPB) for DOS 3.3
+  */
+-- 
+2.23.0
+

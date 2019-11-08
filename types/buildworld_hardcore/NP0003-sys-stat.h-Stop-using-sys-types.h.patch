@@ -1,0 +1,390 @@
+From f17835f4dadfceeccf9c64f53307735f5fa1bd17 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 7 Nov 2019 19:11:14 +0200
+Subject: <sys/stat.h>: Stop using <sys/types.h>.
+
+ I think i got it right for various standards.  Adjust dev_t setup.
+ Don't override udev_t under _KERNEL_STRUCTURES.
+
+ XXX #define udev_t dev_t should only be needed for userland and vkernel.
+ Currently it is needed for genassym in vm_param.h, smth with swap.
+
+ HA XXX have I missed <netinet/tcp.h> in previous????
+ HA Missed one installer in previous commit.
+---
+ sys/netinet/tcp.h                  |   4 +-
+ sys/sys/stat.h                     | 205 ++++++++++++++++++++++++-----
+ sys/sys/types.h                    |  33 ++++-
+ usr.sbin/installer/libaura/popen.c |   1 +
+ 4 files changed, 200 insertions(+), 43 deletions(-)
+
+diff --git a/sys/netinet/tcp.h b/sys/netinet/tcp.h
+index 1eacd0f81d..0838120e15 100644
+--- a/sys/netinet/tcp.h
++++ b/sys/netinet/tcp.h
+@@ -39,8 +39,8 @@
+ 
+ #include <sys/types.h>
+ 
+-typedef	u_int32_t	tcp_seq;
+-typedef	int32_t		tcp_seq_diff_t;
++typedef	__uint32_t	tcp_seq;
++typedef	__int32_t	tcp_seq_diff_t;
+ 
+ #define	tcp6_seq	tcp_seq	/* for KAME src sync over BSD*'s */
+ #define	tcp6hdr		tcphdr	/* for KAME src sync over BSD*'s */
+diff --git a/sys/sys/stat.h b/sys/sys/stat.h
+index 1b422de6b9..13a0e93c09 100644
+--- a/sys/sys/stat.h
++++ b/sys/sys/stat.h
+@@ -39,21 +39,146 @@
+ #define	_SYS_STAT_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
++#include <machine/stdint.h>
++
++#ifdef _KERNEL
++#ifndef _UDEV_T_DECLARED
++typedef	__uint32_t	udev_t;		/* device number */
++#define	_UDEV_T_DECLARED
++#endif
++#endif
++
++#if __XSI_VISIBLE
++#ifndef _BLKCNT_T_DECLARED
++typedef	__int64_t	blkcnt_t;	/* file block count */
++#define	_BLKCNT_T_DECLARED
++#endif
++
++#ifndef _BLKSIEZE_T_DECLARED
++typedef	__int64_t	blksize_t;	/* block size */
++#define	_BLKSIEZE_T_DECLARED
++#endif
++#endif /* __XSI_VISIBLE */
++
++#if __POSIX_VISIBLE >= 200112 || __XSI_VISIBLE
++
++#if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
++#ifndef _DEV_T_DECLARED
++typedef	__uint32_t	dev_t;		/* device number */
++#define	_DEV_T_DECLARED
++#endif
++#endif
++
++#ifndef _GID_T_DECLARED
++typedef	__uint32_t	gid_t;		/* group id */
++#define	_GID_T_DECLARED
++#endif
++
++#ifndef _INO_T_DECLARED
++typedef	__uint64_t	ino_t;		/* inode number */
++#define	_INO_T_DECLARED
++#endif
++
++#ifndef _MODE_T_DECLARED
++typedef	__uint16_t	mode_t;		/* permissions */
++#define	_MODE_T_DECLARED
++#endif
++
++#ifndef _NLINK_T_DECLARED
++typedef	__uint32_t	nlink_t;	/* link count */
++#define	_NLINK_T_DECLARED
++#endif
++
++#ifndef _OFF_T_DECLARED
++typedef	__off_t		off_t;		/* file offset */
++#define	_OFF_T_DECLARED
++#endif
++
++#ifndef _UID_T_DECLARED
++typedef	__uint32_t	uid_t;		/* user id */
++#define	_UID_T_DECLARED
++#endif
++
++#ifndef _TIME_T_DECLARED
++typedef	__time_t	time_t;
++#define	_TIME_T_DECLARED
++#endif
++
++#endif /* __POSIX_VISIBLE >= 200112 || __XSI_VISIBLE */
++
++#if __POSIX_VISIBLE >= 200809 || __XSI_VISIBLE >= 700
++#include <sys/_timespec.h>
++#define	st_atime	st_atim.tv_sec
++#define	st_mtime	st_mtim.tv_sec
++#define	st_ctime	st_ctim.tv_sec
++#define	__tsP_ST(name)	struct timespec name
++#else
++#define	st_atime	__sec_st_atim
++#define	st_mtime	__sec_st_mtim
++#define	st_ctime	__sec_st_ctim
++#define	__tsP_ST(name)	__time_t __sec_##name; long __nsec_##name
++#endif /* !(__POSIX_VISIBLE >= 200809 || __XSI_VISIBLE >= 700) */
+ 
+ #if !defined(_KERNEL) && __BSD_VISIBLE
+ /*
+  * XXX We get miscellaneous namespace pollution with this.
+  */
+ #include <sys/time.h>
++#endif
++
++#if __BSD_VISIBLE
++#define __meB_ST(type, name)	type name
+ #else
+-#include <sys/_timespec.h>
++#define __meB_ST(type, name)	type __##name
+ #endif
+ 
+-#ifdef _KERNEL
+-#define	__dev_t	udev_t
++#if defined(_UDEV_T_DECLARED) && defined(_KERNEL)
++#define	__dev_st	udev_t
++#elif defined(_DEV_T_DECLARED)
++#define	__dev_st	dev_t
+ #else
+-#define	__dev_t	dev_t
++#define	__dev_st	__uint32_t
++#endif
++
++#if defined(_BLKCNT_T_DECLARED)
++#define	__blkc_st	blkcnt_t
++#else
++#define	__blkc_st	__int64_t
++#endif
++#if defined(_BLKSIEZE_T_DECLARED)
++#define	__blks_st	blksize_t
++#else
++#define	__blks_st	__int64_t
++#endif
++#if defined(_GID_T_DECLARED)
++#define	__gid_st	gid_t
++#else
++#define	__gid_st	__uint32_t
++#endif
++#if defined(_INO_T_DECLARED)
++#define	__ino_st	ino_t
++#else
++#define	__ino_st	__uint64_t
++#endif
++#if defined(_NLINK_T_DECLARED)
++#define	__nlink_st	nlink_t
++#else
++#define	__nlink_st	__uint32_t
++#endif
++#if defined(_MODE_T_DECLARED)
++#define	__mode_st	mode_t
++#else
++#define	__mode_st	__uint16_t
++#endif
++#if defined(_OFF_T_DECLARED)
++#define	__off_st	off_t
++#else
++#define	__off_st	__off_t
++#endif
++#if defined(_UID_T_DECLARED)
++#define	__uid_st	uid_t
++#else
++#define	__uid_st	__uint32_t
+ #endif
+ 
+ /*
+@@ -62,36 +187,42 @@
+  * NOTE: st_fsmid removed in DragonFly 2.5.x.
+  */
+ struct stat {
+-	ino_t	  st_ino;		/* inode's number */
+-	nlink_t	  st_nlink;		/* number of hard links */
+-	__dev_t	  st_dev;		/* inode's device */
+-	mode_t	  st_mode;		/* inode protection mode */
+-	__uint16_t st_padding1;
+-	uid_t	  st_uid;		/* user ID of the file's owner */
+-	gid_t	  st_gid;		/* group ID of the file's group */
+-	__dev_t	  st_rdev;		/* device type */
+-	struct	timespec st_atim;	/* time of last access */
+-	struct	timespec st_mtim;	/* time of last data modification */
+-	struct	timespec st_ctim;	/* time of last file status change */
+-	off_t	  st_size;		/* file size, in bytes */
+-	blkcnt_t  st_blocks;		/* blocks allocated for file */
+-	u_int32_t __old_st_blksize;	/* old ABI compatibility only */
+-	u_int32_t st_flags;		/* user defined flags for file */
+-	u_int32_t st_gen;		/* file generation number */
+-	__int32_t st_lspare;
+-	blksize_t st_blksize;		/* optimal blocksize for I/O */
+-	__int64_t st_qspare2;
++	__ino_st	st_ino;		/* inode's number */
++	__nlink_st	st_nlink;	/* number of hard links */
++	__dev_st	st_dev;		/* inode's device */
++	__mode_st	st_mode;	/* inode protection mode */
++	__uint16_t	__st_padding1;
++	__uid_st	st_uid;		/* user ID of the file's owner */
++	__gid_st	st_gid;		/* group ID of the file's group */
++	__dev_st	st_rdev;	/* device type */
++	__tsP_ST(st_atim);		/* time of last access */
++	__tsP_ST(st_mtim);		/* time of last data modification */
++	__tsP_ST(st_ctim);		/* time of last file status change */
++	__off_st	st_size;	/* file size, in bytes */
++	__blkc_st	st_blocks;	/* blocks allocated for file */
++	__uint32_t	__old_st_blksize; /* old ABI compatibility only */
++	__meB_ST(__uint32_t, st_flags);	/* user defined flags for file */
++	__meB_ST(__uint32_t, st_gen);	/* file generation number */
++	__meB_ST(__int32_t, st_lspare);
++	__blks_st	st_blksize;	/* optimal blocksize for I/O */
++	__meB_ST(__int64_t, st_qspare2);
+ };
+ 
++#undef __dev_st
++#undef __blkc_st
++#undef __blks_st
++#undef __gid_st
++#undef __ino_st
++#undef __nlink_st
++/* #undef __mode_st needed for protos */
++#undef __off_st
++#undef __uid_st
++#undef __meB_ST
++#undef __tsP_ST
++
+ /*#define _ST_FSMID_PRESENT_*/
+ #define	_ST_FLAGS_PRESENT_
+ 
+-#undef __dev_t
+-
+-#define	st_atime st_atim.tv_sec
+-#define	st_mtime st_mtim.tv_sec
+-#define	st_ctime st_ctim.tv_sec
+-
+ /* BSD compatibility */
+ #if __BSD_VISIBLE
+ #define	st_atimespec st_atim
+@@ -251,8 +382,8 @@ struct stat {
+ #if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
+ 
+ __BEGIN_DECLS
+-int	chmod(const char *, mode_t);
+-int	fchmod(int, mode_t);
++int	chmod(const char *, __mode_st);
++int	fchmod(int, __mode_st);
+ #if __POSIX_VISIBLE >= 200809
+ int	fchmodat(int, const char *, mode_t, int);
+ int	futimens(int, const struct timespec *);
+@@ -262,14 +393,14 @@ int	fstat(int, struct stat *);
+ #if __POSIX_VISIBLE >= 199506
+ int	lstat(const char * __restrict, struct stat * __restrict);
+ #endif
+-int	mkdir(const char *, mode_t);
+-int	mkfifo(const char *, mode_t);
++int	mkdir(const char *, __mode_st);
++int	mkfifo(const char *, __mode_st);
+ #if !defined(_MKNOD_DECLARED) && __XSI_VISIBLE
+ int	mknod(const char *, mode_t, dev_t);
+ #define	_MKNOD_DECLARED
+ #endif
+ int	stat(const char * __restrict, struct stat * __restrict);
+-mode_t	umask(mode_t);
++__mode_st umask(__mode_st);
+ #if __POSIX_VISIBLE >= 200809
+ int	fstatat(int, const char * __restrict, struct stat * __restrict, int);
+ int	mkdirat(int, const char *, mode_t);
+@@ -287,6 +418,8 @@ int	lchmod(const char *, mode_t);
+ #endif
+ __END_DECLS
+ 
+-#endif
++#endif /* !_KERNEL || defined(_KERNEL_VIRTUAL */
++
++#undef __mode_st
+ 
+ #endif /* !_SYS_STAT_H_ */
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index 02ba00c859..790b12767f 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -64,8 +64,14 @@ typedef	__uint64_t	u_quad_t;	/* quads */
+ typedef	__int64_t	quad_t;
+ typedef	quad_t *	qaddr_t;
+ 
++#ifndef _BLKCNT_T_DECLARED
+ typedef	__int64_t	blkcnt_t;	/* file block count */
++#define	_BLKCNT_T_DECLARED
++#endif
++#ifndef _BLKSIEZE_T_DECLARED
+ typedef	__int64_t	blksize_t;	/* block size */
++#define	_BLKSIEZE_T_DECLARED
++#endif
+ typedef	char *		caddr_t;	/* core address */
+ typedef	const char *	c_caddr_t;	/* core address, pointer to const */
+ typedef	volatile char *	v_caddr_t;	/* core address, pointer to volatile */
+@@ -96,7 +102,10 @@ typedef	__uint32_t	in_addr_t;	/* base type for internet address */
+ typedef	__uint16_t	in_port_t;
+ #define	_IN_PORT_T_DECLARED
+ #endif
++#ifndef _INO_T_DECLARED
+ typedef	__uint64_t	ino_t;		/* inode number */
++#define	_INO_T_DECLARED
++#endif
+ #ifndef _KEY_T_DECLARED
+ typedef	long		key_t;		/* IPC key (for Sys V IPC) */
+ #define	_KEY_T_DECLARED
+@@ -105,7 +114,10 @@ typedef	long		key_t;		/* IPC key (for Sys V IPC) */
+ typedef	__uint16_t	mode_t;		/* permissions */
+ #define	_MODE_T_DECLARED
+ #endif
++#ifndef _NLINK_T_DECLARED
+ typedef	__uint32_t	nlink_t;	/* link count */
++#define	_NLINK_T_DECLARED
++#endif
+ #ifndef _OFF_T_DECLARED
+ typedef	__off_t		off_t;		/* file offset */
+ #define	_OFF_T_DECLARED
+@@ -141,19 +153,30 @@ typedef	__uint32_t	useconds_t;	/* microseconds (unsigned) */
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ struct cdev;
+ typedef	struct cdev	*cdev_t;
+-typedef	u_int32_t	udev_t;		/* device number */
+-typedef	u_int64_t	uoff_t;		/* uio offset */
++#ifndef _UDEV_T_DECLARED
++typedef	__uint32_t	udev_t;		/* device number */
++#define	_UDEV_T_DECLARED
++#endif
++typedef	__uint64_t	uoff_t;		/* uio offset */
+ #endif /* _KERNEL) || _KERNEL_STRUCTURES */
+ 
+-#ifdef _KERNEL
++#if defined(_KERNEL) /* && defined(_KERNEL_VIRTUAL) XXX genassym in vm_param.h needs it */
++#ifndef _DEV_T_DECLARED
+ typedef	udev_t		dev_t;		/* device number */
++#define	_DEV_T_DECLARED
++#endif
+ #endif /* _KERNEL */
+ 
+ #ifndef _KERNEL
+-typedef	u_int32_t	dev_t;		/* device number */
+-#define	udev_t dev_t
++#ifndef _DEV_T_DECLARED
++typedef	__uint32_t	dev_t;		/* device number */
++#define	_DEV_T_DECLARED
++#endif
+ 
+ #if __BSD_VISIBLE
++#if !defined(_KERNEL_STRUCTURES)
++#define	udev_t dev_t
++#endif
+ /*
+  * minor() gives a cookie instead of an index since we don't want to
+  * change the meanings of bits 0-15 or waste time and space shifting
+diff --git a/usr.sbin/installer/libaura/popen.c b/usr.sbin/installer/libaura/popen.c
+index d4a2fdf324..afcf6c6aab 100644
+--- a/usr.sbin/installer/libaura/popen.c
++++ b/usr.sbin/installer/libaura/popen.c
+@@ -49,6 +49,7 @@
+ #include <errno.h>
+ #include <signal.h>
+ #include <stdarg.h>
++#include <stdint.h>		/* for uintptr_t in __DECONST() */
+ #include <paths.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+-- 
+2.23.0
+
