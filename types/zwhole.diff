@@ -1,0 +1,2274 @@
+diff --git a/include/arpa/inet.h b/include/arpa/inet.h
+index 871956f297..b0277f030c 100644
+--- a/include/arpa/inet.h
++++ b/include/arpa/inet.h
+@@ -51,7 +51,6 @@
+  *	@(#)inet.h	8.1 (Berkeley) 6/2/93
+  *	$Id: inet.h,v 1.2.18.1 2005/04/27 05:00:50 sra Exp $
+  * $FreeBSD: src/include/arpa/inet.h,v 1.30 2007/08/24 20:25:52 bms Exp $
+- * $DragonFly: src/include/arpa/inet.h,v 1.5 2005/07/13 12:49:56 joerg Exp $
+  */
+ 
+ #ifndef _ARPA_INET_H_
+@@ -60,10 +59,11 @@
+ /* External definitions for functions in inet(3) */
+ 
+ #include <sys/cdefs.h>
+-#include <stdint.h>
+-
+-/* Required for byteorder(3) functions. */
+-#include <machine/endian.h>
++#include <machine/endian.h>	/* Required for byteorder(3) functions. */
++#include <machine/stdint.h>	/* for __size_t, __socklen_t */
++#ifndef _KERNEL
++#include <stdint.h>		/* for uint16_t, uint32_t as per POSIX */
++#endif
+ 
+ #define	INET_ADDRSTRLEN		16
+ #define	INET6_ADDRSTRLEN	46
+diff --git a/include/ctype.h b/include/ctype.h
+index 5a85be9263..a42bd88aed 100644
+--- a/include/ctype.h
++++ b/include/ctype.h
+@@ -42,7 +42,7 @@
+ #define _CTYPE_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
++#include <machine/stdint.h>
+ 
+ #define	_CTYPE_A	0x00000100L		/* Alpha */
+ #define	_CTYPE_C	0x00000200L		/* Control */
+diff --git a/include/netdb.h b/include/netdb.h
+index 141503f139..19aa7b6548 100644
+--- a/include/netdb.h
++++ b/include/netdb.h
+@@ -58,6 +58,7 @@
+ #define _NETDB_H_
+ 
+ #include <sys/cdefs.h>
++#include <machine/stdint.h>	/* for __size_t, __socklen_t */
+ #include <stdint.h>
+ 
+ #ifndef _IN_ADDR_T_DECLARED
+diff --git a/include/pthread_np.h b/include/pthread_np.h
+index 28d0ebb117..3e3754683e 100644
+--- a/include/pthread_np.h
++++ b/include/pthread_np.h
+@@ -31,7 +31,18 @@
+ #ifndef _PTHREAD_NP_H_
+ #define _PTHREAD_NP_H_
+ 
+-#include <sched.h>
++#include <sys/cdefs.h>
++#include <sys/types.h>
++#include <sys/cpumask.h>
++#include <sys/_timespec.h>
++#include <time.h>
++
++/* In case <sched.h> has limited visibility. */
++#ifndef _CPU_SET_T_DECLARED
++#define	_CPU_SET_T_DECLARED
++typedef	cpumask_t		cpu_set_t;
++typedef	cpumask_t		cpuset_t;	/* FreeBSD compat */
++#endif
+ 
+ /*
+  * Non-POSIX type definitions:
+@@ -64,4 +75,4 @@ int pthread_switch_delete_np(pthread_switch_routine_t);
+ int pthread_timedjoin_np(pthread_t, void **, const struct timespec *);
+ __END_DECLS
+ 
+-#endif
++#endif /* !_PTHREAD_NP_H_ */
+diff --git a/include/runetype.h b/include/runetype.h
+index da5954fe94..9a3c7316fb 100644
+--- a/include/runetype.h
++++ b/include/runetype.h
+@@ -37,7 +37,7 @@
+ #define	_RUNETYPE_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
++#include <machine/stdint.h>
+ 
+ #define	_CACHED_RUNES	(1 <<8 )	/* Must be a power of 2 */
+ #define	_CRMASK		(~(_CACHED_RUNES - 1))
+diff --git a/include/spawn.h b/include/spawn.h
+index 149d18738b..f0dbf709a0 100644
+--- a/include/spawn.h
++++ b/include/spawn.h
+@@ -30,8 +30,8 @@
+ #define _SPAWN_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/stdint.h>
+ #include <sys/_sigset.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _MODE_T_DECLARED
+ typedef	__uint16_t	mode_t;
+diff --git a/include/stddef.h b/include/stddef.h
+index 97d513063c..5c29e9a33e 100644
+--- a/include/stddef.h
++++ b/include/stddef.h
+@@ -36,12 +36,10 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_null.h>
++#include <machine/stdint.h>
+ #ifndef __cplusplus
+ #include <machine/wchar.h>		/* for ___wchar_t */
+ #endif
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>			/* __rune_t and friends */
+-#endif
+ 
+ #ifndef _SIZE_T_DECLARED
+ #define _SIZE_T_DECLARED
+diff --git a/include/stdint.h b/include/stdint.h
+index 5af4e612c3..4a3d37376f 100644
+--- a/include/stdint.h
++++ b/include/stdint.h
+@@ -27,7 +27,7 @@
+ #ifndef _STDINT_H_
+ #define _STDINT_H_
+ 
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ typedef __int8_t	int8_t;
+ typedef __int16_t	int16_t;
+@@ -48,11 +48,6 @@ typedef __uintptr_t	uintptr_t;
+ typedef __intmax_t	intmax_t;
+ typedef __uintmax_t	uintmax_t;
+ 
+-#ifndef _PTRDIFF_T_DECLARED
+-#define _PTRDIFF_T_DECLARED
+-typedef __ptrdiff_t		ptrdiff_t;            /* ptr1 - ptr2 */
+-#endif
+-
+ typedef __int_fast8_t		int_fast8_t;
+ typedef __int_fast16_t		int_fast16_t;
+ typedef __int_fast32_t		int_fast32_t;
+diff --git a/include/termios.h b/include/termios.h
+index 3c77d3f327..beae79a749 100644
+--- a/include/termios.h
++++ b/include/termios.h
+@@ -36,7 +36,7 @@
+ #include <sys/cdefs.h>
+ #include <sys/_termios.h>
+ /* Needed by tcgetsid(3). */
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _PID_T_DECLARED
+ typedef	__pid_t	pid_t;
+diff --git a/include/time.h b/include/time.h
+index 1825f454b8..54fa2c0af2 100644
+--- a/include/time.h
++++ b/include/time.h
+@@ -43,7 +43,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_null.h>
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ #if __BSD_VISIBLE || (__POSIX_VISIBLE && __POSIX_VISIBLE < 200112)
+ /*
+diff --git a/include/uchar.h b/include/uchar.h
+index 4866f15b42..87f7b4f772 100644
+--- a/include/uchar.h
++++ b/include/uchar.h
+@@ -30,7 +30,7 @@
+ #define	_UCHAR_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
++#include <machine/stdint.h>
+ #include <machine/wchar.h>	/* for __mbstate_t */
+ 
+ #if !defined(__cplusplus) || __cplusplus < 201103
+diff --git a/include/wchar.h b/include/wchar.h
+index b37c7e498d..81b7d3cd9a 100644
+--- a/include/wchar.h
++++ b/include/wchar.h
+@@ -62,8 +62,8 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_null.h>
+-#include <sys/types.h>
+ #include <machine/stdarg.h>	/* for __va_list */
++#include <machine/stdint.h>
+ #include <machine/wchar_limits.h>
+ #include <machine/wchar.h>
+ #include <ctype.h>		/* for __wcwidth() */
+diff --git a/include/wctype.h b/include/wctype.h
+index be61aa6ee5..24da2bb692 100644
+--- a/include/wctype.h
++++ b/include/wctype.h
+@@ -32,9 +32,7 @@
+ #define	_WCTYPE_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
+ #include <machine/wchar.h>		/* for __wint_t */
+-
+ #include <ctype.h>
+ 
+ #ifndef _WCTRANS_T
+diff --git a/lib/libc/gen/setproctitle.c b/lib/libc/gen/setproctitle.c
+index a1cd166a54..e30739920b 100644
+--- a/lib/libc/gen/setproctitle.c
++++ b/lib/libc/gen/setproctitle.c
+@@ -15,7 +15,6 @@
+  *    Peter Wemm.
+  *
+  * $FreeBSD: src/lib/libc/gen/setproctitle.c,v 1.18 2003/07/01 09:45:35 alfred Exp $
+- * $DragonFly: src/lib/libc/gen/setproctitle.c,v 1.5 2005/11/13 00:07:42 swildner Exp $
+  */
+ 
+ #include "namespace.h"
+@@ -24,9 +23,9 @@
+ #include <sys/exec.h>
+ #include <sys/sysctl.h>
+ 
++#include <vm/pmap.h>
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+-#include <vm/pmap.h>
+ 
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/lib/libc/include/libc_private.h b/lib/libc/include/libc_private.h
+index c3459e2a57..895b67b67f 100644
+--- a/lib/libc/include/libc_private.h
++++ b/lib/libc/include/libc_private.h
+@@ -35,8 +35,8 @@
+ #ifndef _LIBC_PRIVATE_H_
+ #define _LIBC_PRIVATE_H_
+ 
+-#include <machine/types.h>
+ #include <sys/_pthreadtypes.h>
++#include <machine/stdint.h>
+ 
+ /*
+  * This global flag is non-zero when a process has created one
+diff --git a/lib/libevtr/evtr.c b/lib/libevtr/evtr.c
+index 5e6daf4efe..8160f36b7b 100644
+--- a/lib/libevtr/evtr.c
++++ b/lib/libevtr/evtr.c
+@@ -1,10 +1,10 @@
+ /*
+  * Copyright (c) 2009, 2010 Aggelos Economopoulos.  All rights reserved.
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -14,7 +14,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -35,6 +35,7 @@
+ #include <errno.h>
+ #include <limits.h>
+ #include <stdarg.h>
++#include <stddef.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -1030,7 +1031,7 @@ evtr_dump_fmt(evtr_t evtr, uint64_t ts, const evtr_event_t ev)
+ 
+ /*
+  * Replace string pointers or string ids in fmtdata
+- */ 
++ */
+ static
+ int
+ mangle_string_ptrs(const char *fmt, uint8_t *fmtdata,
+@@ -1684,7 +1685,7 @@ int
+ evtr_skip_to_record(evtr_t evtr)
+ {
+ 	int skip;
+-	
++
+ 	skip = REC_ALIGN - (evtr->bytes % REC_ALIGN);
+ 	if (skip > 0) {
+ 		if (fseek(evtr->f, skip, SEEK_CUR)) {
+@@ -1955,7 +1956,7 @@ void
+ evtr_query_destroy(struct evtr_query *q)
+ {
+ 	evtr_deregister_filters(q, q->filt, q->nfilt);
+-		
++
+ 	free(q->buf);
+ 	free(q);
+ }
+diff --git a/lib/libkvm/kvm_minidump_x86_64.c b/lib/libkvm/kvm_minidump_x86_64.c
+index 753d9eaddc..1d8e959579 100644
+--- a/lib/libkvm/kvm_minidump_x86_64.c
++++ b/lib/libkvm/kvm_minidump_x86_64.c
+@@ -39,6 +39,7 @@
+ #include <unistd.h>
+ #include <nlist.h>
+ 
++#include <cpu/pmap.h>
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+ 
+diff --git a/lib/libkvm/kvm_proc.c b/lib/libkvm/kvm_proc.c
+index 96864245bb..9cfc9e3de0 100644
+--- a/lib/libkvm/kvm_proc.c
++++ b/lib/libkvm/kvm_proc.c
+@@ -59,6 +59,7 @@
+ #include <unistd.h>
+ #include <nlist.h>
+ 
++#include <cpu/pmap.h>
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+ #include <vm/swap_pager.h>
+diff --git a/lib/libkvm/kvm_x86_64.c b/lib/libkvm/kvm_x86_64.c
+index 7f40752e5b..e88b24a738 100644
+--- a/lib/libkvm/kvm_x86_64.c
++++ b/lib/libkvm/kvm_x86_64.c
+@@ -50,6 +50,7 @@
+ #include <unistd.h>
+ #include <nlist.h>
+ 
++#include <cpu/pmap.h>
+ #include <vm/vm.h>
+ #include <vm/vm_param.h>
+ 
+diff --git a/lib/libstand/printf.c b/lib/libstand/printf.c
+index fdc9858249..030f738700 100644
+--- a/lib/libstand/printf.c
++++ b/lib/libstand/printf.c
+@@ -42,6 +42,7 @@
+ #include <sys/types.h>
+ #include <sys/stdint.h>
+ #include <limits.h>
++#include <stddef.h>
+ #include <string.h>
+ #include "stand.h"
+ 
+diff --git a/lib/libthread_xu/thread/thr_private.h b/lib/libthread_xu/thread/thr_private.h
+index 72e5afa9dc..86edcd88d3 100644
+--- a/lib/libthread_xu/thread/thr_private.h
++++ b/lib/libthread_xu/thread/thr_private.h
+@@ -45,10 +45,10 @@
+ #include <sys/rtprio.h>
+ #include <sys/mman.h>
+ #include <machine/atomic.h>
+-#include <machine/cpumask.h>
+ #include <errno.h>
+ #include <limits.h>
+ #include <signal.h>
++#include <sys/cpumask.h>
+ #include <sys/sched.h>
+ #include <stdarg.h>
+ #include <unistd.h>
+diff --git a/sbin/usched/usched.c b/sbin/usched/usched.c
+index 213e92145b..df8ed00e1d 100644
+--- a/sbin/usched/usched.c
++++ b/sbin/usched/usched.c
+@@ -35,7 +35,7 @@
+ 
+ #include <sys/types.h>
+ #include <sys/usched.h>
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+diff --git a/sys/boot/common/bootstrap.h b/sys/boot/common/bootstrap.h
+index 45ed5fd2e5..60429155d9 100644
+--- a/sys/boot/common/bootstrap.h
++++ b/sys/boot/common/bootstrap.h
+@@ -29,6 +29,7 @@
+ #include <sys/types.h>
+ #include <sys/queue.h>
+ #include <sys/linker_set.h>
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ 
+ struct stat;
+ 
+diff --git a/sys/boot/efi/loader/loader_efi.h b/sys/boot/efi/loader/loader_efi.h
+index 12ab7b8e1d..364a5e5572 100644
+--- a/sys/boot/efi/loader/loader_efi.h
++++ b/sys/boot/efi/loader/loader_efi.h
+@@ -32,6 +32,7 @@
+ #define	_LOADER_EFI_COPY_H_
+ 
+ #include <stand.h>
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ 
+ int	efi_autoload(void);
+ 
+diff --git a/sys/boot/pc32/btx/lib/btxv86.h b/sys/boot/pc32/btx/lib/btxv86.h
+index 061762df13..a299d92ba7 100644
+--- a/sys/boot/pc32/btx/lib/btxv86.h
++++ b/sys/boot/pc32/btx/lib/btxv86.h
+@@ -15,13 +15,13 @@
+ 
+ /*
+  * $FreeBSD: src/sys/boot/i386/btx/lib/btxv86.h,v 1.5 1999/08/28 00:40:08 peter Exp $
+- * $DragonFly: src/sys/boot/pc32/btx/lib/btxv86.h,v 1.3 2003/11/10 06:08:35 dillon Exp $
+  */
+ 
+ #ifndef _BTXV86_H_
+ #define _BTXV86_H_
+ 
+ #include <sys/types.h>
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ 
+ #define V86_ADDR   0x10000	/* Segment:offset address */
+ #define V86_CALLF  0x20000	/* Emulate far call */
+diff --git a/sys/boot/pc32/libi386/biosacpi.c b/sys/boot/pc32/libi386/biosacpi.c
+index 2c46eb8253..90f9b1e9a5 100644
+--- a/sys/boot/pc32/libi386/biosacpi.c
++++ b/sys/boot/pc32/libi386/biosacpi.c
+@@ -60,7 +60,7 @@ biosacpi_detect(void)
+ 	return;
+ 
+     /* export values from the RSDP */
+-    sprintf(buf, "0x%08lx", VTOP(rsdp));
++    sprintf(buf, "0x%08x", VTOP(rsdp));
+     setenv("hint.acpi.0.rsdp", buf, 1);
+     revision = rsdp->Revision;
+     if (revision == 0)
+diff --git a/sys/boot/pc32/libi386/libi386.h b/sys/boot/pc32/libi386/libi386.h
+index a15905d11b..6c71d89807 100644
+--- a/sys/boot/pc32/libi386/libi386.h
++++ b/sys/boot/pc32/libi386/libi386.h
+@@ -26,6 +26,7 @@
+  * $FreeBSD: src/sys/boot/i386/libi386/libi386.h,v 1.16 2003/05/01 03:56:29 peter Exp $
+  */
+ 
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ 
+ /*
+  * i386 fully-qualified device descriptor.
+diff --git a/sys/bus/firewire/fwcrom.c b/sys/bus/firewire/fwcrom.c
+index fcf9e8d505..e4ad766414 100644
+--- a/sys/bus/firewire/fwcrom.c
++++ b/sys/bus/firewire/fwcrom.c
+@@ -42,6 +42,7 @@
+ #include <sys/systm.h>
+ #include <sys/kernel.h>
+ #else
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ #include <netinet/in.h>
+ #include <fcntl.h>
+ #include <stdio.h>
+diff --git a/sys/cpu/x86_64/include/cpumask.h b/sys/cpu/x86_64/include/cpumask.h
+index 5173efec02..2da5abad9d 100644
+--- a/sys/cpu/x86_64/include/cpumask.h
++++ b/sys/cpu/x86_64/include/cpumask.h
+@@ -35,16 +35,25 @@
+ #ifndef _CPU_CPUMASK_H_
+ #define	_CPU_CPUMASK_H_
+ 
+-#include <cpu/types.h>
++#include <machine/stdint.h>
+ #ifdef _KERNEL
+ #include <cpu/atomic.h>
+ #endif
+ 
+-#if _CPUMASK_ELEMENTS != 4
+-#error "CPUMASK macros incompatible with cpumask_t"
+-#endif
++/*
++ * cpumask_t - a mask representing a set of cpus and supporting routines.
++ *
++ * WARNING! It is recommended that this mask NOT be made variably-sized
++ *	    because it affects a huge number of system structures.  However,
++ *	    kernel code (non-module) can be optimized to not operate on the
++ *	    whole mask.
++ */
+ 
+-#define CPUMASK_ELEMENTS	_CPUMASK_ELEMENTS
++typedef struct {
++	__uint64_t	ary[4];
++} __cpumask_t;
++
++#define CPUMASK_ELEMENTS	4
+ 
+ #define CPUMASK_INITIALIZER_ALLONES	{ .ary = { (__uint64_t)-1, \
+ 					  (__uint64_t)-1, \
+@@ -212,6 +221,52 @@
+ 					(mask).ary[3] ^= -1L;		\
+ 					} while(0)
+ 
++#ifndef _KERNEL
++#define	__CPU_SETSIZE		((int)(sizeof(cpumask_t) * 8))
++
++#define	__CPU_COUNT(set)	(					\
++				__builtin_popcountl((set)->ary[0]) +	\
++				__builtin_popcountl((set)->ary[1]) +	\
++				__builtin_popcountl((set)->ary[2]) +	\
++				__builtin_popcountl((set)->ary[3]))
++
++#define	__CPU_CLR(cpu, set)	CPUMASK_NANDBIT(*set, cpu)
++#define	__CPU_EQUAL(set1, set2)	CPUMASK_CMPMASKEQ(*set1, *set2)
++#define	__CPU_ISSET(cpu, set)	CPUMASK_TESTBIT(*set, cpu)
++#define	__CPU_SET(cpu, set)	CPUMASK_ORBIT(*set, cpu)
++#define	__CPU_ZERO(set)		CPUMASK_ASSZERO(*set)
++
++#define	__CPU_AND(dst, set1, set2)					\
++			do {						\
++				if (dst == set1) {			\
++					CPUMASK_ANDMASK(*dst, *set2);	\
++				} else {				\
++					*dst = *set2;			\
++					CPUMASK_ANDMASK(*dst, *set1);	\
++				}					\
++			} while (0)
++
++#define	__CPU_OR(dst, set1, set2)					\
++			do {						\
++				if (dst == set1) {			\
++					CPUMASK_ORMASK(*dst, *set2);	\
++				} else {				\
++					*dst = *set2;			\
++					CPUMASK_ORMASK(*dst, *set1);	\
++				}					\
++			} while (0)
++
++#define	__CPU_XOR(dst, set1, set2)					\
++			do {						\
++				if (dst == set1) {			\
++					CPUMASK_XORMASK(*dst, *set2);	\
++				} else {				\
++					*dst = *set2;			\
++					CPUMASK_XORMASK(*dst, *set1);	\
++				}					\
++			} while (0)
++#endif
++
+ #ifdef _KERNEL
+ #define ATOMIC_CPUMASK_ORBIT(mask, i)					  \
+ 			atomic_set_cpumask(&(mask).ary[((i) >> 6) & 3],	  \
+diff --git a/sys/cpu/x86_64/include/npx.h b/sys/cpu/x86_64/include/npx.h
+index 56c76a559b..c8e678f040 100644
+--- a/sys/cpu/x86_64/include/npx.h
++++ b/sys/cpu/x86_64/include/npx.h
+@@ -42,7 +42,7 @@
+ #ifndef _CPU_NPX_H_
+ #define	_CPU_NPX_H_
+ 
+-#include <stdint.h>
++#include <sys/stdint.h>
+ 
+ /* Environment information of floating point unit */
+ struct	env87 {
+diff --git a/sys/cpu/x86_64/include/param.h b/sys/cpu/x86_64/include/param.h
+index 03441227be..1d7d1745a4 100644
+--- a/sys/cpu/x86_64/include/param.h
++++ b/sys/cpu/x86_64/include/param.h
+@@ -71,27 +71,27 @@
+ #define SMP_MAXCPU	256
+ #define MAXCPU		SMP_MAXCPU
+ 
+-/* JG license? from fbsd/src/sys/amd64/include/param.h */
++/* Constants derived from sizeof() that need recalculation. */
+ /* level 1 == page table */
+ #define	NPTEPGSHIFT	9		/* LOG2(NPTEPG) */
+ #define PAGE_SHIFT	12		/* LOG2(PAGE_SIZE) */
+ #define PAGE_SIZE	(1<<PAGE_SHIFT)	/* bytes/page */
+ #define PAGE_MASK	(PAGE_SIZE-1)
+-#define NPTEPG		(PAGE_SIZE/(sizeof (pt_entry_t)))
++#define NPTEPG		(PAGE_SIZE/8LU)	/* PAGE_SIZE/sizeof(pt_entry_t) */
+ 
+ /* level 2 == page directory */
+ #define	NPDEPGSHIFT	9		/* LOG2(NPDEPG) */
+ #define PDRSHIFT	21		/* LOG2(NBPDR) */
+ #define NBPDR		(1<<PDRSHIFT)	/* bytes/page dir */
+ #define PDRMASK		(NBPDR-1)
+-#define NPDEPG		(PAGE_SIZE/(sizeof (pd_entry_t)))
++#define NPDEPG		(PAGE_SIZE/8LU)	/* PAGE_SIZE/sizeof(pd_entry_t) */
+ 
+ /* level 3 == page directory pointer table */
+ #define	NPDPEPGSHIFT	9		/* LOG2(NPDPEPG) */
+ #define PDPSHIFT	30		/* LOG2(NBPDP) */
+ #define NBPDP		(1<<PDPSHIFT)	/* bytes/page dir ptr table */
+ #define PDPMASK		(NBPDP-1)
+-#define NPDPEPG		(PAGE_SIZE/(sizeof (pdp_entry_t)))
++#define NPDPEPG		(PAGE_SIZE/8LU)	/* PAGE_SIZE/sizeof(pdp_entry_t) */
+ 
+ /* level 4 */
+ #define	NPML4EPGSHIFT	9		/* LOG2(NPML4EPG) */
+@@ -99,7 +99,7 @@
+ #define NPML4		(1UL<<PML4SHIFT)/* bytes/page map level4 table */
+ #define	NBPML4		(1ul<<PML4SHIFT)/* bytes/page map lev4 table */
+ #define PML4MASK	(NPML4-1)
+-#define NPML4EPG	(PAGE_SIZE/(sizeof (pml4_entry_t)))
++#define NPML4EPG	(PAGE_SIZE/8LU)	/* PAGE_SIZE/sizeof(pml4_entry_t) */
+ 
+ /*
+  * Virtual address sign-extension and mask.  If bit 47 is set then
+diff --git a/sys/cpu/x86_64/include/pmap.h b/sys/cpu/x86_64/include/pmap.h
+index ba19fc4367..65916ebf13 100644
+--- a/sys/cpu/x86_64/include/pmap.h
++++ b/sys/cpu/x86_64/include/pmap.h
+@@ -45,6 +45,20 @@
+ #ifndef _CPU_PMAP_H_
+ #define _CPU_PMAP_H_
+ 
++#ifndef LOCORE
++
++#include <machine/stdint.h>
++
++/*
++ * MMU page tables, keep public for VM_MAX_USER_ADDRESS/PS_STRINGS.
++ */
++typedef	__uint64_t	pml4_entry_t;
++typedef	__uint64_t	pdp_entry_t;
++typedef	__uint64_t	pd_entry_t;
++typedef	__uint64_t	pt_entry_t;
++
++#endif /* !LOCORE */
++
+ /*
+  * Page-directory and page-table entries follow this format, with a few
+  * of the fields not present here and there, depending on a lot of things.
+diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
+index fc310e14b0..d0651d3b70 100644
+--- a/sys/cpu/x86_64/include/stdint.h
++++ b/sys/cpu/x86_64/include/stdint.h
+@@ -1,7 +1,7 @@
+ /*-
+  * Copyright (c) 2001, 2002 Mike Barcroft <mike@FreeBSD.org>
+  * Copyright (c) 2001 The NetBSD Foundation, Inc.  All rights reserved.
+- * Copyright (c) 1990, 1993 The Regents of the University of California. 
++ * Copyright (c) 1990, 1993 The Regents of the University of California.
+  *		All rights reserved.
+  *
+  * This code is derived from software contributed to The NetBSD Foundation
+@@ -68,21 +68,26 @@ __extension__
+ typedef	unsigned long long __uint64_t;
+ #endif
+ 
++/*
++ * Basic signed and unsigned LP types.  We support LP64 and ILP32 models only.
++ */
++#ifdef __LP64__
++typedef	long		__bslp_t;
++typedef	unsigned long	__bulp_t;
++#else
++typedef	int		__bslp_t;
++typedef	unsigned int	__bulp_t;
++#endif
++
+ /*
+  * Standard type definitions.
+  */
+ typedef	__int64_t	__intmax_t;
+ typedef	__uint64_t	__uintmax_t;
+ 
+-#ifdef __LP64__
+-typedef	__int64_t	__intptr_t;
+-typedef	__uint64_t	__uintptr_t;
+-typedef	__int64_t	__ptrdiff_t;		/* ptr1 - ptr2 */
+-#else
+-typedef	__int32_t	__intptr_t;
+-typedef	__uint32_t	__uintptr_t;
+-typedef	__int32_t	__ptrdiff_t;		/* ptr1 - ptr2 */
+-#endif
++typedef	__bslp_t	__intptr_t;
++typedef	__bulp_t	__uintptr_t;
++typedef	__bslp_t	__ptrdiff_t;	/* ptr1 - ptr2 */
+ 
+ typedef	__int32_t	__int_fast8_t;
+ typedef	__int32_t	__int_fast16_t;
+@@ -108,28 +113,27 @@ typedef	__uint64_t	__uint_least64_t;
+  * do not wish to overly pollute their namespaces.
+  */
+ 
+-#ifdef __LP64__
+-typedef __uint64_t	__size_t;
+-typedef __int64_t	__ssize_t;
+-typedef __int64_t	__register_t;
+-typedef __uint64_t	__u_register_t;
++/* <sys/types.h> */
++typedef	unsigned long	__clock_t;	/* ticks in CLOCKS_PER_SEC */
++typedef	unsigned long	__clockid_t;	/* CLOCK_* identifiers */
++typedef	__int64_t	__off_t;	/* file offset or size */
++typedef	__int32_t	__pid_t;	/* process [group] id */
++typedef	__bulp_t	__size_t;	/* sizes of objects */
++typedef	__bslp_t	__ssize_t;	/* byte counts or error status */
++typedef	long		__suseconds_t;	/* microseconds (signed) */
++typedef	__bslp_t	__time_t;	/* epoch time */
++typedef	int		__timer_t;	/* POSIX timer identifiers */
++
++/* misc types */
++#if __GNUC_PREREQ__(2, 7)
++typedef	int		__register_t __attribute__((__mode__(__word__)));
+ #else
+-typedef __uint32_t	__size_t;
+-typedef __int32_t	__ssize_t;
+-typedef __int32_t	__register_t;
+-typedef __uint32_t	__u_register_t;
++typedef	__bslp_t	__register_t;
+ #endif
+ 
+-typedef long		__suseconds_t;
+-typedef long		__time_t;
+-typedef int		__timer_t;
+ typedef __int32_t	__sig_atomic_t;	/* XXX */
+-typedef unsigned long	__clock_t;
+-typedef unsigned long	__clockid_t;
+ typedef __uint32_t	__socklen_t;
+ typedef volatile int	__atomic_intr_t;
+ typedef __int64_t	__rlim_t;
+-typedef __int64_t	__off_t;
+-typedef __int32_t	__pid_t;
+ 
+ #endif /* _CPU_STDINT_H_ */
+diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
+index ef124646d8..c96de60ece 100644
+--- a/sys/cpu/x86_64/include/types.h
++++ b/sys/cpu/x86_64/include/types.h
+@@ -36,18 +36,8 @@
+ 
+ #include <machine/stdint.h>
+ 
+-#if defined(__x86_64__)
+-typedef	__int64_t	__segsz_t;	/* segment size */
+-typedef	__int64_t	register_t;
+-typedef	__uint64_t	u_register_t;
+-#elif defined(__i386__)
+-typedef	__int32_t	__segsz_t;	/* segment size */
+-typedef	__int32_t	register_t;
+-typedef	__uint32_t	u_register_t;
+-#endif
+-
+-typedef unsigned long	vm_offset_t;    /* address space bounded offset */
+-typedef unsigned long	vm_size_t;      /* address space bounded size */
++typedef __bulp_t	vm_offset_t;	/* address space bounded offset */
++typedef __bulp_t	vm_size_t;	/* address space bounded size */
+ 
+ typedef __uint64_t	vm_pindex_t;    /* physical page index */
+ typedef __uint64_t	vm_spindex_t;   /* physical page index (signed) */
+@@ -55,38 +45,4 @@ typedef	__int64_t	vm_ooffset_t;	/* VM object bounded offset */
+ typedef __uint64_t	vm_poff_t;	/* physical offset */
+ typedef __uint64_t	vm_paddr_t;	/* physical addr (same as vm_poff_t) */
+ 
+-/*
+- * MMU page tables
+- */
+-typedef __uint64_t	pml4_entry_t;
+-typedef __uint64_t	pdp_entry_t;
+-typedef __uint64_t	pd_entry_t;
+-typedef __uint64_t	pt_entry_t;
+-typedef __uint32_t      cpulock_t;      /* count and exclusive lock */
+-
+-/*
+- * cpumask_t - a mask representing a set of cpus and supporting routines.
+- *
+- * WARNING! It is recommended that this mask NOT be made variably-sized
+- *	    because it affects a huge number of system structures.  However,
+- *	    kernel code (non-module) can be optimized to not operate on the
+- *	    whole mask.
+- */
+-
+-#define _CPUMASK_ELEMENTS	4	/* tested by assembly for #error */
+-
+-typedef struct {
+-	__uint64_t      ary[4];
+-} cpumask_t;
+-
+-#define CPULOCK_EXCLBIT	0		/* exclusive lock bit number */
+-#define CPULOCK_EXCL	0x00000001	/* exclusive lock */
+-#define CPULOCK_INCR	0x00000002	/* auxillary counter add/sub */
+-#define CPULOCK_CNTMASK	0x7FFFFFFE
+-
+-#define PML4SIZE	sizeof(pml4_entry_t) /* for assembly files */
+-#define PDPSIZE		sizeof(pdp_entry_t) /* for assembly files */
+-#define PDESIZE         sizeof(pd_entry_t) /* for assembly files */
+-#define PTESIZE         sizeof(pt_entry_t) /* for assembly files */
+-
+ #endif /* !_CPU_TYPES_H_ */
+diff --git a/sys/emulation/ndis/pe_var.h b/sys/emulation/ndis/pe_var.h
+index 0ac691cf36..4c13a7a09b 100644
+--- a/sys/emulation/ndis/pe_var.h
++++ b/sys/emulation/ndis/pe_var.h
+@@ -35,6 +35,8 @@
+ #ifndef _PE_VAR_H_
+ #define	_PE_VAR_H_
+ 
++#include <machine/types.h>	/* XXX for vm_offset_t */
++
+ /*
+  *  Image Format
+  */
+diff --git a/sys/kern/init_sysent.c b/sys/kern/init_sysent.c
+index 97b02ecd7e..8a796061cd 100644
+--- a/sys/kern/init_sysent.c
++++ b/sys/kern/init_sysent.c
+@@ -9,7 +9,6 @@
+ #include <sys/sysent.h>
+ #include <sys/sysproto.h>
+ #include <sys/statvfs.h>
+-#include <machine/cpumask.h>
+ 
+ #define AS(name) ((sizeof(struct name) - sizeof(struct sysmsg)) / sizeof(register_t))
+ 
+diff --git a/sys/kern/kern_usched.c b/sys/kern/kern_usched.c
+index 8399d8cf52..1c8dfe0681 100644
+--- a/sys/kern/kern_usched.c
++++ b/sys/kern/kern_usched.c
+@@ -33,6 +33,7 @@
+  *
+  */
+ 
++#include <sys/cpumask.h>
+ #include <sys/errno.h>
+ #include <sys/globaldata.h>		/* curthread */
+ #include <sys/proc.h>
+@@ -41,7 +42,6 @@
+ #include <sys/systm.h>			/* strcmp() */
+ #include <sys/usched.h>
+ 
+-#include <machine/cpumask.h>
+ #include <machine/smp.h>
+ 
+ static TAILQ_HEAD(, usched) usched_list = TAILQ_HEAD_INITIALIZER(usched_list);
+diff --git a/sys/kern/makesyscalls.sh b/sys/kern/makesyscalls.sh
+index debe226ae8..1885dcf0d9 100644
+--- a/sys/kern/makesyscalls.sh
++++ b/sys/kern/makesyscalls.sh
+@@ -87,6 +87,7 @@ s/\$//g
+ 		printf "#include <sys/select.h>\n" > sysarg
+ 		printf "#include <sys/signal.h>\n" > sysarg
+ 		printf "#include <sys/acl.h>\n" > sysarg
++		printf "#include <sys/cpumask.h>\n" > sysarg
+ 		printf "#include <sys/mqueue.h>\n" > sysarg
+ 		printf "#include <sys/msgport.h>\n" > sysarg
+ 		printf "#include <sys/sysmsg.h>\n" > sysarg
+diff --git a/sys/kern/syscalls.master b/sys/kern/syscalls.master
+index 28a401c77b..80549b9f1b 100644
+--- a/sys/kern/syscalls.master
++++ b/sys/kern/syscalls.master
+@@ -32,7 +32,6 @@
+ #include <sys/sysent.h>
+ #include <sys/sysproto.h>
+ #include <sys/statvfs.h>
+-#include <machine/cpumask.h>
+ 
+ ; Reserved/unimplemented system calls in the range 0-150 inclusive
+ ; are reserved for use in future Berkeley releases.
+diff --git a/sys/libprop/prop_number.h b/sys/libprop/prop_number.h
+index 17cec6908a..2a1e503b06 100644
+--- a/sys/libprop/prop_number.h
++++ b/sys/libprop/prop_number.h
+@@ -32,9 +32,7 @@
+ #ifndef _PROPLIB_PROP_NUMBER_H_
+ #define	_PROPLIB_PROP_NUMBER_H_
+ 
+-#if !defined(_KERNEL) && !defined(_STANDALONE)
+-#include <stdint.h>
+-#endif
++#include <sys/stdint.h>
+ #include <libprop/prop_object.h>
+ 
+ typedef struct _prop_number *prop_number_t;
+diff --git a/sys/platform/pc64/apic/lapic.h b/sys/platform/pc64/apic/lapic.h
+index d6a5afd5e4..e0d0f3e183 100644
+--- a/sys/platform/pc64/apic/lapic.h
++++ b/sys/platform/pc64/apic/lapic.h
+@@ -80,15 +80,15 @@ void	lapic_x2apic_enter(boolean_t);
+ #include <machine/smp.h>
+ #endif
+ 
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
++#endif
++
+ void	selected_apic_ipi(cpumask_t, int, int);
+ 
+ /*
+  * Send an IPI INTerrupt containing 'vector' to all CPUs EXCEPT myself
+  */
+-#ifndef _CPU_CPUMASK_H_
+-#include <machine/cpumask.h>
+-#endif
+-
+ static __inline int
+ all_but_self_ipi(int vector)
+ {
+diff --git a/sys/platform/pc64/include/pmap.h b/sys/platform/pc64/include/pmap.h
+index 0a0459dace..99b5174add 100644
+--- a/sys/platform/pc64/include/pmap.h
++++ b/sys/platform/pc64/include/pmap.h
+@@ -153,6 +153,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
++#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+diff --git a/sys/platform/pc64/vmm/vmm_utils.c b/sys/platform/pc64/vmm/vmm_utils.c
+index 332eb32f9b..f571535d29 100644
+--- a/sys/platform/pc64/vmm/vmm_utils.c
++++ b/sys/platform/pc64/vmm/vmm_utils.c
+@@ -36,6 +36,7 @@
+ #include <sys/proc.h>
+ #include <sys/systm.h>
+ #include <cpu/lwbuf.h>
++#include <cpu/pmap.h>
+ #include <vm/vm_page.h>
+ #include <vm/vm_extern.h>
+ 
+diff --git a/sys/platform/pc64/x86_64/genassym.c b/sys/platform/pc64/x86_64/genassym.c
+index 8f75b5e026..4f9d1ac2e1 100644
+--- a/sys/platform/pc64/x86_64/genassym.c
++++ b/sys/platform/pc64/x86_64/genassym.c
+@@ -81,8 +81,6 @@ ASSYM(UPAGES, UPAGES);
+ ASSYM(PAGE_SIZE, PAGE_SIZE);
+ ASSYM(NPTEPG, NPTEPG);
+ ASSYM(NPDEPG, NPDEPG);
+-ASSYM(PDESIZE, PDESIZE);
+-ASSYM(PTESIZE, PTESIZE);
+ ASSYM(PAGE_SHIFT, PAGE_SHIFT);
+ ASSYM(PAGE_MASK, PAGE_MASK);
+ ASSYM(PDRSHIFT, PDRSHIFT);
+diff --git a/sys/platform/vkernel64/include/pmap.h b/sys/platform/vkernel64/include/pmap.h
+index 9ebd2bb4f2..c42ddc4176 100644
+--- a/sys/platform/vkernel64/include/pmap.h
++++ b/sys/platform/vkernel64/include/pmap.h
+@@ -95,6 +95,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
++#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+diff --git a/sys/platform/vkernel64/x86_64/mp.c b/sys/platform/vkernel64/x86_64/mp.c
+index 8377d7a577..4845131791 100644
+--- a/sys/platform/vkernel64/x86_64/mp.c
++++ b/sys/platform/vkernel64/x86_64/mp.c
+@@ -32,7 +32,7 @@
+  * SUCH DAMAGE.
+  */
+ 
+-
++#include <sys/cpumask.h>
+ #include <sys/interrupt.h>
+ #include <sys/kernel.h>
+ #include <sys/memrange.h>
+@@ -50,7 +50,6 @@
+ 
+ #include <machine/cpu.h>
+ #include <machine/cpufunc.h>
+-#include <machine/cpumask.h>
+ #include <machine/globaldata.h>
+ #include <machine/md_var.h>
+ #include <machine/pmap.h>
+diff --git a/sys/sys/aio.h b/sys/sys/aio.h
+index aca1f5a55d..f0e854c1ba 100644
+--- a/sys/sys/aio.h
++++ b/sys/sys/aio.h
+@@ -22,7 +22,7 @@
+ #include <sys/_pthreadtypes.h>
+ #include <sys/_timespec.h>
+ #include <sys/signal.h>
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _OFF_T_DECLARED
+ typedef	__off_t		off_t;
+diff --git a/sys/sys/cpu_topology.h b/sys/sys/cpu_topology.h
+index 3db45c0af4..a0b441d5cf 100644
+--- a/sys/sys/cpu_topology.h
++++ b/sys/sys/cpu_topology.h
+@@ -3,7 +3,7 @@
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ 
+ /* CPU TOPOLOGY DATA AND FUNCTIONS */
+ struct cpu_node {
+diff --git a/sys/sys/cpumask.h b/sys/sys/cpumask.h
+new file mode 100644
+index 0000000000..4d11fd218b
+--- /dev/null
++++ b/sys/sys/cpumask.h
+@@ -0,0 +1,60 @@
++/*
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++#ifndef _SYS_CPUMASK_H_
++#define _SYS_CPUMASK_H_
++
++#include <machine/cpumask.h>
++#include <machine/stdint.h>
++
++typedef	__cpumask_t	cpumask_t;
++
++#ifndef _KERNEL
++#define	CPU_SETSIZE		((int)(sizeof(cpumask_t) * 8))
++#define	CPU_ZERO(set)			__CPU_ZERO(set)
++#define	CPU_SET(cpu, set)		__CPU_SET(cpu, set)
++#define	CPU_CLR(cpu, set)		__CPU_CLR(cpu, set)
++#define	CPU_ISSET(cpu, set)		__CPU_ISSET(cpu, set)
++#define	CPU_COUNT(set)			__CPU_COUNT(set)
++#define	CPU_AND(dst, set1, set2)	__CPU_AND(dst, set1, set2)
++#define	CPU_OR(dst, set1, set2)		__CPU_OR(dst, set1, set2)
++#define	CPU_XOR(dst, set1, set2)	__CPU_XOR(dst, set1, set2)
++#define	CPU_EQUAL(set1, set2)		__CPU_EQUAL(set1, set2)
++#endif
++
++/*
++ * It is convenient to place this type here due to its proximity to the
++ * cpumask_t use cases in structs.  Keep public for easier access to
++ * struct proc for now.
++ */
++typedef	__uint32_t	cpulock_t;	/* count and exclusive lock */
++
++#define	CPULOCK_EXCLBIT	0		/* exclusive lock bit number */
++#define	CPULOCK_EXCL	0x00000001	/* exclusive lock */
++#define	CPULOCK_INCR	0x00000002	/* auxillary counter add/sub */
++#define	CPULOCK_CNTMASK	0x7FFFFFFE
++
++#endif /* !_SYS_CPUMASK_H_ */
+diff --git a/sys/sys/fbio.h b/sys/sys/fbio.h
+index e1264c3771..3d8c9e7c83 100644
+--- a/sys/sys/fbio.h
++++ b/sys/sys/fbio.h
+@@ -44,6 +44,7 @@
+ #ifndef _SYS_IOCCOM_H_
+ #include <sys/ioccom.h>
+ #endif
++#include <machine/types.h>	/* for vm_offset_t */
+ 
+ /*
+  * Frame buffer ioctls (from Sprite, trimmed to essentials for X11).
+diff --git a/sys/sys/globaldata.h b/sys/sys/globaldata.h
+index 704daa6fd2..26d45d4484 100644
+--- a/sys/sys/globaldata.h
++++ b/sys/sys/globaldata.h
+@@ -1,13 +1,13 @@
+ /*
+  * Copyright (c) 2003-2011 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -17,7 +17,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -30,7 +30,7 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
++ *
+  * Copyright (c) Peter Wemm <peter@netplex.com.au> All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -60,9 +60,6 @@
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>		/* __int types */
+-#endif
+ #ifndef _SYS_TIME_H_
+ #include <sys/time.h>		/* struct timeval */
+ #endif
+@@ -93,6 +90,7 @@
+ #ifndef _SYS_LOCK_H_
+ #include <sys/lock.h>
+ #endif
++#include <machine/stdint.h>
+ 
+ /*
+  * This structure maps out the global data that needs to be kept on a
+diff --git a/sys/sys/ipc.h b/sys/sys/ipc.h
+index 06c34b9615..613f78e0ba 100644
+--- a/sys/sys/ipc.h
++++ b/sys/sys/ipc.h
+@@ -47,7 +47,27 @@
+ #define	_SYS_IPC_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
++#include <machine/stdint.h>
++
++#ifndef _GID_T_DECLARED
++typedef	__uint32_t	gid_t;	/* group id */
++#define	_GID_T_DECLARED
++#endif
++
++#ifndef _KEY_T_DECLARED
++typedef	long		key_t;	/* IPC key (for Sys V IPC) */
++#define _KEY_T_DECLARED
++#endif
++
++#ifndef _MODE_T_DECLARED
++typedef	__uint16_t	mode_t;	/* permissions */
++#define	_MODE_T_DECLARED
++#endif
++
++#ifndef _UID_T_DECLARED
++typedef	__uint32_t	uid_t;	/* user id */
++#define	_UID_T_DECLARED
++#endif
+ 
+ struct ipc_perm {
+ 	uid_t		cuid;	/* creator user id */
+diff --git a/sys/sys/kinfo.h b/sys/sys/kinfo.h
+index 98b6b24b8a..2039246d15 100644
+--- a/sys/sys/kinfo.h
++++ b/sys/sys/kinfo.h
+@@ -35,10 +35,6 @@
+ #ifndef _SYS_KINFO_H_
+ #define _SYS_KINFO_H_
+ 
+-#ifndef _KERNEL_STRUCTURES
+-#define _KERNEL_STRUCTURES
+-#endif
+-
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
+@@ -47,7 +43,30 @@
+ #endif
+ #include <sys/resource.h>
+ #include <sys/rtprio.h>
++#ifdef _KERNEL
+ #include <sys/proc.h>
++#endif
++
++/*
++ * NOTE: correct way to use this header from non kernel code is to include
++ * the <sys/user.h> first!  Following helper is for historic reasons only.
++ */
++#ifndef _STRUCT_PROC_ENUMS_DECLARED
++#define _STRUCT_PROC_ENUMS_DECLARED
++enum lwpstat {
++	LSRUN = 1,
++	LSSTOP = 2,
++	LSSLEEP = 3,
++};
++
++enum procstat {
++	SIDL = 1,
++	SACTIVE = 2,
++	SSTOP = 3,
++	SZOMB = 4,
++	SCORE = 5,
++};
++#endif	/* !_STRUCT_PROC_ENUMS_DECLARED */
+ 
+ struct kinfo_file {
+ 	size_t	 f_size;	/* size of struct kinfo_file */
+@@ -177,12 +196,13 @@ struct kinfo_proc {
+ 	gid_t		kp_rgid;
+ 	gid_t		kp_svgid;
+ 
+-	pid_t		kp_pid;	/* process id */
++	pid_t		kp_pid;		/* process id */
+ 	pid_t		kp_ppid;	/* parent process id */
+ 	pid_t		kp_pgid;	/* process group id */
+ 	int		kp_jobc;	/* job control counter */
+-	pid_t		kp_sid;	/* session id */
+-	char		kp_login[roundup(MAXLOGNAME, sizeof(long))];	/* setlogin() name */
++	pid_t		kp_sid;		/* session id */
++	char		kp_login[roundup(MAXLOGNAME, sizeof(long))];
++					/* setlogin() name */
+ 	dev_t		kp_tdev;	/* controlling tty dev */
+ 	pid_t		kp_tpgid;	/* tty process group id */
+ 	pid_t		kp_tsid;	/* tty session id */
+@@ -192,13 +212,13 @@ struct kinfo_proc {
+ 	int		kp_nice;
+ 	unsigned int	kp_swtime;
+ 
+-	vm_size_t	kp_vm_map_size;	/* vmmap virtual size in bytes */
++	size_t		kp_vm_map_size;		/* vmmap virtual size in bytes */
+ 	segsz_t		kp_vm_rssize;		/* resident set size in pages */
+ 	segsz_t		kp_vm_swrss;		/* rss before last swap in pages */
+ 	segsz_t		kp_vm_tsize;		/* text size in pages */
+ 	segsz_t		kp_vm_dsize;		/* data size in pages */
+ 	segsz_t		kp_vm_ssize;		/* stack size in pages */
+-        u_int		kp_vm_prssize;		/* proportional rss in pages */
++	u_int		kp_vm_prssize;		/* proportional rss in pages */
+ 
+ 	int		kp_jailid;
+ 
+@@ -216,7 +236,7 @@ struct kinfo_proc {
+ };
+ 
+ /*
+- * KERN_SIGTRAMP
++ * KERN_SIGTRAMP, public, KERN_PROC_SIGTRAMP used in external codes
+  */
+ struct kinfo_sigtramp {
+ 	void		*ksigtramp_start;
+@@ -224,23 +244,21 @@ struct kinfo_sigtramp {
+ 	void		*ksigtramp_spare[4];
+ };
+ 
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ struct proc;
+ struct lwp;
+ struct thread;
+ 
++__BEGIN_DECLS
+ void fill_kinfo_proc(struct proc *, struct kinfo_proc *);
+ void fill_kinfo_lwp(struct lwp *, struct kinfo_lwp *);
+ void fill_kinfo_proc_kthread(struct thread *, struct kinfo_proc *);
++__END_DECLS
++#endif	/* defined(_KERNEL) || defined(_KERNEL_STRUCTURES) */
+ 
+-#define KINFO_NEXT(kp)	((union kinfo *)((uintptr_t)kp + kp->gen.len))
+-#define KINFO_END(kp)	(kp->gen.type == KINFO_TYPE_END)
+-
+-#if defined(_KERNEL)
++#ifdef _KERNEL
+ #define cpu_time	cputime_percpu[mycpuid]
+-#endif
+-
+-#if defined(_KERNEL)
+ extern struct kinfo_cputime cputime_percpu[MAXCPU];
+-#endif
++#endif	/* _KERNEL */
+ 
+-#endif /* !_SYS_KINFO_H_ */
++#endif	/* !_SYS_KINFO_H_ */
+diff --git a/sys/sys/lwp.h b/sys/sys/lwp.h
+index 80b7ee7e2f..5694acdfda 100644
+--- a/sys/sys/lwp.h
++++ b/sys/sys/lwp.h
+@@ -16,7 +16,7 @@ struct lwp_params {
+ 
+ #if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
+ 
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ 
+ __BEGIN_DECLS
+ 
+diff --git a/sys/sys/mman.h b/sys/sys/mman.h
+index c2bacacdd8..f50f9fbe60 100644
+--- a/sys/sys/mman.h
++++ b/sys/sys/mman.h
+@@ -34,7 +34,7 @@
+ #define	_SYS_MMAN_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _MODE_T_DECLARED
+ #define	_MODE_T_DECLARED
+diff --git a/sys/sys/msg.h b/sys/sys/msg.h
+index 7a60b9c76e..4c016af2a7 100644
+--- a/sys/sys/msg.h
++++ b/sys/sys/msg.h
+@@ -25,6 +25,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/ipc.h>
++#include <machine/stdint.h>
+ 
+ /*
+  * The MSG_NOERROR identifier value, the msqid_ds struct and the msg struct
+diff --git a/sys/sys/msgport.h b/sys/sys/msgport.h
+index 9917555d56..524331c1d2 100644
+--- a/sys/sys/msgport.h
++++ b/sys/sys/msgport.h
+@@ -10,12 +10,10 @@
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>		/* TAILQ_* macros */
+ #endif
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>
+-#endif
+ #ifndef _SYS_SPINLOCK_H_
+ #include <sys/spinlock.h>
+ #endif
++#include <machine/stdint.h>
+ 
+ struct lwkt_msg;
+ struct lwkt_port;
+diff --git a/sys/sys/proc.h b/sys/sys/proc.h
+index 69e550df72..04f5b7c423 100644
+--- a/sys/sys/proc.h
++++ b/sys/sys/proc.h
+@@ -41,6 +41,7 @@
+ #else
+ 
+ #include <sys/callout.h>		/* For struct callout. */
++#include <sys/cpumask.h>
+ #include <sys/filedesc.h>
+ #include <sys/queue.h>
+ #include <sys/tree.h>
+@@ -151,6 +152,9 @@ struct vmspace_entry;
+ struct ktrace_node;
+ struct sem_undo;
+ 
++/* Also declared in sys/kinfo.h */
++#ifndef _STRUCT_PROC_ENUMS_DECLARED
++#define _STRUCT_PROC_ENUMS_DECLARED
+ enum lwpstat {
+ 	LSRUN = 1,
+ 	LSSTOP = 2,
+@@ -164,6 +168,7 @@ enum procstat {
+ 	SZOMB = 4,
+ 	SCORE = 5,
+ };
++#endif	/* !_STRUCT_PROC_ENUMS_DECLARED */
+ 
+ struct lwp {
+ 	TAILQ_ENTRY(lwp) lwp_procq;	/* run/sleep queue. */
+diff --git a/sys/sys/sched.h b/sys/sys/sched.h
+index 3f3e3b901f..38566d3203 100644
+--- a/sys/sys/sched.h
++++ b/sys/sys/sched.h
+@@ -56,55 +56,13 @@ struct sched_param
+ #include <time.h>		/* Per P1003.4 */
+ 
+ #if __BSD_VISIBLE
+-#include <machine/cpumask.h>
++#include <sys/cpumask.h>
+ 
++#ifndef _CPU_SET_T_DECLARED
++#define	_CPU_SET_T_DECLARED
+ typedef	cpumask_t		cpu_set_t;
+ typedef	cpumask_t		cpuset_t;	/* FreeBSD compat */
+-
+-#define	CPU_SETSIZE		((int)(sizeof(cpumask_t) * 8))
+-
+-#define	CPU_ZERO(set)		CPUMASK_ASSZERO(*set)
+-#define	CPU_SET(cpu, set)	CPUMASK_ORBIT(*set, cpu)
+-#define	CPU_CLR(cpu, set)	CPUMASK_NANDBIT(*set, cpu)
+-#define	CPU_ISSET(cpu, set)	CPUMASK_TESTBIT(*set, cpu)
+-
+-#define	CPU_COUNT(set)				\
+-	(__builtin_popcountl((set)->ary[0]) +	\
+-	 __builtin_popcountl((set)->ary[1]) +	\
+-	 __builtin_popcountl((set)->ary[2]) +	\
+-	 __builtin_popcountl((set)->ary[3]))
+-
+-#define	CPU_AND(dst, set1, set2)		\
+-do {						\
+-	if (dst == set1) {			\
+-		CPUMASK_ANDMASK(*dst, *set2);	\
+-	} else {				\
+-		*dst = *set2;			\
+-		CPUMASK_ANDMASK(*dst, *set1);	\
+-	}					\
+-} while (0)
+-
+-#define	CPU_OR(dst, set1, set2)			\
+-do {						\
+-	if (dst == set1) {			\
+-		CPUMASK_ORMASK(*dst, *set2);	\
+-	} else {				\
+-		*dst = *set2;			\
+-		CPUMASK_ORMASK(*dst, *set1);	\
+-	}					\
+-} while (0)
+-
+-#define	CPU_XOR(dst, set1, set2)		\
+-do {						\
+-	if (dst == set1) {			\
+-		CPUMASK_XORMASK(*dst, *set2);	\
+-	} else {				\
+-		*dst = *set2;			\
+-		CPUMASK_XORMASK(*dst, *set1);	\
+-	}					\
+-} while (0)
+-
+-#define	CPU_EQUAL(set1, set2)	CPUMASK_CMPMASKEQ(*set1, *set2)
++#endif
+ #endif /* __BSD_VISIBLE */
+ 
+ __BEGIN_DECLS
+@@ -127,6 +85,6 @@ int sched_getcpu(void);
+ #endif
+ __END_DECLS
+ 
+-#endif
++#endif /* !_KERNEL */
+ 
+ #endif /* _SCHED_H_ */
+diff --git a/sys/sys/sem.h b/sys/sys/sem.h
+index e228cdd901..3b84428f40 100644
+--- a/sys/sys/sem.h
++++ b/sys/sys/sem.h
+@@ -12,6 +12,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/ipc.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _PID_T_DECLARED
+ typedef	__pid_t		pid_t;
+@@ -74,7 +75,7 @@ struct sembuf {
+ union semun {
+ 	int	val;		/* value for SETVAL */
+ 	struct	semid_ds *buf;	/* buffer for IPC_STAT & IPC_SET */
+-	u_short	*array;		/* array for GETALL & SETALL */
++	unsigned short	*array;	/* array for GETALL & SETALL */
+ };
+ #endif /* __BSD_VISIBLE */
+ 
+diff --git a/sys/sys/sglist.h b/sys/sys/sglist.h
+index ee5b894e8b..2f0e32bde2 100644
+--- a/sys/sys/sglist.h
++++ b/sys/sys/sglist.h
+@@ -39,6 +39,10 @@
+ #ifndef __SGLIST_H__
+ #define	__SGLIST_H__
+ 
++#ifndef _KERNEL
++#error "This file should not be included by userland programs."
++#endif
++
+ #include <sys/refcount.h>
+ 
+ struct sglist_seg {
+diff --git a/sys/sys/shm.h b/sys/sys/shm.h
+index d65135a031..fd8ab47af9 100644
+--- a/sys/sys/shm.h
++++ b/sys/sys/shm.h
+@@ -41,6 +41,7 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/ipc.h>
++#include <machine/stdint.h>
+ 
+ #define	SHM_RDONLY  010000  /* Attach read-only (else read-write) */
+ #define	SHM_RND     020000  /* Round attach address to SHMLBA */
+diff --git a/sys/sys/signal.h b/sys/sys/signal.h
+index 2c04ef1cc8..098b6bce76 100644
+--- a/sys/sys/signal.h
++++ b/sys/sys/signal.h
+@@ -41,7 +41,7 @@
+ #include <sys/cdefs.h>
+ #include <sys/_pthreadtypes.h>
+ #include <sys/_sigset.h>
+-#include <sys/stdint.h>		/* for __ types */
++#include <machine/stdint.h>
+ 
+ #ifndef _PID_T_DECLARED
+ typedef	__pid_t		pid_t;
+diff --git a/sys/sys/slaballoc.h b/sys/sys/slaballoc.h
+index 21e771e85b..d778ea885e 100644
+--- a/sys/sys/slaballoc.h
++++ b/sys/sys/slaballoc.h
+@@ -39,12 +39,10 @@
+ 
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+ 
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>
+-#endif
+ #ifndef _SYS__MALLOC_H_
+ #include <sys/_malloc.h>
+ #endif
++#include <machine/stdint.h>
+ 
+ /*
+  * Note that any allocations which are exact multiples of PAGE_SIZE, or
+diff --git a/sys/sys/stdint.h b/sys/sys/stdint.h
+index fc8f198fe7..400d7d34a8 100644
+--- a/sys/sys/stdint.h
++++ b/sys/sys/stdint.h
+@@ -1,16 +1,88 @@
+ /*
+- * This file is in the public domain.
+- * $FreeBSD: src/sys/sys/inttypes.h,v 1.2 1999/08/28 00:51:47 peter Exp $
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
+  *
+- * Note: since portions of these header files can be included with various
+- * other combinations of defines, we cannot surround the whole header file
+- * with an #ifndef sequence.  Elements are individually protected.
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
+  */
+ 
+ #ifndef _SYS_STDINT_H_
+-#define _SYS_STDINT_H_
++#define	_SYS_STDINT_H_
+ 
+ #include <sys/cdefs.h>
+ #include <machine/stdint.h>
+ 
+-#endif	/* SYS_STDINT_H */
++/*
++ * Proxy header for kernel compilation.  Do not include outside kernel
++ * headers. Userland should use <stdint.h> instead.
++ *
++ * This header is not a convenient placeholder for non integer types.
++ */
++
++#ifdef _KERNEL
++#include <machine/int_limits.h>
++
++typedef	__boolean_t	boolean_t;		/* kernel only */
++
++#if !defined(__bool_true_false_are_defined) && !defined(__cplusplus)
++#define	__bool_true_false_are_defined	1
++#define	false	0
++#define	true	1
++#if __STDC_VERSION__ < 199901L && __GNUC__ < 3
++typedef	int	_Bool;
++#endif
++typedef	_Bool	bool;
++#endif /* !__bool_true_false_are_defined && !__cplusplus */
++
++#define	offsetof(type, field)	__offsetof(type, field)
++
++#ifndef _PTRDIFF_T_DECLARED
++typedef	__ptrdiff_t	ptrdiff_t;	/* ptr1 - ptr2 for kernel */
++#define	_PTRDIFF_T_DECLARED
++#endif
++
++typedef	__int8_t	int8_t;
++typedef	__int16_t	int16_t;
++typedef	__int32_t	int32_t;
++typedef	__int64_t	int64_t;
++
++typedef	__uint8_t	uint8_t;
++typedef	__uint16_t	uint16_t;
++typedef	__uint32_t	uint32_t;
++typedef	__uint64_t	uint64_t;
++
++#ifndef _INTPTR_T_DECLARED
++typedef	__intptr_t	intptr_t;	/* VKERNEL uses <unistd.h> */
++#define	_INTPTR_T_DECLARED
++#endif
++typedef	__uintptr_t	uintptr_t;
++
++typedef	__intmax_t	intmax_t;
++typedef	__uintmax_t	uintmax_t;
++#endif /* _KERNEL */
++
++#ifndef _KERNEL
++#ifndef _STDINT_H_
++#include <stdint.h>			/* in case we still need it */
++#endif
++#endif /* !_KERNEL */
++
++#endif /* SYS_STDINT_H */
+diff --git a/sys/sys/sysproto.h b/sys/sys/sysproto.h
+index 01e8ff65cd..5d2ccac780 100644
+--- a/sys/sys/sysproto.h
++++ b/sys/sys/sysproto.h
+@@ -11,6 +11,7 @@
+ #include <sys/select.h>
+ #include <sys/signal.h>
+ #include <sys/acl.h>
++#include <sys/cpumask.h>
+ #include <sys/mqueue.h>
+ #include <sys/msgport.h>
+ #include <sys/sysmsg.h>
+diff --git a/sys/sys/systimer.h b/sys/sys/systimer.h
+index a8d830120e..4a7167db1f 100644
+--- a/sys/sys/systimer.h
++++ b/sys/sys/systimer.h
+@@ -1,15 +1,15 @@
+ /*
+  * SYS/SYSTIMER.H
+- * 
++ *
+  * Copyright (c) 2003,2004 The DragonFly Project.  All rights reserved.
+- * 
++ *
+  * This code is derived from software contributed to The DragonFly Project
+  * by Matthew Dillon <dillon@backplane.com>
+- * 
++ *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+  * are met:
+- * 
++ *
+  * 1. Redistributions of source code must retain the above copyright
+  *    notice, this list of conditions and the following disclaimer.
+  * 2. Redistributions in binary form must reproduce the above copyright
+@@ -19,7 +19,7 @@
+  * 3. Neither the name of The DragonFly Project nor the names of its
+  *    contributors may be used to endorse or promote products derived
+  *    from this software without specific, prior written permission.
+- * 
++ *
+  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+@@ -32,8 +32,6 @@
+  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+- * 
+- * $DragonFly: src/sys/sys/systimer.h,v 1.13 2007/04/30 06:57:36 dillon Exp $
+  */
+ 
+ #ifndef _SYS_SYSTIMER_H_
+@@ -48,12 +46,6 @@
+ #include <sys/queue.h>
+ #endif
+ 
+-/* XXX fix sys/kinfo.h */
+-#ifndef __BOOLEAN_T_DEFINED__
+-#define __BOOLEAN_T_DEFINED__
+-typedef	__boolean_t	boolean_t;
+-#endif
+-
+ struct intrframe;
+ 
+ typedef __uint32_t	sysclock_t;
+@@ -81,6 +73,7 @@ typedef struct systimer {
+ #define SYSTF_100KHZSYNC	0x0010		/* 100Khz coincident sync */
+ #define SYSTF_FIRST		0x0020		/* order first if coincident */
+ 
++#ifdef _KERNEL
+ void systimer_intr_enable(void);
+ void systimer_intr(sysclock_t *, int, struct intrframe *);
+ void systimer_add(systimer_t);
+@@ -95,7 +88,7 @@ void systimer_adjust_periodic(systimer_t, int);
+ void systimer_init_oneshot(systimer_t, systimer_func_t, void *, int);
+ 
+ /*
+- * The cputimer interface.  This provides a free-running (non-interrupt) 
++ * The cputimer interface.  This provides a free-running (non-interrupt)
+  * and monotonically increasing timebase for the system.
+  *
+  * The cputimer structure holds the fixed cputimer frequency, determining
+@@ -315,6 +308,7 @@ struct cpucounter {
+ void cpucounter_register(struct cpucounter *);
+ const struct cpucounter *cpucounter_find_pcpu(void);
+ const struct cpucounter *cpucounter_find(void);
++#endif	/* _KERNEL */
+ 
+ #endif	/* _KERNEL || _KERNEL_STRUCTURES */
+ 
+diff --git a/sys/sys/thread.h b/sys/sys/thread.h
+index b60502843b..7e12aba66b 100644
+--- a/sys/sys/thread.h
++++ b/sys/sys/thread.h
+@@ -1,7 +1,7 @@
+ /*
+  * SYS/THREAD.H
+  *
+- *	Implements the architecture independant portion of the LWKT 
++ *	Implements the architecture independant portion of the LWKT
+  *	subsystem.
+  *
+  * Types which must already be defined when this header is included by
+@@ -11,9 +11,6 @@
+ #ifndef _SYS_THREAD_H_
+ #define _SYS_THREAD_H_
+ 
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>		/* __int types */
+-#endif
+ #ifndef _SYS_PARAM_H_
+ #include <sys/param.h>		/* MAXCOMLEN */
+ #endif
+@@ -26,6 +23,9 @@
+ #ifndef _SYS_TIME_H_
+ #include <sys/time.h>   	/* struct timeval */
+ #endif
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>	/* cpumask_t */
++#endif
+ #ifndef _SYS_LOCK_H
+ #include <sys/lock.h>
+ #endif
+@@ -36,6 +36,7 @@
+ #include <sys/iosched.h>
+ #endif
+ #include <machine/thread.h>
++#include <machine/stdint.h>
+ 
+ struct globaldata;
+ struct lwp;
+@@ -300,7 +301,7 @@ struct thread {
+ #define CRIT_DEBUG_ARRAY_MASK   (CRIT_DEBUG_ARRAY_SIZE - 1)
+     const char	*td_crit_debug_array[CRIT_DEBUG_ARRAY_SIZE];
+     int		td_crit_debug_index;
+-    int		td_in_crit_report;	
++    int		td_in_crit_report;
+ #endif
+     struct md_thread td_mach;
+ #ifdef DEBUG_LOCKS
+diff --git a/sys/sys/thread2.h b/sys/sys/thread2.h
+index abef300fbc..7a7db68ff6 100644
+--- a/sys/sys/thread2.h
++++ b/sys/sys/thread2.h
+@@ -1,7 +1,7 @@
+ /*
+  * SYS/THREAD2.H
+  *
+- * Implements inline procedure support for the LWKT subsystem. 
++ * Implements inline procedure support for the LWKT subsystem.
+  *
+  * Generally speaking these routines only operate on threads associated
+  * with the current cpu.  For example, a higher priority thread pending
+@@ -25,8 +25,10 @@
+ #ifndef _SYS_GLOBALDATA_H_
+ #include <sys/globaldata.h>
+ #endif
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
++#endif
+ #include <machine/cpufunc.h>
+-#include <machine/cpumask.h>
+ 
+ /*
+  * Don't let GCC reorder critical section count adjustments, because it
+@@ -303,7 +305,7 @@ lwkt_cpusync_init(lwkt_cpusync_t cs, cpumask_t mask,
+ /*
+  * IPIQ messaging wrappers.  IPIQ remote functions are passed three arguments:
+  * a void * pointer, an integer, and a pointer to the trap frame (or NULL if
+- * the trap frame is not known).  However, we wish to provide opaque 
++ * the trap frame is not known).  However, we wish to provide opaque
+  * interfaces for simpler callbacks... the basic IPI messaging function as
+  * used by the kernel takes a single argument.
+  */
+@@ -338,7 +340,7 @@ lwkt_send_ipiq_passive(globaldata_t target, ipifunc1_t func, void *arg)
+ }
+ 
+ static __inline int
+-lwkt_send_ipiq2_passive(globaldata_t target, ipifunc2_t func, 
++lwkt_send_ipiq2_passive(globaldata_t target, ipifunc2_t func,
+ 		       void *arg1, int arg2)
+ {
+     return(lwkt_send_ipiq3_passive(target, (ipifunc3_t)func, arg1, arg2));
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index a69e675983..078d84e66d 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -41,19 +41,8 @@
+ #ifndef _SYS_CDEFS_H_
+ #include <sys/cdefs.h>
+ #endif
+-#ifndef _STDINT_H_
+-#include <stdint.h>
+-#endif
+ #include <machine/endian.h>
+-#ifndef _MACHINE_TYPES_H_
+-#include <machine/types.h>
+-#endif
+-#ifndef _SYS_STDINT_H_
+-#include <sys/stdint.h>
+-#endif
+-#ifndef _SYS__PTHREADTYPES_H_
+-#include <sys/_pthreadtypes.h>
+-#endif
++#include <machine/stdint.h>
+ 
+ #if __BSD_VISIBLE
+ typedef	unsigned char	u_char;
+@@ -108,7 +97,10 @@ typedef	__uint16_t	in_port_t;
+ #define	_IN_PORT_T_DECLARED
+ #endif
+ typedef	__uint64_t	ino_t;		/* inode number */
++#ifndef _KEY_T_DECLARED
+ typedef	long		key_t;		/* IPC key (for Sys V IPC) */
++#define	_KEY_T_DECLARED
++#endif
+ #ifndef _MODE_T_DECLARED
+ typedef	__uint16_t	mode_t;		/* permissions */
+ #define	_MODE_T_DECLARED
+@@ -122,11 +114,16 @@ typedef	__off_t		off_t;		/* file offset */
+ typedef	__pid_t		pid_t;		/* process id */
+ #define	_PID_T_DECLARED
+ #endif
++#if __BSD_VISIBLE
++typedef	__register_t	register_t;	/* register-sized type */
++#endif
+ #ifndef _RLIM_T_DECLARED
+ typedef	__rlim_t	rlim_t;		/* resource limit */
+ #define	_RLIM_T_DECLARED
+ #endif
+-typedef	__segsz_t	segsz_t;	/* segment size */
++#if __BSD_VISIBLE
++typedef	__bslp_t	segsz_t;	/* segment size */
++#endif
+ #ifndef _SUSECONDS_T_DECLARED
+ typedef	__suseconds_t	suseconds_t;	/* microseconds (signed) */
+ #define	_SUSECONDS_T_DECLARED
+@@ -137,61 +134,26 @@ typedef	__uint32_t	uid_t;		/* user id */
+ #endif
+ typedef	__uint32_t	useconds_t;	/* microseconds (unsigned) */
+ 
+-#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+-
+-#ifndef __BOOLEAN_T_DEFINED__
+-#define	__BOOLEAN_T_DEFINED__
+-typedef	__boolean_t	boolean_t;
+-#endif
+-
+-typedef	u_int64_t	uoff_t;
+-
+-#ifdef _KERNEL
+-#if !defined(__bool_true_false_are_defined) && !defined(__cplusplus)
+-#define	__bool_true_false_are_defined	1
+-#define	false	0
+-#define	true	1
+-#if __STDC_VERSION__ < 199901L && __GNUC__ < 3
+-typedef	int	_Bool;
+-#endif
+-typedef	_Bool	bool;
+-#endif /* !__bool_true_false_are_defined && !__cplusplus */
+-#endif /* _KERNEL */
+-
+-#endif /* _KERNEL || _KERNEL_STRUCTURES */
+-
+ /*
+- * XXX cdev_t has different meanings for userland vs kernel compiles.  What
+- * do we do for _KERNEL_STRUCTURES ?  For the moment stick with the userland
+- * meaning as being the more compatible solution.
++ * The kernel now uses only udev_t or cdev_t.  Userland uses dev_t.
++ * Virtual kernel builds needs dev_t in order to include userland headers.
+  */
+-
+ #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
+-
+ struct cdev;
+-
+-typedef	u_int32_t	udev_t;		/* device number */
+ typedef	struct cdev	*cdev_t;
++typedef	u_int32_t	udev_t;		/* device number */
++typedef	u_int64_t	uoff_t;		/* uio offset */
++#endif /* _KERNEL) || _KERNEL_STRUCTURES */
+ 
+-#endif
+-
+-/*
+- * The kernel now uses only udev_t or cdev_t.  Userland uses dev_t.
+- * Virtual kernel builds needs dev_t in order to include userland header
+- * files.
+- */
+ #ifdef _KERNEL
+-
+-#define	offsetof(type, field) __offsetof(type, field)
+ typedef	udev_t		dev_t;		/* device number */
++#endif /* _KERNEL */
+ 
+-#else
+-
++#ifndef _KERNEL
+ typedef	u_int32_t	dev_t;		/* device number */
+ #define	udev_t dev_t
+ 
+ #if __BSD_VISIBLE
+-
+ /*
+  * minor() gives a cookie instead of an index since we don't want to
+  * change the meanings of bits 0-15 or waste time and space shifting
+@@ -200,9 +162,7 @@ typedef	u_int32_t	dev_t;		/* device number */
+ #define	major(x)	((int)(((u_int)(x) >> 8)&0xff)) /* major number */
+ #define	minor(x)	((int)((x)&0xffff00ff))         /* minor number */
+ #define	makedev(x,y)	((dev_t)(((x) << 8) | (y)))     /* create dev_t */
+-
+ #endif /* __BSD_VISIBLE */
+-
+ #endif /* !_KERNEL */
+ 
+ #ifndef _CLOCK_T_DECLARED
+@@ -242,9 +202,20 @@ typedef	__time_t	time_t;
+ typedef	__timer_t	timer_t;
+ #endif
+ 
++#ifndef _KERNEL
++#include <stdint.h>			/* XXX */
++#endif
++
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++#include <sys/stdint.h>			/* kernel int types */
++#include <machine/types.h>		/* for vm_offet_t */
++#endif
++
+ #if __BSD_VISIBLE
+ #include <sys/_fd_set.h>
+ #include <sys/_timeval.h>
+ #endif /* __BSD_VISIBLE */
+ 
++#include <sys/_pthreadtypes.h>		/* now POSIX thread types */
++
+ #endif /* !_SYS_TYPES_H_ */
+diff --git a/sys/sys/uio.h b/sys/sys/uio.h
+index 5083afc27f..6f8d29afad 100644
+--- a/sys/sys/uio.h
++++ b/sys/sys/uio.h
+@@ -35,15 +35,16 @@
+ 
+ #include <sys/cdefs.h>
+ #include <sys/_iovec.h>
++#include <machine/stdint.h>
+ 
+-#ifdef __BSD_VISIBLE
++#if __BSD_VISIBLE
+ #ifndef _OFF_T_DECLARED
+ typedef	__off_t		off_t;
+ #define	_OFF_T_DECLARED
+ #endif
+ #endif
+ 
+-/* The size_t and __ types are expected to be provided by <sys/_iovec.h> */
++/* The size_t is expected to be provided by <sys/_iovec.h> */
+ 
+ #ifndef _SSIZE_T_DECLARED
+ typedef	__ssize_t	ssize_t;
+diff --git a/sys/sys/usched.h b/sys/sys/usched.h
+index 41d30ca8ae..296d01db46 100644
+--- a/sys/sys/usched.h
++++ b/sys/sys/usched.h
+@@ -2,8 +2,6 @@
+  * SYS/USCHED.H
+  *
+  *	Userland scheduler API
+- * 
+- * $DragonFly: src/sys/sys/usched.h,v 1.15 2008/04/21 15:24:47 dillon Exp $
+  */
+ 
+ #ifndef _SYS_USCHED_H_
+@@ -14,6 +12,9 @@
+ #ifndef _SYS_TYPES_H_
+ #include <sys/types.h>
+ #endif
++#ifndef _SYS_CPUMASK_H_
++#include <sys/cpumask.h>
++#endif
+ #ifndef _SYS_QUEUE_H_
+ #include <sys/queue.h>
+ #endif
+@@ -49,7 +50,7 @@ struct usched {
+ 
+ union usched_data {
+     /*
+-     * BSD4 scheduler. 
++     * BSD4 scheduler.
+      */
+     struct {
+ 	short	priority;	/* lower is better */
+diff --git a/sys/sys/wait.h b/sys/sys/wait.h
+index a4960d2132..1d8acd05d2 100644
+--- a/sys/sys/wait.h
++++ b/sys/sys/wait.h
+@@ -139,7 +139,7 @@ typedef	enum
+ #endif
+ 
+ #if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
+-#include <sys/stdint.h>
++#include <machine/stdint.h>
+ 
+ #ifndef _PID_T_DECLARED
+ typedef	__pid_t		pid_t;		/* process id */
+diff --git a/sys/vfs/fuse/fuse_abi.h b/sys/vfs/fuse/fuse_abi.h
+index b4967d48bf..6a42eb9165 100644
+--- a/sys/vfs/fuse/fuse_abi.h
++++ b/sys/vfs/fuse/fuse_abi.h
+@@ -127,7 +127,9 @@
+ #ifndef _LINUX_FUSE_H
+ #define _LINUX_FUSE_H
+ 
+-#ifdef __KERNEL__
++#if defined(_KERNEL)
++#include <sys/stdint.h>
++#elif defined(__KERNEL__)
+ #include <linux/types.h>
+ #else
+ #include <stdint.h>
+diff --git a/sys/vfs/hammer2/hammer2_lz4.c b/sys/vfs/hammer2/hammer2_lz4.c
+index 19f88b27d1..80180ed791 100644
+--- a/sys/vfs/hammer2/hammer2_lz4.c
++++ b/sys/vfs/hammer2/hammer2_lz4.c
+@@ -119,7 +119,7 @@ static MALLOC_DEFINE(C_HASHTABLE, "comphashtable",
+ // Basic Types
+ //**************************************
+ #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   // C99
+-# include <stdint.h>
++# include <sys/stdint.h>
+   typedef uint8_t  BYTE;
+   typedef uint16_t U16;
+   typedef uint32_t U32;
+diff --git a/sys/vfs/hammer2/xxhash/xxhash.c b/sys/vfs/hammer2/xxhash/xxhash.c
+index 8289f4b240..14d4dcc78f 100644
+--- a/sys/vfs/hammer2/xxhash/xxhash.c
++++ b/sys/vfs/hammer2/xxhash/xxhash.c
+@@ -139,7 +139,7 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size) { return memcp
+ #ifndef MEM_MODULE
+ # define MEM_MODULE
+ # if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* C99 */
+-#   include <stdint.h>
++#   include <sys/stdint.h>
+     typedef uint8_t  BYTE;
+     typedef uint16_t U16;
+     typedef uint32_t U32;
+diff --git a/sys/vm/vm_pager.h b/sys/vm/vm_pager.h
+index 8113cd5ec9..8990291fc1 100644
+--- a/sys/vm/vm_pager.h
++++ b/sys/vm/vm_pager.h
+@@ -52,6 +52,7 @@
+ #include <vm/vm_object.h>
+ #endif
+ 
++#ifdef _KERNEL
+ TAILQ_HEAD(pagerlst, vm_object);
+ 
+ struct buf;
+@@ -63,6 +64,7 @@ struct pagerops {
+ 	void (*pgo_putpages) (vm_object_t, vm_page_t *, int, int, int *);
+ 	boolean_t (*pgo_haspage) (vm_object_t, vm_pindex_t);
+ };
++#endif	/* _KERNEL */
+ 
+ /*
+  * get/put return values
+@@ -162,8 +164,8 @@ vm_pager_put_pages(
+ static __inline boolean_t
+ vm_pager_has_page(vm_object_t object, vm_pindex_t offset)
+ {
+-        return ((*pagertab[object->type]->pgo_haspage)(object, offset));
+-} 
++	return ((*pagertab[object->type]->pgo_haspage)(object, offset));
++}
+ 
+ struct cdev_pager_ops {
+ 	int (*cdev_pg_fault)(vm_object_t vm_obj, vm_ooffset_t offset,
+@@ -179,6 +181,6 @@ vm_object_t cdev_pager_allocate(void *handle, enum obj_type tp,
+ vm_object_t cdev_pager_lookup(void *handle);
+ void cdev_pager_free_page(vm_object_t object, vm_page_t m);
+ 
+-#endif
++#endif	/* _KERNEL */
+ 
+-#endif				/* _VM_VM_PAGER_H_ */
++#endif	/* _VM_VM_PAGER_H_ */
+diff --git a/sys/vm/vm_zone.h b/sys/vm/vm_zone.h
+index 04173e889d..a9d9ce2dc6 100644
+--- a/sys/vm/vm_zone.h
++++ b/sys/vm/vm_zone.h
+@@ -12,12 +12,16 @@
+  *	John S. Dyson.
+  *
+  * $FreeBSD: src/sys/vm/vm_zone.h,v 1.13.2.2 2002/10/10 19:50:16 dillon Exp $
+- * $DragonFly: src/sys/vm/vm_zone.h,v 1.10 2008/01/21 20:21:19 nth Exp $
+  */
+ 
+ #ifndef _VM_VM_ZONE_H_
+ #define _VM_VM_ZONE_H_
+ 
++#if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++
++#include <sys/spinlock.h>
++#include <sys/thread.h>
++
+ #define ZONE_INTERRUPT 0x0001	/* If you need to allocate at int time */
+ #define ZONE_PANICFAIL 0x0002	/* panic if the zalloc fails */
+ #define ZONE_SPECIAL   0x0004	/* special vm_map_entry zone, see zget() */
+@@ -27,9 +31,6 @@
+ 
+ #define ZONE_MAXPGLOAD	32	/* max VM pages burst in zget() */
+ 
+-#include <sys/spinlock.h>
+-#include <sys/thread.h>
+-
+ /*
+  * Zone allocator.
+  * Zones are deprecated, use <sys/objcache.h> instead for new developments.
+@@ -74,7 +75,7 @@ typedef struct vm_zone {
+ 	long		zkmmax;		/* # of slots in zkmvec */
+ } *vm_zone_t;
+ 
+-
++#ifdef _KERNEL
+ void		zerror (int) __dead2;
+ vm_zone_t	zinit (char *name, size_t size, long nentries, uint32_t flags);
+ int		zinitna (vm_zone_t z, char *name,
+@@ -84,5 +85,8 @@ void		zfree (vm_zone_t z, void *item);
+ void		zbootinit (vm_zone_t z, char *name, size_t size, void *item,
+ 			       long nitems);
+ void		zdestroy(vm_zone_t z);
++#endif	/* _KERNEL */
++
++#endif	/* _KERNEL || _KERNEL_STRUCTURES */
+ 
+ #endif	/* _VM_VM_ZONE_H_ */
+diff --git a/usr.bin/ktrdump/ktrdump.c b/usr.bin/ktrdump/ktrdump.c
+index 9cb66d28f1..850625aa7a 100644
+--- a/usr.bin/ktrdump/ktrdump.c
++++ b/usr.bin/ktrdump/ktrdump.c
+@@ -40,6 +40,7 @@
+ #include <kvm.h>
+ #include <limits.h>
+ #include <nlist.h>
++#include <stddef.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -469,12 +470,12 @@ print_entry(FILE *fo, int n, int row, struct ktr_entry *entry,
+ 	}
+ 	if (xflag) {
+ 		if (nflag) {
+-		    fprintf(fo, "%p %p ", 
++		    fprintf(fo, "%p %p ",
+ 			    entry->ktr_caller2, entry->ktr_caller1);
+ 		} else {
+-		    fprintf(fo, "%-25s ", 
++		    fprintf(fo, "%-25s ",
+ 			    address_to_symbol(entry->ktr_caller2, &symctx));
+-		    fprintf(fo, "%-25s ", 
++		    fprintf(fo, "%-25s ",
+ 			    address_to_symbol(entry->ktr_caller1, &symctx));
+ 		}
+ 	}
+@@ -627,7 +628,7 @@ mangle_string_ptrs(const char *fmt, uint8_t *fmtdata, int dofree)
+ 			  char *t = strdup(kvm_string(((char **)fmtdata)[0],
+ 							  &strctx));
+ 			  ((const char **)fmtdata)[0] = t;
+-					
++
+ 				skipsize = sizeof(char *);
+ 			}
+ 			++ret;
+@@ -796,7 +797,7 @@ read_symbols(const char *file)
+ 		pclose(fp);
+ 	}
+ 	if (symend == NULL) {
+-		if (sym != NULL) 
++		if (sym != NULL)
+ 			symend = sym->symaddr;
+ 		else
+ 			symend = (char *)-1;
+diff --git a/usr.bin/netstat/route.c b/usr.bin/netstat/route.c
+index 128a8f1c99..f73d0b7029 100644
+--- a/usr.bin/netstat/route.c
++++ b/usr.bin/netstat/route.c
+@@ -30,6 +30,7 @@
+  * $FreeBSD: src/usr.bin/netstat/route.c,v 1.41.2.14 2002/07/17 02:22:22 kbyanc Exp $
+  */
+ 
++#define _KERNEL_STRUCTURES
+ #include <sys/kinfo.h>
+ #include <sys/param.h>
+ #include <sys/socket.h>
+@@ -37,7 +38,7 @@
+ 
+ #include <net/ethernet.h>
+ #include <net/if.h>
+-#include <net/if_var.h>
++#include <net/if_var.h>		/* for struct ifnet */
+ #include <net/if_dl.h>
+ #include <net/if_types.h>
+ #include <net/route.h>
+diff --git a/usr.sbin/mptable/mptable.c b/usr.sbin/mptable/mptable.c
+index 94cdfd138c..fdcaaf71e2 100644
+--- a/usr.sbin/mptable/mptable.c
++++ b/usr.sbin/mptable/mptable.c
+@@ -23,7 +23,6 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/mptable/mptable.c,v 1.12.2.3 2000/12/11 01:03:34 obrien Exp $
+- * $DragonFly: src/usr.sbin/mptable/mptable.c,v 1.4 2008/04/20 13:44:26 swildner Exp $
+  */
+ 
+ /*
+@@ -39,6 +38,7 @@
+ #define OEM_PROCESSING_READY_NOT
+ 
+ #include <sys/types.h>
++#include <machine/types.h>	/* XXX for vm_offset_t */
+ #include <err.h>
+ #include <fcntl.h>
+ #include <inttypes.h>
+diff --git a/usr.sbin/powerd/powerd.c b/usr.sbin/powerd/powerd.c
+index 0975d73972..fa64a8359f 100644
+--- a/usr.sbin/powerd/powerd.c
++++ b/usr.sbin/powerd/powerd.c
+@@ -49,8 +49,8 @@
+ #include <sys/soundcard.h>
+ #include <sys/sensors.h>
+ #include <sys/time.h>
++#include <sys/cpumask.h>
+ #include <machine/cpufunc.h>
+-#include <machine/cpumask.h>
+ #include <err.h>
+ #include <signal.h>
+ #include <stdio.h>
