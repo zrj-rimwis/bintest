@@ -1,0 +1,2499 @@
+diff --git a/archivers/liblzxcomp/dragonfly/patch-lzx__config.h b/archivers/liblzxcomp/dragonfly/patch-lzx__config.h
+new file mode 100644
+index 00000000000..cf7bc7f1dc0
+--- /dev/null
++++ b/archivers/liblzxcomp/dragonfly/patch-lzx__config.h
+@@ -0,0 +1,7 @@
++--- lzx_config.h.orig	2002-06-05 15:10:22 UTC
+++++ lzx_config.h
++@@ -1,3 +1,4 @@
+++#include <stdint.h>
++ 
++ #if BYTE_ORDER == BIG_ENDIAN
++ #define LZX_BIG_ENDIAN
+diff --git a/archivers/par/dragonfly/patch-par.h b/archivers/par/dragonfly/patch-par.h
+new file mode 100644
+index 00000000000..5f98f6081f9
+--- /dev/null
++++ b/archivers/par/dragonfly/patch-par.h
+@@ -0,0 +1,10 @@
++--- par.h.orig	2004-08-05 22:59:11 UTC
+++++ par.h
++@@ -6,6 +6,7 @@
++ #undef	DEBUG
++ 
++ 
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <errno.h>
++ #include <unistd.h>	/* getopt(), read(), ... */
+diff --git a/astro/astrometry/dragonfly/patch-util_permutedsort.c b/astro/astrometry/dragonfly/patch-util_permutedsort.c
+new file mode 100644
+index 00000000000..26c57446ade
+--- /dev/null
++++ b/astro/astrometry/dragonfly/patch-util_permutedsort.c
+@@ -0,0 +1,10 @@
++--- util/permutedsort.c.orig	2019-04-22 16:25:30 UTC
+++++ util/permutedsort.c
++@@ -3,6 +3,7 @@
++  # Licensed under a 3-clause BSD style license - see LICENSE
++  */
++ 
+++#include <stdint.h>
++ #include <stdlib.h>
++ #include <string.h>
++ #include <unistd.h>
+diff --git a/audio/alsa-lib/dragonfly/patch-include_asoundlib-head.h b/audio/alsa-lib/dragonfly/patch-include_asoundlib-head.h
+new file mode 100644
+index 00000000000..8fcf9ce7a11
+--- /dev/null
++++ b/audio/alsa-lib/dragonfly/patch-include_asoundlib-head.h
+@@ -0,0 +1,10 @@
++--- include/asoundlib-head.h.orig	2016-08-02 17:48:38 UTC
+++++ include/asoundlib-head.h
++@@ -29,6 +29,7 @@
++ #define __ASOUNDLIB_H
++ 
++ #include <unistd.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <sys/types.h>
+diff --git a/audio/alsa-lib/dragonfly/patch-include_asoundlib.h b/audio/alsa-lib/dragonfly/patch-include_asoundlib.h
+new file mode 100644
+index 00000000000..4ff63e95ab4
+--- /dev/null
++++ b/audio/alsa-lib/dragonfly/patch-include_asoundlib.h
+@@ -0,0 +1,10 @@
++--- include/asoundlib.h.orig	2016-08-02 17:49:24 UTC
+++++ include/asoundlib.h
++@@ -29,6 +29,7 @@
++ #define __ASOUNDLIB_H
++ 
++ #include <unistd.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <sys/types.h>
+diff --git a/audio/alsa-lib/dragonfly/patch-include_local.h b/audio/alsa-lib/dragonfly/patch-include_local.h
+new file mode 100644
+index 00000000000..83a79699691
+--- /dev/null
++++ b/audio/alsa-lib/dragonfly/patch-include_local.h
+@@ -0,0 +1,10 @@
++--- include/local.h.orig	2016-08-02 17:48:38 UTC
+++++ include/local.h
++@@ -25,6 +25,7 @@
++ #include "config.h"
++ 
++ #include <unistd.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+diff --git a/audio/cdparanoia/dragonfly/patch-utils.h b/audio/cdparanoia/dragonfly/patch-utils.h
+new file mode 100644
+index 00000000000..8213916c0c5
+--- /dev/null
++++ b/audio/cdparanoia/dragonfly/patch-utils.h
+@@ -0,0 +1,12 @@
++--- utils.h.intermediate	2019-11-09 10:09:17.000000000 +0000
+++++ utils.h
++@@ -4,7 +4,9 @@
++ #elif defined(__FreeBSD__)
++ #include <machine/endian.h>
++ #endif
+++#include <stdint.h>
++ #include <stdio.h>
+++#include <stdlib.h>
++ #include <errno.h>
++ #include <string.h>
++ 
+diff --git a/audio/festalon/dragonfly/patch-src_cputest.c b/audio/festalon/dragonfly/patch-src_cputest.c
+new file mode 100644
+index 00000000000..7f32820e534
+--- /dev/null
++++ b/audio/festalon/dragonfly/patch-src_cputest.c
+@@ -0,0 +1,10 @@
++--- src/cputest.c.intermediate	2019-11-10 12:51:58.000000000 +0000
+++++ src/cputest.c
++@@ -1,6 +1,7 @@
++ /* Cpu detection code, extracted from mmx.h ((c)1997-99 by H. Dietz
++    and R. Fisher). Converted to C and improved by Fabrice Bellard */
++ 
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+diff --git a/audio/mpiosh/dragonfly/patch-libmpio_debug.h b/audio/mpiosh/dragonfly/patch-libmpio_debug.h
+new file mode 100644
+index 00000000000..39a88674660
+--- /dev/null
++++ b/audio/mpiosh/dragonfly/patch-libmpio_debug.h
+@@ -0,0 +1,10 @@
++--- libmpio/debug.h.intermediate	2019-11-10 12:55:28.000000000 +0000
+++++ libmpio/debug.h
++@@ -42,6 +42,7 @@
++ #include <sys/int_types.h>
++ #else
++ #include <sys/types.h>
+++#include <stdint.h>
++ #endif
++ 
++ #ifdef __cplusplus
+diff --git a/audio/osalp/dragonfly/patch-formatlib_audiofile-0.2.0_libaudiofile_audiofile.h b/audio/osalp/dragonfly/patch-formatlib_audiofile-0.2.0_libaudiofile_audiofile.h
+new file mode 100644
+index 00000000000..c33bead83f5
+--- /dev/null
++++ b/audio/osalp/dragonfly/patch-formatlib_audiofile-0.2.0_libaudiofile_audiofile.h
+@@ -0,0 +1,10 @@
++--- formatlib/audiofile-0.2.0/libaudiofile/audiofile.h.orig	2001-02-20 19:37:23 UTC
+++++ formatlib/audiofile-0.2.0/libaudiofile/audiofile.h
++@@ -28,6 +28,7 @@
++ #define AUDIOFILE_H
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ #include <aupvlist.h>
++ 
++ #define LIBAUDIOFILE_MAJOR_VERSION 0
+diff --git a/audio/osalp/dragonfly/patch-formatlib_audiofile-0.2.0_libaudiofile_modules.h b/audio/osalp/dragonfly/patch-formatlib_audiofile-0.2.0_libaudiofile_modules.h
+new file mode 100644
+index 00000000000..fafd376f9d7
+--- /dev/null
++++ b/audio/osalp/dragonfly/patch-formatlib_audiofile-0.2.0_libaudiofile_modules.h
+@@ -0,0 +1,10 @@
++--- formatlib/audiofile-0.2.0/libaudiofile/modules.h.orig	2001-02-20 19:37:23 UTC
+++++ formatlib/audiofile-0.2.0/libaudiofile/modules.h
++@@ -26,6 +26,7 @@
++ #define MODULES_H
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ #include <audiofile.h>
++ #include "afinternal.h"
++ 
+diff --git a/audio/rawrec/dragonfly/patch-rawrec.h b/audio/rawrec/dragonfly/patch-rawrec.h
+new file mode 100644
+index 00000000000..c58d2ab5937
+--- /dev/null
++++ b/audio/rawrec/dragonfly/patch-rawrec.h
+@@ -0,0 +1,10 @@
++--- rawrec.h.intermediate	2019-11-10 07:30:20.000000000 +0000
+++++ rawrec.h
++@@ -7,6 +7,7 @@
++ #include <limits.h>
++ #include <sys/types.h>
++ 
+++#include <stdint.h>
++ /* GNU C allows us to use really long integers.  */
++ #ifdef __GNUC__
++ # define INT64_MAX 9223372036854775807LL
+diff --git a/audio/spectrogram/dragonfly/patch-sio.c b/audio/spectrogram/dragonfly/patch-sio.c
+new file mode 100644
+index 00000000000..302a01a2f5c
+--- /dev/null
++++ b/audio/spectrogram/dragonfly/patch-sio.c
+@@ -0,0 +1,10 @@
++--- sio.c.orig	2016-05-29 14:54:31 UTC
+++++ sio.c
++@@ -18,6 +18,7 @@
++ #include <assert.h>
++ #include <err.h>
++ #include <sndio.h>
+++#include <stdint.h>
++ #include <stdlib.h>
++ 
++ #include "sio.h"
+diff --git a/audio/xanalyser/dragonfly/patch-src_Scope.h b/audio/xanalyser/dragonfly/patch-src_Scope.h
+new file mode 100644
+index 00000000000..981e5259059
+--- /dev/null
++++ b/audio/xanalyser/dragonfly/patch-src_Scope.h
+@@ -0,0 +1,10 @@
++--- src/Scope.h.orig	2005-09-20 17:07:41 UTC
+++++ src/Scope.h
++@@ -15,6 +15,7 @@
++ #endif
++ #include <Xm/Xm.h>
++ 
+++#include <cstdint>
++ 
++ #include "Trans.h"
++ 
+diff --git a/audio/zinf/Makefile.DragonFly b/audio/zinf/Makefile.DragonFly
+index 77a43c9bf81..b669e418c1d 100644
+--- a/audio/zinf/Makefile.DragonFly
++++ b/audio/zinf/Makefile.DragonFly
+@@ -1 +1 @@
+-CXXFLAGS+=	-Wno-narrowing -fpermissive
++CXXFLAGS+=	-Wno-narrowing -fpermissive -D_WANT_STDINT
+diff --git a/benchmarks/fhourstones/dragonfly/patch-Game.c b/benchmarks/fhourstones/dragonfly/patch-Game.c
+new file mode 100644
+index 00000000000..c2442ffda97
+--- /dev/null
++++ b/benchmarks/fhourstones/dragonfly/patch-Game.c
+@@ -0,0 +1,10 @@
++--- Game.c.orig	2008-06-03 20:27:19 UTC
+++++ Game.c
++@@ -38,6 +38,7 @@
++ #define SIZE1 (H1*WIDTH)
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ typedef u_int64_t uint64;
++ typedef int64_t int64;
++ #if (SIZE1<=64)
+diff --git a/biology/fasta3/dragonfly/patch-src_map__db.c b/biology/fasta3/dragonfly/patch-src_map__db.c
+new file mode 100644
+index 00000000000..fcf37f0ffe5
+--- /dev/null
++++ b/biology/fasta3/dragonfly/patch-src_map__db.c
+@@ -0,0 +1,10 @@
++--- src/map_db.c.orig	2015-07-28 18:27:10 UTC
+++++ src/map_db.c
++@@ -36,6 +36,7 @@
++     sequence files will be as defined by their format
++ */
++ 
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+diff --git a/biology/stringtie/dragonfly/patch-gclib_GThreads.h b/biology/stringtie/dragonfly/patch-gclib_GThreads.h
+new file mode 100644
+index 00000000000..0704379f10d
+--- /dev/null
++++ b/biology/stringtie/dragonfly/patch-gclib_GThreads.h
+@@ -0,0 +1,10 @@
++--- gclib/GThreads.h.orig	2018-03-06 16:29:49 UTC
+++++ gclib/GThreads.h
++@@ -101,6 +101,7 @@ freely, subject to the following restric
++   #include <sched.h>
++   #include <unistd.h>
++ #endif
+++#include <stdint.h>
++ #include <stdlib.h>
++ #include <stdio.h>
++ #include <errno.h>
+diff --git a/converters/iconv/dragonfly/patch-lib_iconv.h b/converters/iconv/dragonfly/patch-lib_iconv.h
+new file mode 100644
+index 00000000000..deb3028d5ae
+--- /dev/null
++++ b/converters/iconv/dragonfly/patch-lib_iconv.h
+@@ -0,0 +1,10 @@
++--- lib/iconv.h.orig	2000-11-26 13:34:53 UTC
+++++ lib/iconv.h
++@@ -34,6 +34,7 @@
++ #define _ICONV_H_
++ 
++ #include <sys/types.h>	/* size_t */
+++#include <stdint.h>	/* uint*_t */
++ 
++ /*
++  * iconv_t:	charset conversion descriptor type
+diff --git a/databases/jlog/dragonfly/patch-jlog__config.h.in b/databases/jlog/dragonfly/patch-jlog__config.h.in
+new file mode 100644
+index 00000000000..0ea3a5bf1b9
+--- /dev/null
++++ b/databases/jlog/dragonfly/patch-jlog__config.h.in
+@@ -0,0 +1,10 @@
++--- jlog_config.h.in.intermediate	2019-11-10 13:45:57.000000000 +0000
+++++ jlog_config.h.in
++@@ -57,6 +57,7 @@
++ #undef HAVE_U_INTXX_T
++ #define IFS_CH '/'
++ 
+++#include <stdint.h>
++ #ifdef HAVE_STRING_H
++ #include <string.h>
++ #endif
+diff --git a/databases/libnvpair/dragonfly/patch-nvpair.h b/databases/libnvpair/dragonfly/patch-nvpair.h
+new file mode 100644
+index 00000000000..2ebbcb330c4
+--- /dev/null
++++ b/databases/libnvpair/dragonfly/patch-nvpair.h
+@@ -0,0 +1,10 @@
++--- nvpair.h.orig	2015-10-01 09:55:54 UTC
+++++ nvpair.h
++@@ -27,6 +27,7 @@
++ #define	_SYS_NVPAIR_H
++ 
++ #include <stdbool.h>
+++#include <stdint.h>
++ #include <sys/types.h>
++ #include <sys/time.h>
++ #include <sys/errno.h>
+diff --git a/databases/percona56-client/dragonfly/patch-include_my__timer.h b/databases/percona56-client/dragonfly/patch-include_my__timer.h
+new file mode 100644
+index 00000000000..268ffbd68c7
+--- /dev/null
++++ b/databases/percona56-client/dragonfly/patch-include_my__timer.h
+@@ -0,0 +1,10 @@
++--- include/my_timer.h.orig	2019-08-01 07:25:26 UTC
+++++ include/my_timer.h
++@@ -25,6 +25,7 @@
++   typedef timer_t   os_timer_t;
++ #elif HAVE_KQUEUE_TIMERS
++ # include <sys/types.h> /* uintptr_t */
+++# include <stdint.h>
++   typedef uintptr_t os_timer_t;
++ #endif
++ 
+diff --git a/databases/percona56-server/dragonfly/patch-include_my__timer.h b/databases/percona56-server/dragonfly/patch-include_my__timer.h
+new file mode 100644
+index 00000000000..268ffbd68c7
+--- /dev/null
++++ b/databases/percona56-server/dragonfly/patch-include_my__timer.h
+@@ -0,0 +1,10 @@
++--- include/my_timer.h.orig	2019-08-01 07:25:26 UTC
+++++ include/my_timer.h
++@@ -25,6 +25,7 @@
++   typedef timer_t   os_timer_t;
++ #elif HAVE_KQUEUE_TIMERS
++ # include <sys/types.h> /* uintptr_t */
+++# include <stdint.h>
++   typedef uintptr_t os_timer_t;
++ #endif
++ 
+diff --git a/deskutils/xmdiary/Makefile.DragonFly b/deskutils/xmdiary/Makefile.DragonFly
+index cfb387b07c3..b9811959f82 100644
+--- a/deskutils/xmdiary/Makefile.DragonFly
++++ b/deskutils/xmdiary/Makefile.DragonFly
+@@ -1,4 +1,6 @@
+ 
++CFLAGS+=	-D_WANT_STDINT
++
+ # zrj: union wait removal
+ dfly-patch:
+ 	${REINPLACE_CMD} -e 's@ifndef \(__FreeBSD__\)@if \!(defined(\1)||defined(__DragonFly__))@g'	\
+diff --git a/devel/ada-util/Makefile.DragonFly b/devel/ada-util/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/devel/ada-util/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/devel/agar/Makefile.DragonFly b/devel/agar/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/devel/agar/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/devel/agar/dragonfly/patch-core_types.h b/devel/agar/dragonfly/patch-core_types.h
+new file mode 100644
+index 00000000000..88ea7f823a9
+--- /dev/null
++++ b/devel/agar/dragonfly/patch-core_types.h
+@@ -0,0 +1,11 @@
++--- core/types.h.orig	2015-08-24 07:59:45 UTC
+++++ core/types.h
++@@ -19,6 +19,8 @@
++ # endif /* !_WIN32 */
++ #endif /* HAVE_CYGWIN */
++ 
+++#include <stdint.h>
+++
++ #ifndef _AGAR_HAVE_64BIT_H
++ # include <agar/config/have_64bit.h>
++ # define _AGAR_HAVE_64BIT_H_
+diff --git a/devel/bin86/Makefile.DragonFly b/devel/bin86/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/devel/bin86/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/devel/commoncpp/Makefile.DragonFly b/devel/commoncpp/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/devel/commoncpp/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/devel/commoncpp/dragonfly/patch-config.h.in b/devel/commoncpp/dragonfly/patch-config.h.in
+index 706e5374f49..fefd678474f 100644
+--- a/devel/commoncpp/dragonfly/patch-config.h.in
++++ b/devel/commoncpp/dragonfly/patch-config.h.in
+@@ -1,4 +1,4 @@
+---- config.h.in.orig	2010-11-01 00:10:18.000000000 +0200
++--- config.h.in.orig	2010-10-31 22:10:18 UTC
+ +++ config.h.in
+ @@ -38,7 +38,7 @@
+  #endif
+@@ -18,3 +18,13 @@
+  #define _XOPEN_SOURCE 600
+  #endif
+  
++@@ -108,6 +108,9 @@
++ #ifdef HAVE_SYS_TYPES_H
++ #include <sys/types.h>
++ #endif
+++#if 1 //def HAVE_STDINT_H
+++#include <stdint.h>
+++#endif
++     
++ 
++ 
+diff --git a/devel/evdev-proto/dragonfly/patch-input.h b/devel/evdev-proto/dragonfly/patch-input.h
+new file mode 100644
+index 00000000000..633142fb106
+--- /dev/null
++++ b/devel/evdev-proto/dragonfly/patch-input.h
+@@ -0,0 +1,10 @@
++--- input.h.intermediate	2019-11-08 17:58:26.000000000 +0000
+++++ input.h
++@@ -14,6 +14,7 @@
++ #include <sys/time.h>
++ #include <sys/ioccom.h>
++ #include <linux/types.h>
+++#include <stdint.h>
++ #endif
++ 
++ #include "input-event-codes.h"
+diff --git a/devel/fmake/Makefile.DragonFly b/devel/fmake/Makefile.DragonFly
+index e9fe2fccb50..8fc90b58116 100644
+--- a/devel/fmake/Makefile.DragonFly
++++ b/devel/fmake/Makefile.DragonFly
+@@ -1,6 +1,8 @@
+ FIDS=	cond job make suff proc dir main buf targ \
+ 	shell hash parse str util var for arch
+ 
++CFLAGS+=	-D_WANT_STDINT
++
+ post-patch:
+ .for F in ${FIDS}
+ 	@${REINPLACE_CMD} -e '/^__FBSDID/d' ${WRKSRC}/${F}.c
+diff --git a/devel/gdb761/files/patch-kgdb b/devel/gdb761/files/patch-kgdb
+index 6b21159503f..b3a4d8d755e 100644
+--- a/devel/gdb761/files/patch-kgdb
++++ b/devel/gdb761/files/patch-kgdb
+@@ -146,7 +146,7 @@
+ +CLEANFILES+=	bfd_stdint.h
+ +
+ +bfd_stdint.h:
+-+	touch ${.TARGET}
+++	echo "#include <stdint.h>" > ${.TARGET}
+ +
+ +.include <bsd.lib.mk>
+ --- /dev/null
+@@ -968,7 +968,7 @@
+ +	sh ${CONTRIBDIR}/observer.sh inc ${CONTRIBDIR}/doc/observer.texi ${.TARGET}
+ +
+ +gdb_stdint.h:
+-+	touch ${.TARGET}
+++	echo "#include <stdint.h>" > ${.TARGET}
+ +
+ +CLEANFILES+=	observer.h observer.inc gdb_stdint.h \
+ +		init.c xml-builtin.c common-agent.c
+diff --git a/devel/ksql/dragonfly/patch-ksql.h b/devel/ksql/dragonfly/patch-ksql.h
+new file mode 100755
+index 00000000000..6f4af3a8101
+--- /dev/null
++++ b/devel/ksql/dragonfly/patch-ksql.h
+@@ -0,0 +1,11 @@
++--- ksql.h.orig	2018-12-28 22:34:39 UTC
+++++ ksql.h
++@@ -17,6 +17,8 @@
++ #ifndef KSQL_H
++ #define KSQL_H
++ 
+++#include <stdint.h>
+++
++ #if !defined(__BEGIN_DECLS)
++ #  ifdef __cplusplus
++ #  define       __BEGIN_DECLS           extern "C" {
+diff --git a/devel/libaura/Makefile.DragonFly b/devel/libaura/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/devel/libaura/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/devel/libcfu/dragonfly/patch-examples_large__hash.c b/devel/libcfu/dragonfly/patch-examples_large__hash.c
+new file mode 100644
+index 00000000000..8ccac9894a0
+--- /dev/null
++++ b/devel/libcfu/dragonfly/patch-examples_large__hash.c
+@@ -0,0 +1,10 @@
++--- examples/large_hash.c.orig	2013-05-25 12:29:43 UTC
+++++ examples/large_hash.c
++@@ -4,6 +4,7 @@
++  */
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ #include <stdio.h>
++ #include <string.h>
+diff --git a/devel/librevisa/dragonfly/patch-include_visatype.h b/devel/librevisa/dragonfly/patch-include_visatype.h
+new file mode 100644
+index 00000000000..e36845e6f80
+--- /dev/null
++++ b/devel/librevisa/dragonfly/patch-include_visatype.h
+@@ -0,0 +1,10 @@
++--- include/visatype.h.orig	2013-01-07 10:35:29 UTC
+++++ include/visatype.h
++@@ -71,6 +71,7 @@ typedef _VI_SIGNED __int64 ViInt64;
++ #elif defined(__GNUC__) && (__GNUC__ >= 3)
++ #include <limits.h>
++ #include <sys/types.h>
+++#include <stdint.h>
++ typedef u_int64_t            ViUInt64;
++ typedef int64_t              ViInt64;
++ #define _VI_INT64_UINT64_DEFINED
+diff --git a/devel/libsmpp34/dragonfly/patch-src_smpp34__structs.h b/devel/libsmpp34/dragonfly/patch-src_smpp34__structs.h
+new file mode 100755
+index 00000000000..f52ae020261
+--- /dev/null
++++ b/devel/libsmpp34/dragonfly/patch-src_smpp34__structs.h
+@@ -0,0 +1,10 @@
++--- src/smpp34_structs.h.intermediate	2019-11-10 16:28:30.000000000 +0000
+++++ src/smpp34_structs.h
++@@ -24,6 +24,7 @@
++ #define _STB_H_
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ #define SMALL_BUFF      30
++ /* Identify PDUs ident ********************************************************/
+diff --git a/devel/libsysctlmibinfo/dragonfly/patch-sysctlmibinfo.h b/devel/libsysctlmibinfo/dragonfly/patch-sysctlmibinfo.h
+new file mode 100755
+index 00000000000..3d044c49fe5
+--- /dev/null
++++ b/devel/libsysctlmibinfo/dragonfly/patch-sysctlmibinfo.h
+@@ -0,0 +1,10 @@
++--- sysctlmibinfo.h.orig	2019-03-14 22:58:19 UTC
+++++ sysctlmibinfo.h
++@@ -33,6 +33,7 @@
++ #include <sys/types.h>
++ #include <sys/queue.h>
++ #include <sys/sysctl.h>
+++#include <stdint.h>
++ 
++ #define SYSCTLMIF_VERSION        1
++ #define SYSCTLMIF_MAXIDLEVEL     CTL_MAXNAME
+diff --git a/devel/libuutil/Makefile.DragonFly b/devel/libuutil/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/devel/libuutil/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/devel/openzz/dragonfly/patch-src_zz.h b/devel/openzz/dragonfly/patch-src_zz.h
+new file mode 100755
+index 00000000000..acc8a35712e
+--- /dev/null
++++ b/devel/openzz/dragonfly/patch-src_zz.h
+@@ -0,0 +1,10 @@
++--- src/zz.h.orig	2002-06-03 11:06:13 UTC
+++++ src/zz.h
++@@ -30,6 +30,7 @@
++ //#include "trace.h"
++ 
++ #include <sys/types.h> /* for int32_t, ... */
+++#include <stdint.h>
++ #include <stdio.h> /* for FILE ... */
++ 
++ #ifdef  __cplusplus
+diff --git a/devel/ossp-xds/dragonfly/patch-xds.h.in b/devel/ossp-xds/dragonfly/patch-xds.h.in
+new file mode 100755
+index 00000000000..1018803fa61
+--- /dev/null
++++ b/devel/ossp-xds/dragonfly/patch-xds.h.in
+@@ -0,0 +1,10 @@
++--- xds.h.in.orig	2005-06-02 18:50:56 UTC
+++++ xds.h.in
++@@ -31,6 +31,7 @@
++ #ifndef __XDS_H__
++ #define __XDS_H__
++ 
+++#include <stdint.h>
++ #include <stdlib.h>
++ #include <stdarg.h>
++ #include <sys/types.h>
+diff --git a/devel/ptypes/dragonfly/patch-include_pport.h b/devel/ptypes/dragonfly/patch-include_pport.h
+new file mode 100644
+index 00000000000..9abbe93f1c1
+--- /dev/null
++++ b/devel/ptypes/dragonfly/patch-include_pport.h
+@@ -0,0 +1,11 @@
++--- include/pport.h.orig	2007-06-27 13:05:48 UTC
+++++ include/pport.h
++@@ -13,7 +13,7 @@
++ #define __PPORT_H__
++ 
++ 
++-#if defined(linux)
+++#if defined(linux) || defined(__DragonFly__)
++ #  include <stdint.h>     // for uintptr_t
++ #endif
++ 
+diff --git a/devel/tcl-trf/dragonfly/patch-generic_transformInt.h b/devel/tcl-trf/dragonfly/patch-generic_transformInt.h
+new file mode 100644
+index 00000000000..117dc9218de
+--- /dev/null
++++ b/devel/tcl-trf/dragonfly/patch-generic_transformInt.h
+@@ -0,0 +1,10 @@
++--- generic/transformInt.h.intermediate	2019-11-09 15:00:44.000000000 +0000
+++++ generic/transformInt.h
++@@ -33,6 +33,7 @@ extern "C" {
++ 
++ #include "transform.h"
++ #include <errno.h>
+++#include <stdint.h>
++ #include <string.h>
++ #include <assert.h>
++ 
+diff --git a/devel/tcllib/dragonfly/patch-modules_sha1_sha256.h b/devel/tcllib/dragonfly/patch-modules_sha1_sha256.h
+old mode 100644
+new mode 100755
+index 1a0ddaf6004..f805b27fa71
+--- a/devel/tcllib/dragonfly/patch-modules_sha1_sha256.h
++++ b/devel/tcllib/dragonfly/patch-modules_sha1_sha256.h
+@@ -1,6 +1,20 @@
+---- modules/sha1/sha256.h.orig	2016-02-04 05:14:14 UTC
++--- modules/sha1/sha256.h.orig	2017-08-07 23:35:08 UTC
+ +++ modules/sha1/sha256.h
+-@@ -42,12 +42,6 @@
++@@ -29,30 +29,13 @@
++ #ifndef _SHA256_H
++ #define _SHA256_H
++ 
++-#if HAVE_INTTYPES_H
++-# include <inttypes.h>
++-#else
++-# if HAVE_STDINT_H
++-#  include <stdint.h>
++-# endif
++-#endif
+++#include <stdint.h>
++ 
++ #define SHA256_HASH_SIZE 32
++ 
+  /* Hash size in 32-bit words */
+  #define SHA256_HASH_WORDS 8
+  
+@@ -10,6 +24,11 @@
+ -typedef unsigned long long  uint64_t;
+ -#endif
+ -
+- #if !(defined(__hpux))
+- typedef unsigned int        uint32_t;
+- typedef unsigned char       uint8_t;
++-#if !(defined(__hpux))
++-typedef unsigned int        uint32_t;
++-typedef unsigned char       uint8_t;
++-#endif
++-
++ struct _SHA256Context {
++   uint64_t totalLength;
++   uint32_t hash[SHA256_HASH_WORDS];
+diff --git a/dns/nslint/dragonfly/patch-configure b/dns/nslint/dragonfly/patch-configure
+new file mode 100644
+index 00000000000..6b8120f5710
+--- /dev/null
++++ b/dns/nslint/dragonfly/patch-configure
+@@ -0,0 +1,12 @@
++Fix improper checking of int32_t
++
++--- configure.intermediate	2019-11-10 13:36:16.000000000 +0000
+++++ configure
++@@ -5580,6 +5580,7 @@ cat >>conftest.$ac_ext <<_ACEOF
++ #	include "confdefs.h"
++ #	include <sys/types.h>
++ #	if STDC_HEADERS
+++#	include <stdint.h>
++ #	include <stdlib.h>
++ #	include <stddef.h>
++ #	endif
+diff --git a/dns/p5-Net-DNS-ToolKit/Makefile.DragonFly b/dns/p5-Net-DNS-ToolKit/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/dns/p5-Net-DNS-ToolKit/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/emulators/lisaem/dragonfly/patch-include_vars.h b/emulators/lisaem/dragonfly/patch-include_vars.h
+new file mode 100644
+index 00000000000..cbf9efd4851
+--- /dev/null
++++ b/emulators/lisaem/dragonfly/patch-include_vars.h
+@@ -0,0 +1,10 @@
++--- include/vars.h.orig	2007-12-04 16:57:08 UTC
+++++ include/vars.h
++@@ -237,6 +237,7 @@
++ 
++ 
++ // include all the includes we'll (might) need (and want)
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+diff --git a/games/battletanks/Makefile.DragonFly b/games/battletanks/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/games/battletanks/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/games/d2x/Makefile.DragonFly b/games/d2x/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/games/d2x/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/games/heretic/Makefile.DragonFly b/games/heretic/Makefile.DragonFly
+index e41fb4fb283..f98e5073343 100644
+--- a/games/heretic/Makefile.DragonFly
++++ b/games/heretic/Makefile.DragonFly
+@@ -1,4 +1,6 @@
+ 
++CFLAGS+=	-D_WANT_STDINT
++
+ dfly-patch:
+ 	${REINPLACE_CMD} -e 's@-I/usr/include/sys@@g'			\
+ 		${WRKSRC}/sndserv/Makefile
+diff --git a/games/moria/Makefile.DragonFly b/games/moria/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/games/moria/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/games/polyglot/Makefile.DragonFly b/games/polyglot/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/games/polyglot/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/games/searchandrescue/Makefile.DragonFly b/games/searchandrescue/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/games/searchandrescue/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/games/tomenet/Makefile.DragonFly b/games/tomenet/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/games/tomenet/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/games/xtux/dragonfly/patch-src_common_xtux.h b/games/xtux/dragonfly/patch-src_common_xtux.h
+new file mode 100644
+index 00000000000..68c783b21b2
+--- /dev/null
++++ b/games/xtux/dragonfly/patch-src_common_xtux.h
+@@ -0,0 +1,8 @@
++--- src/common/xtux.h.orig	2003-01-30 01:51:18 UTC
+++++ src/common/xtux.h
++@@ -1,4 +1,5 @@
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ /* Some libraries on some systems do not define types we need. */
++ 
+diff --git a/graphics/exiftags/dragonfly/patch-exif.h b/graphics/exiftags/dragonfly/patch-exif.h
+new file mode 100644
+index 00000000000..72ebf5f4950
+--- /dev/null
++++ b/graphics/exiftags/dragonfly/patch-exif.h
+@@ -0,0 +1,10 @@
++--- exif.h.orig	2007-12-16 03:44:32 UTC
+++++ exif.h
++@@ -45,6 +45,7 @@
++ #define _EXIF_H
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ 
++ /*
+diff --git a/graphics/hppsmtools/dragonfly/patch-exif.h b/graphics/hppsmtools/dragonfly/patch-exif.h
+new file mode 100644
+index 00000000000..efe406220f4
+--- /dev/null
++++ b/graphics/hppsmtools/dragonfly/patch-exif.h
+@@ -0,0 +1,10 @@
++--- exif.h.intermediate	2019-11-10 12:49:38.000000000 +0000
+++++ exif.h
++@@ -35,6 +35,7 @@ msdemlei@tucana.harvard.edu */
++ #ifndef _EXIF_H
++ #define _EXIF_H
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ /* 
++ Predefined tags:  hi and lo bytes (I have to do it this way since
+diff --git a/graphics/libvisual/dragonfly/patch-libvisual_lv__types.h b/graphics/libvisual/dragonfly/patch-libvisual_lv__types.h
+new file mode 100644
+index 00000000000..8c139bb5008
+--- /dev/null
++++ b/graphics/libvisual/dragonfly/patch-libvisual_lv__types.h
+@@ -0,0 +1,10 @@
++--- libvisual/lv_types.h.orig	2005-01-01 14:11:56 UTC
+++++ libvisual/lv_types.h
++@@ -25,6 +25,7 @@
++ #define _LV_TYPES_H
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ #ifdef __cplusplus
++ extern "C" {
+diff --git a/graphics/libvisual04/dragonfly/patch-libvisual_lv__types.h b/graphics/libvisual04/dragonfly/patch-libvisual_lv__types.h
+new file mode 100644
+index 00000000000..2249fa4f23c
+--- /dev/null
++++ b/graphics/libvisual04/dragonfly/patch-libvisual_lv__types.h
+@@ -0,0 +1,10 @@
++--- libvisual/lv_types.h.intermediate	2019-11-09 14:42:21.000000000 +0000
+++++ libvisual/lv_types.h
++@@ -30,6 +30,7 @@
++ #include <stdint.h>
++ #else
++ #include <sys/types.h>
+++#include <stdint.h>
++ #endif /* !VISUAL_OS_WIN32 */
++ 
++ VISUAL_BEGIN_DECLS
+diff --git a/graphics/mesa-dri/dragonfly/patch-include_GL_glx.h b/graphics/mesa-dri/dragonfly/patch-include_GL_glx.h
+new file mode 100644
+index 00000000000..6711dc6d89e
+--- /dev/null
++++ b/graphics/mesa-dri/dragonfly/patch-include_GL_glx.h
+@@ -0,0 +1,10 @@
++--- include/GL/glx.h.orig	2019-01-17 11:26:22 UTC
+++++ include/GL/glx.h
++@@ -30,6 +30,7 @@
++ #include <X11/Xlib.h>
++ #include <X11/Xutil.h>
++ #include <GL/gl.h>
+++#include <stdint.h>	/* for int64_t */
++ 
++ 
++ #if defined(USE_MGL_NAMESPACE)
+diff --git a/graphics/mesa-dri/dragonfly/patch-include_drm-uapi_drm.h b/graphics/mesa-dri/dragonfly/patch-include_drm-uapi_drm.h
+new file mode 100644
+index 00000000000..af9aa0b4b4a
+--- /dev/null
++++ b/graphics/mesa-dri/dragonfly/patch-include_drm-uapi_drm.h
+@@ -0,0 +1,10 @@
++--- include/drm-uapi/drm.h.orig	2019-01-17 11:26:22 UTC
+++++ include/drm-uapi/drm.h
++@@ -46,6 +46,7 @@ typedef unsigned int drm_handle_t;
++ 
++ #include <sys/ioccom.h>
++ #include <sys/types.h>
+++#include <stdint.h>
++ typedef int8_t   __s8;
++ typedef uint8_t  __u8;
++ typedef int16_t  __s16;
+diff --git a/graphics/mmrecover/dragonfly/patch-mmrecover.c b/graphics/mmrecover/dragonfly/patch-mmrecover.c
+new file mode 100644
+index 00000000000..afc95a01573
+--- /dev/null
++++ b/graphics/mmrecover/dragonfly/patch-mmrecover.c
+@@ -0,0 +1,10 @@
++--- mmrecover.c.orig	2009-08-16 09:21:26 UTC
+++++ mmrecover.c
++@@ -2,6 +2,7 @@
++ 
++ #include <err.h>
++ #include <fcntl.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <unistd.h>
+diff --git a/graphics/svgalib/dragonfly/patch-src_joystick_joydev.h b/graphics/svgalib/dragonfly/patch-src_joystick_joydev.h
+new file mode 100644
+index 00000000000..2f27eaead88
+--- /dev/null
++++ b/graphics/svgalib/dragonfly/patch-src_joystick_joydev.h
+@@ -0,0 +1,10 @@
++--- src/joystick/joydev.h.intermediate	2019-11-09 14:46:52.000000000 +0000
+++++ src/joystick/joydev.h
++@@ -13,6 +13,7 @@
++ 
++ #include <sys/ioctl.h> /* for _IOR(x) and _IOW(x) macros */ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ /*
++  * IOCTL commands for joystick driver
++  */
+diff --git a/graphics/weston/files/patch-src_kbdev.c b/graphics/weston/files/patch-src_kbdev.c
+index 04e16deee72..3a07ead3307 100644
+--- a/graphics/weston/files/patch-src_kbdev.c
++++ b/graphics/weston/files/patch-src_kbdev.c
+@@ -1,6 +1,6 @@
+ --- /dev/null	2015-10-10 13:36:27 +0200
+ +++ src/kbdev.c
+-@@ -0,0 +1,253 @@
++@@ -0,0 +1,254 @@
+ +/*
+ + * Copyright (c) 2015  Imre Vadasz.  All Rights Reserved.
+ + *
+@@ -30,6 +30,7 @@
+ +#include <sys/ioctl.h>
+ +#include <sys/kbio.h>
+ +
+++#include <stdint.h>
+ +#include <stdlib.h>
+ +#include <string.h>
+ +#include <err.h>
+diff --git a/lang/retro12/dragonfly/patch-source_interfaces_retro-unix.c b/lang/retro12/dragonfly/patch-source_interfaces_retro-unix.c
+new file mode 100644
+index 00000000000..95b2f09c8a6
+--- /dev/null
++++ b/lang/retro12/dragonfly/patch-source_interfaces_retro-unix.c
+@@ -0,0 +1,10 @@
++--- source/interfaces/retro-unix.c.orig	2019-08-12 17:00:59 UTC
+++++ source/interfaces/retro-unix.c
++@@ -24,6 +24,7 @@
++ #include <errno.h>
++ #include <math.h>
++ #include <signal.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+diff --git a/mail/thunderbird/Makefile.DragonFly b/mail/thunderbird/Makefile.DragonFly
+index f5ecac8e4b6..2bcf2e4d50d 100644
+--- a/mail/thunderbird/Makefile.DragonFly
++++ b/mail/thunderbird/Makefile.DragonFly
+@@ -6,6 +6,8 @@ MAKE_ENV+=		AR=/usr/bin/ar LD=/usr/bin/ld \
+ MOZ_OPTIONS+=	--host=${ARCH}-dports-${OPSYS:tl}${OSREL}
+ MOZ_OPTIONS+=	--disable-webrtc
+ 
++CFLAGS+=	-D_WANT_STDINT
++
+ dfly-patch:
+ 	# disable SCTP
+ 	${REINPLACE_CMD} -e 's|MOZ_SCTP|MOZ_DISABLE_SCTP|' \
+diff --git a/math/combblas/dragonfly/patch-include_CombBLAS_mmio.h b/math/combblas/dragonfly/patch-include_CombBLAS_mmio.h
+new file mode 100644
+index 00000000000..22bed4cf884
+--- /dev/null
++++ b/math/combblas/dragonfly/patch-include_CombBLAS_mmio.h
+@@ -0,0 +1,10 @@
++--- include/CombBLAS/mmio.h.orig	2019-11-09 18:36:50.000000000 +0000
+++++ include/CombBLAS/mmio.h
++@@ -14,6 +14,7 @@
++ #define MM_MAX_TOKEN_LENGTH 64
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ typedef char MM_typecode[4];
++ 
+diff --git a/math/flintqs/Makefile.DragonFly b/math/flintqs/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/math/flintqs/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/math/opensolaris-libm/Makefile.DragonFly b/math/opensolaris-libm/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/math/opensolaris-libm/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/math/p5-Math-Random-MT/dragonfly/patch-mt.h b/math/p5-Math-Random-MT/dragonfly/patch-mt.h
+new file mode 100755
+index 00000000000..1aa393b962e
+--- /dev/null
++++ b/math/p5-Math-Random-MT/dragonfly/patch-mt.h
+@@ -0,0 +1,11 @@
++--- mt.h.orig	2014-01-14 10:10:11 UTC
+++++ mt.h
++@@ -3,7 +3,7 @@
++ 
++ #if defined(_MSC_VER) && (_MSC_VER < 1600) // for MS Visual Studio prior to 2010
++ typedef unsigned __int32 uint32_t;
++-#elif defined(__linux__) || defined(__GLIBC__) || defined(__WIN32__) || defined(_MSC_VER) || defined(__APPLE__) || defined(__GNU__)
+++#elif defined(__linux__) || defined(__GLIBC__) || defined(__WIN32__) || defined(_MSC_VER) || defined(__APPLE__) || defined(__GNU__) || defined(__DragonFly__)
++ #include <stdint.h>
++ #elif defined(__osf__)
++ #include <inttypes.h>
+diff --git a/math/p5-Statistics-CaseResampling/dragonfly/patch-mt.h b/math/p5-Statistics-CaseResampling/dragonfly/patch-mt.h
+new file mode 100644
+index 00000000000..00bdfb9bc30
+--- /dev/null
++++ b/math/p5-Statistics-CaseResampling/dragonfly/patch-mt.h
+@@ -0,0 +1,11 @@
++--- mt.h.orig	2013-05-14 16:30:28 UTC
+++++ mt.h
++@@ -3,7 +3,7 @@
++ 
++ #if defined(_MSC_VER)
++ typedef unsigned __int32 uint32_t;
++-#elif defined(__linux__) || defined(__GLIBC__) || defined(__WIN32__) || defined(__APPLE__)
+++#elif defined(__linux__) || defined(__GLIBC__) || defined(__WIN32__) || defined(__APPLE__) || defined(__DragonFly__)
++ #include <stdint.h>
++ #elif defined(__osf__)
++ #include <inttypes.h>
+diff --git a/misc/libpri/Makefile.DragonFly b/misc/libpri/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/misc/libpri/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/misc/mbuffer/dragonfly/patch-mbconf.h b/misc/mbuffer/dragonfly/patch-mbconf.h
+new file mode 100644
+index 00000000000..a5bc5f80f6c
+--- /dev/null
++++ b/misc/mbuffer/dragonfly/patch-mbconf.h
+@@ -0,0 +1,10 @@
++--- mbconf.h.orig	2019-10-17 18:39:06 UTC
+++++ mbconf.h
++@@ -38,6 +38,7 @@
++ #include <fcntl.h>
++ #include <limits.h>
++ #include <semaphore.h>
+++#include <stdint.h>
++ #include <unistd.h>
++ 
++ #ifndef O_LARGEFILE
+diff --git a/misc/team/dragonfly/patch-team.c b/misc/team/dragonfly/patch-team.c
+index f6b9dfc47ca..21103e4c824 100644
+--- a/misc/team/dragonfly/patch-team.c
++++ b/misc/team/dragonfly/patch-team.c
+@@ -1,10 +1,11 @@
+ --- team.c.intermediate	2019-11-08 19:05:41.000000000 +0000
+ +++ team.c
+-@@ -86,6 +86,10 @@ static char Notice[] =
++@@ -86,6 +86,11 @@ static char Notice[] =
+  #include <sys/file.h>
+  #include <sys/stat.h>
+  #include <fcntl.h>
+ +#include <time.h>
+++#include <stdint.h>
+ +#include <stdlib.h>
+ +#include <string.h>
+ +#include <unistd.h>	/* for lseek() */
+diff --git a/misc/window/dragonfly/patch-ww.h b/misc/window/dragonfly/patch-ww.h
+new file mode 100644
+index 00000000000..659d6113bae
+--- /dev/null
++++ b/misc/window/dragonfly/patch-ww.h
+@@ -0,0 +1,10 @@
++--- ww.h.orig	2008-07-12 06:05:22 UTC
+++++ ww.h
++@@ -38,6 +38,7 @@
++  */
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ #ifdef OLD_TTY
++ #include <sgtty.h>
+diff --git a/misc/xtar/Makefile.DragonFly b/misc/xtar/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/misc/xtar/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/misc/xtar/dragonfly/patch-common_stat.c b/misc/xtar/dragonfly/patch-common_stat.c
+new file mode 100755
+index 00000000000..2c9022b7066
+--- /dev/null
++++ b/misc/xtar/dragonfly/patch-common_stat.c
+@@ -0,0 +1,10 @@
++--- common/stat.c.orig	1995-05-09 08:06:46 UTC
+++++ common/stat.c
++@@ -18,6 +18,7 @@
++  *
++  */
++ 
+++#include <sys/types.h>		/* For uchort */
++ #include <sys/stat.h>		/* For struct stat        */
++ #include <time.h>		/* For time_t             */
++ 
+diff --git a/misc/xtar/dragonfly/patch-common_stat.h b/misc/xtar/dragonfly/patch-common_stat.h
+new file mode 100755
+index 00000000000..ad79e702603
+--- /dev/null
++++ b/misc/xtar/dragonfly/patch-common_stat.h
+@@ -0,0 +1,10 @@
++--- common/stat.h.orig	1995-05-09 08:06:46 UTC
+++++ common/stat.h
++@@ -21,6 +21,7 @@
++ #ifndef	COMMON_FILE_H
++ #define	COMMON_FILE_H
++ 
+++#include <sys/types.h>     /* For ushort */
++ #include <time.h>          /* For time_t */
++ 
++ extern int stat_size(char *);		/* File size in bytes     */
+diff --git a/multimedia/atomicparsley/dragonfly/patch-AP__commons.h b/multimedia/atomicparsley/dragonfly/patch-AP__commons.h
+new file mode 100644
+index 00000000000..65b793110f9
+--- /dev/null
++++ b/multimedia/atomicparsley/dragonfly/patch-AP__commons.h
+@@ -0,0 +1,10 @@
++--- AP_commons.h.intermediate	2019-11-10 14:37:16.000000000 +0000
+++++ AP_commons.h
++@@ -21,6 +21,7 @@
++ 
++ #include <sys/types.h>
++ #include <sys/stat.h>
+++#include <stdint.h>
++ 
++ #ifndef _UINT8_T
++ #define _UINT8_T
+diff --git a/multimedia/dvb-apps/dragonfly/patch-util_dib3000-watch_dib-i2c.h b/multimedia/dvb-apps/dragonfly/patch-util_dib3000-watch_dib-i2c.h
+new file mode 100644
+index 00000000000..7d119571fbb
+--- /dev/null
++++ b/multimedia/dvb-apps/dragonfly/patch-util_dib3000-watch_dib-i2c.h
+@@ -0,0 +1,13 @@
++--- util/dib3000-watch/dib-i2c.h.intermediate	2019-11-10 14:29:31.000000000 +0000
+++++ util/dib3000-watch/dib-i2c.h
++@@ -8,7 +8,9 @@
++ #ifndef _DIB_I2C_H
++ #define _DIB_I2C_H
++ 
++-#ifdef __FreeBSD__
+++#include <stdint.h>
+++
+++#if defined(__FreeBSD__) || defined(__DragonFly__)
++ #define __u8 uint8_t
++ #define __u16 uint16_t
++ #define __u32 uint32_t
+diff --git a/multimedia/dvbsnoop/Makefile.DragonFly b/multimedia/dvbsnoop/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/multimedia/dvbsnoop/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/multimedia/libmpeg3/Makefile.DragonFly b/multimedia/libmpeg3/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/multimedia/libmpeg3/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/multimedia/libv4l/dragonfly/patch-include_linux_dvb_audio.h b/multimedia/libv4l/dragonfly/patch-include_linux_dvb_audio.h
+new file mode 100644
+index 00000000000..bd4b4295237
+--- /dev/null
++++ b/multimedia/libv4l/dragonfly/patch-include_linux_dvb_audio.h
+@@ -0,0 +1,10 @@
++--- include/linux/dvb/audio.h.intermediate	2019-11-10 13:56:01.000000000 +0000
+++++ include/linux/dvb/audio.h
++@@ -25,6 +25,7 @@
++ #define _DVBAUDIO_H_
++ 
++ #include <linux/types.h>
+++#include <stdint.h>
++ 
++ typedef enum {
++ 	AUDIO_SOURCE_DEMUX, /* Select the demux as the main source */
+diff --git a/multimedia/libv4l/dragonfly/patch-include_linux_dvb_dmx.h b/multimedia/libv4l/dragonfly/patch-include_linux_dvb_dmx.h
+new file mode 100644
+index 00000000000..f1ec63be66d
+--- /dev/null
++++ b/multimedia/libv4l/dragonfly/patch-include_linux_dvb_dmx.h
+@@ -0,0 +1,10 @@
++--- include/linux/dvb/dmx.h.intermediate	2019-11-08 20:26:51.000000000 +0000
+++++ include/linux/dvb/dmx.h
++@@ -26,6 +26,7 @@
++ 
++ #include <sys/types.h>
++ #include <time.h>
+++#include <stdint.h>
++ 
++ 
++ #define DMX_FILTER_SIZE 16
+diff --git a/multimedia/libv4l/dragonfly/patch-include_linux_dvb_frontend.h b/multimedia/libv4l/dragonfly/patch-include_linux_dvb_frontend.h
+new file mode 100644
+index 00000000000..18a2c3e2b1d
+--- /dev/null
++++ b/multimedia/libv4l/dragonfly/patch-include_linux_dvb_frontend.h
+@@ -0,0 +1,10 @@
++--- include/linux/dvb/frontend.h.intermediate	2019-11-10 14:15:36.000000000 +0000
+++++ include/linux/dvb/frontend.h
++@@ -27,6 +27,7 @@
++ #define _DVBFRONTEND_H_
++ 
++ #include <linux/types.h>
+++#include <stdint.h>
++ 
++ typedef enum fe_type {
++ 	FE_QPSK,
+diff --git a/multimedia/libv4l/dragonfly/patch-lib_include_libdvbv5_dvb-frontend.h b/multimedia/libv4l/dragonfly/patch-lib_include_libdvbv5_dvb-frontend.h
+new file mode 100644
+index 00000000000..ab1a165e632
+--- /dev/null
++++ b/multimedia/libv4l/dragonfly/patch-lib_include_libdvbv5_dvb-frontend.h
+@@ -0,0 +1,10 @@
++--- lib/include/libdvbv5/dvb-frontend.h.intermediate	2019-11-08 19:35:55.000000000 +0000
+++++ lib/include/libdvbv5/dvb-frontend.h
++@@ -27,6 +27,7 @@
++ #define _DVBFRONTEND_H_
++ 
++ #include <linux/types.h>
+++#include <stdint.h>
++ 
++ typedef enum fe_type {
++ 	FE_QPSK,
+diff --git a/multimedia/libv4l/dragonfly/patch-linux_dvb_net.h b/multimedia/libv4l/dragonfly/patch-linux_dvb_net.h
+new file mode 100644
+index 00000000000..df55dbd3130
+--- /dev/null
++++ b/multimedia/libv4l/dragonfly/patch-linux_dvb_net.h
+@@ -0,0 +1,10 @@
++--- ../linux/dvb/net.h.intermediate	2019-11-10 14:13:27.000000000 +0000
+++++ ../linux/dvb/net.h
++@@ -25,6 +25,7 @@
++ #define _DVBNET_H_
++ 
++ #include <linux/types.h>
+++#include <stdint.h>
++ 
++ struct dvb_net_if {
++ 	uint16_t pid;
+diff --git a/multimedia/mpgtx/dragonfly/patch-common.hh b/multimedia/mpgtx/dragonfly/patch-common.hh
+new file mode 100644
+index 00000000000..b1ecd418205
+--- /dev/null
++++ b/multimedia/mpgtx/dragonfly/patch-common.hh
+@@ -0,0 +1,12 @@
++--- common.hh	2019-11-06 09:53:43.000000000 +0000
+++++ common.hh
++@@ -211,6 +211,9 @@ extern int mpgtx_stack_current;
++ #if defined (_MACOSX) || defined (__FreeBSD__)
++ 		#define   _OFF_d   "%qd"
++ 		#define   _OFF_x   "%qx"
+++#elif defined(__DragonFly__)
+++		#define   _OFF_d   "%jd"
+++		#define   _OFF_x   "%jx"
++ #else
++ 		#define   _OFF_d   "%lld"
++ 		#define   _OFF_x   "%llx"
+diff --git a/multimedia/xawtv/dragonfly/patch-libng_grab-ng.h b/multimedia/xawtv/dragonfly/patch-libng_grab-ng.h
+new file mode 100644
+index 00000000000..0003a3819b6
+--- /dev/null
++++ b/multimedia/xawtv/dragonfly/patch-libng_grab-ng.h
+@@ -0,0 +1,10 @@
++--- libng/grab-ng.h.orig	2019-02-21 11:11:36 UTC
+++++ libng/grab-ng.h
++@@ -7,6 +7,7 @@
++ 
++ #include <pthread.h>
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ #include "devices.h"
++ #include "list.h"
+diff --git a/net-im/climm/Makefile.DragonFly b/net-im/climm/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/net-im/climm/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/net-mgmt/braa/dragonfly/patch-braaasn.h b/net-mgmt/braa/dragonfly/patch-braaasn.h
+new file mode 100755
+index 00000000000..51308449e9f
+--- /dev/null
++++ b/net-mgmt/braa/dragonfly/patch-braaasn.h
+@@ -0,0 +1,7 @@
++--- braaasn.h.orig	2006-09-27 11:35:13 UTC
+++++ braaasn.h
++@@ -1,3 +1,4 @@
+++#include <stdint.h>
++ 
++ #ifdef SOLARIS_SPARC
++ typedef uint32_t u_int32_t;
+diff --git a/net-mgmt/darkstat/dragonfly/patch-now.h b/net-mgmt/darkstat/dragonfly/patch-now.h
+new file mode 100755
+index 00000000000..51a43fc142a
+--- /dev/null
++++ b/net-mgmt/darkstat/dragonfly/patch-now.h
+@@ -0,0 +1,10 @@
++--- now.h.orig	2015-05-24 07:40:25 UTC
+++++ now.h
++@@ -16,6 +16,7 @@
++  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++  */
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ void now_init(void);
++ void now_update(void); /* once per event loop (in darkstat.c) */
+diff --git a/net/avahi-app/dragonfly/patch-avahi-compat-howl_include_salt_platform.h b/net/avahi-app/dragonfly/patch-avahi-compat-howl_include_salt_platform.h
+new file mode 100644
+index 00000000000..1a76c81dac9
+--- /dev/null
++++ b/net/avahi-app/dragonfly/patch-avahi-compat-howl_include_salt_platform.h
+@@ -0,0 +1,18 @@
++--- avahi-compat-howl/include/salt/platform.h.orig	2017-07-10 10:14:59 UTC
+++++ avahi-compat-howl/include/salt/platform.h
++@@ -71,6 +71,7 @@ typedef _int64						u_int64_t;
++ #	endif
++ #	include <sys/types.h>
++ #	include <stdlib.h>
+++#       include <stdint.h>
++ #	include <unistd.h>
++ 
++ #	define sw_snooze(SECS)		sleep(SECS)
++@@ -364,6 +365,7 @@ typedef int							sw_socklen_t;
++ 
++ #	include <sys/types.h>
++ #	include <signal.h>
+++#       include <stdint.h>
++ 
++ #	if defined(__Lynx__)
++ 
+diff --git a/net/cvsync/dragonfly/patch-common_rcslib.c b/net/cvsync/dragonfly/patch-common_rcslib.c
+new file mode 100755
+index 00000000000..e5b119e400a
+--- /dev/null
++++ b/net/cvsync/dragonfly/patch-common_rcslib.c
+@@ -0,0 +1,10 @@
++--- common/rcslib.c.intermediate	2019-11-10 15:20:35.000000000 +0000
+++++ common/rcslib.c
++@@ -30,6 +30,7 @@
++ #include <sys/types.h>
++ #include <sys/uio.h>
++ 
+++#include <stdint.h>
++ #include <stdlib.h>
++ 
++ #include <ctype.h>
+diff --git a/net/hlmaster/dragonfly/patch-lib_pfc++_include_pfc++_types.h b/net/hlmaster/dragonfly/patch-lib_pfc++_include_pfc++_types.h
+new file mode 100755
+index 00000000000..825be57c488
+--- /dev/null
++++ b/net/hlmaster/dragonfly/patch-lib_pfc++_include_pfc++_types.h
+@@ -0,0 +1,10 @@
++--- lib/pfc++/include/pfc++/types.h.orig	2001-07-12 22:29:34 UTC
+++++ lib/pfc++/include/pfc++/types.h
++@@ -51,6 +51,7 @@ typedef unsigned __int32 pfc_uint32;
++ #else
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ typedef int8_t           pfc_int8;
++ typedef int16_t          pfc_int16;
+diff --git a/net/howl/dragonfly/patch-include_salt_platform.h b/net/howl/dragonfly/patch-include_salt_platform.h
+new file mode 100755
+index 00000000000..2d43231de91
+--- /dev/null
++++ b/net/howl/dragonfly/patch-include_salt_platform.h
+@@ -0,0 +1,10 @@
++--- include/salt/platform.h.orig	2005-05-19 06:12:32 UTC
+++++ include/salt/platform.h
++@@ -76,6 +76,7 @@ typedef _int64						u_int64_t;
++ #		include <howl_config.h>
++ #	endif
++ #	include <sys/types.h>
+++#	include <stdint.h>
++ #	include <stdlib.h>
++ #	include <unistd.h>
++ 
+diff --git a/net/kamailio/dragonfly/patch-src_modules_tls_fortuna_rijndael.h b/net/kamailio/dragonfly/patch-src_modules_tls_fortuna_rijndael.h
+new file mode 100755
+index 00000000000..73270b7f73e
+--- /dev/null
++++ b/net/kamailio/dragonfly/patch-src_modules_tls_fortuna_rijndael.h
+@@ -0,0 +1,10 @@
++--- src/modules/tls/fortuna/rijndael.h.orig	2019-10-17 11:30:50 UTC
+++++ src/modules/tls/fortuna/rijndael.h
++@@ -21,6 +21,7 @@
++ #define _RIJNDAEL_H_
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ /* 1. Standard types for AES cryptography source code				*/
++ 
+diff --git a/net/openmpi/Makefile.DragonFly b/net/openmpi/Makefile.DragonFly
+index d2b529f2f04..74e09f0aefb 100644
+--- a/net/openmpi/Makefile.DragonFly
++++ b/net/openmpi/Makefile.DragonFly
+@@ -1 +1,3 @@
+ OPTIONS_DEFAULT:=	${OPTIONS_DEFAULT:NSLURM}
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/net/openmpi2/Makefile.DragonFly b/net/openmpi2/Makefile.DragonFly
+index d2b529f2f04..74e09f0aefb 100644
+--- a/net/openmpi2/Makefile.DragonFly
++++ b/net/openmpi2/Makefile.DragonFly
+@@ -1 +1,3 @@
+ OPTIONS_DEFAULT:=	${OPTIONS_DEFAULT:NSLURM}
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/net/openmpi3/Makefile.DragonFly b/net/openmpi3/Makefile.DragonFly
+index d2b529f2f04..74e09f0aefb 100644
+--- a/net/openmpi3/Makefile.DragonFly
++++ b/net/openmpi3/Makefile.DragonFly
+@@ -1 +1,3 @@
+ OPTIONS_DEFAULT:=	${OPTIONS_DEFAULT:NSLURM}
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/net/tcpslice/dragonfly/patch-gmt2local.c b/net/tcpslice/dragonfly/patch-gmt2local.c
+new file mode 100755
+index 00000000000..8eab4f4a1d6
+--- /dev/null
++++ b/net/tcpslice/dragonfly/patch-gmt2local.c
+@@ -0,0 +1,10 @@
++--- gmt2local.c.orig	2014-04-07 13:09:35 UTC
+++++ gmt2local.c
++@@ -26,6 +26,7 @@
++ #include <sys/types.h>
++ #include <sys/time.h>
++ 
+++#include <stdint.h>
++ #include <stdio.h>
++ #ifdef TIME_WITH_SYS_TIME
++ #include <time.h>
+diff --git a/net/udpxy/dragonfly/patch-udpxy.h b/net/udpxy/dragonfly/patch-udpxy.h
+new file mode 100755
+index 00000000000..8f69c10f5b3
+--- /dev/null
++++ b/net/udpxy/dragonfly/patch-udpxy.h
+@@ -0,0 +1,10 @@
++--- udpxy.h.orig	2012-07-16 17:20:03 UTC
+++++ udpxy.h
++@@ -22,6 +22,7 @@
++ #define UDPXY_H_0110081654
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ /* application error codes
++  *
+diff --git a/net/udpxy/dragonfly/patch-uopt.h b/net/udpxy/dragonfly/patch-uopt.h
+new file mode 100755
+index 00000000000..67d3ef71f67
+--- /dev/null
++++ b/net/udpxy/dragonfly/patch-uopt.h
+@@ -0,0 +1,10 @@
++--- uopt.h.orig	2012-07-16 17:20:03 UTC
+++++ uopt.h
++@@ -22,6 +22,7 @@
++ #define UOPT_H_0215082300
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <time.h>
++ #include <unistd.h>
+diff --git a/net/udpxy/dragonfly/patch-util.h b/net/udpxy/dragonfly/patch-util.h
+new file mode 100755
+index 00000000000..43de3e70f25
+--- /dev/null
++++ b/net/udpxy/dragonfly/patch-util.h
+@@ -0,0 +1,10 @@
++--- util.h.orig	2012-07-16 17:20:03 UTC
+++++ util.h
++@@ -22,6 +22,7 @@
++ #define UTILH_UDPXY_200712181853
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ 
++ struct timeval;
+diff --git a/net/vde/Makefile.DragonFly b/net/vde/Makefile.DragonFly
+index db7e70b7fd1..946e3bee2db 100644
+--- a/net/vde/Makefile.DragonFly
++++ b/net/vde/Makefile.DragonFly
+@@ -1,5 +1,7 @@
+ USES+=	alias
+ 
++CFLAGS+=	-D_WANT_STDINT
++
+ dfly-patch:
+ 	${REINPLACE_CMD} -e 's@net/if_tun.h@net/tun/if_tun.h@g' \
+ 		${WRKSRC}/vdetaplib/test.c \
+diff --git a/net/vncreflector/dragonfly/patch-rfblib.h b/net/vncreflector/dragonfly/patch-rfblib.h
+new file mode 100755
+index 00000000000..a6a178be27e
+--- /dev/null
++++ b/net/vncreflector/dragonfly/patch-rfblib.h
+@@ -0,0 +1,11 @@
++--- rfblib.h.orig	2003-01-11 09:44:02 UTC
+++++ rfblib.h
++@@ -17,6 +17,8 @@
++ #ifndef _REFLIB_RFBLIB_H
++ #define _REFLIB_RFBLIB_H
++ 
+++#include <stdint.h>
+++
++ /*
++  * Define data types used in the RFB protocol.
++  */
+diff --git a/news/nntpcache/Makefile.DragonFly b/news/nntpcache/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/news/nntpcache/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/news/nntpcache/dragonfly/patch-common_ntypes.h b/news/nntpcache/dragonfly/patch-common_ntypes.h
+new file mode 100644
+index 00000000000..40a6354a0cd
+--- /dev/null
++++ b/news/nntpcache/dragonfly/patch-common_ntypes.h
+@@ -0,0 +1,10 @@
++--- common/ntypes.h.orig	2004-04-11 11:43:50 UTC
+++++ common/ntypes.h
++@@ -6,6 +6,7 @@
++ #define NTYPES_H
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ #ifdef HAVE_SYS_PARAM_H
++ #  include <sys/param.h>
+diff --git a/ports-mgmt/pkg-devel/dragonfly/patch-libpkg_pkg.h.in b/ports-mgmt/pkg-devel/dragonfly/patch-libpkg_pkg.h.in
+new file mode 100644
+index 00000000000..d5ce80590a7
+--- /dev/null
++++ b/ports-mgmt/pkg-devel/dragonfly/patch-libpkg_pkg.h.in
+@@ -0,0 +1,10 @@
++--- libpkg/pkg.h.in.orig	2019-09-18 07:11:10 UTC
+++++ libpkg/pkg.h.in
++@@ -43,6 +43,7 @@ extern "C" {
++ #include <sys/cdefs.h>
++ #include <stdarg.h>
++ #include <stdbool.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ 
++ /* The expected name of the pkg(8) binary executable. */
+diff --git a/ports-mgmt/pkg-devel/dragonfly/patch-libpkg_private_pkg.h b/ports-mgmt/pkg-devel/dragonfly/patch-libpkg_private_pkg.h
+new file mode 100644
+index 00000000000..318ede4dad5
+--- /dev/null
++++ b/ports-mgmt/pkg-devel/dragonfly/patch-libpkg_private_pkg.h
+@@ -0,0 +1,10 @@
++--- libpkg/private/pkg.h.orig	2019-09-18 07:11:10 UTC
+++++ libpkg/private/pkg.h
++@@ -39,6 +39,7 @@
++ #include <archive.h>
++ #include <sqlite3.h>
++ #include <stdbool.h>
+++#include <stdint.h>
++ #include <uthash.h>
++ #include <utlist.h>
++ #include <utstring.h>
+diff --git a/ports-mgmt/pkg/dragonfly/patch-libpkg_pkg.h.in b/ports-mgmt/pkg/dragonfly/patch-libpkg_pkg.h.in
+new file mode 100644
+index 00000000000..d5ce80590a7
+--- /dev/null
++++ b/ports-mgmt/pkg/dragonfly/patch-libpkg_pkg.h.in
+@@ -0,0 +1,10 @@
++--- libpkg/pkg.h.in.orig	2019-09-18 07:11:10 UTC
+++++ libpkg/pkg.h.in
++@@ -43,6 +43,7 @@ extern "C" {
++ #include <sys/cdefs.h>
++ #include <stdarg.h>
++ #include <stdbool.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ 
++ /* The expected name of the pkg(8) binary executable. */
+diff --git a/ports-mgmt/pkg/dragonfly/patch-libpkg_private_pkg.h b/ports-mgmt/pkg/dragonfly/patch-libpkg_private_pkg.h
+new file mode 100644
+index 00000000000..318ede4dad5
+--- /dev/null
++++ b/ports-mgmt/pkg/dragonfly/patch-libpkg_private_pkg.h
+@@ -0,0 +1,10 @@
++--- libpkg/private/pkg.h.orig	2019-09-18 07:11:10 UTC
+++++ libpkg/private/pkg.h
++@@ -39,6 +39,7 @@
++ #include <archive.h>
++ #include <sqlite3.h>
++ #include <stdbool.h>
+++#include <stdint.h>
++ #include <uthash.h>
++ #include <utlist.h>
++ #include <utstring.h>
+diff --git a/print/ghostscript9-base/Makefile.DragonFly b/print/ghostscript9-base/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/print/ghostscript9-base/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/print/openprinting/dragonfly/patch-source_libpapi-common_papi.h b/print/openprinting/dragonfly/patch-source_libpapi-common_papi.h
+new file mode 100755
+index 00000000000..2ac99c01777
+--- /dev/null
++++ b/print/openprinting/dragonfly/patch-source_libpapi-common_papi.h
+@@ -0,0 +1,10 @@
++--- source/libpapi-common/papi.h.orig	2006-02-01 05:55:01 UTC
+++++ source/libpapi-common/papi.h
++@@ -10,6 +10,7 @@
++ 
++ #include <sys/types.h>
++ #include <time.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ 
++ #ifdef __cplusplus
+diff --git a/print/xmbibtex/Makefile.DragonFly b/print/xmbibtex/Makefile.DragonFly
+index 1c9fcbc85b4..3afc9d9b3a5 100644
+--- a/print/xmbibtex/Makefile.DragonFly
++++ b/print/xmbibtex/Makefile.DragonFly
+@@ -1 +1 @@
+-CXXFLAGS+=	-fpermissive
++CXXFLAGS+=	-fpermissive -D_WANT_STDINT
+diff --git a/print/xmbibtex/dragonfly/patch-refman.cc b/print/xmbibtex/dragonfly/patch-refman.cc
+new file mode 100755
+index 00000000000..73413dbb2f7
+--- /dev/null
++++ b/print/xmbibtex/dragonfly/patch-refman.cc
+@@ -0,0 +1,10 @@
++--- refman.cc.intermediate	2019-11-10 15:48:50.000000000 +0000
+++++ refman.cc
++@@ -15,6 +15,7 @@
++ #include <Xm/MessageB.h>
++ #include <Xm/Text.h>
++ #include <X11/Xmu/Editres.h>
+++#include <cstdint>
++ #include <stdio.h>
++ 
++ #include "nrutil.c"
+diff --git a/security/beid/dragonfly/patch-tests_unit_testlib.c b/security/beid/dragonfly/patch-tests_unit_testlib.c
+new file mode 100644
+index 00000000000..687c9c2acb7
+--- /dev/null
++++ b/security/beid/dragonfly/patch-tests_unit_testlib.c
+@@ -0,0 +1,10 @@
++--- tests/unit/testlib.c.orig	2019-09-04 10:11:22 UTC
+++++ tests/unit/testlib.c
++@@ -28,6 +28,7 @@
++ #include <unistd.h>
++ #endif
++ #include <pkcs11.h>
+++#include <stdint.h>
++ #include <stdlib.h>
++ #include <string.h>
++ #include <stdarg.h>
+diff --git a/security/chntpw/dragonfly/patch-ntreg.c b/security/chntpw/dragonfly/patch-ntreg.c
+new file mode 100755
+index 00000000000..c3d9bf68870
+--- /dev/null
++++ b/security/chntpw/dragonfly/patch-ntreg.c
+@@ -0,0 +1,10 @@
++--- ntreg.c.orig	2011-05-11 19:33:56 UTC
+++++ ntreg.c
++@@ -58,6 +58,7 @@
++  * 
++  */ 
++ 
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <ctype.h>
+diff --git a/security/chntpw/dragonfly/patch-ntreg.h b/security/chntpw/dragonfly/patch-ntreg.h
+new file mode 100755
+index 00000000000..0b0e8c45313
+--- /dev/null
++++ b/security/chntpw/dragonfly/patch-ntreg.h
+@@ -0,0 +1,11 @@
++--- ntreg.h.orig	2011-05-11 19:33:56 UTC
+++++ ntreg.h
++@@ -25,6 +25,8 @@
++ #ifndef _INCLUDE_NTREG_H
++ #define _INCLUDE_NTREG_H 1
++ 
+++#include <stdint.h>
+++
++ #define SZ_MAX     4096       /* Max unicode strlen before we truncate */
++ 
++ #define KEY_ROOT   0x2c         /* Type ID of ROOT key node */
+diff --git a/security/fwlogwatch/dragonfly/patch-main.h b/security/fwlogwatch/dragonfly/patch-main.h
+new file mode 100755
+index 00000000000..3df691cbb4e
+--- /dev/null
++++ b/security/fwlogwatch/dragonfly/patch-main.h
+@@ -0,0 +1,11 @@
++--- main.h.intermediate	2019-11-10 16:50:42.000000000 +0000
+++++ main.h
++@@ -22,6 +22,8 @@
++ 
++ /* i18n */
++ 
+++#include <stdint.h>
+++
++ #ifdef HAVE_GETTEXT
++ #include <libintl.h>
++ #define _(String) gettext(String)
+diff --git a/security/fwlogwatch/dragonfly/patch-resolve.c b/security/fwlogwatch/dragonfly/patch-resolve.c
+new file mode 100755
+index 00000000000..9be0f29bedb
+--- /dev/null
++++ b/security/fwlogwatch/dragonfly/patch-resolve.c
+@@ -0,0 +1,10 @@
++--- resolve.c.intermediate	2019-11-10 17:04:27.000000000 +0000
+++++ resolve.c
++@@ -2,6 +2,7 @@
++ /* $Id: resolve.c 741 2016-02-19 14:35:50Z bw $ */
++ 
++ #include <stdio.h>
+++#include <stdint.h>
++ #include <stdlib.h>
++ #include <string.h>
++ #include <sys/types.h>
+diff --git a/security/fwlogwatch/dragonfly/patch-utils.c b/security/fwlogwatch/dragonfly/patch-utils.c
+new file mode 100755
+index 00000000000..ecc199e76af
+--- /dev/null
++++ b/security/fwlogwatch/dragonfly/patch-utils.c
+@@ -0,0 +1,10 @@
++--- utils.c.orig	2019-11-10 17:40:46.000000000 +0000
+++++ utils.c
++@@ -1,6 +1,7 @@
++ /* Copyright (C) 2000-2016 Boris Wesslowski */
++ /* $Id: utils.c 741 2016-02-19 14:35:50Z bw $ */
++ 
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <unistd.h>
+diff --git a/security/kc24/Makefile.DragonFly b/security/kc24/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/security/kc24/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/security/libsectok/dragonfly/patch-atr.c b/security/libsectok/dragonfly/patch-atr.c
+new file mode 100644
+index 00000000000..4b65e793d13
+--- /dev/null
++++ b/security/libsectok/dragonfly/patch-atr.c
+@@ -0,0 +1,10 @@
++--- atr.c.orig	2001-09-27 15:37:24 UTC
+++++ atr.c
++@@ -46,6 +46,7 @@ such damages.
++ typedef long int32_t;
++ #else
++ #include <sys/types.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <string.h>
++ #endif
+diff --git a/security/sst/dragonfly/patch-sst.c b/security/sst/dragonfly/patch-sst.c
+new file mode 100755
+index 00000000000..4394d89049b
+--- /dev/null
++++ b/security/sst/dragonfly/patch-sst.c
+@@ -0,0 +1,10 @@
++--- sst.c.intermediate	2019-11-10 16:03:06.000000000 +0000
+++++ sst.c
++@@ -217,6 +217,7 @@ static const char rcsid[] = "$Header: /c
++ 
++ #include <stdio.h>
++ #include <unistd.h>
+++#include <stdint.h>
++ #include <stdlib.h>
++ #include <memory.h>
++ #include <errno.h>
+diff --git a/shells/oksh/Makefile.DragonFly b/shells/oksh/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/shells/oksh/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/sysutils/acpica-tools/dragonfly/patch-source_include_platform_acdragonfly.h b/sysutils/acpica-tools/dragonfly/patch-source_include_platform_acdragonfly.h
+new file mode 100644
+index 00000000000..7405cee538e
+--- /dev/null
++++ b/sysutils/acpica-tools/dragonfly/patch-source_include_platform_acdragonfly.h
+@@ -0,0 +1,12 @@
++--- source/include/platform/acdragonfly.h.orig	2019-10-18 16:06:45 UTC
+++++ source/include/platform/acdragonfly.h
++@@ -153,6 +153,9 @@
++ #define __ACDRAGONFLY_H_
++ 
++ #include <sys/types.h>
+++#ifndef _KERNEL
+++#include <stdint.h>
+++#endif
++ 
++ #ifdef __LP64__
++ #define ACPI_MACHINE_WIDTH              64
+diff --git a/sysutils/bsdhwmon/dragonfly/patch-global.h b/sysutils/bsdhwmon/dragonfly/patch-global.h
+new file mode 100755
+index 00000000000..14086e65466
+--- /dev/null
++++ b/sysutils/bsdhwmon/dragonfly/patch-global.h
+@@ -0,0 +1,10 @@
++--- global.h.orig	2015-12-06 14:00:18 UTC
+++++ global.h
++@@ -25,6 +25,7 @@ SUCH DAMAGE.
++ */
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ /*
++  * A list of hardware monitoring ASIC types.  Every entry in this enum
+diff --git a/sysutils/bsdhwmon/dragonfly/patch-smbus_io.c b/sysutils/bsdhwmon/dragonfly/patch-smbus_io.c
+index 178b855e5e7..466fc64dacb 100644
+--- a/sysutils/bsdhwmon/dragonfly/patch-smbus_io.c
++++ b/sysutils/bsdhwmon/dragonfly/patch-smbus_io.c
+@@ -1,10 +1,11 @@
+ --- smbus_io.c.orig	2015-12-06 16:00:18.000000000 +0200
+ +++ smbus_io.c
+-@@ -25,11 +25,17 @@ SUCH DAMAGE.
++@@ -25,11 +25,18 @@ SUCH DAMAGE.
+  */
+  
+  #include <sys/param.h>
+ +#ifdef __DragonFly__
+++#include <stdint.h>
+ +#include <dev/smbus/smb/smb.h>
+ +#else
+  #include <dev/smbus/smb.h>
+diff --git a/sysutils/cdrdao/Makefile.DragonFly b/sysutils/cdrdao/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/sysutils/cdrdao/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/sysutils/cpuid/dragonfly/patch-cpuid.c b/sysutils/cpuid/dragonfly/patch-cpuid.c
+new file mode 100755
+index 00000000000..df9bf61b345
+--- /dev/null
++++ b/sysutils/cpuid/dragonfly/patch-cpuid.c
+@@ -0,0 +1,10 @@
++--- cpuid.c.intermediate	2019-11-10 17:12:21.000000000 +0000
+++++ cpuid.c
++@@ -37,6 +37,7 @@
++ #include <fcntl.h>
++ #include <errno.h>
++ #include <unistd.h>
+++#include <stdint.h>
++ #include <stdlib.h>
++ #include <string.h>
++ #include <regex.h>
+diff --git a/sysutils/dupmerge/dragonfly/patch-dupmerge.c b/sysutils/dupmerge/dragonfly/patch-dupmerge.c
+new file mode 100755
+index 00000000000..4abff3d4f14
+--- /dev/null
++++ b/sysutils/dupmerge/dragonfly/patch-dupmerge.c
+@@ -0,0 +1,10 @@
++--- dupmerge.c.intermediate	2019-11-10 17:50:13.000000000 +0000
+++++ dupmerge.c
++@@ -110,6 +110,7 @@ Todo:
++ 
++  */
++ 
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>             // strndup,
+diff --git a/sysutils/fcode-utils/dragonfly/patch-shared_types.h b/sysutils/fcode-utils/dragonfly/patch-shared_types.h
+index 7b498263c6e..3b12cfc4d58 100644
+--- a/sysutils/fcode-utils/dragonfly/patch-shared_types.h
++++ b/sysutils/fcode-utils/dragonfly/patch-shared_types.h
+@@ -1,11 +1,12 @@
+ --- shared/types.h.intermediate	2019-05-13 07:30:56.000000000 +0000
+ +++ shared/types.h
+-@@ -39,7 +39,7 @@
++@@ -39,7 +39,8 @@
+   *
+   **************************************************************************** */
+  
+ -#if defined(__ppc__) && defined(__APPLE__) || defined (__FreeBSD__)
+ +#if defined(__ppc__) && defined(__APPLE__) || defined (__FreeBSD__) || defined(__DragonFly__)
+  #include <sys/types.h>
+++#include <stdint.h>
+  
+  typedef int8_t s8;
+diff --git a/sysutils/fstyp/Makefile.DragonFly b/sysutils/fstyp/Makefile.DragonFly
+new file mode 100644
+index 00000000000..659d0a09612
+--- /dev/null
++++ b/sysutils/fstyp/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WITH_STDINT
+diff --git a/sysutils/fstyp/dragonfly/patch-src_linux__fs.h b/sysutils/fstyp/dragonfly/patch-src_linux__fs.h
+new file mode 100755
+index 00000000000..982c0675f35
+--- /dev/null
++++ b/sysutils/fstyp/dragonfly/patch-src_linux__fs.h
+@@ -0,0 +1,11 @@
++--- src/linux_fs.h.orig	2008-11-09 16:32:20 UTc
+++++ src/linux_fs.h
++@@ -3,6 +3,8 @@
++    only designed to be able to check a magic number
++    in case no filesystem type was given. */
++ 
+++#include <stdint.h>
+++
++ #ifndef BLKGETSIZE
++ #ifndef _IO
++ /* pre-1.3.45 */
+diff --git a/sysutils/jstest-gtk/dragonfly/patch-src_linux_types.h b/sysutils/jstest-gtk/dragonfly/patch-src_linux_types.h
+new file mode 100755
+index 00000000000..345a97be071
+--- /dev/null
++++ b/sysutils/jstest-gtk/dragonfly/patch-src_linux_types.h
+@@ -0,0 +1,11 @@
++--- src/linux/types.h.intermediate	2019-11-10 17:06:38.000000000 +0000
+++++ src/linux/types.h
++@@ -29,6 +29,8 @@
++  * Simple types maping.
++  */
++ 
+++#include <stdint.h>
+++
++ #define __u8		uint8_t
++ #define __u16		uint16_t
++ #define __u32		uint32_t
+diff --git a/sysutils/kldpatch/dragonfly/patch-kldpatch.c b/sysutils/kldpatch/dragonfly/patch-kldpatch.c
+new file mode 100755
+index 00000000000..5e54935dc61
+--- /dev/null
++++ b/sysutils/kldpatch/dragonfly/patch-kldpatch.c
+@@ -0,0 +1,10 @@
++--- kldpatch.c.orig	2009-01-17 10:22:34 UTC
+++++ kldpatch.c
++@@ -101,6 +101,7 @@ static const char _default_table[] ="\
++ ";
++ 
++ 
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+diff --git a/sysutils/lbl-hf/Makefile.DragonFly b/sysutils/lbl-hf/Makefile.DragonFly
+new file mode 100644
+index 00000000000..15da714eae7
+--- /dev/null
++++ b/sysutils/lbl-hf/Makefile.DragonFly
+@@ -0,0 +1,2 @@
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/sysutils/mfid/dragonfly/patch-mfid.c b/sysutils/mfid/dragonfly/patch-mfid.c
+index a318190f3a4..1c2efe29433 100644
+--- a/sysutils/mfid/dragonfly/patch-mfid.c
++++ b/sysutils/mfid/dragonfly/patch-mfid.c
+@@ -1,5 +1,13 @@
+ --- mfid.c.orig	2016-04-26 21:50:29.000000000 +0200
+ +++ mfid.c	2019-06-30 11:00:59.793137000 +0200
++@@ -33,6 +33,7 @@
++ #include <sys/uio.h>
++ 
++ #include <stdarg.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+ @@ -41,6 +41,10 @@
+  #include <err.h>
+  #include <fcntl.h>
+diff --git a/sysutils/mptd/dragonfly/patch-mptd.h b/sysutils/mptd/dragonfly/patch-mptd.h
+index 9312205575a..14818e494bf 100644
+--- a/sysutils/mptd/dragonfly/patch-mptd.h
++++ b/sysutils/mptd/dragonfly/patch-mptd.h
+@@ -1,5 +1,13 @@
+ --- mptd.h.orig	2019-06-30 10:53:26.166368000 +0200
+ +++ mptd.h	2019-06-30 10:54:06.146961000 +0200
++@@ -29,6 +29,7 @@
++ #define	__MPTD_H__
++ 
++ #include <sys/cdefs.h>
+++#include <stdint.h>
++ 
++ #include <dev/disk/mpt/mpilib/mpi_type.h>
++ #include <dev/disk/mpt/mpilib/mpi.h>
+ @@ -35,6 +35,10 @@
+  #include <dev/mpt/mpilib/mpi_cnfg.h>
+  #include <dev/mpt/mpilib/mpi_raid.h>
+diff --git a/sysutils/node_exporter/dragonfly/patch-collector_kvm__bsd.c b/sysutils/node_exporter/dragonfly/patch-collector_kvm__bsd.c
+new file mode 100755
+index 00000000000..3aa76a23669
+--- /dev/null
++++ b/sysutils/node_exporter/dragonfly/patch-collector_kvm__bsd.c
+@@ -0,0 +1,10 @@
++--- collector/kvm_bsd.c.orig	2019-06-04 16:38:40 UTC
+++++ collector/kvm_bsd.c
++@@ -18,6 +18,7 @@
++ #include <kvm.h>
++ #include <limits.h>
++ #include <paths.h>
+++#include <stdint.h>
++ #include <stdlib.h>
++ 
++ int _kvm_swap_used_pages(uint64_t *out) {
+diff --git a/sysutils/node_exporter/dragonfly/patch-collector_kvm__bsd.go b/sysutils/node_exporter/dragonfly/patch-collector_kvm__bsd.go
+new file mode 100755
+index 00000000000..76ff3f9ffe0
+--- /dev/null
++++ b/sysutils/node_exporter/dragonfly/patch-collector_kvm__bsd.go
+@@ -0,0 +1,10 @@
++--- collector/kvm_bsd.go.orig	2019-06-04 16:38:40 UTC
+++++ collector/kvm_bsd.go
++@@ -22,6 +22,7 @@ import (
++ )
++ 
++ // #cgo LDFLAGS: -lkvm
+++// #include "stdint.h"
++ // #include "kvm_bsd.h"
++ import "C"
++ 
+diff --git a/sysutils/scan_ffs/dragonfly/patch-scan__ffs.c b/sysutils/scan_ffs/dragonfly/patch-scan__ffs.c
+new file mode 100755
+index 00000000000..5baca63d667
+--- /dev/null
++++ b/sysutils/scan_ffs/dragonfly/patch-scan__ffs.c
+@@ -0,0 +1,10 @@
++--- scan_ffs.c.orig	2006-10-21 19:02:50 UTC
+++++ scan_ffs.c
++@@ -28,6 +28,7 @@
++ #include <sys/types.h>
++ #include <sys/param.h>
++ #include <sys/fcntl.h>
+++#include <stdint.h>
++ #include <ufs/ufs/dinode.h>
++ #include <ufs/ffs/fs.h>
++ #include <unistd.h>
+diff --git a/sysutils/smartmontools/dragonfly/patch-cciss.cpp b/sysutils/smartmontools/dragonfly/patch-cciss.cpp
+new file mode 100644
+index 00000000000..b7361f6e85c
+--- /dev/null
++++ b/sysutils/smartmontools/dragonfly/patch-cciss.cpp
+@@ -0,0 +1,10 @@
++--- cciss.cpp.orig	2018-12-16 17:59:59 UTC
+++++ cciss.cpp
++@@ -8,6 +8,7 @@
++  * SPDX-License-Identifier: GPL-2.0-or-later
++  */
++ 
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <string.h>
++ #include <sys/types.h>
+diff --git a/sysutils/symon/dragonfly/patch-lib_percentages.c b/sysutils/symon/dragonfly/patch-lib_percentages.c
+new file mode 100755
+index 00000000000..7812925ebfb
+--- /dev/null
++++ b/sysutils/symon/dragonfly/patch-lib_percentages.c
+@@ -0,0 +1,10 @@
++--- lib/percentages.c.orig	2009-06-28 18:40:26 UTC
+++++ lib/percentages.c
++@@ -15,6 +15,7 @@
++  */
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ #define UQUAD_MAX ((u_int64_t)0-1)
++ #define QUAD_MAX ((int64_t)(UQUAD_MAX >> 1))
+diff --git a/textproc/bsdgrep/dragonfly/patch-util.c b/textproc/bsdgrep/dragonfly/patch-util.c
+new file mode 100755
+index 00000000000..2c7a70333b4
+--- /dev/null
++++ b/textproc/bsdgrep/dragonfly/patch-util.c
+@@ -0,0 +1,10 @@
++--- util.c.orig	2017-10-19 20:07:52 UTC
+++++ util.c
++@@ -43,6 +43,7 @@ __FBSDID("$FreeBSD: head/usr.bin/grep/ut
++ #include <fts.h>
++ #include <libgen.h>
++ #include <stdbool.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+diff --git a/textproc/confetti/dragonfly/patch-prscfl.h b/textproc/confetti/dragonfly/patch-prscfl.h
+new file mode 100755
+index 00000000000..351094269a6
+--- /dev/null
++++ b/textproc/confetti/dragonfly/patch-prscfl.h
+@@ -0,0 +1,10 @@
++--- prscfl.h.orig	2012-08-01 09:22:11 UTC
+++++ prscfl.h
++@@ -2,6 +2,7 @@
++ #define PRSCFL_H
++ 
++ #include <stdbool.h>
+++#include <stdint.h>
++ #include <sys/types.h>
++ 
++ typedef struct prscfl_yy_extra_type {
+diff --git a/textproc/kmflcomp/dragonfly/patch-include_kmfl.h b/textproc/kmflcomp/dragonfly/patch-include_kmfl.h
+new file mode 100644
+index 00000000000..0c3893ab98b
+--- /dev/null
++++ b/textproc/kmflcomp/dragonfly/patch-include_kmfl.h
+@@ -0,0 +1,10 @@
++--- include/kmfl.h.intermediate	2009-11-24 21:40:50.000000000 +0000
+++++ include/kmfl.h
++@@ -31,6 +31,7 @@ extern "C" {
++ #endif
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ #define FILE_VERSION	"1"
++ #define BASE_VERSION	"320"
+diff --git a/textproc/liblrdf/dragonfly/patch-lrdf__types.h b/textproc/liblrdf/dragonfly/patch-lrdf__types.h
+new file mode 100644
+index 00000000000..193fc8af5f9
+--- /dev/null
++++ b/textproc/liblrdf/dragonfly/patch-lrdf__types.h
+@@ -0,0 +1,10 @@
++--- lrdf_types.h.orig	2017-01-09 16:58:58 UTC
+++++ lrdf_types.h
++@@ -6,6 +6,7 @@ extern "C" {
++ #endif
++ 
++ #include <sys/types.h>
+++#include <stdint.h>
++ 
++ enum lrdf_objtype {
++ 	lrdf_uri,
+diff --git a/textproc/libnxml/dragonfly/patch-src_nxml__internal.h b/textproc/libnxml/dragonfly/patch-src_nxml__internal.h
+new file mode 100644
+index 00000000000..a696dbc96ba
+--- /dev/null
++++ b/textproc/libnxml/dragonfly/patch-src_nxml__internal.h
+@@ -0,0 +1,11 @@
++--- src/nxml_internal.h.orig	2007-01-17 17:22:26 UTC
+++++ src/nxml_internal.h
++@@ -19,6 +19,8 @@
++ #ifndef __N_XML_INTERNAL_H__
++ #define __N_XML_INTERNAL_H__
++ 
+++#include <stdint.h>
+++
++ /* Rule [4] */
++ #define __NXML_NAMESTARTCHARS \
++ 	  ((ch=__NXML_U8()) == ':' \
+diff --git a/www/chromium/Makefile.DragonFly b/www/chromium/Makefile.DragonFly
+index a3e21dc28a9..b8f08d736c2 100644
+--- a/www/chromium/Makefile.DragonFly
++++ b/www/chromium/Makefile.DragonFly
+@@ -5,6 +5,7 @@ USE_CLANG_FALLBACK=	default
+ # XXX - This is a hack to force llvm80 to use libc++ C++ includes instead of base's gcc
+ CXXFLAGS+=	-stdlib=libc++ -cxx-isystem ${LOCALBASE}/include/c++/v1 -I${LOCALBASE}/include
+ LDFLAGS=	-L${LOCALBASE}/lib/c++ -L${LOCALBASE}/lib -L /usr/lib -L /lib
++CFLAGS+=	-D_WANT_STDINT
+ 
+ # Since FreeBSD has libc++ in base we need to rely on DPorts' libc++
+ LIB_DEPENDS+=  	libc++.so.1:devel/libc++
+diff --git a/www/firefox-esr/Makefile.DragonFly b/www/firefox-esr/Makefile.DragonFly
+index c5a13037ded..46be5e030a0 100644
+--- a/www/firefox-esr/Makefile.DragonFly
++++ b/www/firefox-esr/Makefile.DragonFly
+@@ -4,6 +4,7 @@ OPTIONS_DEFAULT:=        ${OPTIONS_DEFAULT:NPULSEAUDIO}
+ # turn it off again
+ MOZ_OPTIONS+=	--disable-webrtc
+ CXXFLAGS+=	-Wno-multistatement-macros -Wno-class-memaccess
++CFLAGS+=	-D_WANT_STDINT
+ 
+ dfly-patch:
+ 	# disable SCTP
+diff --git a/www/firefox/Makefile.DragonFly b/www/firefox/Makefile.DragonFly
+index 656d53e14ee..49742683440 100644
+--- a/www/firefox/Makefile.DragonFly
++++ b/www/firefox/Makefile.DragonFly
+@@ -7,6 +7,7 @@ MOZ_OPTIONS+=	--disable-webrtc
+ MOZ_OPTIONS+=	--with-clang-path=${LOCALBASE}/llvm80/bin/clang \
+ 		--with-libclang-path=${LOCALBASE}/llvm80/lib
+ CXXFLAGS+=	-Wno-multistatement-macros -Wno-class-memaccess
++CFLAGS+=	-D_WANT_STDINT
+ 
+ dfly-patch:
+ 	# disable SCTP
+diff --git a/www/libhpack/Makefile.DragonFly b/www/libhpack/Makefile.DragonFly
+new file mode 100644
+index 00000000000..ec0d6da0936
+--- /dev/null
++++ b/www/libhpack/Makefile.DragonFly
+@@ -0,0 +1,3 @@
++
++# cmake crappy tests
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/www/obhttpd/Makefile.DragonFly b/www/obhttpd/Makefile.DragonFly
+index d06e9d988af..ecbaf321257 100644
+--- a/www/obhttpd/Makefile.DragonFly
++++ b/www/obhttpd/Makefile.DragonFly
+@@ -1,3 +1,6 @@
++# builds internal libc bcrypt
++CFLAGS+=	-D_WANT_STDINT
++
+ dfly-patch:
+ 	-${REINPLACE_CMD} -e 's/TAILQ_FOREACH_SAFE/TAILQ_FOREACH_MUTABLE/g' \
+ 		${WRKSRC}/usr.sbin/httpd/logger.c \
+diff --git a/www/qt5-webengine/Makefile.DragonFly b/www/qt5-webengine/Makefile.DragonFly
+index a1dd27b9d4e..1f223794110 100644
+--- a/www/qt5-webengine/Makefile.DragonFly
++++ b/www/qt5-webengine/Makefile.DragonFly
+@@ -25,3 +25,5 @@ dfly-patch:
+ 		${WRKSRC}/src/3rdparty/chromium/base/process/process_metrics_dragonfly.cc
+ 	${CP} ${WRKSRC}/src/3rdparty/chromium/base/sys_info_freebsd.cc \
+ 		${WRKSRC}/src/3rdparty/chromium/base/sys_info_dragonfly.cc
++	${REINPLACE_CMD} -e 's@uint64_t@__uint64_t@g' \
++		${WRKSRC}/src/3rdparty/chromium/third_party/webrtc/rtc_base/platform_thread_types.cc
+diff --git a/www/rssroll/Makefile.DragonFly b/www/rssroll/Makefile.DragonFly
+index e924eac89de..f154d1fbfa1 100644
+--- a/www/rssroll/Makefile.DragonFly
++++ b/www/rssroll/Makefile.DragonFly
+@@ -2,7 +2,7 @@ USES+=	ssl
+ CFLAGS+=	-I${OPENSSLINC}
+ LDFLAGS+=	-L${OPENSSLLIB}
+ 
+-CFLAGS+=	-Wno-stringop-overflow
++CFLAGS+=	-Wno-stringop-overflow -D_WANT_STDINT
+ 
+ # disable tests target that uses bsd.progs.mk
+ dfly-patch:
+diff --git a/www/squid_radius_auth/dragonfly/patch-md5.h b/www/squid_radius_auth/dragonfly/patch-md5.h
+new file mode 100644
+index 00000000000..18ea20f9554
+--- /dev/null
++++ b/www/squid_radius_auth/dragonfly/patch-md5.h
+@@ -0,0 +1,10 @@
++--- md5.h.intermediate	2019-11-10 12:05:11.000000000 +0000
+++++ md5.h
++@@ -29,6 +29,7 @@ typedef unsigned long int UINT4;
++ #endif
++ #endif
++ #include <sys/types.h>
+++#include <stdint.h>
++ typedef uint32_t UINT4;
++ 
++ /* PROTO_LIST is defined depending on how PROTOTYPES is defined above.
+diff --git a/www/tclhttpd/Makefile.DragonFly b/www/tclhttpd/Makefile.DragonFly
+index 413f619c947..31cba4b66f2 100644
+--- a/www/tclhttpd/Makefile.DragonFly
++++ b/www/tclhttpd/Makefile.DragonFly
+@@ -1,2 +1,2 @@
+ # gcc80 -Werror=format-overflow
+-CFLAGS+=	-Wformat=0
++CFLAGS+=	-Wformat=0 -D_WANT_STDINT
+diff --git a/www/thttpd/Makefile.DragonFly b/www/thttpd/Makefile.DragonFly
+new file mode 100644
+index 00000000000..fd58a8e893b
+--- /dev/null
++++ b/www/thttpd/Makefile.DragonFly
+@@ -0,0 +1,3 @@
++
++# tries to get funny w/ configure HAVE_INT64T and typedef long long int64_t
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/www/trafficserver/dragonfly/patch-include_tscore_ink__hrtime.h b/www/trafficserver/dragonfly/patch-include_tscore_ink__hrtime.h
+new file mode 100644
+index 00000000000..19619eac25b
+--- /dev/null
++++ b/www/trafficserver/dragonfly/patch-include_tscore_ink__hrtime.h
+@@ -0,0 +1,10 @@
++--- include/tscore/ink_hrtime.h.orig	2019-01-18 22:13:53 UTC
+++++ include/tscore/ink_hrtime.h
++@@ -34,6 +34,7 @@
++ #include "tscore/ink_assert.h"
++ #include <ctime>
++ #include <sys/time.h>
+++#include <cstdint>
++ #include <cstdlib>
++ typedef int64_t ink_hrtime;
++ 
+diff --git a/www/websh/dragonfly/patch-generic_logutl.c b/www/websh/dragonfly/patch-generic_logutl.c
+new file mode 100644
+index 00000000000..6e73a2e14ef
+--- /dev/null
++++ b/www/websh/dragonfly/patch-generic_logutl.c
+@@ -0,0 +1,10 @@
++--- ../generic/logutl.c.intermediate	2019-11-10 11:51:14.000000000 +0000
+++++ ../generic/logutl.c
++@@ -26,6 +26,7 @@
++ #include "log.h"
++ #include "webutl.h"
++ #include <sys/types.h>
+++#include <stdint.h>
++ #include "macros.h"
++ 
++ static char *severityName[] = { "none",
+diff --git a/x11-fm/rox-filer/dragonfly/patch-ROX-Filer_src_configure b/x11-fm/rox-filer/dragonfly/patch-ROX-Filer_src_configure
+new file mode 100644
+index 00000000000..ed846e8599e
+--- /dev/null
++++ b/x11-fm/rox-filer/dragonfly/patch-ROX-Filer_src_configure
+@@ -0,0 +1,11 @@
++--- ROX-Filer/src/configure.intermediate	2019-11-06 10:26:38.000000000 +0000
+++++ ROX-Filer/src/configure
++@@ -3921,7 +3921,7 @@ $as_echo "yes" >&6; }
++   $as_echo "#define LARGE_FILE_SUPPORT 1" >>confdefs.h
++ 
++   ;;
++-FreeBSD*)
+++FreeBSD*|DragonFly*)
++   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
++ $as_echo "yes" >&6; }
++   $as_echo "#define LARGE_FILE_SUPPORT 1" >>confdefs.h
+diff --git a/x11-toolkits/plib/dragonfly/patch-src_util_ul.h b/x11-toolkits/plib/dragonfly/patch-src_util_ul.h
+new file mode 100644
+index 00000000000..deac0dc6779
+--- /dev/null
++++ b/x11-toolkits/plib/dragonfly/patch-src_util_ul.h
+@@ -0,0 +1,10 @@
++--- src/util/ul.h.orig	2008-03-11 02:10:13 UTC
+++++ src/util/ul.h
++@@ -37,6 +37,7 @@
++ #ifndef _INCLUDED_UL_H_
++ #define _INCLUDED_UL_H_
++ 
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <stdarg.h>
+diff --git a/x11-toolkits/v/Makefile.DragonFly b/x11-toolkits/v/Makefile.DragonFly
+index 3fb7af66dbd..a96b600bd53 100644
+--- a/x11-toolkits/v/Makefile.DragonFly
++++ b/x11-toolkits/v/Makefile.DragonFly
+@@ -1 +1 @@
+-CFLAGS+=	-Wno-narrowing
++CFLAGS+=	-Wno-narrowing -D_WANT_STDINT
+diff --git a/x11-wm/cwm/dragonfly/patch-parse.y b/x11-wm/cwm/dragonfly/patch-parse.y
+new file mode 100644
+index 00000000000..b53f96f50d2
+--- /dev/null
++++ b/x11-wm/cwm/dragonfly/patch-parse.y
+@@ -0,0 +1,10 @@
++--- parse.y.orig	2018-05-14 13:31:34 UTC
+++++ parse.y
++@@ -29,6 +29,7 @@
++ #include <errno.h>
++ #include <limits.h>
++ #include <stdarg.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+diff --git a/x11/libinput/dragonfly/patch-include_linux_dragonfly_input.h b/x11/libinput/dragonfly/patch-include_linux_dragonfly_input.h
+index 8588a8430b9..091bef94aca 100644
+--- a/x11/libinput/dragonfly/patch-include_linux_dragonfly_input.h
++++ b/x11/libinput/dragonfly/patch-include_linux_dragonfly_input.h
+@@ -36,6 +36,7 @@
+ +#include <sys/ioccom.h>
+ +#include <sys/time.h>
+ +#include <sys/types.h>
+++#include <stdint.h>
+ +
+ +#include "input-event-codes.h"
+ +
+diff --git a/x11/metisse/Makefile.DragonFly b/x11/metisse/Makefile.DragonFly
+index f6e10911c18..172379df9ce 100644
+--- a/x11/metisse/Makefile.DragonFly
++++ b/x11/metisse/Makefile.DragonFly
+@@ -1 +1,3 @@
+ USE_CXXSTD=	gnu++98
++
++CFLAGS+=	-D_WANT_STDINT
+diff --git a/x11/polybar/dragonfly/patch-include_adapters_alsa_generic.hpp b/x11/polybar/dragonfly/patch-include_adapters_alsa_generic.hpp
+new file mode 100644
+index 00000000000..cbebf5fee73
+--- /dev/null
++++ b/x11/polybar/dragonfly/patch-include_adapters_alsa_generic.hpp
+@@ -0,0 +1,10 @@
++--- include/adapters/alsa/generic.hpp.intermediate	2019-11-10 09:36:54.000000000 +0000
+++++ include/adapters/alsa/generic.hpp
++@@ -12,6 +12,7 @@
++ #include <errno.h>
++ #include <fcntl.h>
++ #include <stdarg.h>
+++#include <stdint.h>
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <string.h>
+diff --git a/x11/simplestroke/dragonfly/patch-tracker.h b/x11/simplestroke/dragonfly/patch-tracker.h
+new file mode 100644
+index 00000000000..54923f4def3
+--- /dev/null
++++ b/x11/simplestroke/dragonfly/patch-tracker.h
+@@ -0,0 +1,11 @@
++--- tracker.h.orig	2019-07-24 09:49:03 UTC
+++++ tracker.h
++@@ -16,6 +16,8 @@
++ #ifndef __TRACKER_H__
++ #define __TRACKER_H__
++ 
+++#include <stdint.h>
+++
++ struct stroke;
++ 
++ void tracker_init(const char *);
+diff --git a/x11/x11perf/dragonfly/patch-x11perf.h b/x11/x11perf/dragonfly/patch-x11perf.h
+new file mode 100644
+index 00000000000..3d76463a0fb
+--- /dev/null
++++ b/x11/x11perf/dragonfly/patch-x11perf.h
+@@ -0,0 +1,10 @@
++--- x11perf.h.orig	2019-03-16 22:53:28 UTC
+++++ x11perf.h
++@@ -37,6 +37,7 @@ SOFTWARE.
++ #include <X11/Xfuncs.h>
++ #endif
++ #include <stddef.h>
+++#include <stdint.h>
++ #include <X11/extensions/Xrender.h>
++ 
++ #define POLY	     1000       /* # (small) items in poly calls	*/
+diff --git a/x11/xload/dragonfly/patch-get__rload.c b/x11/xload/dragonfly/patch-get__rload.c
+new file mode 100644
+index 00000000000..74a653a9c84
+--- /dev/null
++++ b/x11/xload/dragonfly/patch-get__rload.c
+@@ -0,0 +1,10 @@
++--- get_rload.c.orig	2018-03-10 01:52:46 UTC
+++++ get_rload.c
++@@ -24,6 +24,7 @@ void GetRLoadPoint(
++ }
++ #else  /* RLOADSTUB */
++ 
+++#include <stdint.h>
++ #include <protocols/rwhod.h>
++ #ifndef _PATH_RWHODIR
++ #define _PATH_RWHODIR "/var/spool/rwho"

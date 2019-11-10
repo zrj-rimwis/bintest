@@ -2730,6 +2730,25 @@ index 061762df13..a299d92ba7 100644
  
  #define V86_ADDR   0x10000	/* Segment:offset address */
  #define V86_CALLF  0x20000	/* Emulate far call */
+diff --git a/sys/boot/pc32/btxld/btx.h b/sys/boot/pc32/btxld/btx.h
+index 229698b588..5c270e7a7f 100644
+--- a/sys/boot/pc32/btxld/btx.h
++++ b/sys/boot/pc32/btxld/btx.h
+@@ -24,13 +24,13 @@
+  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/btxld/btx.h,v 1.2 1999/08/28 01:15:41 peter Exp $
+- * $DragonFly: src/usr.sbin/btxld/btx.h,v 1.2 2003/06/17 04:29:52 dillon Exp $
+  */
+ 
+ #ifndef _BTX_H_
+ #define _BTX_H_
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ #define BTX_PGSIZE	0x1000		/* Page size */
+ #define BTX_PGBASE	0x5000		/* Start of page tables */
 diff --git a/sys/boot/pc32/libi386/biosacpi.c b/sys/boot/pc32/libi386/biosacpi.c
 index 2c46eb8253..90f9b1e9a5 100644
 --- a/sys/boot/pc32/libi386/biosacpi.c
@@ -5699,7 +5718,7 @@ index abef300fbc..7a7db68ff6 100644
  {
      return(lwkt_send_ipiq3_passive(target, (ipifunc3_t)func, arg1, arg2));
 diff --git a/sys/sys/types.h b/sys/sys/types.h
-index a69e675983..790b12767f 100644
+index a69e675983..11a5186b91 100644
 --- a/sys/sys/types.h
 +++ b/sys/sys/types.h
 @@ -41,19 +41,8 @@
@@ -5723,9 +5742,19 @@ index a69e675983..790b12767f 100644
  
  #if __BSD_VISIBLE
  typedef	unsigned char	u_char;
-@@ -75,8 +64,14 @@ typedef	__uint64_t	u_quad_t;	/* quads */
+@@ -65,7 +54,6 @@ typedef	unsigned char	unchar;		/* Sys V compatibility */
+ typedef	unsigned short	ushort;		/* Sys V compatibility */
+ typedef	unsigned int	uint;		/* Sys V compatibility */
+ typedef	unsigned long	ulong;		/* Sys V compatibility */
+-#endif
+ 
+ typedef	__uint8_t	u_int8_t;
+ typedef	__uint16_t	u_int16_t;
+@@ -74,9 +62,16 @@ typedef	__uint64_t	u_int64_t;
+ typedef	__uint64_t	u_quad_t;	/* quads */
  typedef	__int64_t	quad_t;
  typedef	quad_t *	qaddr_t;
++#endif /* __BSD_VISIBLE */
  
 +#ifndef _BLKCNT_T_DECLARED
  typedef	__int64_t	blkcnt_t;	/* file block count */
@@ -6277,6 +6306,18 @@ index 486461b362..2024365bb7 100644
  
  #include <err.h>
 +#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.bin/calendar/io.c b/usr.bin/calendar/io.c
+index 1cdc30ee06..1c492f2855 100644
+--- a/usr.bin/calendar/io.c
++++ b/usr.bin/calendar/io.c
+@@ -46,6 +46,7 @@
+ #include <paths.h>
+ #include <pwd.h>
+ #include <stdbool.h>
++#include <stdint.h>	/* for uintptr_t * in __DECONST() */
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>

@@ -1,4 +1,4 @@
-From e977678af9ebe747aab722329e7a4eacf709a21e Mon Sep 17 00:00:00 2001
+From 2ad8cf93345656e2ee83276ba45e6475729ec88c Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Thu, 7 Nov 2019 18:25:59 +0000
 Subject: <sys/types.h>: Stop including <stdint.h>.
@@ -116,15 +116,18 @@ Subject: <sys/types.h>: Stop including <stdint.h>.
  sbin/vinum/vinumutil.c                        |  2 +-
  sys/boot/common/ls.c                          |  5 +-
  sys/boot/pc32/boot2/scrc32.c                  |  1 +
+ sys/boot/pc32/btxld/btx.h                     |  2 +-
  .../source/include/platform/acdragonfly.h     |  5 ++
  sys/emulation/ndis/pe_var.h                   |  1 +
  sys/libkern/crc32.c                           |  2 +-
  sys/libkern/icrc32.c                          |  1 +
  sys/net/if.h                                  |  1 +
+ sys/netinet/tcp.h                             |  4 +-
  sys/netproto/smb/smb.h                        |  7 +--
  sys/sys/types.h                               |  4 +-
  sys/vfs/ufs/ffs_subr.c                        |  1 +
  usr.bin/c89/c89.c                             |  2 +-
+ usr.bin/calendar/io.c                         |  1 +
  usr.bin/cksum/cksum.c                         |  2 +-
  usr.bin/cksum/extern.h                        |  1 -
  usr.bin/hexdump/display.c                     |  2 +-
@@ -153,6 +156,7 @@ Subject: <sys/types.h>: Stop including <stdint.h>.
  usr.sbin/edquota/edquota.c                    |  1 +
  usr.sbin/fstyp/fstyp.c                        |  1 +
  usr.sbin/fstyp/msdosfs.h                      |  2 +-
+ usr.sbin/installer/libaura/popen.c            |  1 +
  usr.sbin/makefs/ffs/ffs_subr.c                |  3 +-
  usr.sbin/makefs/makefs.h                      |  3 +-
  usr.sbin/memcontrol/memcontrol.c              | 25 +++++-----
@@ -174,7 +178,7 @@ Subject: <sys/types.h>: Stop including <stdint.h>.
  usr.sbin/repquota/repquota.c                  |  1 +
  usr.sbin/rtadvd/advcap.c                      |  1 +
  usr.sbin/sdpd/log.c                           |  2 +-
- 167 files changed, 315 insertions(+), 192 deletions(-)
+ 171 files changed, 320 insertions(+), 195 deletions(-)
 
 diff --git a/bin/dd/conv.c b/bin/dd/conv.c
 index 3ddde5c641..0440a12732 100644
@@ -2322,6 +2326,25 @@ index a818250ebe..16478e7348 100644
  #endif
  
  #ifndef _KERNEL
+diff --git a/sys/boot/pc32/btxld/btx.h b/sys/boot/pc32/btxld/btx.h
+index 229698b588..5c270e7a7f 100644
+--- a/sys/boot/pc32/btxld/btx.h
++++ b/sys/boot/pc32/btxld/btx.h
+@@ -24,13 +24,13 @@
+  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/btxld/btx.h,v 1.2 1999/08/28 01:15:41 peter Exp $
+- * $DragonFly: src/usr.sbin/btxld/btx.h,v 1.2 2003/06/17 04:29:52 dillon Exp $
+  */
+ 
+ #ifndef _BTX_H_
+ #define _BTX_H_
+ 
+ #include <sys/types.h>
++#include <stdint.h>
+ 
+ #define BTX_PGSIZE	0x1000		/* Page size */
+ #define BTX_PGBASE	0x5000		/* Start of page tables */
 diff --git a/sys/contrib/dev/acpica/source/include/platform/acdragonfly.h b/sys/contrib/dev/acpica/source/include/platform/acdragonfly.h
 index 318110edc1..2a014942e8 100644
 --- a/sys/contrib/dev/acpica/source/include/platform/acdragonfly.h
@@ -2394,6 +2417,21 @@ index f49603fd69..0d526fda9d 100644
  #endif /* !_KERNEL */
  #endif /* __BSD_VISIBLE */
  
+diff --git a/sys/netinet/tcp.h b/sys/netinet/tcp.h
+index 1eacd0f81d..0838120e15 100644
+--- a/sys/netinet/tcp.h
++++ b/sys/netinet/tcp.h
+@@ -39,8 +39,8 @@
+ 
+ #include <sys/types.h>
+ 
+-typedef	u_int32_t	tcp_seq;
+-typedef	int32_t		tcp_seq_diff_t;
++typedef	__uint32_t	tcp_seq;
++typedef	__int32_t	tcp_seq_diff_t;
+ 
+ #define	tcp6_seq	tcp_seq	/* for KAME src sync over BSD*'s */
+ #define	tcp6hdr		tcphdr	/* for KAME src sync over BSD*'s */
 diff --git a/sys/netproto/smb/smb.h b/sys/netproto/smb/smb.h
 index 1620f94bc9..782b52f8b2 100644
 --- a/sys/netproto/smb/smb.h
@@ -2464,6 +2502,18 @@ index 486461b362..2024365bb7 100644
  
  #include <err.h>
 +#include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/usr.bin/calendar/io.c b/usr.bin/calendar/io.c
+index 1cdc30ee06..1c492f2855 100644
+--- a/usr.bin/calendar/io.c
++++ b/usr.bin/calendar/io.c
+@@ -46,6 +46,7 @@
+ #include <paths.h>
+ #include <pwd.h>
+ #include <stdbool.h>
++#include <stdint.h>	/* for uintptr_t * in __DECONST() */
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>
@@ -2951,6 +3001,18 @@ index bd0abcef60..dd9ee6f20e 100644
  
  /*
   * Conversion macros for little endian encoded unsigned integers
+diff --git a/usr.sbin/installer/libaura/popen.c b/usr.sbin/installer/libaura/popen.c
+index d4a2fdf324..afcf6c6aab 100644
+--- a/usr.sbin/installer/libaura/popen.c
++++ b/usr.sbin/installer/libaura/popen.c
+@@ -49,6 +49,7 @@
+ #include <errno.h>
+ #include <signal.h>
+ #include <stdarg.h>
++#include <stdint.h>		/* for uintptr_t in __DECONST() */
+ #include <paths.h>
+ #include <stdio.h>
+ #include <stdlib.h>
 diff --git a/usr.sbin/makefs/ffs/ffs_subr.c b/usr.sbin/makefs/ffs/ffs_subr.c
 index 45dda21917..9def3bbff4 100644
 --- a/usr.sbin/makefs/ffs/ffs_subr.c

@@ -1,0 +1,33 @@
+From f732cd6ad4d4b650f0c43c71d4e8bf9156f0cfb1 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 10 Nov 2019 11:14:06 +0200
+Subject: <sys/types.h>: Put u_* types under __BSD_VISIBLE too.
+
+ Not covered by any standards.
+---
+ sys/sys/types.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index 790b12767f..11a5186b91 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -54,7 +54,6 @@ typedef	unsigned char	unchar;		/* Sys V compatibility */
+ typedef	unsigned short	ushort;		/* Sys V compatibility */
+ typedef	unsigned int	uint;		/* Sys V compatibility */
+ typedef	unsigned long	ulong;		/* Sys V compatibility */
+-#endif
+ 
+ typedef	__uint8_t	u_int8_t;
+ typedef	__uint16_t	u_int16_t;
+@@ -63,6 +62,7 @@ typedef	__uint64_t	u_int64_t;
+ typedef	__uint64_t	u_quad_t;	/* quads */
+ typedef	__int64_t	quad_t;
+ typedef	quad_t *	qaddr_t;
++#endif /* __BSD_VISIBLE */
+ 
+ #ifndef _BLKCNT_T_DECLARED
+ typedef	__int64_t	blkcnt_t;	/* file block count */
+-- 
+2.23.0
+

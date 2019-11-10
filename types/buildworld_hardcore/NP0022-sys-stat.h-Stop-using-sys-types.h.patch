@@ -1,6 +1,6 @@
-From f17835f4dadfceeccf9c64f53307735f5fa1bd17 Mon Sep 17 00:00:00 2001
+From 17bce1378b6afcd2c230517840abeb04091a93cf Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
-Date: Thu, 7 Nov 2019 19:11:14 +0200
+Date: Sun, 10 Nov 2019 12:20:18 +0200
 Subject: <sys/stat.h>: Stop using <sys/types.h>.
 
  I think i got it right for various standards.  Adjust dev_t setup.
@@ -8,33 +8,13 @@ Subject: <sys/stat.h>: Stop using <sys/types.h>.
 
  XXX #define udev_t dev_t should only be needed for userland and vkernel.
  Currently it is needed for genassym in vm_param.h, smth with swap.
-
- HA XXX have I missed <netinet/tcp.h> in previous????
- HA Missed one installer in previous commit.
 ---
- sys/netinet/tcp.h                  |   4 +-
- sys/sys/stat.h                     | 205 ++++++++++++++++++++++++-----
- sys/sys/types.h                    |  33 ++++-
- usr.sbin/installer/libaura/popen.c |   1 +
- 4 files changed, 200 insertions(+), 43 deletions(-)
+ sys/sys/stat.h  | 205 +++++++++++++++++++++++++++++++++++++++---------
+ sys/sys/types.h |  33 ++++++--
+ 2 files changed, 197 insertions(+), 41 deletions(-)
 
-diff --git a/sys/netinet/tcp.h b/sys/netinet/tcp.h
-index 1eacd0f81d..0838120e15 100644
---- a/sys/netinet/tcp.h
-+++ b/sys/netinet/tcp.h
-@@ -39,8 +39,8 @@
- 
- #include <sys/types.h>
- 
--typedef	u_int32_t	tcp_seq;
--typedef	int32_t		tcp_seq_diff_t;
-+typedef	__uint32_t	tcp_seq;
-+typedef	__int32_t	tcp_seq_diff_t;
- 
- #define	tcp6_seq	tcp_seq	/* for KAME src sync over BSD*'s */
- #define	tcp6hdr		tcphdr	/* for KAME src sync over BSD*'s */
 diff --git a/sys/sys/stat.h b/sys/sys/stat.h
-index 1b422de6b9..13a0e93c09 100644
+index 1b422de6b9..44958bc8e1 100644
 --- a/sys/sys/stat.h
 +++ b/sys/sys/stat.h
 @@ -39,21 +39,146 @@
@@ -291,7 +271,7 @@ index 1b422de6b9..13a0e93c09 100644
  __END_DECLS
  
 -#endif
-+#endif /* !_KERNEL || defined(_KERNEL_VIRTUAL */
++#endif /* !_KERNEL || _KERNEL_VIRTUAL */
 +
 +#undef __mode_st
  
@@ -373,18 +353,6 @@ index 02ba00c859..790b12767f 100644
  /*
   * minor() gives a cookie instead of an index since we don't want to
   * change the meanings of bits 0-15 or waste time and space shifting
-diff --git a/usr.sbin/installer/libaura/popen.c b/usr.sbin/installer/libaura/popen.c
-index d4a2fdf324..afcf6c6aab 100644
---- a/usr.sbin/installer/libaura/popen.c
-+++ b/usr.sbin/installer/libaura/popen.c
-@@ -49,6 +49,7 @@
- #include <errno.h>
- #include <signal.h>
- #include <stdarg.h>
-+#include <stdint.h>		/* for uintptr_t in __DECONST() */
- #include <paths.h>
- #include <stdio.h>
- #include <stdlib.h>
 -- 
 2.23.0
 
