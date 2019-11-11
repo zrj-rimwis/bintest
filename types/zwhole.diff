@@ -645,7 +645,7 @@ index ba19fc4367..65916ebf13 100644
   * Page-directory and page-table entries follow this format, with a few
   * of the fields not present here and there, depending on a lot of things.
 diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
-index fc310e14b0..d0651d3b70 100644
+index fc310e14b0..51c3d15942 100644
 --- a/sys/cpu/x86_64/include/stdint.h
 +++ b/sys/cpu/x86_64/include/stdint.h
 @@ -1,7 +1,7 @@
@@ -665,11 +665,11 @@ index fc310e14b0..d0651d3b70 100644
 + * Basic signed and unsigned LP types.  We support LP64 and ILP32 models only.
 + */
 +#ifdef __LP64__
-+typedef	long		__bslp_t;
-+typedef	unsigned long	__bulp_t;
++typedef	long		__intlp_t;
++typedef	unsigned long	__uintlp_t;
 +#else
-+typedef	int		__bslp_t;
-+typedef	unsigned int	__bulp_t;
++typedef	int		__intlp_t;
++typedef	unsigned int	__uintlp_t;
 +#endif
 +
  /*
@@ -687,9 +687,9 @@ index fc310e14b0..d0651d3b70 100644
 -typedef	__uint32_t	__uintptr_t;
 -typedef	__int32_t	__ptrdiff_t;		/* ptr1 - ptr2 */
 -#endif
-+typedef	__bslp_t	__intptr_t;
-+typedef	__bulp_t	__uintptr_t;
-+typedef	__bslp_t	__ptrdiff_t;	/* ptr1 - ptr2 */
++typedef	__intlp_t	__intptr_t;
++typedef	__uintlp_t	__uintptr_t;
++typedef	__intlp_t	__ptrdiff_t;	/* ptr1 - ptr2 */
  
  typedef	__int32_t	__int_fast8_t;
  typedef	__int32_t	__int_fast16_t;
@@ -707,10 +707,10 @@ index fc310e14b0..d0651d3b70 100644
 +typedef	unsigned long	__clockid_t;	/* CLOCK_* identifiers */
 +typedef	__int64_t	__off_t;	/* file offset or size */
 +typedef	__int32_t	__pid_t;	/* process [group] id */
-+typedef	__bulp_t	__size_t;	/* sizes of objects */
-+typedef	__bslp_t	__ssize_t;	/* byte counts or error status */
++typedef	__uintlp_t	__size_t;	/* sizes of objects */
++typedef	__intlp_t	__ssize_t;	/* byte counts or error status */
 +typedef	long		__suseconds_t;	/* microseconds (signed) */
-+typedef	__bslp_t	__time_t;	/* epoch time */
++typedef	__intlp_t	__time_t;	/* epoch time */
 +typedef	int		__timer_t;	/* POSIX timer identifiers */
 +
 +/* misc types */
@@ -721,7 +721,7 @@ index fc310e14b0..d0651d3b70 100644
 -typedef __int32_t	__ssize_t;
 -typedef __int32_t	__register_t;
 -typedef __uint32_t	__u_register_t;
-+typedef	__bslp_t	__register_t;
++typedef	__intlp_t	__register_t;
  #endif
  
 -typedef long		__suseconds_t;
@@ -738,7 +738,7 @@ index fc310e14b0..d0651d3b70 100644
  
  #endif /* _CPU_STDINT_H_ */
 diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
-index ef124646d8..c96de60ece 100644
+index ef124646d8..f8a67d9aa8 100644
 --- a/sys/cpu/x86_64/include/types.h
 +++ b/sys/cpu/x86_64/include/types.h
 @@ -36,18 +36,8 @@
@@ -757,8 +757,8 @@ index ef124646d8..c96de60ece 100644
 -
 -typedef unsigned long	vm_offset_t;    /* address space bounded offset */
 -typedef unsigned long	vm_size_t;      /* address space bounded size */
-+typedef __bulp_t	vm_offset_t;	/* address space bounded offset */
-+typedef __bulp_t	vm_size_t;	/* address space bounded size */
++typedef __uintlp_t	vm_offset_t;	/* address space bounded offset */
++typedef __uintlp_t	vm_size_t;	/* address space bounded size */
  
  typedef __uint64_t	vm_pindex_t;    /* physical page index */
  typedef __uint64_t	vm_spindex_t;   /* physical page index (signed) */
@@ -1335,7 +1335,7 @@ index 7a60b9c76e..4c016af2a7 100644
  /*
   * The MSG_NOERROR identifier value, the msqid_ds struct and the msg struct
 diff --git a/sys/sys/msgport.h b/sys/sys/msgport.h
-index 9917555d56..524331c1d2 100644
+index 171bc2fd73..018b1e1698 100644
 --- a/sys/sys/msgport.h
 +++ b/sys/sys/msgport.h
 @@ -10,12 +10,10 @@
@@ -1819,7 +1819,7 @@ index abef300fbc..7a7db68ff6 100644
  {
      return(lwkt_send_ipiq3_passive(target, (ipifunc3_t)func, arg1, arg2));
 diff --git a/sys/sys/types.h b/sys/sys/types.h
-index a69e675983..078d84e66d 100644
+index a69e675983..9e61b6f52c 100644
 --- a/sys/sys/types.h
 +++ b/sys/sys/types.h
 @@ -41,19 +41,8 @@
@@ -1867,7 +1867,7 @@ index a69e675983..078d84e66d 100644
  #endif
 -typedef	__segsz_t	segsz_t;	/* segment size */
 +#if __BSD_VISIBLE
-+typedef	__bslp_t	segsz_t;	/* segment size */
++typedef	__intlp_t	segsz_t;	/* segment size */
 +#endif
  #ifndef _SUSECONDS_T_DECLARED
  typedef	__suseconds_t	suseconds_t;	/* microseconds (signed) */

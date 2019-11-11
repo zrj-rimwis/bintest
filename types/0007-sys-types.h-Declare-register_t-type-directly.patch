@@ -17,7 +17,7 @@ index e08045d806..d0651d3b70 100644
 --- a/sys/cpu/x86_64/include/stdint.h
 +++ b/sys/cpu/x86_64/include/stdint.h
 @@ -124,12 +124,11 @@ typedef	long		__suseconds_t;	/* microseconds (signed) */
- typedef	__bslp_t	__time_t;	/* epoch time */
+ typedef	__intlp_t	__time_t;	/* epoch time */
  typedef	int		__timer_t;	/* POSIX timer identifiers */
  
 -#ifdef __LP64__
@@ -29,7 +29,7 @@ index e08045d806..d0651d3b70 100644
  #else
 -typedef __int32_t	__register_t;
 -typedef __uint32_t	__u_register_t;
-+typedef	__bslp_t	__register_t;
++typedef	__intlp_t	__register_t;
  #endif
  
  typedef __int32_t	__sig_atomic_t;	/* XXX */

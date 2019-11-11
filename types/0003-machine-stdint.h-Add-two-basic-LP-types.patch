@@ -7,8 +7,8 @@ Subject: [PATCH 03/19] <machine/stdint.h>: Add two basic LP types.
  On x64_64 is is very simple.  Non ILP32/LP64 model usage on UNIX-like
  systems is rather exception.  For example if we would support LLP64
  data type model, we would declare these types as follows:
-   typedef long long __bslp_t;
-   typedef unsigned long long __bulp_t;
+   typedef long long __intlp_t;
+   typedef unsigned long long __uintlp_t;
 ---
  sys/cpu/x86_64/include/stdint.h | 13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)
@@ -34,11 +34,11 @@ index fc310e14b0..829c2fe3ec 100644
 + * Basic signed and unsigned LP types.  We support LP64 and ILP32 models only.
 + */
 +#ifdef __LP64__
-+typedef	long		__bslp_t;
-+typedef	unsigned long	__bulp_t;
++typedef	long		__intlp_t;
++typedef	unsigned long	__uintlp_t;
 +#else
-+typedef	int		__bslp_t;
-+typedef	unsigned int	__bulp_t;
++typedef	int		__intlp_t;
++typedef	unsigned int	__uintlp_t;
 +#endif
 +
  /*

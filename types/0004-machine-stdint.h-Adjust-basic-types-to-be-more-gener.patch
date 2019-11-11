@@ -17,7 +17,7 @@ diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
 index 829c2fe3ec..e08045d806 100644
 --- a/sys/cpu/x86_64/include/stdint.h
 +++ b/sys/cpu/x86_64/include/stdint.h
-@@ -85,15 +85,9 @@ typedef	unsigned int	__bulp_t;
+@@ -85,15 +85,9 @@ typedef	unsigned int	__uintlp_t;
  typedef	__int64_t	__intmax_t;
  typedef	__uint64_t	__uintmax_t;
  
@@ -30,9 +30,9 @@ index 829c2fe3ec..e08045d806 100644
 -typedef	__uint32_t	__uintptr_t;
 -typedef	__int32_t	__ptrdiff_t;		/* ptr1 - ptr2 */
 -#endif
-+typedef	__bslp_t	__intptr_t;
-+typedef	__bulp_t	__uintptr_t;
-+typedef	__bslp_t	__ptrdiff_t;	/* ptr1 - ptr2 */
++typedef	__intlp_t	__intptr_t;
++typedef	__uintlp_t	__uintptr_t;
++typedef	__intlp_t	__ptrdiff_t;	/* ptr1 - ptr2 */
  
  typedef	__int32_t	__int_fast8_t;
  typedef	__int32_t	__int_fast16_t;
@@ -45,10 +45,10 @@ index 829c2fe3ec..e08045d806 100644
 +typedef	unsigned long	__clockid_t;	/* CLOCK_* identifiers */
 +typedef	__int64_t	__off_t;	/* file offset or size */
 +typedef	__int32_t	__pid_t;	/* process [group] id */
-+typedef	__bulp_t	__size_t;	/* sizes of objects */
-+typedef	__bslp_t	__ssize_t;	/* byte counts or error status */
++typedef	__uintlp_t	__size_t;	/* sizes of objects */
++typedef	__intlp_t	__ssize_t;	/* byte counts or error status */
 +typedef	long		__suseconds_t;	/* microseconds (signed) */
-+typedef	__bslp_t	__time_t;	/* epoch time */
++typedef	__intlp_t	__time_t;	/* epoch time */
 +typedef	int		__timer_t;	/* POSIX timer identifiers */
 +
  #ifdef __LP64__

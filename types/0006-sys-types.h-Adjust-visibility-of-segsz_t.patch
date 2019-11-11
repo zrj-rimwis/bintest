@@ -36,7 +36,7 @@ index 8ec0f80476..685b35f07b 100644
  #endif
 -typedef	__segsz_t	segsz_t;	/* segment size */
 +#if __BSD_VISIBLE
-+typedef	__bslp_t	segsz_t;	/* segment size */
++typedef	__intlp_t	segsz_t;	/* segment size */
 +#endif
  #ifndef _SUSECONDS_T_DECLARED
  typedef	__suseconds_t	suseconds_t;	/* microseconds (signed) */
