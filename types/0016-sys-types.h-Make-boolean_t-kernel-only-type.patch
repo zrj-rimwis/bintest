@@ -1,7 +1,7 @@
-From 94d0ee7093c279141054de1687bc6cd8920dc2d6 Mon Sep 17 00:00:00 2001
+From 3689004dfa0fe2f8217491318ee57c2ba7b9564b Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 6 Nov 2019 12:39:02 +0200
-Subject: [PATCH 16/19] <sys/types.h>: Make boolean_t kernel only type.
+Subject: [PATCH 16/20] <sys/types.h>: Make boolean_t kernel only type.
 
  This effectively eliminates boolean_t from use in userland.  Injecting
  this type into userland codes often creates issues in DPorts where ports
@@ -18,7 +18,7 @@ Subject: [PATCH 16/19] <sys/types.h>: Make boolean_t kernel only type.
  2 files changed, 9 insertions(+), 9 deletions(-)
 
 diff --git a/sys/sys/types.h b/sys/sys/types.h
-index 30a15a71df..ec5a523295 100644
+index 8b65d7b210..5529132a1e 100644
 --- a/sys/sys/types.h
 +++ b/sys/sys/types.h
 @@ -138,15 +138,15 @@ typedef	__uint32_t	uid_t;		/* user id */

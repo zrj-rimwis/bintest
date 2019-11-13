@@ -1,7 +1,7 @@
-From 54421c4b75079be2725590ebe9eb90d4c6ab4428 Mon Sep 17 00:00:00 2001
+From 0c1bfe829788b0c9da96606506de78bf89d5443f Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 6 Nov 2019 09:07:27 +0200
-Subject: [PATCH 13/19] sys/sglist.h: Mark as kernel only header.
+Subject: [PATCH 13/20] sys/sglist.h: Mark as kernel only header.
 
 ---
  sys/sys/sglist.h | 4 ++++

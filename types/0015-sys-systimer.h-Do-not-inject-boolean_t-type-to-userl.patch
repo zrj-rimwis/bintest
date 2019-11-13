@@ -1,7 +1,7 @@
-From 100d3f5c878a7fe31a4fd8a41d578d06cee678e2 Mon Sep 17 00:00:00 2001
+From edb5751738221528b2720830716d43a22af84aec Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 6 Nov 2019 10:33:33 +0200
-Subject: [PATCH 15/19] <sys/systimer.h>: Do not inject boolean_t type to
+Subject: [PATCH 15/20] <sys/systimer.h>: Do not inject boolean_t type to
  userland.
 
  The original workaround in 59ef3aa79b36a4ea4883a900381454c6b3bb4ea8

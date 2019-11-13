@@ -1,7 +1,7 @@
-From f4053fb8bab17b9ddec84e1b85be3907e3729e1a Mon Sep 17 00:00:00 2001
+From 27ebd7760e4bbfab11a8b5d86821571dff5f37f0 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 6 Nov 2019 17:13:34 +0200
-Subject: [PATCH 18/19] <sys/stdint.h>: Repurpose.
+Subject: [PATCH 18/20] <sys/stdint.h>: Repurpose.
 
  Start using this header as proxy to separate non sys/ headers from
  userland only headers.
@@ -11,9 +11,9 @@ Subject: [PATCH 18/19] <sys/stdint.h>: Repurpose.
 
  Strictly non functional changes.
 ---
- sys/sys/stdint.h | 59 +++++++++++++++++++++++++++++++++++++++------
- sys/sys/types.h  | 62 ++++++++++--------------------------------------
- 2 files changed, 64 insertions(+), 57 deletions(-)
+ sys/sys/stdint.h | 59 ++++++++++++++++++++++++++++++++++++++------
+ sys/sys/types.h  | 64 +++++++++++-------------------------------------
+ 2 files changed, 66 insertions(+), 57 deletions(-)
 
 diff --git a/sys/sys/stdint.h b/sys/sys/stdint.h
 index fc8f198fe7..3dad400b58 100644
@@ -89,7 +89,7 @@ index fc8f198fe7..3dad400b58 100644
 +
 +#endif /* SYS_STDINT_H */
 diff --git a/sys/sys/types.h b/sys/sys/types.h
-index ec5a523295..a309717945 100644
+index 5529132a1e..f1efc5c5d3 100644
 --- a/sys/sys/types.h
 +++ b/sys/sys/types.h
 @@ -41,9 +41,6 @@
@@ -184,7 +184,7 @@ index ec5a523295..a309717945 100644
  #endif /* !_KERNEL */
  
  #ifndef _CLOCK_T_DECLARED
-@@ -245,7 +202,12 @@ typedef	__time_t	time_t;
+@@ -245,7 +202,14 @@ typedef	__time_t	time_t;
  typedef	__timer_t	timer_t;
  #endif
  
@@ -193,7 +193,9 @@ index ec5a523295..a309717945 100644
 +#endif
 +
  #if defined(_KERNEL) || defined(_KERNEL_STRUCTURES)
++#ifndef _SYS_STDINT_H_
 +#include <sys/stdint.h>			/* kernel int types */
++#endif
  #include <machine/types.h>		/* for vm_offet_t */
  #endif
  

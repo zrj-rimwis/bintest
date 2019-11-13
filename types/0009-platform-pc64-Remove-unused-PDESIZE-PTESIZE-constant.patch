@@ -1,7 +1,7 @@
-From 03fa3677347a10be6629b352f585b9a752b2d408 Mon Sep 17 00:00:00 2001
+From 0fe1df9a922b41b9f51d3abaafa7dcd7228bd2c7 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Mon, 4 Nov 2019 12:10:04 +0200
-Subject: [PATCH 09/19] platform/pc64: Remove unused PDESIZE/PTESIZE constants.
+Subject: [PATCH 09/20] platform/pc64: Remove unused PDESIZE/PTESIZE constants.
 
  Leftover from early x86_64 porting.
 ---

@@ -1,7 +1,7 @@
-From 496224fb0b4575c40afcc2f6ef071619114397b1 Mon Sep 17 00:00:00 2001
+From 8e60dcd6c8556a8a3609c852ee66acd327b3268a Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 6 Nov 2019 09:07:54 +0200
-Subject: [PATCH 14/19] <vm/vm_zone.h>: Adjust visibility.
+Subject: [PATCH 14/20] <vm/vm_zone.h>: Adjust visibility.
 
 ---
  sys/vm/vm_zone.h | 14 +++++++++-----

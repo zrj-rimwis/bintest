@@ -1,7 +1,7 @@
-From 23c3ce6f7ad99789ebb1180bb162ab8869568a9e Mon Sep 17 00:00:00 2001
+From 43ab4424d86b6bb18dcc0b47339e4593a99c53de Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Mon, 4 Nov 2019 10:47:21 +0200
-Subject: [PATCH 07/19] <sys/types.h>: Declare register_t type directly.
+Subject: [PATCH 07/20] <sys/types.h>: Declare register_t type directly.
 
  It is expected by some of the ports.  Use compiler attribute to select
  correct word size if supported, else use LP types in for __register_t.
@@ -13,7 +13,7 @@ Subject: [PATCH 07/19] <sys/types.h>: Declare register_t type directly.
  3 files changed, 7 insertions(+), 13 deletions(-)
 
 diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
-index e08045d806..d0651d3b70 100644
+index 3e49d66945..51c3d15942 100644
 --- a/sys/cpu/x86_64/include/stdint.h
 +++ b/sys/cpu/x86_64/include/stdint.h
 @@ -124,12 +124,11 @@ typedef	long		__suseconds_t;	/* microseconds (signed) */
@@ -53,7 +53,7 @@ index 91d7af23b8..aa5f23a5c2 100644
  typedef unsigned long	vm_size_t;      /* address space bounded size */
  
 diff --git a/sys/sys/types.h b/sys/sys/types.h
-index 685b35f07b..f002b59210 100644
+index 296623c72e..a2095da780 100644
 --- a/sys/sys/types.h
 +++ b/sys/sys/types.h
 @@ -123,6 +123,9 @@ typedef	__off_t		off_t;		/* file offset */

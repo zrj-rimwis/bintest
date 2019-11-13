@@ -1,7 +1,7 @@
-From 7d578ae4b9932696b1f925efa4e7b66cf5c37f8c Mon Sep 17 00:00:00 2001
+From b6aab77bb15043e23f200099908a20bff53516f0 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 3 Nov 2019 22:32:58 +0200
-Subject: [PATCH 02/19] Adjust headers for <machine/stdint.h> visibility.
+Subject: [PATCH 02/20] Adjust headers for <machine/stdint.h> visibility.
 
  This also reduces namespace pollution a bit.  Include <machine/stdint.h>
  where <stdint.h> is used too.  External compiler under -ffreestanding
@@ -214,7 +214,7 @@ index be61aa6ee5..24da2bb692 100644
  
  #ifndef _WCTRANS_T
 diff --git a/lib/libc/include/libc_private.h b/lib/libc/include/libc_private.h
-index c3459e2a57..895b67b67f 100644
+index e5de2b237c..8c26942584 100644
 --- a/lib/libc/include/libc_private.h
 +++ b/lib/libc/include/libc_private.h
 @@ -35,8 +35,8 @@
@@ -226,7 +226,7 @@ index c3459e2a57..895b67b67f 100644
 +#include <machine/stdint.h>
  
  /*
-  * This global flag is non-zero when a process has created one
+  * With this attribute set, do not require a function call for accessing
 diff --git a/sys/sys/aio.h b/sys/sys/aio.h
 index aca1f5a55d..f0e854c1ba 100644
 --- a/sys/sys/aio.h
@@ -356,7 +356,7 @@ index 7a60b9c76e..4c016af2a7 100644
  /*
   * The MSG_NOERROR identifier value, the msqid_ds struct and the msg struct
 diff --git a/sys/sys/msgport.h b/sys/sys/msgport.h
-index 9917555d56..524331c1d2 100644
+index 171bc2fd73..018b1e1698 100644
 --- a/sys/sys/msgport.h
 +++ b/sys/sys/msgport.h
 @@ -10,12 +10,10 @@
@@ -398,7 +398,7 @@ index d65135a031..fd8ab47af9 100644
  #define	SHM_RDONLY  010000  /* Attach read-only (else read-write) */
  #define	SHM_RND     020000  /* Round attach address to SHMLBA */
 diff --git a/sys/sys/signal.h b/sys/sys/signal.h
-index 2c04ef1cc8..098b6bce76 100644
+index fa1f0f1951..c36557d099 100644
 --- a/sys/sys/signal.h
 +++ b/sys/sys/signal.h
 @@ -41,7 +41,7 @@
@@ -429,7 +429,7 @@ index 21e771e85b..d778ea885e 100644
  /*
   * Note that any allocations which are exact multiples of PAGE_SIZE, or
 diff --git a/sys/sys/thread.h b/sys/sys/thread.h
-index b60502843b..3a99d0c64b 100644
+index 83e5693290..ffaa34092c 100644
 --- a/sys/sys/thread.h
 +++ b/sys/sys/thread.h
 @@ -1,7 +1,7 @@

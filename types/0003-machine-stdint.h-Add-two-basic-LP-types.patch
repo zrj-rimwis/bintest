@@ -1,7 +1,7 @@
-From 8f8b600b4e2c50930eee07a509e574b3786188ba Mon Sep 17 00:00:00 2001
+From 6451fe62dd27a551d427a35e7129775a62cc1ae6 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 3 Nov 2019 18:37:57 +0200
-Subject: [PATCH 03/19] <machine/stdint.h>: Add two basic LP types.
+Subject: [PATCH 03/20] <machine/stdint.h>: Add two basic LP types.
 
  These will be used to derive types that depend on data type models.
  On x64_64 is is very simple.  Non ILP32/LP64 model usage on UNIX-like
@@ -14,7 +14,7 @@ Subject: [PATCH 03/19] <machine/stdint.h>: Add two basic LP types.
  1 file changed, 12 insertions(+), 1 deletion(-)
 
 diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
-index fc310e14b0..829c2fe3ec 100644
+index fc310e14b0..368cb56430 100644
 --- a/sys/cpu/x86_64/include/stdint.h
 +++ b/sys/cpu/x86_64/include/stdint.h
 @@ -1,7 +1,7 @@

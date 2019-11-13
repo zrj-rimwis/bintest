@@ -1,7 +1,7 @@
-From 684beed4b51354b11ac75763b01b7677ab17773d Mon Sep 17 00:00:00 2001
+From 8d1f5d9e4d623f6deaa5b1fe96b8aa753f9aec52 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Tue, 5 Nov 2019 17:19:04 +0200
-Subject: [PATCH 11/19] <cpu/types.h>: Use basic LP types for vm_offset_t and
+Subject: [PATCH 11/20] <cpu/types.h>: Use basic LP types for vm_offset_t and
  vm_size_t.
 
  Adjust PRI in biosacpi.c to use natural "%08x" specifier. The
@@ -27,7 +27,7 @@ index 2c46eb8253..90f9b1e9a5 100644
      revision = rsdp->Revision;
      if (revision == 0)
 diff --git a/sys/cpu/x86_64/include/types.h b/sys/cpu/x86_64/include/types.h
-index c365d02b63..c96de60ece 100644
+index c365d02b63..f8a67d9aa8 100644
 --- a/sys/cpu/x86_64/include/types.h
 +++ b/sys/cpu/x86_64/include/types.h
 @@ -36,8 +36,8 @@

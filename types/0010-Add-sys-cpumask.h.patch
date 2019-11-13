@@ -1,7 +1,7 @@
-From 6c03030b9cbd48f2baf3b5369db7e80346f3a437 Mon Sep 17 00:00:00 2001
+From a49f739340bdf6fa9e9ca2b2e810dbdae6c80d99 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Mon, 4 Nov 2019 16:46:30 +0200
-Subject: [PATCH 10/19] Add <sys/cpumask.h>.
+Subject: [PATCH 10/20] Add <sys/cpumask.h>.
 
  Collect and gather all scatter cpumask bits to correct headers. This
  cleans up the namespace and simplifies platform handling in asm macros.
@@ -69,7 +69,7 @@ index 28d0ebb117..3e3754683e 100644
 -#endif
 +#endif /* !_PTHREAD_NP_H_ */
 diff --git a/lib/libthread_xu/thread/thr_private.h b/lib/libthread_xu/thread/thr_private.h
-index 72e5afa9dc..86edcd88d3 100644
+index 40cd940315..93305f65d9 100644
 --- a/lib/libthread_xu/thread/thr_private.h
 +++ b/lib/libthread_xu/thread/thr_private.h
 @@ -45,10 +45,10 @@
@@ -438,7 +438,7 @@ index 80b7ee7e2f..5694acdfda 100644
  __BEGIN_DECLS
  
 diff --git a/sys/sys/proc.h b/sys/sys/proc.h
-index 69e550df72..7de4905a7b 100644
+index eead3b4f72..2e743136e4 100644
 --- a/sys/sys/proc.h
 +++ b/sys/sys/proc.h
 @@ -41,6 +41,7 @@
@@ -534,7 +534,7 @@ index 01e8ff65cd..5d2ccac780 100644
  #include <sys/msgport.h>
  #include <sys/sysmsg.h>
 diff --git a/sys/sys/thread.h b/sys/sys/thread.h
-index 3a99d0c64b..7e12aba66b 100644
+index ffaa34092c..b39290b5a3 100644
 --- a/sys/sys/thread.h
 +++ b/sys/sys/thread.h
 @@ -23,6 +23,9 @@

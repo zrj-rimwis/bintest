@@ -1,7 +1,7 @@
-From 11716573fff880b4190c793c9f293c66a84c316c Mon Sep 17 00:00:00 2001
+From 649b54c04066e0a0ff44d049208a8d6e4a2ee101 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Mon, 4 Nov 2019 11:48:04 +0200
-Subject: [PATCH 08/19] cpu/x64_64: Move MMU page table types back to
+Subject: [PATCH 08/20] cpu/x64_64: Move MMU page table types back to
  <cpu/pmap.h>.
 
  Reduce namespace pollution.  These types are common for both
@@ -69,7 +69,7 @@ index 753d9eaddc..1d8e959579 100644
  #include <vm/vm_param.h>
  
 diff --git a/lib/libkvm/kvm_proc.c b/lib/libkvm/kvm_proc.c
-index 96864245bb..9cfc9e3de0 100644
+index 8631978afe..15a169d6b9 100644
 --- a/lib/libkvm/kvm_proc.c
 +++ b/lib/libkvm/kvm_proc.c
 @@ -59,6 +59,7 @@

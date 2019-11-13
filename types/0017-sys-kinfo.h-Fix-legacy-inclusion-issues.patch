@@ -1,7 +1,7 @@
-From 4d96d1c9a1ce3b4d2be20fe4e66f9cc2890739d1 Mon Sep 17 00:00:00 2001
+From c5bd32c92962801baa5bc5a00e5ea195d97cb659 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Wed, 6 Nov 2019 14:43:30 +0200
-Subject: [PATCH 17/19] <sys/kinfo.h>: Fix legacy inclusion issues.
+Subject: [PATCH 17/20] <sys/kinfo.h>: Fix legacy inclusion issues.
 
  Sadly this header was not being included properly for a long time.
  Make it publicly accessable and put a big NOTE how to do it properly for
@@ -124,10 +124,10 @@ index aad1b7a1cb..2039246d15 100644
 -#endif /* !_SYS_KINFO_H_ */
 +#endif	/* !_SYS_KINFO_H_ */
 diff --git a/sys/sys/proc.h b/sys/sys/proc.h
-index 7de4905a7b..04f5b7c423 100644
+index 2e743136e4..ac77bf41a4 100644
 --- a/sys/sys/proc.h
 +++ b/sys/sys/proc.h
-@@ -152,6 +152,9 @@ struct vmspace_entry;
+@@ -153,6 +153,9 @@ struct vmspace_entry;
  struct ktrace_node;
  struct sem_undo;
  
@@ -137,7 +137,7 @@ index 7de4905a7b..04f5b7c423 100644
  enum lwpstat {
  	LSRUN = 1,
  	LSSTOP = 2,
-@@ -165,6 +168,7 @@ enum procstat {
+@@ -166,6 +169,7 @@ enum procstat {
  	SZOMB = 4,
  	SCORE = 5,
  };

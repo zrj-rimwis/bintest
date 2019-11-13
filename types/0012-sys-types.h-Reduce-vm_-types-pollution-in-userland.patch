@@ -1,7 +1,7 @@
-From f16f0f3d19bd076c41f12319f66cf77406cacdff Mon Sep 17 00:00:00 2001
+From c1ed36423977eec9a8fbe58518cfc1b4927e3603 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Tue, 5 Nov 2019 19:40:49 +0200
-Subject: [PATCH 12/19] <sys/types.h>: Reduce vm_* types pollution in userland.
+Subject: [PATCH 12/20] <sys/types.h>: Reduce vm_* types pollution in userland.
 
  Userland should not be using these types outside kernel structures or
  <vm/*.h> scope.  Adjust several userland and boot code sources to
@@ -147,7 +147,7 @@ index 98b6b24b8a..aad1b7a1cb 100644
  	int		kp_jailid;
  
 diff --git a/sys/sys/types.h b/sys/sys/types.h
-index f002b59210..30a15a71df 100644
+index a2095da780..8b65d7b210 100644
 --- a/sys/sys/types.h
 +++ b/sys/sys/types.h
 @@ -45,13 +45,7 @@

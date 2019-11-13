@@ -1,7 +1,7 @@
-From ec8f6f3bd959da41476bb3f1d014dabbfd89d2c3 Mon Sep 17 00:00:00 2001
+From 5ebce3f176739fa3b21fd09ec18c30e456267628 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Sun, 3 Nov 2019 23:00:04 +0200
-Subject: [PATCH 04/19] <machine/stdint.h>: Adjust basic types to be more
+Subject: [PATCH 04/20] <machine/stdint.h>: Adjust basic types to be more
  generic.
 
  Use basic LP types for time_t to avoid need to use cast (uintmax_t) in
@@ -14,7 +14,7 @@ Subject: [PATCH 04/19] <machine/stdint.h>: Adjust basic types to be more
  1 file changed, 14 insertions(+), 20 deletions(-)
 
 diff --git a/sys/cpu/x86_64/include/stdint.h b/sys/cpu/x86_64/include/stdint.h
-index 829c2fe3ec..e08045d806 100644
+index 368cb56430..3e49d66945 100644
 --- a/sys/cpu/x86_64/include/stdint.h
 +++ b/sys/cpu/x86_64/include/stdint.h
 @@ -85,15 +85,9 @@ typedef	unsigned int	__uintlp_t;
