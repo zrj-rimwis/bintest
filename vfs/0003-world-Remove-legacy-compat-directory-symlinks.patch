@@ -1,0 +1,76 @@
+From 84008837a888ae0ba9b8ee3bd2a9d37ba36ed283 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 15 Nov 2019 21:41:12 +0200
+Subject: [PATCH 3/3] world: Remove legacy compat directory symlinks.
+
+ While there, remove ata.h symlink too.
+---
+ Makefile_upgrade.inc | 10 ++++++++++
+ etc/Makefile         |  2 --
+ include/Makefile     | 13 +------------
+ 3 files changed, 11 insertions(+), 14 deletions(-)
+
+diff --git a/Makefile_upgrade.inc b/Makefile_upgrade.inc
+index d3329dcf61..53c84eb515 100644
+--- a/Makefile_upgrade.inc
++++ b/Makefile_upgrade.inc
+@@ -3873,6 +3873,16 @@ TO_REMOVE+=/usr/share/calendar/uk_UA.KOI8-U
+ TO_REMOVE+=/usr/lib/thread/libc_r.a
+ TO_REMOVE+=/usr/lib/thread/libc_r.so
+ TO_REMOVE+=/usr/lib/thread/libc_r.so.5
++TO_REMOVE+=/usr/include/cam
++TO_REMOVE+=/usr/include/fs
++TO_REMOVE+=/usr/include/isofs
++TO_REMOVE+=/usr/include/mfs
++TO_REMOVE+=/usr/include/msdosfs
++TO_REMOVE+=/usr/include/nfs
++TO_REMOVE+=/usr/include/ntfs
++TO_REMOVE+=/usr/include/ufs
++TO_REMOVE+=/usr/include/vfs/ffs
++TO_REMOVE+=/usr/include/sys/ata.h
+ 
+ .if !defined(WANT_INSTALLER)
+ TO_REMOVE+=/usr/sbin/dfuibe_installer
+diff --git a/etc/Makefile b/etc/Makefile
+index 548ebfd78f..4ecb722093 100644
+--- a/etc/Makefile
++++ b/etc/Makefile
+@@ -200,10 +200,8 @@ upgrade_base:	upgrade_check preupgrade remove-obsolete-files
+ .endif
+ 	rm -f ${DESTDIR}/usr/include/machine/ioctl_meteor.h
+ 	rm -f ${DESTDIR}/usr/include/machine/ioctl_bt848.h
+-	rm -f ${DESTDIR}/usr/include/sys/ata.h
+ 	${LN} -s "../dev/video/bktr/ioctl_bt848.h" ${DESTDIR}/usr/include/machine/ioctl_bt848.h
+ 	${LN} -s "../dev/video/meteor/ioctl_meteor.h" ${DESTDIR}/usr/include/machine/ioctl_meteor.h
+-	${LN} -s nata.h ${DESTDIR}/usr/include/sys/ata.h
+ .if exists(${DESTDIR}/usr/lib/gcc2)
+ 	ldconfig -m ${DESTDIR}/usr/lib/gcc2
+ .endif
+diff --git a/include/Makefile b/include/Makefile
+index 0fbe3ca861..8890f7d6f5 100644
+--- a/include/Makefile
++++ b/include/Makefile
+@@ -124,19 +124,8 @@ INCSLINKS+=	sys/$i ${INCLUDEDIR}/$i
+ .for i in ${MHDRS}
+ INCSLINKS+=	machine/$i ${INCLUDEDIR}/$i
+ .endfor
+-INCSLINKS+=	bus/cam ${INCLUDEDIR}/cam
+-INCSLINKS+=	vfs/msdosfs ${INCLUDEDIR}/msdosfs
+-INCSLINKS+=	vfs/isofs ${INCLUDEDIR}/isofs
+-INCSLINKS+=	vfs/mfs ${INCLUDEDIR}/mfs
+-INCSLINKS+=	vfs/nfs ${INCLUDEDIR}/nfs
+-INCSLINKS+=	vfs/ntfs ${INCLUDEDIR}/ntfs
+-INCSLINKS+=	vfs ${INCLUDEDIR}/fs
+-# this is for <ufs/ufs/...> and <ufs/ffs/...> paths used by ports
+-# It is hopefully a temporary hack until we have environments working.
+-INCSLINKS+=	vfs ${INCLUDEDIR}/ufs
+-INCSLINKS+=	ufs ${INCLUDEDIR}/vfs/ffs
++# For smbfs contrib.
+ INCSLINKS+=	netproto/smb ${INCLUDEDIR}/netsmb
+-INCSLINKS+=	bus/pccard ${INCLUDEDIR}/pccard
+ # Some 3rd party software looks for <floatingpoint.h>
+ INCSLINKS+=	ieeefp.h ${INCLUDEDIR}/floatingpoint.h
+ 
+-- 
+2.23.0
+

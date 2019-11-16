@@ -1,0 +1,386 @@
+From aeafc97cef74753aa70817b560db6f0c0197ea47 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 15 Nov 2019 21:40:40 +0200
+Subject: [PATCH 2/3] world: Use <vfs/FS/...> in userland.
+
+---
+ contrib/smbfs/mount_smbfs/mount_smbfs.c | 2 +-
+ lib/libstand/cd9660.c                   | 4 ++--
+ sbin/nfsd/nfsd.c                        | 6 +++---
+ sbin/nfsiod/nfsiod.c                    | 5 ++---
+ sbin/umount/umount.c                    | 2 +-
+ sys/boot/common/ls.c                    | 4 ++--
+ usr.bin/fstat/cd9660.c                  | 2 +-
+ usr.bin/fstat/fstat.c                   | 8 ++++----
+ usr.bin/kdump/mksubr                    | 2 +-
+ usr.bin/nfsstat/nfsstat.c               | 6 +++---
+ usr.bin/showmount/showmount.c           | 2 +-
+ usr.sbin/makefs/ffs.c                   | 6 +++---
+ usr.sbin/makefs/ffs.h                   | 4 ++--
+ usr.sbin/makefs/ffs/ffs_alloc.c         | 4 ++--
+ usr.sbin/makefs/ffs/ffs_balloc.c        | 4 ++--
+ usr.sbin/makefs/ffs/ffs_bswap.c         | 4 ++--
+ usr.sbin/makefs/ffs/ffs_subr.c          | 4 ++--
+ usr.sbin/makefs/ffs/mkfs.c              | 4 ++--
+ usr.sbin/makefs/ffs/ufs_bmap.c          | 4 ++--
+ usr.sbin/pstat/pstat.c                  | 8 ++++----
+ usr.sbin/rpc.umntall/mounttab.c         | 3 +--
+ usr.sbin/rpc.umntall/rpc.umntall.c      | 3 +--
+ 22 files changed, 44 insertions(+), 47 deletions(-)
+
+diff --git a/contrib/smbfs/mount_smbfs/mount_smbfs.c b/contrib/smbfs/mount_smbfs/mount_smbfs.c
+index 9a54b8037c..f3cd2d0aae 100644
+--- a/contrib/smbfs/mount_smbfs/mount_smbfs.c
++++ b/contrib/smbfs/mount_smbfs/mount_smbfs.c
+@@ -52,7 +52,7 @@
+ #include <netsmb/smb_conn.h>
+ #include <netsmb/smb_lib.h>
+ 
+-#include <fs/smbfs/smbfs.h>
++#include <vfs/smbfs/smbfs.h>
+ 
+ #include <mntopts.h>
+ 
+diff --git a/lib/libstand/cd9660.c b/lib/libstand/cd9660.c
+index 808903adbc..2255e3f2ef 100644
+--- a/lib/libstand/cd9660.c
++++ b/lib/libstand/cd9660.c
+@@ -41,8 +41,8 @@
+ #include <sys/param.h>
+ #include <string.h>
+ #include <sys/dirent.h>
+-#include <isofs/cd9660/iso.h>
+-#include <isofs/cd9660/cd9660_rrip.h>
++#include <vfs/isofs/cd9660/iso.h>
++#include <vfs/isofs/cd9660/cd9660_rrip.h>
+ 
+ #include "stand.h"
+ 
+diff --git a/sbin/nfsd/nfsd.c b/sbin/nfsd/nfsd.c
+index a645d0227f..891d8812c0 100644
+--- a/sbin/nfsd/nfsd.c
++++ b/sbin/nfsd/nfsd.c
+@@ -46,9 +46,9 @@
+ 
+ #include <netdb.h>
+ #include <arpa/inet.h>
+-#include <nfs/rpcv2.h>
+-#include <nfs/nfsproto.h>
+-#include <nfs/nfs.h>
++#include <vfs/nfs/rpcv2.h>
++#include <vfs/nfs/nfsproto.h>
++#include <vfs/nfs/nfs.h>
+ 
+ #include <err.h>
+ #include <errno.h>
+diff --git a/sbin/nfsiod/nfsiod.c b/sbin/nfsiod/nfsiod.c
+index 6764efa222..3bc77e7619 100644
+--- a/sbin/nfsiod/nfsiod.c
++++ b/sbin/nfsiod/nfsiod.c
+@@ -32,7 +32,6 @@
+  * @(#) Copyright (c) 1989, 1993 The Regents of the University of California.  All rights reserved.
+  * @(#)nfsiod.c	8.4 (Berkeley) 5/3/95
+  * $FreeBSD: src/sbin/nfsiod/nfsiod.c,v 1.9 1999/08/28 00:13:55 peter Exp $
+- * $DragonFly: src/sbin/nfsiod/nfsiod.c,v 1.5 2004/11/14 20:07:25 liamfoy Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -40,8 +39,8 @@
+ #include <sys/wait.h>
+ #include <sys/mount.h>
+ 
+-#include <nfs/rpcv2.h>
+-#include <nfs/nfs.h>
++#include <vfs/nfs/rpcv2.h>
++#include <vfs/nfs/nfs.h>
+ 
+ #include <err.h>
+ #include <stdio.h>
+diff --git a/sbin/umount/umount.c b/sbin/umount/umount.c
+index 068f1364b1..8f0f64a71b 100644
+--- a/sbin/umount/umount.c
++++ b/sbin/umount/umount.c
+@@ -37,7 +37,7 @@
+ 
+ #include <netdb.h>
+ #include <rpc/rpc.h>
+-#include <nfs/rpcv2.h>
++#include <vfs/nfs/rpcv2.h>
+ 
+ #include <err.h>
+ #include <fstab.h>
+diff --git a/sys/boot/common/ls.c b/sys/boot/common/ls.c
+index 1bc3bdd450..8a58182208 100644
+--- a/sys/boot/common/ls.c
++++ b/sys/boot/common/ls.c
+@@ -36,8 +36,8 @@
+  */
+ 
+ #include <sys/param.h>
+-#include <ufs/ufs/dinode.h>
+-#include <ufs/ufs/dir.h>
++#include <vfs/ufs/dinode.h>
++#include <vfs/ufs/dir.h>
+ 
+ #include <stand.h>
+ #include <string.h>
+diff --git a/usr.bin/fstat/cd9660.c b/usr.bin/fstat/cd9660.c
+index 831fb089cb..326cc9a139 100644
+--- a/usr.bin/fstat/cd9660.c
++++ b/usr.bin/fstat/cd9660.c
+@@ -46,7 +46,7 @@
+ #include <sys/vnode.h>
+ #include <sys/mount.h>
+ 
+-#include <isofs/cd9660/cd9660_node.h>
++#include <vfs/isofs/cd9660/cd9660_node.h>
+ 
+ #include <kvm.h>
+ #include <stdio.h>
+diff --git a/usr.bin/fstat/fstat.c b/usr.bin/fstat/fstat.c
+index c13bde450f..c1af08631b 100644
+--- a/usr.bin/fstat/fstat.c
++++ b/usr.bin/fstat/fstat.c
+@@ -53,10 +53,10 @@
+ #include <vfs/ufs/inode.h>
+ #include <sys/mount.h>
+ #include <sys/namecache.h>
+-#include <nfs/nfsproto.h>
+-#include <nfs/rpcv2.h>
+-#include <nfs/nfs.h>
+-#include <nfs/nfsnode.h>
++#include <vfs/nfs/nfsproto.h>
++#include <vfs/nfs/rpcv2.h>
++#include <vfs/nfs/nfs.h>
++#include <vfs/nfs/nfsnode.h>
+ #include <sys/devfs.h>
+ 
+ #include <vm/vm.h>
+diff --git a/usr.bin/kdump/mksubr b/usr.bin/kdump/mksubr
+index 5dab39e0fb..57cf0005ef 100644
+--- a/usr.bin/kdump/mksubr
++++ b/usr.bin/kdump/mksubr
+@@ -387,7 +387,7 @@ auto_switch_type "acltypename" "ACL_TYPE_[A-Z]+[[:space:]]+0x[0-9]+" "sys/acl.h"
+ auto_switch_type "sigprocmaskhowname" "SIG_[A-Z]+[[:space:]]+[0-9]+" "sys/signal.h"
+ auto_switch_type "lio_listioname" "LIO_(NO)?WAIT[[:space:]]+[0-9]+" "aio.h"
+ auto_switch_type "minheritname" "INHERIT_[A-Z]+[[:space:]]+[0-9]+" "sys/mman.h"
+-auto_switch_type "quotactlname" "Q_[A-Z]+[[:space:]]+0x[0-9]+" "ufs/ufs/quota.h"
++auto_switch_type "quotactlname" "Q_[A-Z]+[[:space:]]+0x[0-9]+" "vfs/ufs/quota.h"
+ auto_if_type "sockdomainname" "PF_[[:alnum:]]+[[:space:]]+" "sys/socket.h"
+ auto_if_type "sockipprotoname" "IPPROTO_[[:alnum:]]+[[:space:]]+" "netinet/in.h"
+ auto_switch_type "sockoptname" "SO_[A-Z]+[[:space:]]+0x[0-9]+" "sys/socket.h"
+diff --git a/usr.bin/nfsstat/nfsstat.c b/usr.bin/nfsstat/nfsstat.c
+index 510588fe33..eb045529a7 100644
+--- a/usr.bin/nfsstat/nfsstat.c
++++ b/usr.bin/nfsstat/nfsstat.c
+@@ -38,9 +38,9 @@
+ #include <sys/mount.h>
+ #include <sys/time.h>
+ #include <sys/sysctl.h>
+-#include <nfs/rpcv2.h>
+-#include <nfs/nfsproto.h>
+-#include <nfs/nfs.h>
++#include <vfs/nfs/rpcv2.h>
++#include <vfs/nfs/nfsproto.h>
++#include <vfs/nfs/nfs.h>
+ #include <signal.h>
+ #include <fcntl.h>
+ #include <ctype.h>
+diff --git a/usr.bin/showmount/showmount.c b/usr.bin/showmount/showmount.c
+index 18805758ed..98fd5c4ee0 100644
+--- a/usr.bin/showmount/showmount.c
++++ b/usr.bin/showmount/showmount.c
+@@ -45,7 +45,7 @@
+ #include <rpc/rpc.h>
+ #include <rpc/pmap_clnt.h>
+ #include <rpc/pmap_prot.h>
+-#include <nfs/rpcv2.h>
++#include <vfs/nfs/rpcv2.h>
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+diff --git a/usr.sbin/makefs/ffs.c b/usr.sbin/makefs/ffs.c
+index 02fd5b9da3..0883482736 100644
+--- a/usr.sbin/makefs/ffs.c
++++ b/usr.sbin/makefs/ffs.c
+@@ -95,9 +95,9 @@
+ #include <sys/statvfs.h>
+ #endif
+ 
+-#include <ufs/ufs/dinode.h>
+-#include <ufs/ufs/dir.h>
+-#include <ufs/ffs/fs.h>
++#include <vfs/ufs/dinode.h>
++#include <vfs/ufs/dir.h>
++#include <vfs/ufs/fs.h>
+ 
+ 
+ #include "ffs/ufs_bswap.h"
+diff --git a/usr.sbin/makefs/ffs.h b/usr.sbin/makefs/ffs.h
+index ed430e4c75..47833ff509 100644
+--- a/usr.sbin/makefs/ffs.h
++++ b/usr.sbin/makefs/ffs.h
+@@ -42,8 +42,8 @@
+ #ifndef _FFS_H
+ #define _FFS_H
+ 
+-#include <ufs/ufs/dinode.h>
+-#include <ufs/ffs/fs.h>
++#include <vfs/ufs/dinode.h>
++#include <vfs/ufs/fs.h>
+ 
+ typedef struct {
+ 	char	label[MAXVOLLEN];	/* volume name/label */
+diff --git a/usr.sbin/makefs/ffs/ffs_alloc.c b/usr.sbin/makefs/ffs/ffs_alloc.c
+index 8f37112e5f..79610006d8 100644
+--- a/usr.sbin/makefs/ffs/ffs_alloc.c
++++ b/usr.sbin/makefs/ffs/ffs_alloc.c
+@@ -52,8 +52,8 @@
+ 
+ #include "makefs.h"
+ 
+-#include <ufs/ufs/dinode.h>
+-#include <ufs/ffs/fs.h>
++#include <vfs/ufs/dinode.h>
++#include <vfs/ufs/fs.h>
+ 
+ #include "ffs/ufs_bswap.h"
+ #include "ffs/buf.h"
+diff --git a/usr.sbin/makefs/ffs/ffs_balloc.c b/usr.sbin/makefs/ffs/ffs_balloc.c
+index cd0fd82be4..5e362047da 100644
+--- a/usr.sbin/makefs/ffs/ffs_balloc.c
++++ b/usr.sbin/makefs/ffs/ffs_balloc.c
+@@ -46,8 +46,8 @@
+ 
+ #include "makefs.h"
+ 
+-#include <ufs/ufs/dinode.h>
+-#include <ufs/ffs/fs.h>
++#include <vfs/ufs/dinode.h>
++#include <vfs/ufs/fs.h>
+ 
+ #include "ffs/ufs_bswap.h"
+ #include "ffs/buf.h"
+diff --git a/usr.sbin/makefs/ffs/ffs_bswap.c b/usr.sbin/makefs/ffs/ffs_bswap.c
+index ba48c71de8..f01034b798 100644
+--- a/usr.sbin/makefs/ffs/ffs_bswap.c
++++ b/usr.sbin/makefs/ffs/ffs_bswap.c
+@@ -41,9 +41,9 @@
+ #include <string.h>
+ #endif
+ 
+-#include <ufs/ufs/dinode.h>
++#include <vfs/ufs/dinode.h>
+ #include "ffs/ufs_bswap.h"
+-#include <ufs/ffs/fs.h>
++#include <vfs/ufs/fs.h>
+ #include "ffs/ffs_extern.h"
+ 
+ #ifdef __DragonFly__
+diff --git a/usr.sbin/makefs/ffs/ffs_subr.c b/usr.sbin/makefs/ffs/ffs_subr.c
+index 45dda21917..ee477ab400 100644
+--- a/usr.sbin/makefs/ffs/ffs_subr.c
++++ b/usr.sbin/makefs/ffs/ffs_subr.c
+@@ -37,8 +37,8 @@
+ #include <sys/param.h>
+ #include <sys/types.h>
+ 
+-#include <ufs/ufs/dinode.h>
+-#include <ufs/ffs/fs.h>
++#include <vfs/ufs/dinode.h>
++#include <vfs/ufs/fs.h>
+ #include "ffs/ffs_extern.h"
+ #include "ffs/ufs_bswap.h"
+ 
+diff --git a/usr.sbin/makefs/ffs/mkfs.c b/usr.sbin/makefs/ffs/mkfs.c
+index 41fc68dcd0..32c1b78120 100644
+--- a/usr.sbin/makefs/ffs/mkfs.c
++++ b/usr.sbin/makefs/ffs/mkfs.c
+@@ -56,8 +56,8 @@
+ #include "makefs.h"
+ #include "ffs.h"
+ 
+-#include <ufs/ufs/dinode.h>
+-#include <ufs/ffs/fs.h>
++#include <vfs/ufs/dinode.h>
++#include <vfs/ufs/fs.h>
+ 
+ #include "ffs/ufs_bswap.h"
+ #include "ffs/ufs_inode.h"
+diff --git a/usr.sbin/makefs/ffs/ufs_bmap.c b/usr.sbin/makefs/ffs/ufs_bmap.c
+index adf9199a1c..3829b00a75 100644
+--- a/usr.sbin/makefs/ffs/ufs_bmap.c
++++ b/usr.sbin/makefs/ffs/ufs_bmap.c
+@@ -49,8 +49,8 @@
+ 
+ #include "makefs.h"
+ 
+-#include <ufs/ufs/dinode.h>
+-#include <ufs/ffs/fs.h>
++#include <vfs/ufs/dinode.h>
++#include <vfs/ufs/fs.h>
+ 
+ #include "ffs/ufs_bswap.h"
+ #include "ffs/ufs_inode.h"
+diff --git a/usr.sbin/pstat/pstat.c b/usr.sbin/pstat/pstat.c
+index c8bf3e37c3..c57735eda2 100644
+--- a/usr.sbin/pstat/pstat.c
++++ b/usr.sbin/pstat/pstat.c
+@@ -44,10 +44,10 @@
+ #include <sys/uio.h>
+ #include <sys/namei.h>
+ #include <sys/stat.h>
+-#include <nfs/rpcv2.h>
+-#include <nfs/nfsproto.h>
+-#include <nfs/nfs.h>
+-#include <nfs/nfsnode.h>
++#include <vfs/nfs/rpcv2.h>
++#include <vfs/nfs/nfsproto.h>
++#include <vfs/nfs/nfs.h>
++#include <vfs/nfs/nfsnode.h>
+ #include <sys/ioctl.h>
+ #include <sys/tty.h>
+ #include <sys/conf.h>
+diff --git a/usr.sbin/rpc.umntall/mounttab.c b/usr.sbin/rpc.umntall/mounttab.c
+index f4321db619..449e8f5c59 100644
+--- a/usr.sbin/rpc.umntall/mounttab.c
++++ b/usr.sbin/rpc.umntall/mounttab.c
+@@ -24,13 +24,12 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/rpc.umntall/mounttab.c,v 1.2.2.1 2001/12/13 01:27:20 iedowse Exp $
+- * $DragonFly: src/usr.sbin/rpc.umntall/mounttab.c,v 1.4 2008/11/12 21:44:59 swildner Exp $
+  */
+ 
+ #include <sys/syslog.h>
+ 
+ #include <rpc/rpc.h>
+-#include <nfs/rpcv2.h>
++#include <vfs/nfs/rpcv2.h>
+ 
+ #include <err.h>
+ #include <errno.h>
+diff --git a/usr.sbin/rpc.umntall/rpc.umntall.c b/usr.sbin/rpc.umntall/rpc.umntall.c
+index d7c4a0eef5..a5da49544e 100644
+--- a/usr.sbin/rpc.umntall/rpc.umntall.c
++++ b/usr.sbin/rpc.umntall/rpc.umntall.c
+@@ -24,7 +24,6 @@
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/usr.sbin/rpc.umntall/rpc.umntall.c,v 1.13 2005/05/27 00:05:16 mux Exp $
+- * $DragonFly: src/usr.sbin/rpc.umntall/rpc.umntall.c,v 1.7 2008/11/12 21:44:59 swildner Exp $
+  */
+ 
+ #include <sys/param.h>
+@@ -33,7 +32,7 @@
+ 
+ #include <rpc/rpc.h>
+ #include <rpc/pmap_clnt.h>
+-#include <nfs/rpcv2.h>
++#include <vfs/nfs/rpcv2.h>
+ 
+ #include <err.h>
+ #include <netdb.h>
+-- 
+2.23.0
+
