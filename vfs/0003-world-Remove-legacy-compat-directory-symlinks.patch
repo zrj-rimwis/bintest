@@ -1,7 +1,11 @@
-From 84008837a888ae0ba9b8ee3bd2a9d37ba36ed283 Mon Sep 17 00:00:00 2001
+From 9a22e727cef34e7278f381d147c07086b7836f06 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Fri, 15 Nov 2019 21:41:12 +0200
-Subject: [PATCH 3/3] world: Remove legacy compat directory symlinks.
+Subject: [PATCH 3/4] world: Remove legacy compat directory symlinks.
+
+ If compatibility paths are needed for 3rd-party software, then create
+ paths in /usr/include/compat/ using real directories without use of the
+ symlinks (hardlinks are ok).
 
  While there, remove ata.h symlink too.
 ---

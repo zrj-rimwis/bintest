@@ -1,0 +1,357 @@
+From 71a538a33a8fad9f041fbb8c1581a9eb377cc74e Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 18 Nov 2019 12:51:52 +0200
+Subject: [PATCH 4/4] include/compat: Unify header setup.
+
+ Use small forwarding header wrappers.  These headers are privided for
+ ports benefits and should not be used during buildworld/buildkernel.
+---
+ etc/mtree/BSD.include.dist                 | 22 ++++++++++++++++++++++
+ include/Makefile                           |  7 +------
+ include/compat/cam/cam.h                   |  4 ++++
+ include/compat/cam/cam_ccb.h               |  4 ++++
+ include/compat/cam/scsi/scsi_all.h         |  4 ++++
+ include/compat/cam/scsi/scsi_da.h          |  4 ++++
+ include/compat/cam/scsi/scsi_message.h     |  4 ++++
+ include/compat/cam/scsi/scsi_pass.h        |  4 ++++
+ include/compat/fs/msdosfs/msdosfsmount.h   |  4 ++++
+ include/compat/fs/nfs/nfs.h                |  4 ++++
+ include/compat/fs/nfs/nfsport.h            |  4 ++++
+ include/compat/fs/nfs/nfsproto.h           |  4 ++++
+ include/compat/fs/nfs/rpcv2.h              |  4 ++++
+ include/compat/fs/ntfs/ntfsmount.h         |  4 ++++
+ include/compat/isofs/cd9660/cd9660_mount.h |  4 ++++
+ include/compat/isofs/cd9660/iso.h          |  4 ++++
+ include/compat/linux/input-event-codes.h   |  4 ++++
+ include/compat/linux/input.h               |  4 ++++
+ include/compat/linux/types.h               |  5 +++++
+ include/compat/nfs/nfs.h                   |  4 ++++
+ include/compat/nfs/nfsproto.h              |  4 ++++
+ include/compat/nfs/rpcv2.h                 |  4 ++++
+ include/compat/ufs/ffs/fs.h                |  4 ++++
+ include/compat/ufs/ufs/dinode.h            |  4 ++++
+ include/compat/ufs/ufs/ufs_types.h         |  4 ++++
+ include/compat/ufs/ufs/ufsmount.h          |  4 ++++
+ 26 files changed, 120 insertions(+), 6 deletions(-)
+ create mode 100644 include/compat/cam/cam.h
+ create mode 100644 include/compat/cam/cam_ccb.h
+ create mode 100644 include/compat/cam/scsi/scsi_all.h
+ create mode 100644 include/compat/cam/scsi/scsi_da.h
+ create mode 100644 include/compat/cam/scsi/scsi_message.h
+ create mode 100644 include/compat/cam/scsi/scsi_pass.h
+ create mode 100644 include/compat/fs/msdosfs/msdosfsmount.h
+ create mode 100644 include/compat/fs/nfs/nfs.h
+ create mode 100644 include/compat/fs/nfs/nfsport.h
+ create mode 100644 include/compat/fs/nfs/nfsproto.h
+ create mode 100644 include/compat/fs/nfs/rpcv2.h
+ create mode 100644 include/compat/fs/ntfs/ntfsmount.h
+ create mode 100644 include/compat/isofs/cd9660/cd9660_mount.h
+ create mode 100644 include/compat/isofs/cd9660/iso.h
+ create mode 100644 include/compat/linux/input-event-codes.h
+ create mode 100644 include/compat/linux/input.h
+ create mode 100644 include/compat/linux/types.h
+ create mode 100644 include/compat/nfs/nfs.h
+ create mode 100644 include/compat/nfs/nfsproto.h
+ create mode 100644 include/compat/nfs/rpcv2.h
+ create mode 100644 include/compat/ufs/ffs/fs.h
+ create mode 100644 include/compat/ufs/ufs/dinode.h
+ create mode 100644 include/compat/ufs/ufs/ufs_types.h
+ create mode 100644 include/compat/ufs/ufs/ufsmount.h
+
+diff --git a/etc/mtree/BSD.include.dist b/etc/mtree/BSD.include.dist
+index 44e929cce9..d982730c7f 100644
+--- a/etc/mtree/BSD.include.dist
++++ b/etc/mtree/BSD.include.dist
+@@ -174,8 +174,30 @@
+         ..
+     ..
+     compat
++        cam
++            scsi
++            ..
++        ..
++        fs
++            msdosfs
++            ..
++            nfs
++            ..
++            ntfs
++            ..
++        ..
++        isofs
++        ..
+         linux
+         ..
++        nfs
++        ..
++        ufs
++            ffs
++            ..
++            ufs
++            ..
++        ..
+     ..
+     cpu
+     ..
+diff --git a/include/Makefile b/include/Makefile
+index 8890f7d6f5..515c6b4abb 100644
+--- a/include/Makefile
++++ b/include/Makefile
+@@ -168,12 +168,7 @@ copies:		mtree_setup
+ 	cd ${.CURDIR}/../sys/dev/misc/evdev; \
+ 		${INSTALL} -C -o ${BINOWN} -g ${BINGRP} -m 444 input-event-codes.h \
+ 		${DESTDIR}/usr/include/dev/misc/evdev
+-	cd ${.CURDIR}/../sys/dev/misc/evdev; \
+-		${INSTALL} -C -o ${BINOWN} -g ${BINGRP} -m 444 input.h \
+-		${DESTDIR}/usr/include/compat/linux
+-	cd ${.CURDIR}/../sys/dev/misc/evdev; \
+-		${INSTALL} -C -o ${BINOWN} -g ${BINGRP} -m 444 input-event-codes.h \
+-		${DESTDIR}/usr/include/compat/linux
++	cpdup -o ${.CURDIR}/compat ${DESTDIR}/usr/include/compat
+ .if exists(${.CURDIR}/../sys/cpu/${MACHINE_ARCH}/include)
+ 	cd ${.CURDIR}/../sys/cpu/${MACHINE_ARCH}/include; \
+ 		${INSTALL} -C -o ${BINOWN} -g ${BINGRP} -m 444 *.h \
+diff --git a/include/compat/cam/cam.h b/include/compat/cam/cam.h
+new file mode 100644
+index 0000000000..ab44f8d907
+--- /dev/null
++++ b/include/compat/cam/cam.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_CAM_CAM_H_
++#define	_COMPAT_CAM_CAM_H_
++#include <bus/cam/cam.h>
++#endif
+diff --git a/include/compat/cam/cam_ccb.h b/include/compat/cam/cam_ccb.h
+new file mode 100644
+index 0000000000..9298d9e9e5
+--- /dev/null
++++ b/include/compat/cam/cam_ccb.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_CAM_CAM_CCB_H_
++#define	_COMPAT_CAM_CAM_CCB_H_
++#include <bus/cam/cam_ccb.h>
++#endif
+diff --git a/include/compat/cam/scsi/scsi_all.h b/include/compat/cam/scsi/scsi_all.h
+new file mode 100644
+index 0000000000..29a3c78c01
+--- /dev/null
++++ b/include/compat/cam/scsi/scsi_all.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_BUS_CAM_SCSI_SCSI_ALL_H_
++#define	_COMPAT_BUS_CAM_SCSI_SCSI_ALL_H_
++#include <bus/cam/scsi/scsi_all.h>
++#endif
+diff --git a/include/compat/cam/scsi/scsi_da.h b/include/compat/cam/scsi/scsi_da.h
+new file mode 100644
+index 0000000000..5d1ad79de4
+--- /dev/null
++++ b/include/compat/cam/scsi/scsi_da.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_CAM_SCSI_SCSI_DA_H_
++#define	_COMPAT_CAM_SCSI_SCSI_DA_H_
++#include <bus/cam/scsi/scsi_da.h>
++#endif
+diff --git a/include/compat/cam/scsi/scsi_message.h b/include/compat/cam/scsi/scsi_message.h
+new file mode 100644
+index 0000000000..8f1096838b
+--- /dev/null
++++ b/include/compat/cam/scsi/scsi_message.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_CAM_SCSI_SCSI_MESSAGE_H_
++#define	_COMPAT_CAM_SCSI_SCSI_MESSAGE_H_
++#include <bus/cam/scsi/scsi_message.h>
++#endif
+diff --git a/include/compat/cam/scsi/scsi_pass.h b/include/compat/cam/scsi/scsi_pass.h
+new file mode 100644
+index 0000000000..6b707f8f07
+--- /dev/null
++++ b/include/compat/cam/scsi/scsi_pass.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_CAM_SCSI_SCSI_PASS_H_
++#define	_COMPAT_CAM_SCSI_SCSI_PASS_H_
++#include <bus/cam/scsi/scsi_pass.h>
++#endif
+diff --git a/include/compat/fs/msdosfs/msdosfsmount.h b/include/compat/fs/msdosfs/msdosfsmount.h
+new file mode 100644
+index 0000000000..5e04e04cd0
+--- /dev/null
++++ b/include/compat/fs/msdosfs/msdosfsmount.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_FS_MSDOSFS_MSDOSFSMOUNT_H_
++#define	_COMPAT_FS_MSDOSFS_MSDOSFSMOUNT_H_
++#include <vfs/msdosfs/msdosfsmount.h>
++#endif
+diff --git a/include/compat/fs/nfs/nfs.h b/include/compat/fs/nfs/nfs.h
+new file mode 100644
+index 0000000000..aea22d9973
+--- /dev/null
++++ b/include/compat/fs/nfs/nfs.h
+@@ -0,0 +1,4 @@
++#ifndef	_COMPAT_FS_NFS_NFS_H_
++#define	_COMPAT_FS_NFS_NFS_H_
++#include <vfs/nfs/nfs.h>
++#endif
+diff --git a/include/compat/fs/nfs/nfsport.h b/include/compat/fs/nfs/nfsport.h
+new file mode 100644
+index 0000000000..df1517f29f
+--- /dev/null
++++ b/include/compat/fs/nfs/nfsport.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_FS_NFS_NFSPORT_H_
++#define	_COMPAT_FS_NFS_NFSPORT_H_
++/* nothing */
++#endif
+diff --git a/include/compat/fs/nfs/nfsproto.h b/include/compat/fs/nfs/nfsproto.h
+new file mode 100644
+index 0000000000..3796c26b77
+--- /dev/null
++++ b/include/compat/fs/nfs/nfsproto.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_FS_NFS_NFSPROTO_H_
++#define	_COMPAT_FS_NFS_NFSPROTO_H_
++#include <vfs/nfs/nfsproto.h>
++#endif
+diff --git a/include/compat/fs/nfs/rpcv2.h b/include/compat/fs/nfs/rpcv2.h
+new file mode 100644
+index 0000000000..3f32774637
+--- /dev/null
++++ b/include/compat/fs/nfs/rpcv2.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_FS_NFS_RPCV2_H_
++#define	_COMPAT_FS_NFS_RPCV2_H_
++#include <vfs/nfs/rpcv2.h>
++#endif
+diff --git a/include/compat/fs/ntfs/ntfsmount.h b/include/compat/fs/ntfs/ntfsmount.h
+new file mode 100644
+index 0000000000..19e92ac4f9
+--- /dev/null
++++ b/include/compat/fs/ntfs/ntfsmount.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_FS_NTFS_NTFSMOUNT_H_
++#define	_COMPAT_FS_NTFS_NTFSMOUNT_H_
++#include <vfs/ntfs/ntfsmount.h>
++#endif
+diff --git a/include/compat/isofs/cd9660/cd9660_mount.h b/include/compat/isofs/cd9660/cd9660_mount.h
+new file mode 100644
+index 0000000000..a6587f821b
+--- /dev/null
++++ b/include/compat/isofs/cd9660/cd9660_mount.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_ISOFS_CD9660_CD9660_MOUNT_H_
++#define	_COMPAT_ISOFS_CD9660_CD9660_MOUNT_H_
++#include <vfs/isofs/cd9660/cd9660_mount.h>
++#endif
+diff --git a/include/compat/isofs/cd9660/iso.h b/include/compat/isofs/cd9660/iso.h
+new file mode 100644
+index 0000000000..239b9fcc6b
+--- /dev/null
++++ b/include/compat/isofs/cd9660/iso.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_ISOFS_CD9660_ISO_H_
++#define	_COMPAT_ISOFS_CD9660_ISO_H_
++#include <vfs/isofs/cd9660/iso.h>
++#endif
+diff --git a/include/compat/linux/input-event-codes.h b/include/compat/linux/input-event-codes.h
+new file mode 100644
+index 0000000000..78ce7a4cae
+--- /dev/null
++++ b/include/compat/linux/input-event-codes.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_LINUX_INPUT_EVENT_CODES_H_
++#define	_COMPAT_LINUX_INPUT_EVENT_CODES_H_
++#include <dev/misc/evdev/input-event-codes.h>
++#endif
+diff --git a/include/compat/linux/input.h b/include/compat/linux/input.h
+new file mode 100644
+index 0000000000..b949aced0c
+--- /dev/null
++++ b/include/compat/linux/input.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_LINUX_INPUT_H_
++#define	_COMPAT_LINUX_INPUT_H_
++#include <dev/misc/evdev/input.h>
++#endif
+diff --git a/include/compat/linux/types.h b/include/compat/linux/types.h
+new file mode 100644
+index 0000000000..80c291578e
+--- /dev/null
++++ b/include/compat/linux/types.h
+@@ -0,0 +1,5 @@
++#ifndef _COMPAT_LINUX_TYPES_H_
++#define	_COMPAT_LINUX_TYPES_H_
++#include <sys/stdint.h>
++#include <sys/types.h>
++#endif
+diff --git a/include/compat/nfs/nfs.h b/include/compat/nfs/nfs.h
+new file mode 100644
+index 0000000000..7504cf4fbc
+--- /dev/null
++++ b/include/compat/nfs/nfs.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_NFS_NFS_H_
++#define	_COMPAT_NFS_NFS_H_
++#include <vfs/nfs/nfs.h>
++#endif
+diff --git a/include/compat/nfs/nfsproto.h b/include/compat/nfs/nfsproto.h
+new file mode 100644
+index 0000000000..17442f9638
+--- /dev/null
++++ b/include/compat/nfs/nfsproto.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_NFS_NFSPROTO_H_
++#define	_COMPAT_NFS_NFSPROTO_H_
++#include <vfs/nfs/nfsproto.h>
++#endif
+diff --git a/include/compat/nfs/rpcv2.h b/include/compat/nfs/rpcv2.h
+new file mode 100644
+index 0000000000..6157180cb9
+--- /dev/null
++++ b/include/compat/nfs/rpcv2.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_NFS_RPCV2_H_
++#define	_COMPAT_NFS_RPCV2_H_
++#include <vfs/nfs/rpcv2.h>
++#endif
+diff --git a/include/compat/ufs/ffs/fs.h b/include/compat/ufs/ffs/fs.h
+new file mode 100644
+index 0000000000..1bb0406e24
+--- /dev/null
++++ b/include/compat/ufs/ffs/fs.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_UFS_FFS_FS_H_
++#define	_COMPAT_UFS_FFS_FS_H_
++#include <vfs/ufs/fs.h>
++#endif
+diff --git a/include/compat/ufs/ufs/dinode.h b/include/compat/ufs/ufs/dinode.h
+new file mode 100644
+index 0000000000..1c17209816
+--- /dev/null
++++ b/include/compat/ufs/ufs/dinode.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_UFS_UFS_DINODE_H_
++#define	_COMPAT_UFS_UFS_DINODE_H_
++#include <vfs/ufs/dinode.h>
++#endif
+diff --git a/include/compat/ufs/ufs/ufs_types.h b/include/compat/ufs/ufs/ufs_types.h
+new file mode 100644
+index 0000000000..558d841cbc
+--- /dev/null
++++ b/include/compat/ufs/ufs/ufs_types.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_UFS_UFS_UFS_TYPES_H_
++#define	_COMPAT_UFS_UFS_UFS_TYPES_H_
++#include <vfs/ufs/ufs_types.h>
++#endif
+diff --git a/include/compat/ufs/ufs/ufsmount.h b/include/compat/ufs/ufs/ufsmount.h
+new file mode 100644
+index 0000000000..37fc2420aa
+--- /dev/null
++++ b/include/compat/ufs/ufs/ufsmount.h
+@@ -0,0 +1,4 @@
++#ifndef _COMPAT_UFS_UFS_UFSMOUNT_H_
++#define	_COMPAT_UFS_UFS_UFSMOUNT_H_
++#include <vfs/ufs/ufsmount.h>
++#endif
+-- 
+2.23.0
+
