@@ -1,0 +1,72 @@
+From ba1ce6380664447e8ae11cec6e4f5a1dcb1b746b Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 20 Nov 2019 09:32:09 +0200
+Subject: [PATCH 12/12] libstand: Switch to _STANDALONE handling.
+
+ For consistency.  Exclude pthread types for loaders and prevent
+ TLS __thread variables leaking into intermediates.
+---
+ lib/libc/string/strtok.c | 2 +-
+ lib/libstand/Makefile    | 1 -
+ sys/sys/errno.h          | 2 +-
+ sys/sys/types.h          | 4 ++--
+ 4 files changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/lib/libc/string/strtok.c b/lib/libc/string/strtok.c
+index 6e1c94cdda..bf6d9492e8 100644
+--- a/lib/libc/string/strtok.c
++++ b/lib/libc/string/strtok.c
+@@ -41,7 +41,7 @@
+ #endif
+ #include <string.h>
+ 
+-#ifdef _LIBSTAND_
++#ifdef _STANDALONE
+ #define TLS_ATTRIBUTE
+ #define __thread
+ #else
+diff --git a/lib/libstand/Makefile b/lib/libstand/Makefile
+index 1aa6decc39..6d3a1a67de 100644
+--- a/lib/libstand/Makefile
++++ b/lib/libstand/Makefile
+@@ -20,7 +20,6 @@ LIBSTAND_SRC?=	${.CURDIR}
+ LIBSTAND_ARCH?=	${MACHINE_ARCH}
+ LIBC_SRC=	${LIBSTAND_SRC}/../libc
+ 
+-CFLAGS+=-D_LIBSTAND_
+ CFLAGS+=	-D_STANDALONE
+ 
+ # Mostly OK, some of the libc imports are a bit noisy
+diff --git a/sys/sys/errno.h b/sys/sys/errno.h
+index 2bfa6a9b5c..b96b5eff0f 100644
+--- a/sys/sys/errno.h
++++ b/sys/sys/errno.h
+@@ -40,7 +40,7 @@
+ 
+ #include <sys/cdefs.h>
+ 
+-#if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
++#if (!defined(_KERNEL) || defined(_KERNEL_VIRTUAL)) && !defined(_STANDALONE)
+ __BEGIN_DECLS
+ extern __thread int	errno;
+ 
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index a9b29a63ef..2f162cf23a 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -220,10 +220,10 @@ typedef	__timer_t	timer_t;
+ #include <sys/_timeval.h>
+ #endif /* __BSD_VISIBLE */
+ 
+-#ifndef _KERNEL
++#if !defined(_KERNEL) && !defined(_STANDALONE)
+ #if __POSIX_VISIBLE >= 199209 || __XSI_VISIBLE >= 500
+ #include <sys/_pthreadtypes.h>		/* now POSIX thread types */
+ #endif
+-#endif	/* !_KERNEL */
++#endif	/* !_KERNEL && !_STANDALONE */
+ 
+ #endif /* !_SYS_TYPES_H_ */
+-- 
+2.23.0
+

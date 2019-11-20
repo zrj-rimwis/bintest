@@ -1,0 +1,80 @@
+From c3f5f395ab5e35bd006a226ab69a6b135974fe4f Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 19 Nov 2019 20:54:48 +0200
+Subject: [PATCH 10/12] <signal.h>: Further reduce pthread namespace pollution.
+
+ Only provide types mandated by POSIX here.
+---
+ include/signal.h        | 8 ++++++++
+ sys/sys/_pthreadtypes.h | 8 ++++++++
+ sys/sys/signal.h        | 6 +++++-
+ 3 files changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/include/signal.h b/include/signal.h
+index 2993a0e5f9..5301dff166 100644
+--- a/include/signal.h
++++ b/include/signal.h
+@@ -49,6 +49,14 @@ extern const char * const sys_siglist[NSIG];
+ extern const int sys_nsig;
+ #endif
+ 
++#if __POSIX_VISIBLE >= 199506 || __XSI_VISIBLE >= 500
++#ifndef _PTHREAD_T_DECLARED
++struct __pthread_s;
++typedef	struct __pthread_s	*pthread_t;
++#define	_PTHREAD_T_DECLARED
++#endif
++#endif /* __POSIX_VISIBLE >= 199506 || __XSI_VISIBLE >= 500 */
++
+ __BEGIN_DECLS
+ int	raise(int);
+ 
+diff --git a/sys/sys/_pthreadtypes.h b/sys/sys/_pthreadtypes.h
+index ee46ff7858..7a16b9b28f 100644
+--- a/sys/sys/_pthreadtypes.h
++++ b/sys/sys/_pthreadtypes.h
+@@ -27,7 +27,9 @@
+ #ifndef _SYS__PTHREADTYPES_H_
+ #define	_SYS__PTHREADTYPES_H_
+ 
++#ifndef _SYS_CDEFS_H_
+ #include <sys/cdefs.h>
++#endif
+ 
+ /*
+  * Forward opaque structure definitions that do not pollute namespaces.
+@@ -49,8 +51,14 @@ struct __pthread_spinlock_s;
+ /*
+  * Basic pthread types to be used in function prototypes.
+  */
++#ifndef _PTHREAD_T_DECLARED
+ typedef	struct __pthread_s		*pthread_t;
++#define	_PTHREAD_T_DECLARED
++#endif
++#ifndef _PTHREAD_ATTR_T_DECLARED
+ typedef	struct __pthread_attr_s		*pthread_attr_t;
++#define	_PTHREAD_ATTR_T_DECLARED
++#endif
+ typedef	struct __pthread_barrier_s	*pthread_barrier_t;
+ typedef	struct __pthread_barrierattr_s	*pthread_barrierattr_t;
+ typedef	struct __pthread_cond_s		*pthread_cond_t;
+diff --git a/sys/sys/signal.h b/sys/sys/signal.h
+index 681b6317e0..558baee512 100644
+--- a/sys/sys/signal.h
++++ b/sys/sys/signal.h
+@@ -163,7 +163,11 @@ typedef	void __sighandler_t (int);
+ 
+ #if __POSIX_VISIBLE >= 199309 || __XSI_VISIBLE >= 500
+ #if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
+-#include <sys/_pthreadtypes.h>
++#ifndef _PTHREAD_ATTR_T_DECLARED
++struct __pthread_attr_s;
++typedef	struct __pthread_attr_s		*pthread_attr_t;
++#define	_PTHREAD_ATTR_T_DECLARED
++#endif
+ #endif
+ 
+ struct sigevent {
+-- 
+2.23.0
+

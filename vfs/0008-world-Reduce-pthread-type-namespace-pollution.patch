@@ -1,0 +1,162 @@
+From 70911b10b6b0fa005219932ff37db35ae0fffd4a Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 19 Nov 2019 12:02:45 +0200
+Subject: [PATCH 08/12] world: Reduce pthread type namespace pollution.
+
+ This fully removes pthread types in kernel (except vkernel).
+ The vkernel bits first require <signal.h> exposure adjustments.
+ * Switch to lighter includes in several headers where possible.
+ * Adjust visibility in <signal.h>.
+ * Exclude type for sigev_notify_attributes for kernel, used only by the
+   lib/librt/aio.c.  We could use void type unconditionally like NetBSD,
+ * Do not provide pthread_attr_t in <sys/aio.h> for kernel.
+ * Remove <sys/signal.h> from <pthead.h>, seems to be legacy remnant for
+   no longer required pthread_kill() and pthread_sigmask().
+---
+ include/pthread.h                       |  3 +--
+ include/pthread_np.h                    |  2 +-
+ include/signal.h                        |  4 +++-
+ sys/platform/vkernel64/include/md_var.h |  3 +++
+ sys/sys/aio.h                           |  2 ++
+ sys/sys/signal.h                        | 13 ++++++++++---
+ sys/sys/types.h                         |  4 ++++
+ 7 files changed, 24 insertions(+), 7 deletions(-)
+
+diff --git a/include/pthread.h b/include/pthread.h
+index 7b7a19dbc1..79b5294ada 100644
+--- a/include/pthread.h
++++ b/include/pthread.h
+@@ -39,9 +39,8 @@
+  * Header files.
+  */
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
++#include <sys/_pthreadtypes.h>
+ #include <sys/time.h>
+-#include <sys/signal.h>
+ #include <machine/limits.h>
+ #include <sys/sched.h>
+ 
+diff --git a/include/pthread_np.h b/include/pthread_np.h
+index 3ab916dafd..bb9a583249 100644
+--- a/include/pthread_np.h
++++ b/include/pthread_np.h
+@@ -32,8 +32,8 @@
+ #define _PTHREAD_NP_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/types.h>
+ #include <sys/cpumask.h>
++#include <sys/_pthreadtypes.h>
+ #include <sys/_timespec.h>
+ #include <time.h>
+ 
+diff --git a/include/signal.h b/include/signal.h
+index 35d7478315..2993a0e5f9 100644
+--- a/include/signal.h
++++ b/include/signal.h
+@@ -52,11 +52,13 @@ extern const int sys_nsig;
+ __BEGIN_DECLS
+ int	raise(int);
+ 
+-#if __POSIX_VISIBLE
++#if __POSIX_VISIBLE || __XSI_VISIBLE
+ int	kill(pid_t, int);
++#if __POSIX_VISIBLE >= 199506 || __XSI_VISIBLE >= 500
+ int	pthread_kill(pthread_t, int);
+ int	pthread_sigmask(int, const sigset_t * __restrict,
+ 	    sigset_t * __restrict);
++#endif
+ int	sigaction(int, const struct sigaction * __restrict,
+ 	    struct sigaction * __restrict);
+ int	sigaddset(sigset_t *, int);
+diff --git a/sys/platform/vkernel64/include/md_var.h b/sys/platform/vkernel64/include/md_var.h
+index ecb57ac4f0..0e6a0a3709 100644
+--- a/sys/platform/vkernel64/include/md_var.h
++++ b/sys/platform/vkernel64/include/md_var.h
+@@ -44,6 +44,9 @@
+ #ifndef _NET_ETHERNET_H_
+ #include <net/ethernet.h>
+ #endif
++#ifndef _SYS__PTHREADTYPES_H_
++#include <sys/_pthreadtypes.h>
++#endif
+ 
+ #define VKNETIF_MAX	16
+ #define VKDISK_MAX	16
+diff --git a/sys/sys/aio.h b/sys/sys/aio.h
+index f0e854c1ba..fb7d4f5fa5 100644
+--- a/sys/sys/aio.h
++++ b/sys/sys/aio.h
+@@ -19,7 +19,9 @@
+ #ifndef _SYS_AIO_H_
+ #define	_SYS_AIO_H_
+ 
++#ifndef _KERNEL
+ #include <sys/_pthreadtypes.h>
++#endif
+ #include <sys/_timespec.h>
+ #include <sys/signal.h>
+ #include <machine/stdint.h>
+diff --git a/sys/sys/signal.h b/sys/sys/signal.h
+index e0456a9773..681b6317e0 100644
+--- a/sys/sys/signal.h
++++ b/sys/sys/signal.h
+@@ -39,7 +39,6 @@
+ #define	_SYS_SIGNAL_H_
+ 
+ #include <sys/cdefs.h>
+-#include <sys/_pthreadtypes.h>
+ #include <sys/_siginfo.h>
+ #include <sys/_sigset.h>
+ #include <machine/stdint.h>
+@@ -162,13 +161,21 @@ typedef	void __sighandler_t (int);
+ #define	SIG_IGN		((__sighandler_t *)1)
+ #define	SIG_ERR		((__sighandler_t *)-1)
+ 
+-#if __POSIX_VISIBLE >= 199309
++#if __POSIX_VISIBLE >= 199309 || __XSI_VISIBLE >= 500
++#if !defined(_KERNEL) || defined(_KERNEL_VIRTUAL)
++#include <sys/_pthreadtypes.h>
++#endif
++
+ struct sigevent {
+ 	int	sigev_notify;		/* Notification type */
+ 	union {
+ 		int	__sigev_signo;	/* Signal number */
+ 		int	__sigev_notify_kqueue;
++#ifdef _KERNEL
++		void	*__sigev_notify_attributes;
++#else
+ 		pthread_attr_t *__sigev_notify_attributes;
++#endif
+ 	} __sigev_u;
+ 	union sigval sigev_value;	/* Signal value */
+ 	void (*sigev_notify_function)(union sigval);
+@@ -195,7 +202,7 @@ typedef	struct __sigset	sigset_t;
+ /*
+  * XXX - there are some nasty dependencies on include file order. Now that
+  * sigset_t has been defined we can include the MD header.
+- */     
++ */
+ #include <machine/signal.h>     /* sig_atomic_t; trap codes; sigcontext */
+ 
+ #if __POSIX_VISIBLE
+diff --git a/sys/sys/types.h b/sys/sys/types.h
+index b6576d17f3..a9b29a63ef 100644
+--- a/sys/sys/types.h
++++ b/sys/sys/types.h
+@@ -220,6 +220,10 @@ typedef	__timer_t	timer_t;
+ #include <sys/_timeval.h>
+ #endif /* __BSD_VISIBLE */
+ 
++#ifndef _KERNEL
++#if __POSIX_VISIBLE >= 199209 || __XSI_VISIBLE >= 500
+ #include <sys/_pthreadtypes.h>		/* now POSIX thread types */
++#endif
++#endif	/* !_KERNEL */
+ 
+ #endif /* !_SYS_TYPES_H_ */
+-- 
+2.23.0
+

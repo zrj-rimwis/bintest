@@ -1,0 +1,2488 @@
+From 34e28a9832eeb2c077686f6d4644c99debb3f0a3 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 19 Nov 2019 19:19:59 +0200
+Subject: [PATCH 09/12] world: Reimplement pthread types using non polluting
+ types.
+
+ Use __ implementation specific namespace and adjust libthread_xu.
+ * The pthread_addr_t type was specific only to libc_r, remove it.
+ * The pthread_startroutine_t typedef was never used since initial fork.
+ * The mutex member in struct pthread_once was for libc_r only, rename
+   it to __private void pointer to keep ABI compatibility.
+ * Mangle struct names using __type_s scheme to avoid collisions with
+   user defined types in 3rd-party software packages.
+ * Use pthread_t type in libthread_xu to allow easier differentiation
+   between non-pointers, single and double pointers.
+ * Adjust partly publicly visible struct pthread_once members too.
+
+ While there, adjust visibility for spinlock/rwlock pthread functions.
+---
+ include/pthread.h                             |  14 ++-
+ lib/libc/gen/_once_stub.c                     |   4 +-
+ lib/libc/gen/_pthread_stubs.c                 |   4 +-
+ lib/libc/gen/gen_private.h                    |   4 +-
+ .../arch/x86_64/include/pthread_md.h          |   4 +-
+ lib/libthread_xu/thread/thr_affinity.c        |   4 +-
+ lib/libthread_xu/thread/thr_attr.c            |  10 +-
+ lib/libthread_xu/thread/thr_barrier.c         |   4 +-
+ lib/libthread_xu/thread/thr_barrierattr.c     |   2 +-
+ lib/libthread_xu/thread/thr_cancel.c          |  12 +-
+ lib/libthread_xu/thread/thr_clean.c           |   4 +-
+ lib/libthread_xu/thread/thr_cond.c            |  16 +--
+ lib/libthread_xu/thread/thr_condattr.c        |   4 +-
+ lib/libthread_xu/thread/thr_create.c          |   8 +-
+ lib/libthread_xu/thread/thr_ctrdtr.c          |   2 +-
+ lib/libthread_xu/thread/thr_detach.c          |   2 +-
+ lib/libthread_xu/thread/thr_distribute.c      |   4 +-
+ lib/libthread_xu/thread/thr_event.c           |   6 +-
+ lib/libthread_xu/thread/thr_exit.c            |   6 +-
+ lib/libthread_xu/thread/thr_fork.c            |   8 +-
+ lib/libthread_xu/thread/thr_getschedparam.c   |   2 +-
+ lib/libthread_xu/thread/thr_getthreadid_np.c  |   2 +-
+ lib/libthread_xu/thread/thr_info.c            |   4 +-
+ lib/libthread_xu/thread/thr_init.c            |  14 +--
+ lib/libthread_xu/thread/thr_join.c            |   6 +-
+ lib/libthread_xu/thread/thr_kern.c            |  12 +-
+ lib/libthread_xu/thread/thr_kill.c            |   2 +-
+ lib/libthread_xu/thread/thr_list.c            |  49 ++++----
+ lib/libthread_xu/thread/thr_mutex.c           |  58 ++++-----
+ lib/libthread_xu/thread/thr_mutexattr.c       |   4 +-
+ lib/libthread_xu/thread/thr_once.c            |  12 +-
+ lib/libthread_xu/thread/thr_private.h         | 111 ++++++++--------
+ lib/libthread_xu/thread/thr_pspinlock.c       |  16 +--
+ lib/libthread_xu/thread/thr_resume_np.c       |  10 +-
+ lib/libthread_xu/thread/thr_rwlock.c          |  14 +--
+ lib/libthread_xu/thread/thr_rwlockattr.c      |   2 +-
+ lib/libthread_xu/thread/thr_sem.c             |   4 +-
+ lib/libthread_xu/thread/thr_setschedparam.c   |   2 +-
+ lib/libthread_xu/thread/thr_sig.c             |  14 +--
+ lib/libthread_xu/thread/thr_spec.c            |  10 +-
+ lib/libthread_xu/thread/thr_spinlock.c        |   8 +-
+ lib/libthread_xu/thread/thr_stack.c           |   6 +-
+ lib/libthread_xu/thread/thr_suspend_np.c      |  12 +-
+ lib/libthread_xu/thread/thr_symbols.c         |  16 +--
+ lib/libthread_xu/thread/thr_syscalls.c        |  62 ++++-----
+ sys/sys/_pthreadtypes.h                       | 118 ++++++++----------
+ 46 files changed, 339 insertions(+), 353 deletions(-)
+
+diff --git a/include/pthread.h b/include/pthread.h
+index 79b5294ada..7920b7367e 100644
+--- a/include/pthread.h
++++ b/include/pthread.h
+@@ -14,20 +14,20 @@
+  * 3. All advertising materials mentioning features or use of this software
+  *    must display the following acknowledgement:
+  *  This product includes software developed by Chris Provenzano.
+- * 4. The name of Chris Provenzano may not be used to endorse or promote 
++ * 4. The name of Chris Provenzano may not be used to endorse or promote
+  *	  products derived from this software without specific prior written
+  *	  permission.
+  *
+  * THIS SOFTWARE IS PROVIDED BY CHRIS PROVENZANO ``AS IS'' AND
+  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+- * ARE DISCLAIMED.  IN NO EVENT SHALL CHRIS PROVENZANO BE LIABLE FOR ANY 
++ * ARE DISCLAIMED.  IN NO EVENT SHALL CHRIS PROVENZANO BE LIABLE FOR ANY
+  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
++ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
++ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  *
+  * $FreeBSD: src/include/pthread.h,v 1.20.2.4 2003/05/27 18:18:01 jdp Exp $
+@@ -220,6 +220,7 @@ int	pthread_mutex_unlock(pthread_mutex_t *);
+ 
+ int	pthread_once(pthread_once_t *, void (*) (void)) __nonnull(1);
+ 
++#if __POSIX_VISIBLE >= 200112 || __XSI_VISIBLE
+ int	pthread_rwlock_destroy(pthread_rwlock_t *);
+ int	pthread_rwlock_init(pthread_rwlock_t * __restrict,
+ 	    const pthread_rwlockattr_t * __restrict) __nonnull(1);
+@@ -238,15 +239,18 @@ int	pthread_rwlockattr_getpshared(const pthread_rwlockattr_t * __restrict,
+ 	    int * __restrict) __nonnull(1, 2);
+ int	pthread_rwlockattr_init(pthread_rwlockattr_t *);
+ int	pthread_rwlockattr_setpshared(pthread_rwlockattr_t *, int) __nonnull(1);
++#endif
+ 
+ pthread_t	pthread_self(void);
+ int	pthread_setspecific(pthread_key_t, const void *);
+ 
++#if __POSIX_VISIBLE >= 200112 || __XSI_VISIBLE >= 600
+ int	pthread_spin_destroy(pthread_spinlock_t *);
+ int	pthread_spin_init(pthread_spinlock_t *, int);
+ int	pthread_spin_lock(pthread_spinlock_t *);
+ int	pthread_spin_trylock(pthread_spinlock_t *);
+ int	pthread_spin_unlock(pthread_spinlock_t *);
++#endif
+ 
+ int	pthread_cancel(pthread_t);
+ int	pthread_setcancelstate(int, int *);
+diff --git a/lib/libc/gen/_once_stub.c b/lib/libc/gen/_once_stub.c
+index 4efbafd2d2..9a8a41789a 100644
+--- a/lib/libc/gen/_once_stub.c
++++ b/lib/libc/gen/_once_stub.c
+@@ -38,10 +38,10 @@ static int
+ _libc_once(pthread_once_t *once_control, void (*init_routine)(void))
+ {
+ 
+-	if (once_control->state == PTHREAD_DONE_INIT)
++	if (once_control->__state == PTHREAD_DONE_INIT)
+ 		return (0);
+ 	init_routine();
+-	once_control->state = PTHREAD_DONE_INIT;
++	once_control->__state = PTHREAD_DONE_INIT;
+ 	return (0);
+ }
+ 
+diff --git a/lib/libc/gen/_pthread_stubs.c b/lib/libc/gen/_pthread_stubs.c
+index 240476ec01..3a85b9405b 100644
+--- a/lib/libc/gen/_pthread_stubs.c
++++ b/lib/libc/gen/_pthread_stubs.c
+@@ -192,9 +192,9 @@ stub_zero(void)
+ static int __used
+ stub_once(pthread_once_t *o, void (*r)(void))
+ {
+-	if (o->state != PTHREAD_DONE_INIT) {
++	if (o->__state != PTHREAD_DONE_INIT) {
+ 		(*r)();
+-		o->state = PTHREAD_DONE_INIT;
++		o->__state = PTHREAD_DONE_INIT;
+ 	}
+ 
+ 	return (0);
+diff --git a/lib/libc/gen/gen_private.h b/lib/libc/gen/gen_private.h
+index 933743aad2..f10281614f 100644
+--- a/lib/libc/gen/gen_private.h
++++ b/lib/libc/gen/gen_private.h
+@@ -32,7 +32,7 @@
+ #ifndef _GEN_PRIVATE_H_
+ #define	_GEN_PRIVATE_H_
+ 
+-struct pthread_mutex;
++struct __pthread_mutex_s;
+ 
+ /*
+  * Structure describing an open directory.
+@@ -49,7 +49,7 @@ struct _dirdesc {
+ 	long	dd_lastseek;	/* last seek index */
+ 	long	dd_rewind;	/* magic cookie for rewinding */
+ 	int	dd_flags;	/* flags for readdir */
+-	struct pthread_mutex	*dd_lock;	/* lock */
++	struct __pthread_mutex_s *dd_lock;	/* lock */
+ 	off_t	dd_seek;	/* new magic cookie returned by getdirentries */
+ };
+ 
+diff --git a/lib/libthread_xu/arch/x86_64/include/pthread_md.h b/lib/libthread_xu/arch/x86_64/include/pthread_md.h
+index 9a627122cb..0150169b5b 100644
+--- a/lib/libthread_xu/arch/x86_64/include/pthread_md.h
++++ b/lib/libthread_xu/arch/x86_64/include/pthread_md.h
+@@ -38,7 +38,7 @@
+ #include <machine/sysarch.h>
+ #include <machine/tls.h>
+ 
+-struct pthread;
++struct __pthread_s;
+ 
+ #define	CPU_SPINWAIT		__asm __volatile("pause");
+ 
+@@ -47,7 +47,7 @@ struct pthread;
+ /*
+  * The constructors.
+  */
+-struct tls_tcb	*_tcb_ctor(struct pthread *, int);
++struct tls_tcb	*_tcb_ctor(struct __pthread_s *, int);
+ void		_tcb_dtor(struct tls_tcb *tcb);
+ 
+ #endif
+diff --git a/lib/libthread_xu/thread/thr_affinity.c b/lib/libthread_xu/thread/thr_affinity.c
+index d3fa081e3b..91a34b9ef6 100644
+--- a/lib/libthread_xu/thread/thr_affinity.c
++++ b/lib/libthread_xu/thread/thr_affinity.c
+@@ -41,7 +41,7 @@ int
+ _pthread_getaffinity_np(pthread_t thread, size_t cpusetsize,
+     cpu_set_t *mask)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	cpu_set_t mask1;
+ 	int ret;
+ 
+@@ -79,7 +79,7 @@ int
+ _pthread_setaffinity_np(pthread_t thread, size_t cpusetsize,
+     const cpu_set_t *mask)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	size_t cplen = cpusetsize;
+ 	cpu_set_t mask1;
+ 	int ret;
+diff --git a/lib/libthread_xu/thread/thr_attr.c b/lib/libthread_xu/thread/thr_attr.c
+index c0c7f2095f..05c1f5633c 100644
+--- a/lib/libthread_xu/thread/thr_attr.c
++++ b/lib/libthread_xu/thread/thr_attr.c
+@@ -72,8 +72,8 @@ __strong_reference(_pthread_attr_destroy, pthread_attr_destroy);
+ int
+ _pthread_attr_get_np(pthread_t pid, pthread_attr_t *dst)
+ {
+-	struct pthread *curthread;
+-	struct pthread_attr attr;
++	pthread_t curthread;
++	struct __pthread_attr_s attr;
+ 	int	ret;
+ 
+ 	if (pid == NULL || dst == NULL || *dst == NULL)
+@@ -86,7 +86,7 @@ _pthread_attr_get_np(pthread_t pid, pthread_attr_t *dst)
+ 	if (pid->tlflags & TLFLAGS_DETACHED)
+ 		attr.flags |= PTHREAD_DETACHED;
+ 	_thr_ref_delete(curthread, pid);
+-	memcpy(*dst, &attr, sizeof(struct pthread_attr));
++	memcpy(*dst, &attr, sizeof(struct __pthread_attr_s));
+ 
+ 	return (0);
+ }
+@@ -301,14 +301,14 @@ _pthread_attr_init(pthread_attr_t *attr)
+ 	pthread_attr_t	pattr;
+ 
+ 	/* Allocate memory for the attribute object: */
+-	pattr = __malloc(sizeof(struct pthread_attr));
++	pattr = __malloc(sizeof(struct __pthread_attr_s));
+ 	if (pattr == NULL) {
+ 		/* Insufficient memory: */
+ 		ret = ENOMEM;
+ 	} else {
+ 		/* Initialise the attribute object with the defaults: */
+ 		memcpy(pattr, &_pthread_attr_default,
+-		    sizeof(struct pthread_attr));
++		    sizeof(struct __pthread_attr_s));
+ 
+ 		/* Return a pointer to the attribute object: */
+ 		*attr = pattr;
+diff --git a/lib/libthread_xu/thread/thr_barrier.c b/lib/libthread_xu/thread/thr_barrier.c
+index 3036893e16..713cd3e035 100644
+--- a/lib/libthread_xu/thread/thr_barrier.c
++++ b/lib/libthread_xu/thread/thr_barrier.c
+@@ -61,7 +61,7 @@ _pthread_barrier_init(pthread_barrier_t * __restrict barrier,
+ 	if (barrier == NULL || count == 0 || count > INT_MAX)
+ 		return (EINVAL);
+ 
+-	bar = __malloc(sizeof(struct pthread_barrier));
++	bar = __malloc(sizeof(struct __pthread_barrier_s));
+ 	if (bar == NULL)
+ 		return (ENOMEM);
+ 
+@@ -77,7 +77,7 @@ _pthread_barrier_init(pthread_barrier_t * __restrict barrier,
+ int
+ _pthread_barrier_wait(pthread_barrier_t *barrier)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	pthread_barrier_t bar;
+ 	int64_t cycle;
+ 	int ret;
+diff --git a/lib/libthread_xu/thread/thr_barrierattr.c b/lib/libthread_xu/thread/thr_barrierattr.c
+index e1c6b52ef7..924a226215 100644
+--- a/lib/libthread_xu/thread/thr_barrierattr.c
++++ b/lib/libthread_xu/thread/thr_barrierattr.c
+@@ -66,7 +66,7 @@ _pthread_barrierattr_init(pthread_barrierattr_t *attr)
+ 	if (attr == NULL)
+ 		return (EINVAL);
+ 
+-	*attr = __malloc(sizeof(struct pthread_barrierattr));
++	*attr = __malloc(sizeof(struct __pthread_barrierattr_s));
+ 	if (*attr ==NULL)
+ 		return (ENOMEM);
+ 	(*attr)->pshared = PTHREAD_PROCESS_PRIVATE;
+diff --git a/lib/libthread_xu/thread/thr_cancel.c b/lib/libthread_xu/thread/thr_cancel.c
+index 9ec98a9d0f..07920af4a0 100644
+--- a/lib/libthread_xu/thread/thr_cancel.c
++++ b/lib/libthread_xu/thread/thr_cancel.c
+@@ -35,7 +35,7 @@
+ int
+ _pthread_cancel(pthread_t pthread)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldval, newval = 0;
+ 	int oldtype;
+ 	int ret;
+@@ -66,7 +66,7 @@ _pthread_cancel(pthread_t pthread)
+ }
+ 
+ static inline void
+-testcancel(struct pthread *curthread)
++testcancel(pthread_t curthread)
+ {
+ 	int newval;
+ 
+@@ -78,7 +78,7 @@ testcancel(struct pthread *curthread)
+ int
+ _pthread_setcancelstate(int state, int *oldstate)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldval;
+ 
+ 	oldval = curthread->cancelflags;
+@@ -103,7 +103,7 @@ _pthread_setcancelstate(int state, int *oldstate)
+ int
+ _pthread_setcanceltype(int type, int *oldtype)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldval;
+ 
+ 	oldval = curthread->cancelflags;
+@@ -133,7 +133,7 @@ _pthread_testcancel(void)
+ }
+ 
+ int
+-_thr_cancel_enter(struct pthread *curthread)
++_thr_cancel_enter(pthread_t curthread)
+ {
+ 	int oldval;
+ 
+@@ -146,7 +146,7 @@ _thr_cancel_enter(struct pthread *curthread)
+ }
+ 
+ void
+-_thr_cancel_leave(struct pthread *curthread, int previous)
++_thr_cancel_leave(pthread_t curthread, int previous)
+ {
+ 	if (!(previous & THR_CANCEL_AT_POINT))
+ 		atomic_clear_int(&curthread->cancelflags, THR_CANCEL_AT_POINT);
+diff --git a/lib/libthread_xu/thread/thr_clean.c b/lib/libthread_xu/thread/thr_clean.c
+index 263a9d2614..70b597281a 100644
+--- a/lib/libthread_xu/thread/thr_clean.c
++++ b/lib/libthread_xu/thread/thr_clean.c
+@@ -41,7 +41,7 @@
+ void
+ _pthread_cleanup_push(void (*routine) (void *), void *routine_arg)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	struct pthread_cleanup *new;
+ 
+ 	new = __malloc(sizeof(struct pthread_cleanup));
+@@ -58,7 +58,7 @@ _pthread_cleanup_push(void (*routine) (void *), void *routine_arg)
+ void
+ _pthread_cleanup_pop(int execute)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	struct pthread_cleanup *old;
+ 
+ 	if ((old = curthread->cleanup) != NULL) {
+diff --git a/lib/libthread_xu/thread/thr_cond.c b/lib/libthread_xu/thread/thr_cond.c
+index ea3567f7ca..dbba2bc148 100644
+--- a/lib/libthread_xu/thread/thr_cond.c
++++ b/lib/libthread_xu/thread/thr_cond.c
+@@ -87,7 +87,7 @@ cond_init(pthread_cond_t *cond, const pthread_condattr_t *cond_attr)
+ 	pthread_cond_t pcond;
+ 	int rval = 0;
+ 
+-	pcond = __malloc(sizeof(struct pthread_cond));
++	pcond = __malloc(sizeof(struct __pthread_cond_s));
+ 	if (pcond == NULL) {
+ 		rval = ENOMEM;
+ 	} else {
+@@ -126,7 +126,7 @@ _cond_reinit(pthread_cond_t cond)
+ #endif
+ 
+ static int
+-init_static(struct pthread *thread, pthread_cond_t *cond)
++init_static(pthread_t thread, pthread_cond_t *cond)
+ {
+ 	int ret;
+ 
+@@ -153,9 +153,9 @@ _pthread_cond_init(pthread_cond_t * __restrict cond,
+ int
+ _pthread_cond_destroy(pthread_cond_t *cond)
+ {
+-	struct pthread_cond	*cv;
+-	struct pthread		*curthread = tls_get_curthread();
+-	int			rval = 0;
++	pthread_cond_t	cv;
++	pthread_t	curthread = tls_get_curthread();
++	int		rval = 0;
+ 
+ 	if (cond == NULL) {
+ 		rval = EINVAL;
+@@ -203,7 +203,7 @@ struct cond_cancel_info {
+ static void
+ cond_cancel_handler(void *arg)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	struct cond_cancel_info *info = (struct cond_cancel_info *)arg;
+ 	pthread_cond_t cv;
+ 
+@@ -231,7 +231,7 @@ static int
+ cond_wait_common(pthread_cond_t *cond, pthread_mutex_t *mutex,
+ 		 const struct timespec *abstime, int cancel)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	struct timespec ts, ts2, *tsp;
+ 	struct cond_cancel_info info;
+ 	pthread_cond_t  cv;
+@@ -360,7 +360,7 @@ __pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+ static int
+ cond_signal_common(pthread_cond_t *cond, int broadcast)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t	curthread = tls_get_curthread();
+ 	struct cond_cancel_info *info;
+ 	pthread_cond_t	cv;
+ 	int		ret = 0;
+diff --git a/lib/libthread_xu/thread/thr_condattr.c b/lib/libthread_xu/thread/thr_condattr.c
+index fd2f2552a0..a546553e34 100644
+--- a/lib/libthread_xu/thread/thr_condattr.c
++++ b/lib/libthread_xu/thread/thr_condattr.c
+@@ -42,12 +42,12 @@ _pthread_condattr_init(pthread_condattr_t *attr)
+ 	pthread_condattr_t pattr;
+ 	int ret;
+ 
+-	pattr = __malloc(sizeof(struct pthread_cond_attr));
++	pattr = __malloc(sizeof(struct __pthread_condattr_s));
+ 	if (pattr == NULL) {
+ 		ret = ENOMEM;
+ 	} else {
+ 		memcpy(pattr, &_pthread_condattr_default,
+-		       sizeof(struct pthread_cond_attr));
++		       sizeof(struct __pthread_condattr_s));
+ 		*attr = pattr;
+ 		ret = 0;
+ 	}
+diff --git a/lib/libthread_xu/thread/thr_create.c b/lib/libthread_xu/thread/thr_create.c
+index 00b0451cb3..71b70632ee 100644
+--- a/lib/libthread_xu/thread/thr_create.c
++++ b/lib/libthread_xu/thread/thr_create.c
+@@ -44,7 +44,7 @@
+ #include "libc_private.h"
+ #include "thr_private.h"
+ 
+-static int  create_stack(struct pthread_attr *pattr);
++static int  create_stack(pthread_attr_t pattr);
+ static void thread_start(void *);
+ 
+ int
+@@ -55,7 +55,7 @@ _pthread_create(pthread_t * __restrict thread,
+ 	struct lwp_params create_params;
+ 	void *stack;
+ 	sigset_t sigmask, oldsigmask;
+-	struct pthread *curthread, *new_thread;
++	pthread_t curthread, new_thread;
+ 	const cpu_set_t *cpumask = NULL;
+ 	int ret = 0, locked;
+ 
+@@ -197,7 +197,7 @@ _pthread_create(pthread_t * __restrict thread,
+ }
+ 
+ static int
+-create_stack(struct pthread_attr *pattr)
++create_stack(pthread_attr_t pattr)
+ {
+ 	int ret;
+ 
+@@ -215,7 +215,7 @@ create_stack(struct pthread_attr *pattr)
+ static void
+ thread_start(void *arg)
+ {
+-	struct pthread *curthread = (struct pthread *)arg;
++	pthread_t curthread = (struct __pthread_s *)arg;
+ 
+ 	tls_set_tcb(curthread->tcb);
+ 
+diff --git a/lib/libthread_xu/thread/thr_ctrdtr.c b/lib/libthread_xu/thread/thr_ctrdtr.c
+index c8b0c7cf77..8c2c65f34d 100644
+--- a/lib/libthread_xu/thread/thr_ctrdtr.c
++++ b/lib/libthread_xu/thread/thr_ctrdtr.c
+@@ -37,7 +37,7 @@
+  * The constructors.
+  */
+ struct tls_tcb *
+-_tcb_ctor(struct pthread *thread, int initial)
++_tcb_ctor(struct __pthread_s *thread, int initial)
+ {
+ 	struct tls_tcb *tcb;
+ 
+diff --git a/lib/libthread_xu/thread/thr_detach.c b/lib/libthread_xu/thread/thr_detach.c
+index 37c313f62d..158927f9d8 100644
+--- a/lib/libthread_xu/thread/thr_detach.c
++++ b/lib/libthread_xu/thread/thr_detach.c
+@@ -36,7 +36,7 @@
+ int
+ _pthread_detach(pthread_t pthread)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int rval;
+ 
+ 	if (pthread == NULL)
+diff --git a/lib/libthread_xu/thread/thr_distribute.c b/lib/libthread_xu/thread/thr_distribute.c
+index 4eb5711684..1601f7cd6e 100644
+--- a/lib/libthread_xu/thread/thr_distribute.c
++++ b/lib/libthread_xu/thread/thr_distribute.c
+@@ -28,8 +28,8 @@ void
+ _libthread_distribute_static_tls(size_t offset, void *src,
+ 				 size_t len, size_t total_len)
+ {
+-	struct pthread *curthread = tls_get_curthread();
+-	struct pthread *td;
++	pthread_t curthread = tls_get_curthread();
++	pthread_t td;
+ 	char *tlsbase;
+ 
+ 	THREAD_LIST_LOCK(curthread);
+diff --git a/lib/libthread_xu/thread/thr_event.c b/lib/libthread_xu/thread/thr_event.c
+index 74cb687895..c16630d9ed 100644
+--- a/lib/libthread_xu/thread/thr_event.c
++++ b/lib/libthread_xu/thread/thr_event.c
+@@ -28,7 +28,7 @@
+ #include "thr_private.h"
+ 
+ int		_thread_event_mask;
+-struct pthread	*_thread_last_event;
++pthread_t	_thread_last_event;
+ umtx_t		_thr_event_lock;
+ 
+ void
+@@ -42,7 +42,7 @@ _thread_bp_death(void)
+ }
+ 
+ void
+-_thr_report_creation(struct pthread *curthread, struct pthread *newthread)
++_thr_report_creation(pthread_t curthread, pthread_t newthread)
+ {
+ 	curthread->event_buf.event = TD_CREATE;
+ 	curthread->event_buf.th_p = (td_thrhandle_t *)newthread;
+@@ -55,7 +55,7 @@ _thr_report_creation(struct pthread *curthread, struct pthread *newthread)
+ }
+ 
+ void
+-_thr_report_death(struct pthread *curthread)
++_thr_report_death(pthread_t curthread)
+ {
+ 	curthread->event_buf.event = TD_DEATH;
+ 	curthread->event_buf.th_p = (td_thrhandle_t *)curthread;
+diff --git a/lib/libthread_xu/thread/thr_exit.c b/lib/libthread_xu/thread/thr_exit.c
+index baa76b739d..cb6091b3b2 100644
+--- a/lib/libthread_xu/thread/thr_exit.c
++++ b/lib/libthread_xu/thread/thr_exit.c
+@@ -78,7 +78,7 @@ _thread_exit(const char *fname, int lineno, const char *msg)
+ void
+ _thr_exit_cleanup(void)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 
+ 	/*
+ 	 * POSIX states that cancellation/termination of a thread should
+@@ -99,7 +99,7 @@ _thr_exit_cleanup(void)
+ void
+ _pthread_exit(void *status)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 
+ 	/* Check if this thread is already in the process of exiting: */
+ 	if ((curthread->cancelflags & THR_CANCEL_EXITING) != 0) {
+@@ -129,7 +129,7 @@ __strong_reference(_pthread_exit, pthread_exit);
+ static void
+ exit_thread(void)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 
+ 	/* Check if there is thread specific data: */
+ 	if (curthread->specific != NULL) {
+diff --git a/lib/libthread_xu/thread/thr_fork.c b/lib/libthread_xu/thread/thr_fork.c
+index 0709156135..8ecce1d84b 100644
+--- a/lib/libthread_xu/thread/thr_fork.c
++++ b/lib/libthread_xu/thread/thr_fork.c
+@@ -86,7 +86,7 @@ int
+ _pthread_atfork(void (*prepare)(void), void (*parent)(void),
+ 		void (*child)(void))
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	struct pthread_atfork *af;
+ 
+ 	af = __malloc(sizeof(struct pthread_atfork));
+@@ -117,7 +117,7 @@ void
+ _thr_atfork_kern(void (*prepare)(void), void (*parent)(void),
+ 		 void (*child)(void))
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	struct pthread_atfork *af;
+ 
+ 	af = __malloc(sizeof(struct pthread_atfork));
+@@ -134,7 +134,7 @@ _thr_atfork_kern(void (*prepare)(void), void (*parent)(void),
+ void
+ __pthread_cxa_finalize(struct dl_phdr_info *phdr_info)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	struct pthread_atfork *af, *af1;
+ 
+ 	curthread = tls_get_curthread();
+@@ -165,7 +165,7 @@ _fork(void)
+ 	static int waiters;
+ 	umtx_t tmp;
+ 
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	struct pthread_atfork *af;
+ 	pid_t ret;
+ 	int errsave;
+diff --git a/lib/libthread_xu/thread/thr_getschedparam.c b/lib/libthread_xu/thread/thr_getschedparam.c
+index 167d55698d..457089837c 100644
+--- a/lib/libthread_xu/thread/thr_getschedparam.c
++++ b/lib/libthread_xu/thread/thr_getschedparam.c
+@@ -43,7 +43,7 @@ int
+ _pthread_getschedparam(pthread_t pthread, int * __restrict policy,
+     struct sched_param * __restrict param)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int ret = 0;
+ 
+ 	if (policy == NULL || param == NULL)
+diff --git a/lib/libthread_xu/thread/thr_getthreadid_np.c b/lib/libthread_xu/thread/thr_getthreadid_np.c
+index 48ba75b4d0..51b83f7aca 100644
+--- a/lib/libthread_xu/thread/thr_getthreadid_np.c
++++ b/lib/libthread_xu/thread/thr_getthreadid_np.c
+@@ -35,7 +35,7 @@
+ int
+ _pthread_getthreadid_np(void)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	return curthread->tid;
+ }
+ 
+diff --git a/lib/libthread_xu/thread/thr_info.c b/lib/libthread_xu/thread/thr_info.c
+index 65e6cf27c0..76ddce9e50 100644
+--- a/lib/libthread_xu/thread/thr_info.c
++++ b/lib/libthread_xu/thread/thr_info.c
+@@ -44,7 +44,7 @@
+ void
+ _pthread_set_name_np(pthread_t thread, const char *name)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 
+ 	if (curthread == thread) {
+ 		lwp_setname(thread->tid, name);
+@@ -63,7 +63,7 @@ _pthread_set_name_np(pthread_t thread, const char *name)
+ void
+ _pthread_get_name_np(pthread_t thread, char *name, size_t len)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 
+ 	if (curthread == thread) {
+ 		lwp_getname(thread->tid, name, len);
+diff --git a/lib/libthread_xu/thread/thr_init.c b/lib/libthread_xu/thread/thr_init.c
+index c92df237ea..d3946bb9a1 100644
+--- a/lib/libthread_xu/thread/thr_init.c
++++ b/lib/libthread_xu/thread/thr_init.c
+@@ -53,7 +53,7 @@
+ #include "thr_private.h"
+ 
+ /* Default thread attributes: */
+-struct pthread_attr _pthread_attr_default = {
++struct __pthread_attr_s _pthread_attr_default = {
+ 	.sched_policy = SCHED_OTHER,
+ 	.sched_inherit = 0,
+ 	.prio = THR_DEFAULT_PRIORITY,
+@@ -65,7 +65,7 @@ struct pthread_attr _pthread_attr_default = {
+ };
+ 
+ /* Default mutex attributes: */
+-struct pthread_mutex_attr _pthread_mutexattr_default = {
++struct __pthread_mutexattr_s _pthread_mutexattr_default = {
+ 	.m_type = PTHREAD_MUTEX_DEFAULT,
+ 	.m_protocol = PTHREAD_PRIO_NONE,
+ 	.m_ceiling = 0,
+@@ -73,7 +73,7 @@ struct pthread_mutex_attr _pthread_mutexattr_default = {
+ };
+ 
+ /* Default condition variable attributes: */
+-struct pthread_cond_attr _pthread_condattr_default = {
++struct __pthread_condattr_s _pthread_condattr_default = {
+ 	.c_pshared = PTHREAD_PROCESS_PRIVATE,
+ 	.c_clockid = CLOCK_REALTIME
+ };
+@@ -178,7 +178,7 @@ STATIC_LIB_REQUIRE(__wait4);
+ STATIC_LIB_REQUIRE(_pthread_yield);
+ 
+ char		*_usrstack;
+-struct pthread	*_thr_initial;
++pthread_t	_thr_initial;
+ static void	*_thr_main_redzone;
+ 
+ pid_t		_thr_pid;
+@@ -189,7 +189,7 @@ int		_thr_page_size;
+ 
+ static void	init_private(void);
+ static void	_libpthread_uninit(void);
+-static void	init_main_thread(struct pthread *thread);
++static void	init_main_thread(pthread_t thread);
+ 
+ void	_thread_init(void) __attribute__ ((constructor));
+ void
+@@ -229,7 +229,7 @@ _pthread_init_early(void)
+  *      by curthread != NULL)
+  */
+ void
+-_libpthread_init(struct pthread *curthread)
++_libpthread_init(pthread_t curthread)
+ {
+ 	int fd, first = 0;
+ 	sigset_t sigset, oldset;
+@@ -313,7 +313,7 @@ _libpthread_uninit(void)
+  * It'd be nice to consolidate the common stuff in one place.
+  */
+ static void
+-init_main_thread(struct pthread *thread)
++init_main_thread(pthread_t thread)
+ {
+ 	/* Setup the thread attributes. */
+ 	thread->tid = _thr_get_tid();
+diff --git a/lib/libthread_xu/thread/thr_join.c b/lib/libthread_xu/thread/thr_join.c
+index fa92f6ac79..e9c672b9c1 100644
+--- a/lib/libthread_xu/thread/thr_join.c
++++ b/lib/libthread_xu/thread/thr_join.c
+@@ -40,8 +40,8 @@ static int join_common(pthread_t, void **, const struct timespec *);
+ 
+ static void backout_join(void *arg)
+ {
+-	struct pthread *curthread = tls_get_curthread();
+-	struct pthread *pthread = (struct pthread *)arg;
++	pthread_t curthread = tls_get_curthread();
++	pthread_t pthread = (struct __pthread_s *)arg;
+ 
+ 	THREAD_LIST_LOCK(curthread);
+ 	pthread->joiner = NULL;
+@@ -69,7 +69,7 @@ static int
+ join_common(pthread_t pthread, void **thread_return,
+ 	const struct timespec *abstime)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	struct timespec ts, ts2, *tsp;
+ 	void *tmp;
+ 	long state;
+diff --git a/lib/libthread_xu/thread/thr_kern.c b/lib/libthread_xu/thread/thr_kern.c
+index 410af80c94..1d75eeb66c 100644
+--- a/lib/libthread_xu/thread/thr_kern.c
++++ b/lib/libthread_xu/thread/thr_kern.c
+@@ -63,7 +63,7 @@ _thr_setthreaded(int threaded)
+ }
+ 
+ void
+-_thr_signal_block(struct pthread *curthread)
++_thr_signal_block(pthread_t curthread)
+ {
+ 	sigset_t set;
+ 
+@@ -82,7 +82,7 @@ _thr_signal_block(struct pthread *curthread)
+ }
+ 
+ void
+-_thr_signal_unblock(struct pthread *curthread)
++_thr_signal_unblock(pthread_t curthread)
+ {
+ 	if (--curthread->sigblock == 0)
+ 		__sys_sigprocmask(SIG_SETMASK, &curthread->sigmask, NULL);
+@@ -95,7 +95,7 @@ _thr_assert_lock_level(void)
+ }
+ 
+ int
+-_thr_send_sig(struct pthread *thread, int sig)
++_thr_send_sig(pthread_t thread, int sig)
+ {
+ 	return (lwp_kill(-1, thread->tid, sig));
+ }
+@@ -114,7 +114,7 @@ _thr_get_tid(void)
+  * falls into implementation defined behavior or not.
+  */
+ int
+-_thr_set_sched_other_prio(struct pthread *pth __unused, int prio)
++_thr_set_sched_other_prio(pthread_t pth __unused, int prio)
+ {
+ 	static int max, min, init_status;
+ 
+@@ -192,7 +192,7 @@ _schedparam_to_rtp(int policy, const struct sched_param *param,
+ int
+ _thr_getscheduler(lwpid_t lwpid, int *policy, struct sched_param *param)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	struct rtprio rtp;
+ 	int ret;
+ 
+@@ -208,7 +208,7 @@ _thr_getscheduler(lwpid_t lwpid, int *policy, struct sched_param *param)
+ int
+ _thr_setscheduler(lwpid_t lwpid, int policy, const struct sched_param *param)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	struct rtprio rtp;
+ 
+ 	if (lwpid == curthread->tid)
+diff --git a/lib/libthread_xu/thread/thr_kill.c b/lib/libthread_xu/thread/thr_kill.c
+index b178a443fe..37e95e0581 100644
+--- a/lib/libthread_xu/thread/thr_kill.c
++++ b/lib/libthread_xu/thread/thr_kill.c
+@@ -40,7 +40,7 @@
+ int
+ _pthread_kill(pthread_t pthread, int sig)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	int ret;
+ 
+ 	/* Check for invalid signal numbers: */
+diff --git a/lib/libthread_xu/thread/thr_list.c b/lib/libthread_xu/thread/thr_list.c
+index 2dd466604f..e3decd9f79 100644
+--- a/lib/libthread_xu/thread/thr_list.c
++++ b/lib/libthread_xu/thread/thr_list.c
+@@ -68,19 +68,19 @@ umtx_t	_thr_list_lock;
+  * to have a speedy free list, but also so they can be deallocated
+  * after a fork().
+  */
+-static TAILQ_HEAD(, pthread)	free_threadq;
++static TAILQ_HEAD(, __pthread_s) free_threadq;
+ static umtx_t			free_thread_lock;
+ static umtx_t			tcb_lock;
+ static int			free_thread_count = 0;
+ static int			inited = 0;
+ static u_int64_t		next_uniqueid = 1;
+ 
+-LIST_HEAD(thread_hash_head, pthread);
++LIST_HEAD(thread_hash_head, __pthread_s);
+ #define HASH_QUEUES	128
+ static struct thread_hash_head	thr_hashtable[HASH_QUEUES];
+ #define	THREAD_HASH(thrd)	(((unsigned long)thrd >> 12) % HASH_QUEUES)
+ 
+-static void thr_destroy(struct pthread *curthread, struct pthread *thread);
++static void thr_destroy(pthread_t curthread, pthread_t thread);
+ 
+ void
+ _thr_list_init(void)
+@@ -101,10 +101,10 @@ _thr_list_init(void)
+ }
+ 
+ void
+-_thr_gc(struct pthread *curthread)
++_thr_gc(pthread_t curthread)
+ {
+-	struct pthread *td, *td_next;
+-	TAILQ_HEAD(, pthread) worklist;
++	pthread_t td, td_next;
++	TAILQ_HEAD(, __pthread_s) worklist;
+ 
+ 	TAILQ_INIT(&worklist);
+ 	THREAD_LIST_LOCK(curthread);
+@@ -146,10 +146,10 @@ _thr_gc(struct pthread *curthread)
+ 	}
+ }
+ 
+-struct pthread *
+-_thr_alloc(struct pthread *curthread)
++pthread_t
++_thr_alloc(pthread_t curthread)
+ {
+-	struct pthread	*thread = NULL;
++	pthread_t	thread = NULL;
+ 	struct tls_tcb	*tcb;
+ 
+ 	if (curthread != NULL) {
+@@ -165,7 +165,7 @@ _thr_alloc(struct pthread *curthread)
+ 		}
+ 	}
+ 	if (thread == NULL) {
+-		thread = __malloc(sizeof(struct pthread));
++		thread = __malloc(sizeof(struct __pthread_s));
+ 		if (thread == NULL)
+ 			return (NULL);
+ 	}
+@@ -187,7 +187,7 @@ _thr_alloc(struct pthread *curthread)
+ }
+ 
+ void
+-_thr_free(struct pthread *curthread, struct pthread *thread)
++_thr_free(pthread_t curthread, pthread_t thread)
+ {
+ 	DBG_MSG("Freeing thread %p\n", thread);
+ 	if (thread->name) {
+@@ -222,7 +222,7 @@ _thr_free(struct pthread *curthread, struct pthread *thread)
+ }
+ 
+ static void
+-thr_destroy(struct pthread *curthread __unused, struct pthread *thread)
++thr_destroy(pthread_t curthread __unused, pthread_t thread)
+ {
+ 	__free(thread);
+ }
+@@ -236,7 +236,7 @@ thr_destroy(struct pthread *curthread __unused, struct pthread *thread)
+  *     number of active threads.
+  */
+ void
+-_thr_link(struct pthread *curthread, struct pthread *thread)
++_thr_link(pthread_t curthread, pthread_t thread)
+ {
+ 	THREAD_LIST_LOCK(curthread);
+ 	/*
+@@ -254,7 +254,7 @@ _thr_link(struct pthread *curthread, struct pthread *thread)
+  * Remove an active thread.
+  */
+ void
+-_thr_unlink(struct pthread *curthread, struct pthread *thread)
++_thr_unlink(pthread_t curthread, pthread_t thread)
+ {
+ 	THREAD_LIST_LOCK(curthread);
+ 	THR_LIST_REMOVE(thread);
+@@ -263,7 +263,7 @@ _thr_unlink(struct pthread *curthread, struct pthread *thread)
+ }
+ 
+ void
+-_thr_hash_add(struct pthread *thread)
++_thr_hash_add(pthread_t thread)
+ {
+ 	struct thread_hash_head *head;
+ 
+@@ -272,15 +272,15 @@ _thr_hash_add(struct pthread *thread)
+ }
+ 
+ void
+-_thr_hash_remove(struct pthread *thread)
++_thr_hash_remove(pthread_t thread)
+ {
+ 	LIST_REMOVE(thread, hle);
+ }
+ 
+-struct pthread *
+-_thr_hash_find(struct pthread *thread)
++pthread_t
++_thr_hash_find(pthread_t thread)
+ {
+-	struct pthread *td;
++	pthread_t td;
+ 	struct thread_hash_head *head;
+ 
+ 	head = &thr_hashtable[THREAD_HASH(thread)];
+@@ -297,7 +297,7 @@ _thr_hash_find(struct pthread *thread)
+  * until all references are released.
+  */
+ int
+-_thr_ref_add(struct pthread *curthread, struct pthread *thread,
++_thr_ref_add(pthread_t curthread, pthread_t thread,
+     int include_dead)
+ {
+ 	int ret;
+@@ -317,7 +317,7 @@ _thr_ref_add(struct pthread *curthread, struct pthread *thread,
+ }
+ 
+ void
+-_thr_ref_delete(struct pthread *curthread, struct pthread *thread)
++_thr_ref_delete(pthread_t curthread, pthread_t thread)
+ {
+ 	THREAD_LIST_LOCK(curthread);
+ 	_thr_ref_delete_unlocked(curthread, thread);
+@@ -325,8 +325,7 @@ _thr_ref_delete(struct pthread *curthread, struct pthread *thread)
+ }
+ 
+ void
+-_thr_ref_delete_unlocked(struct pthread *curthread __unused,
+-	struct pthread *thread)
++_thr_ref_delete_unlocked(pthread_t curthread __unused, pthread_t thread)
+ {
+ 	if (thread != NULL) {
+ 		thread->refcount--;
+@@ -337,10 +336,10 @@ _thr_ref_delete_unlocked(struct pthread *curthread __unused,
+ }
+ 
+ int
+-_thr_find_thread(struct pthread *curthread __unused, struct pthread *thread,
++_thr_find_thread(pthread_t curthread __unused, pthread_t thread,
+     int include_dead)
+ {
+-	struct pthread *pthread;
++	pthread_t pthread;
+ 
+ 	if (thread == NULL)
+ 		return (EINVAL);
+diff --git a/lib/libthread_xu/thread/thr_mutex.c b/lib/libthread_xu/thread/thr_mutex.c
+index 8723566a7f..3b6b472b7e 100644
+--- a/lib/libthread_xu/thread/thr_mutex.c
++++ b/lib/libthread_xu/thread/thr_mutex.c
+@@ -112,7 +112,7 @@ mutex_log(const char *ctl __unused, ...)
+ #ifdef _PTHREADS_DEBUGGING2
+ 
+ static void
+-mutex_log2(struct pthread *curthread, struct pthread_mutex *m, int op)
++mutex_log2(pthread_t curthread, pthread_mutex_t m, int op)
+ {
+ 	if (curthread) {
+ 		if (curthread->tid < 32)
+@@ -128,8 +128,8 @@ mutex_log2(struct pthread *curthread, struct pthread_mutex *m, int op)
+ 
+ static __inline
+ void
+-mutex_log2(struct pthread *curthread __unused,
+-	   struct pthread_mutex *m __unused, int op __unused)
++mutex_log2(pthread_t curthread __unused,
++	   pthread_mutex_t m __unused, int op __unused)
+ {
+ }
+ 
+@@ -151,7 +151,7 @@ int __pthread_mutex_timedlock(pthread_mutex_t *mutex,
+ 	const struct timespec *abs_timeout);
+ 
+ static int
+-mutex_check_attr(const struct pthread_mutex_attr *attr)
++mutex_check_attr(const struct __pthread_mutexattr_s *attr)
+ {
+ 	if (attr->m_type < PTHREAD_MUTEX_ERRORCHECK ||
+ 	    attr->m_type >= PTHREAD_MUTEX_TYPE_MAX)
+@@ -163,8 +163,8 @@ mutex_check_attr(const struct pthread_mutex_attr *attr)
+ }
+ 
+ static void
+-mutex_init_body(struct pthread_mutex *pmutex,
+-    const struct pthread_mutex_attr *attr, int private)
++mutex_init_body(pthread_mutex_t pmutex,
++    const struct __pthread_mutexattr_s *attr, int private)
+ {
+ 	_thr_umtx_init(&pmutex->m_lock);
+ 	pmutex->m_type = attr->m_type;
+@@ -189,8 +189,8 @@ static int
+ mutex_init(pthread_mutex_t *mutex,
+     const pthread_mutexattr_t *mutex_attr, int private)
+ {
+-	const struct pthread_mutex_attr *attr;
+-	struct pthread_mutex *pmutex;
++	const struct __pthread_mutexattr_s *attr;
++	pthread_mutex_t pmutex;
+ 	int error;
+ 
+ 	if (mutex_attr == NULL) {
+@@ -202,7 +202,7 @@ mutex_init(pthread_mutex_t *mutex,
+ 			return (error);
+ 	}
+ 
+-	pmutex = __malloc(sizeof(struct pthread_mutex));
++	pmutex = __malloc(sizeof(struct __pthread_mutex_s));
+ 	if (pmutex == NULL)
+ 		return (ENOMEM);
+ 	mutex_init_body(pmutex, attr, private);
+@@ -211,7 +211,7 @@ mutex_init(pthread_mutex_t *mutex,
+ }
+ 
+ static int
+-init_static(struct pthread *thread, pthread_mutex_t *mutex)
++init_static(pthread_t thread, pthread_mutex_t *mutex)
+ {
+ 	int ret;
+ 
+@@ -227,7 +227,7 @@ init_static(struct pthread *thread, pthread_mutex_t *mutex)
+ }
+ 
+ static int
+-init_static_private(struct pthread *thread, pthread_mutex_t *mutex)
++init_static_private(pthread_t thread, pthread_mutex_t *mutex)
+ {
+ 	int ret;
+ 
+@@ -278,9 +278,9 @@ _mutex_reinit(pthread_mutex_t *mutexp)
+ #endif
+ 
+ void
+-_mutex_fork(struct pthread *curthread, lwpid_t tid)
++_mutex_fork(pthread_t curthread, lwpid_t tid)
+ {
+-	struct pthread_mutex *m;
++	pthread_mutex_t m;
+ 
+ 	TAILQ_FOREACH(m, &curthread->mutexq, m_qe)
+ 		m->m_lock = tid;
+@@ -289,7 +289,7 @@ _mutex_fork(struct pthread *curthread, lwpid_t tid)
+ int
+ _pthread_mutex_destroy(pthread_mutex_t *mutex)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	pthread_mutex_t m;
+ 	int ret = 0;
+ 
+@@ -341,9 +341,9 @@ _pthread_mutex_destroy(pthread_mutex_t *mutex)
+ }
+ 
+ static int
+-mutex_trylock_common(struct pthread *curthread, pthread_mutex_t *mutex)
++mutex_trylock_common(pthread_t curthread, pthread_mutex_t *mutex)
+ {
+-	struct pthread_mutex *m;
++	pthread_mutex_t m;
+ 	int ret;
+ 
+ 	m = *mutex;
+@@ -367,7 +367,7 @@ mutex_trylock_common(struct pthread *curthread, pthread_mutex_t *mutex)
+ int
+ __pthread_mutex_trylock(pthread_mutex_t *m)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int ret;
+ 
+ 	if (__predict_false(m == NULL))
+@@ -387,7 +387,7 @@ __pthread_mutex_trylock(pthread_mutex_t *m)
+ int
+ _pthread_mutex_trylock(pthread_mutex_t *m)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	ret = 0;
+ 
+ 	/*
+@@ -403,11 +403,11 @@ _pthread_mutex_trylock(pthread_mutex_t *m)
+ }
+ 
+ static int
+-mutex_lock_common(struct pthread *curthread, pthread_mutex_t *mutex,
++mutex_lock_common(pthread_t curthread, pthread_mutex_t *mutex,
+ 	const struct timespec * abstime)
+ {
+ 	struct  timespec ts, ts2;
+-	struct  pthread_mutex *m;
++	pthread_mutex_t m;
+ 	int	ret = 0;
+ 
+ 	m = *mutex;
+@@ -451,7 +451,7 @@ mutex_lock_common(struct pthread *curthread, pthread_mutex_t *mutex,
+ int
+ __pthread_mutex_lock(pthread_mutex_t *m)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	int	ret;
+ 
+ 	if (__predict_false(m == NULL))
+@@ -473,7 +473,7 @@ __pthread_mutex_lock(pthread_mutex_t *m)
+ int
+ _pthread_mutex_lock(pthread_mutex_t *m)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	int	ret;
+ 
+ 	_thr_check_init();
+@@ -498,7 +498,7 @@ int
+ __pthread_mutex_timedlock(pthread_mutex_t * __restrict m,
+     const struct timespec * __restrict abs_timeout)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	int	ret;
+ 
+ 	_thr_check_init();
+@@ -523,7 +523,7 @@ int
+ _pthread_mutex_timedlock(pthread_mutex_t *m,
+ 	const struct timespec *abs_timeout)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	int	ret;
+ 
+ 	if (__predict_false(m == NULL))
+@@ -642,8 +642,8 @@ mutex_self_lock(pthread_mutex_t m, const struct timespec *abstime)
+ static int
+ mutex_unlock_common(pthread_mutex_t *mutex)
+ {
+-	struct pthread *curthread = tls_get_curthread();
+-	struct pthread_mutex *m;
++	pthread_t curthread = tls_get_curthread();
++	pthread_mutex_t m;
+ 
+ 	if (__predict_false((m = *mutex) == NULL)) {
+ 		mutex_log2(curthread, m, 252);
+@@ -732,8 +732,8 @@ _mutex_cv_lock(pthread_mutex_t *m, int count)
+ int
+ _mutex_cv_unlock(pthread_mutex_t *mutex, int *count)
+ {
+-	struct pthread *curthread = tls_get_curthread();
+-	struct pthread_mutex *m;
++	pthread_t curthread = tls_get_curthread();
++	pthread_mutex_t m;
+ 
+ 	if (__predict_false(mutex == NULL))
+ 		return (EINVAL);
+@@ -759,7 +759,7 @@ _mutex_cv_unlock(pthread_mutex_t *mutex, int *count)
+ void
+ _mutex_unlock_private(pthread_t pthread)
+ {
+-	struct pthread_mutex	*m, *m_next;
++	pthread_mutex_t	m, m_next;
+ 
+ 	for (m = TAILQ_FIRST(&pthread->mutexq); m != NULL; m = m_next) {
+ 		m_next = TAILQ_NEXT(m, m_qe);
+diff --git a/lib/libthread_xu/thread/thr_mutexattr.c b/lib/libthread_xu/thread/thr_mutexattr.c
+index 545bc1e30a..b66ccb8f74 100644
+--- a/lib/libthread_xu/thread/thr_mutexattr.c
++++ b/lib/libthread_xu/thread/thr_mutexattr.c
+@@ -45,12 +45,12 @@ _pthread_mutexattr_init(pthread_mutexattr_t *attr)
+ 	int ret;
+ 	pthread_mutexattr_t pattr;
+ 
+-	pattr = __malloc(sizeof(struct pthread_mutex_attr));
++	pattr = __malloc(sizeof(struct __pthread_mutexattr_s));
+ 	if (pattr == NULL) {
+ 		ret = ENOMEM;
+ 	} else {
+ 		memcpy(pattr, &_pthread_mutexattr_default,
+-		       sizeof(struct pthread_mutex_attr));
++		       sizeof(struct __pthread_mutexattr_s));
+ 		*attr = pattr;
+ 		ret = 0;
+ 	}
+diff --git a/lib/libthread_xu/thread/thr_once.c b/lib/libthread_xu/thread/thr_once.c
+index e970c49489..1f013a5e16 100644
+--- a/lib/libthread_xu/thread/thr_once.c
++++ b/lib/libthread_xu/thread/thr_once.c
+@@ -51,7 +51,7 @@ once_cancel_handler(void *arg)
+ 	pthread_once_t *once_control = arg;
+ 
+ 	_pthread_mutex_lock(&once_lock);
+-	once_control->state = ONCE_NEVER_DONE;
++	once_control->__state = ONCE_NEVER_DONE;
+ 	_pthread_mutex_unlock(&once_lock);
+ 	_pthread_cond_broadcast(&once_cv);
+ }
+@@ -63,23 +63,23 @@ _pthread_once(pthread_once_t *once_control, void (*init_routine) (void))
+ 
+ 	_thr_check_init();
+ 
+-	if (once_control->state == ONCE_DONE)
++	if (once_control->__state == ONCE_DONE)
+ 		return (0);
+ 	_pthread_mutex_lock(&once_lock);
+-	while (*(volatile int *)&(once_control->state) == ONCE_IN_PROGRESS)
++	while (*(volatile int *)&(once_control->__state) == ONCE_IN_PROGRESS)
+ 		_pthread_cond_wait(&once_cv, &once_lock);
+ 	/*
+ 	 * If previous thread was canceled, then the state still
+ 	 * could be ONCE_NEVER_DONE, we need to check it again.
+ 	 */
+-	if (*(volatile int *)&(once_control->state) == ONCE_NEVER_DONE) {
+-		once_control->state = ONCE_IN_PROGRESS;
++	if (*(volatile int *)&(once_control->__state) == ONCE_NEVER_DONE) {
++		once_control->__state = ONCE_IN_PROGRESS;
+ 		_pthread_mutex_unlock(&once_lock);
+ 		_pthread_cleanup_push(once_cancel_handler, once_control);
+ 		init_routine();
+ 		_pthread_cleanup_pop(0);
+ 		_pthread_mutex_lock(&once_lock);
+-		once_control->state = ONCE_DONE;
++		once_control->__state = ONCE_DONE;
+ 		wakeup = 1;
+ 	}
+ 	_pthread_mutex_unlock(&once_lock);
+diff --git a/lib/libthread_xu/thread/thr_private.h b/lib/libthread_xu/thread/thr_private.h
+index 93305f65d9..fb39e41783 100644
+--- a/lib/libthread_xu/thread/thr_private.h
++++ b/lib/libthread_xu/thread/thr_private.h
+@@ -90,10 +90,10 @@ void	_thr_log(const char *buf, size_t bytes);
+ #define STATIC_LIB_REQUIRE(name)	__asm(".globl " #name)
+ #endif
+ 
+-TAILQ_HEAD(thread_head, pthread)	thread_head;
++TAILQ_HEAD(thread_head, __pthread_s)	thread_head;
+ TAILQ_HEAD(atfork_head, pthread_atfork)	atfork_head;
+ 
+-struct pthread_mutex {
++struct __pthread_mutex_s {
+ 	/*
+ 	 * Lock for accesses to this structure.
+ 	 */
+@@ -103,8 +103,8 @@ struct pthread_mutex {
+ #endif
+ 	enum pthread_mutextype		m_type;
+ 	int				m_protocol;
+-	TAILQ_HEAD(mutex_head, pthread)	m_queue;
+-	struct pthread			*m_owner;
++	TAILQ_HEAD(mutex_head, __pthread_s) m_queue;
++	struct __pthread_s			*m_owner;
+ 	long				m_flags;
+ 	int				m_count;
+ 	int				m_refcount;
+@@ -126,7 +126,7 @@ struct pthread_mutex {
+ 	/*
+ 	 * Link for list of all mutexes a thread currently owns.
+ 	 */
+-	TAILQ_ENTRY(pthread_mutex)	m_qe;
++	TAILQ_ENTRY(__pthread_mutex_s)	m_qe;
+ };
+ 
+ #define TAILQ_INITIALIZER	{ NULL, NULL }
+@@ -144,7 +144,7 @@ struct pthread_mutex {
+ #define MUTEX_FLAGS_PRIVATE	0x01
+ #define MUTEX_FLAGS_INITED	0x02
+ 
+-struct pthread_mutex_attr {
++struct __pthread_mutexattr_s {
+ 	enum pthread_mutextype	m_type;
+ 	int			m_protocol;
+ 	int			m_ceiling;
+@@ -156,7 +156,7 @@ struct pthread_mutex_attr {
+ 
+ struct cond_cancel_info;
+ 
+-struct pthread_cond {
++struct __pthread_cond_s {
+ 	/*
+ 	 * Lock for accesses to this structure.
+ 	 */
+@@ -167,7 +167,7 @@ struct pthread_cond {
+ 	TAILQ_HEAD(, cond_cancel_info)	c_waitlist;
+ };
+ 
+-struct pthread_cond_attr {
++struct __pthread_condattr_s {
+ 	int		c_pshared;
+ 	int		c_clockid;
+ };
+@@ -178,18 +178,18 @@ struct pthread_cond_attr {
+ #define COND_FLAGS_PRIVATE	0x01
+ #define COND_FLAGS_INITED	0x02
+ 
+-struct pthread_barrier {
++struct __pthread_barrier_s {
+ 	volatile umtx_t	b_lock;
+ 	volatile umtx_t	b_cycle;
+ 	volatile int	b_count;
+ 	volatile int	b_waiters;
+ };
+ 
+-struct pthread_barrierattr {
++struct __pthread_barrierattr_s {
+ 	int		pshared;
+ };
+ 
+-struct pthread_spinlock {
++struct __pthread_spinlock_s {
+ 	volatile umtx_t	s_lock;
+ };
+ 
+@@ -225,7 +225,7 @@ struct pthread_atfork {
+ 	void (*child)(void);
+ };
+ 
+-struct pthread_attr {
++struct __pthread_attr_s {
+ 	int	sched_policy;
+ 	int	sched_inherit;
+ 	int	prio;
+@@ -279,11 +279,11 @@ struct pthread_attr {
+  */
+ #define TIMESLICE_USEC				20000
+ 
+-struct pthread_rwlockattr {
++struct __pthread_rwlockattr_s {
+ 	int		pshared;
+ };
+ 
+-struct pthread_rwlock {
++struct __pthread_rwlock_s {
+ 	pthread_mutex_t	lock;	/* monitor lock */
+ 	pthread_cond_t	read_signal;
+ 	pthread_cond_t	write_signal;
+@@ -314,7 +314,7 @@ struct pthread_key {
+ /*
+  * Thread structure.
+  */
+-struct pthread {
++struct __pthread_s {
+ 	/*
+ 	 * Magic value to help recognize a valid thread structure
+ 	 * from an invalid one:
+@@ -351,13 +351,13 @@ struct pthread {
+ 	int			sigblock;
+ 
+ 	/* Queue entry for list of all threads. */
+-	TAILQ_ENTRY(pthread)	tle;	/* link for all threads in process */
++	TAILQ_ENTRY(__pthread_s) tle;	/* link for all threads in process */
+ 
+ 	/* Queue entry for GC lists. */
+-	TAILQ_ENTRY(pthread)	gcle;
++	TAILQ_ENTRY(__pthread_s) gcle;
+ 
+ 	/* Hash queue entry. */
+-	LIST_ENTRY(pthread)	hle;
++	LIST_ENTRY(__pthread_s)	hle;
+ 
+ 	/* Threads reference count. */
+ 	int			refcount;
+@@ -368,7 +368,7 @@ struct pthread {
+ 	 */
+ 	void			*(*start_routine)(void *);
+ 	void			*arg;
+-	struct pthread_attr	attr;
++	struct __pthread_attr_s	attr;
+ 
+ 	/*
+ 	 * Cancelability flags
+@@ -402,13 +402,13 @@ struct pthread {
+ 	 * The joiner is the thread that is joining to this thread.  The
+ 	 * join status keeps track of a join operation to another thread.
+ 	 */
+-	struct pthread		*joiner;
++	struct __pthread_s	*joiner;
+ 
+ 	/*
+ 	 * The current thread can belong to a priority mutex queue.
+ 	 * This is the synchronization queue link.
+ 	 */
+-	TAILQ_ENTRY(pthread)	sqe;
++	TAILQ_ENTRY(__pthread_s) sqe;
+ 
+ 	/* Miscellaneous flags; only set with scheduling lock held. */
+ 	int			flags;
+@@ -453,7 +453,7 @@ struct pthread {
+ 	int			priority_mutex_count;
+ 
+ 	/* Queue of currently owned simple type mutexes. */
+-	TAILQ_HEAD(, pthread_mutex)	mutexq;
++	TAILQ_HEAD(, __pthread_mutex_s)	mutexq;
+ 
+ 	void				*ret;
+ 	struct pthread_specific_elem	*specific;
+@@ -610,12 +610,12 @@ extern int __isthreaded;
+  * Global variables for the pthread library.
+  */
+ extern char		*_usrstack;
+-extern struct pthread	*_thr_initial;
++extern pthread_t	_thr_initial;
+ 
+ /* For debugger */
+ extern int		_libthread_xu_debug;
+ extern int		_thread_event_mask;
+-extern struct pthread	*_thread_last_event;
++extern pthread_t	_thread_last_event;
+ 
+ /* List of all threads */
+ extern struct thread_head	_thread_list;
+@@ -630,13 +630,13 @@ extern struct	atfork_head	_thr_atfork_kern_list;
+ extern umtx_t	_thr_atfork_lock;
+ 
+ /* Default thread attributes */
+-extern struct pthread_attr _pthread_attr_default;
++extern struct __pthread_attr_s _pthread_attr_default;
+ 
+ /* Default mutex attributes */
+-extern struct pthread_mutex_attr _pthread_mutexattr_default;
++extern struct __pthread_mutexattr_s _pthread_mutexattr_default;
+ 
+ /* Default condition variable attributes */
+-extern struct pthread_cond_attr _pthread_condattr_default;
++extern struct __pthread_condattr_s _pthread_condattr_default;
+ 
+ extern pid_t	_thr_pid;
+ extern size_t	_thr_guard_default;
+@@ -659,9 +659,9 @@ __BEGIN_DECLS
+ int	_thr_setthreaded(int);
+ int	_mutex_cv_lock(pthread_mutex_t *, int count);
+ int	_mutex_cv_unlock(pthread_mutex_t *, int *count);
+-void	_mutex_notify_priochange(struct pthread *, struct pthread *, int);
+-void	_mutex_fork(struct pthread *curthread, lwpid_t tid);
+-void	_mutex_unlock_private(struct pthread *);
++void	_mutex_notify_priochange(pthread_t, pthread_t, int);
++void	_mutex_fork(pthread_t, lwpid_t tid);
++void	_mutex_unlock_private(pthread_t);
+ 
+ #if 0
+ int	_mutex_reinit(pthread_mutex_t *);
+@@ -669,58 +669,57 @@ void	_cond_reinit(pthread_cond_t pcond);
+ void	_rwlock_reinit(pthread_rwlock_t prwlock);
+ #endif
+ 
+-void	_libpthread_init(struct pthread *);
+-struct pthread *_thr_alloc(struct pthread *);
++void	_libpthread_init(pthread_t);
++pthread_t _thr_alloc(pthread_t);
+ void	_thread_exit(const char *, int, const char *) __dead2;
+ void	_thread_exitf(const char *, int, const char *, ...) __dead2
+ 	    __printflike(3, 4);
+ void	_thr_exit_cleanup(void);
+ void	_thr_atfork_kern(void (*prepare)(void), void (*parent)(void),
+ 			void (*child)(void));
+-int	_thr_ref_add(struct pthread *, struct pthread *, int);
+-void	_thr_ref_delete(struct pthread *, struct pthread *);
+-void	_thr_ref_delete_unlocked(struct pthread *, struct pthread *);
+-int	_thr_find_thread(struct pthread *, struct pthread *, int);
++int	_thr_ref_add(pthread_t, pthread_t, int);
++void	_thr_ref_delete(pthread_t, pthread_t);
++void	_thr_ref_delete_unlocked(pthread_t, pthread_t);
++int	_thr_find_thread(pthread_t, pthread_t, int);
+ void	_thr_malloc_init(void);
+ void	_rtld_setthreaded(int);
+ void	_thr_rtld_init(void);
+ void	_thr_rtld_fini(void);
+-int	_thr_stack_alloc(struct pthread_attr *);
+-void	_thr_stack_free(struct pthread_attr *);
++int	_thr_stack_alloc(pthread_attr_t);
++void	_thr_stack_free(pthread_attr_t);
+ void	_thr_stack_cleanup(void);
+ void	_thr_sem_init(void);
+-void	_thr_free(struct pthread *, struct pthread *);
+-void	_thr_gc(struct pthread *);
++void	_thr_free(pthread_t, pthread_t);
++void	_thr_gc(pthread_t);
+ void	_thread_cleanupspecific(void);
+ void	_thread_dump_info(void);
+ void	_thread_printf(int, const char *, ...) __printflike(2, 3);
+ void	_thread_vprintf(int, const char *, va_list);
+ void	_thr_spinlock_init(void);
+-int	_thr_cancel_enter(struct pthread *);
+-void	_thr_cancel_leave(struct pthread *, int);
+-void	_thr_signal_block(struct pthread *);
+-void	_thr_signal_unblock(struct pthread *);
++int	_thr_cancel_enter(pthread_t);
++void	_thr_cancel_leave(pthread_t, int);
++void	_thr_signal_block(pthread_t);
++void	_thr_signal_unblock(pthread_t);
+ void	_thr_signal_init(void);
+ void	_thr_signal_deinit(void);
+-int	_thr_send_sig(struct pthread *, int sig);
++int	_thr_send_sig(pthread_t, int sig);
+ void	_thr_list_init(void);
+-void	_thr_hash_add(struct pthread *);
+-void	_thr_hash_remove(struct pthread *);
+-struct pthread *_thr_hash_find(struct pthread *);
+-void	_thr_link(struct pthread *curthread, struct pthread *thread);
+-void	_thr_unlink(struct pthread *curthread, struct pthread *thread);
+-void	_thr_suspend_check(struct pthread *curthread);
++void	_thr_hash_add(pthread_t);
++void	_thr_hash_remove(pthread_t);
++pthread_t _thr_hash_find(pthread_t);
++void	_thr_link(pthread_t, pthread_t);
++void	_thr_unlink(pthread_t, pthread_t);
++void	_thr_suspend_check(pthread_t);
+ void	_thr_assert_lock_level(void) __dead2;
+-void	_thr_ast(struct pthread *);
++void	_thr_ast(pthread_t);
+ int	_thr_get_tid(void);
+-void	_thr_report_creation(struct pthread *curthread,
+-			   struct pthread *newthread);
+-void	_thr_report_death(struct pthread *curthread);
++void	_thr_report_creation(pthread_t, pthread_t);
++void	_thr_report_death(pthread_t);
+ void	_thread_bp_create(void);
+ void	_thread_bp_death(void);
+ int	_thr_getscheduler(lwpid_t, int *, struct sched_param *);
+ int	_thr_setscheduler(lwpid_t, int, const struct sched_param *);
+-int	_thr_set_sched_other_prio(struct pthread *, int);
++int	_thr_set_sched_other_prio(pthread_t, int);
+ int	_rtp_to_schedparam(const struct rtprio *rtp, int *policy,
+ 	    struct sched_param *param);
+ int	_schedparam_to_rtp(int policy, const struct sched_param *param,
+diff --git a/lib/libthread_xu/thread/thr_pspinlock.c b/lib/libthread_xu/thread/thr_pspinlock.c
+index d1002e1f82..43d96ae2ca 100644
+--- a/lib/libthread_xu/thread/thr_pspinlock.c
++++ b/lib/libthread_xu/thread/thr_pspinlock.c
+@@ -40,11 +40,11 @@
+ int
+ _pthread_spin_init(pthread_spinlock_t *lock, int pshared)
+ {
+-	struct pthread_spinlock	*lck;
++	pthread_spinlock_t	lck;
+ 
+ 	if (lock == NULL || pshared != PTHREAD_PROCESS_PRIVATE)
+ 		return (EINVAL);
+-	lck = __malloc(sizeof(struct pthread_spinlock));
++	lck = __malloc(sizeof(struct __pthread_spinlock_s));
+ 	if (lck == NULL)
+ 		return (ENOMEM);
+ 	_thr_umtx_init(&lck->s_lock);
+@@ -72,8 +72,8 @@ _pthread_spin_destroy(pthread_spinlock_t *lock)
+ int
+ _pthread_spin_trylock(pthread_spinlock_t *lock)
+ {
+-	struct pthread *curthread = tls_get_curthread();
+-	struct pthread_spinlock	*lck;
++	pthread_t curthread = tls_get_curthread();
++	pthread_spinlock_t	lck;
+ 
+ 	if (lock == NULL || (lck = *lock) == NULL)
+ 		return (EINVAL);
+@@ -83,8 +83,8 @@ _pthread_spin_trylock(pthread_spinlock_t *lock)
+ int
+ _pthread_spin_lock(pthread_spinlock_t *lock)
+ {
+-	struct pthread *curthread;
+-	struct pthread_spinlock	*lck;
++	pthread_t curthread;
++	pthread_spinlock_t	lck;
+ 	int count;
+ 
+ 	if (lock == NULL || (lck = *lock) == NULL)
+@@ -107,8 +107,8 @@ _pthread_spin_lock(pthread_spinlock_t *lock)
+ int
+ _pthread_spin_unlock(pthread_spinlock_t *lock)
+ {
+-	struct pthread *curthread = tls_get_curthread();
+-	struct pthread_spinlock	*lck;
++	pthread_t curthread = tls_get_curthread();
++	pthread_spinlock_t	lck;
+ 
+ 	if (lock == NULL || (lck = *lock) == NULL)
+ 		return (EINVAL);
+diff --git a/lib/libthread_xu/thread/thr_resume_np.c b/lib/libthread_xu/thread/thr_resume_np.c
+index 96f9bfd33d..d43fa5b7b2 100644
+--- a/lib/libthread_xu/thread/thr_resume_np.c
++++ b/lib/libthread_xu/thread/thr_resume_np.c
+@@ -37,13 +37,13 @@
+ 
+ #include "thr_private.h"
+ 
+-static void resume_common(struct pthread *thread);
++static void resume_common(pthread_t thread);
+ 
+ /* Resume a thread: */
+ int
+ _pthread_resume_np(pthread_t thread)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int ret;
+ 
+ 	/* Add a reference to the thread: */
+@@ -60,8 +60,8 @@ _pthread_resume_np(pthread_t thread)
+ void
+ _pthread_resume_all_np(void)
+ {
+-	struct pthread *curthread = tls_get_curthread();
+-	struct pthread *thread;
++	pthread_t curthread = tls_get_curthread();
++	pthread_t thread;
+ 
+ 	/* Take the thread list lock: */
+ 	THREAD_LIST_LOCK(curthread);
+@@ -79,7 +79,7 @@ _pthread_resume_all_np(void)
+ }
+ 
+ static void
+-resume_common(struct pthread *thread)
++resume_common(pthread_t thread)
+ {
+ 	/* Clear the suspend flag: */
+ 	thread->flags &= ~THR_FLAGS_NEED_SUSPEND;
+diff --git a/lib/libthread_xu/thread/thr_rwlock.c b/lib/libthread_xu/thread/thr_rwlock.c
+index 7468de1222..45720c8fdb 100644
+--- a/lib/libthread_xu/thread/thr_rwlock.c
++++ b/lib/libthread_xu/thread/thr_rwlock.c
+@@ -82,7 +82,7 @@ rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr __unused)
+ 	int ret;
+ 
+ 	/* allocate rwlock object */
+-	prwlock = __malloc(sizeof(struct pthread_rwlock));
++	prwlock = __malloc(sizeof(struct __pthread_rwlock_s));
+ 	if (prwlock == NULL)
+ 		return (ENOMEM);
+ 
+@@ -155,7 +155,7 @@ _pthread_rwlock_destroy (pthread_rwlock_t *rwlock)
+ }
+ 
+ static int
+-init_static(struct pthread *thread, pthread_rwlock_t *rwlock)
++init_static(pthread_t thread, pthread_rwlock_t *rwlock)
+ {
+ 	int ret;
+ 
+@@ -181,7 +181,7 @@ _pthread_rwlock_init(pthread_rwlock_t *rwlock, const pthread_rwlockattr_t *attr)
+ static int
+ rwlock_rdlock_common(pthread_rwlock_t *rwlock, const struct timespec *abstime)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	pthread_rwlock_t prwlock;
+ 	int ret;
+ 
+@@ -285,7 +285,7 @@ _pthread_rwlock_timedrdlock (pthread_rwlock_t * __restrict rwlock,
+ int
+ _pthread_rwlock_tryrdlock (pthread_rwlock_t *rwlock)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	pthread_rwlock_t prwlock;
+ 	int ret;
+ 
+@@ -331,7 +331,7 @@ _pthread_rwlock_tryrdlock (pthread_rwlock_t *rwlock)
+ int
+ _pthread_rwlock_trywrlock (pthread_rwlock_t *rwlock)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	pthread_rwlock_t prwlock;
+ 	int ret;
+ 
+@@ -367,7 +367,7 @@ _pthread_rwlock_trywrlock (pthread_rwlock_t *rwlock)
+ int
+ _pthread_rwlock_unlock (pthread_rwlock_t *rwlock)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	pthread_rwlock_t prwlock;
+ 	int ret;
+ 
+@@ -418,7 +418,7 @@ _pthread_rwlock_unlock (pthread_rwlock_t *rwlock)
+ static int
+ rwlock_wrlock_common (pthread_rwlock_t *rwlock, const struct timespec *abstime)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	pthread_rwlock_t prwlock;
+ 	int ret;
+ 
+diff --git a/lib/libthread_xu/thread/thr_rwlockattr.c b/lib/libthread_xu/thread/thr_rwlockattr.c
+index fa4c3d7499..20528a271a 100644
+--- a/lib/libthread_xu/thread/thr_rwlockattr.c
++++ b/lib/libthread_xu/thread/thr_rwlockattr.c
+@@ -65,7 +65,7 @@ _pthread_rwlockattr_init(pthread_rwlockattr_t *rwlockattr)
+ 	if (rwlockattr == NULL)
+ 		return (EINVAL);
+ 
+-	prwlockattr = __malloc(sizeof(struct pthread_rwlockattr));
++	prwlockattr = __malloc(sizeof(struct __pthread_rwlockattr_s));
+ 	if (prwlockattr == NULL)
+ 		return (ENOMEM);
+ 
+diff --git a/lib/libthread_xu/thread/thr_sem.c b/lib/libthread_xu/thread/thr_sem.c
+index 30b564716f..d62aa6151f 100644
+--- a/lib/libthread_xu/thread/thr_sem.c
++++ b/lib/libthread_xu/thread/thr_sem.c
+@@ -296,7 +296,7 @@ _sem_trywait(sem_t *sem)
+ int
+ _sem_wait(sem_t *sem)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	int val, oldcancel, retval;
+ 
+ 	if (sem_check_validity(sem) != 0) {
+@@ -338,7 +338,7 @@ int
+ _sem_timedwait(sem_t * __restrict sem, const struct timespec * __restrict abstime)
+ {
+ 	struct timespec ts, ts2;
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	int val, oldcancel, retval;
+ 
+ 	if (sem_check_validity(sem) != 0)
+diff --git a/lib/libthread_xu/thread/thr_setschedparam.c b/lib/libthread_xu/thread/thr_setschedparam.c
+index 485d8fe687..adf0774509 100644
+--- a/lib/libthread_xu/thread/thr_setschedparam.c
++++ b/lib/libthread_xu/thread/thr_setschedparam.c
+@@ -44,7 +44,7 @@ int
+ _pthread_setschedparam(pthread_t pthread, int policy,
+ 	const struct sched_param *param)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	ret = 0;
+ 
+ 	if (pthread == curthread) {
+diff --git a/lib/libthread_xu/thread/thr_sig.c b/lib/libthread_xu/thread/thr_sig.c
+index c9f77f207c..cc03152d27 100644
+--- a/lib/libthread_xu/thread/thr_sig.c
++++ b/lib/libthread_xu/thread/thr_sig.c
+@@ -60,7 +60,7 @@ static void
+ sigcancel_handler(int sig __unused, siginfo_t *info __unused,
+ 	ucontext_t *ucp __unused)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 
+ 	if (curthread->cancelflags & THR_CANCEL_AT_POINT)
+ 		_pthread_testcancel();
+@@ -68,7 +68,7 @@ sigcancel_handler(int sig __unused, siginfo_t *info __unused,
+ }
+ 
+ void
+-_thr_ast(struct pthread *curthread)
++_thr_ast(pthread_t curthread)
+ {
+ 	if (!THR_IN_CRITICAL(curthread)) {
+ 		if (__predict_false((curthread->flags &
+@@ -79,7 +79,7 @@ _thr_ast(struct pthread *curthread)
+ }
+ 
+ void
+-_thr_suspend_check(struct pthread *curthread)
++_thr_suspend_check(pthread_t curthread)
+ {
+ 	umtx_t cycle;
+ 
+@@ -195,7 +195,7 @@ __strong_reference(_pthread_sigmask, pthread_sigmask);
+ int
+ _sigsuspend(const sigset_t * set)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	sigset_t newset;
+ 	const sigset_t *pset;
+ 	int oldcancel;
+@@ -221,7 +221,7 @@ int
+ __sigtimedwait(const sigset_t *set, siginfo_t *info,
+ 	const struct timespec * timeout)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	sigset_t newset;
+ 	const sigset_t *pset;
+ 	int oldcancel;
+@@ -244,7 +244,7 @@ __strong_reference(__sigtimedwait, sigtimedwait);
+ int
+ __sigwaitinfo(const sigset_t *set, siginfo_t *info)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	sigset_t newset;
+ 	const sigset_t *pset;
+ 	int oldcancel;
+@@ -291,7 +291,7 @@ unsigned long LogWIndex;
+ void
+ _thr_log(const char *buf, size_t bytes)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	unsigned long i;
+ 	char prefix[32];
+ 	size_t plen;
+diff --git a/lib/libthread_xu/thread/thr_spec.c b/lib/libthread_xu/thread/thr_spec.c
+index b8193cb3c5..c7935dbdde 100644
+--- a/lib/libthread_xu/thread/thr_spec.c
++++ b/lib/libthread_xu/thread/thr_spec.c
+@@ -46,7 +46,7 @@ static size_t _pthread_specific_bytes;
+ int
+ _pthread_key_create(pthread_key_t *key, void (*destructor) (void *))
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	int i;
+ 
+ 	/* User program might be preparing to call pthread_create() */
+@@ -78,7 +78,7 @@ _pthread_key_create(pthread_key_t *key, void (*destructor) (void *))
+ int
+ _pthread_key_delete(pthread_key_t key)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int ret = 0;
+ 
+ 	if ((unsigned int)key < PTHREAD_KEYS_MAX) {
+@@ -100,7 +100,7 @@ _pthread_key_delete(pthread_key_t key)
+ void
+ _thread_cleanupspecific(void)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t	curthread = tls_get_curthread();
+ 	void		(*destructor)( void *);
+ 	const void	*data = NULL;
+ 	int		key;
+@@ -190,7 +190,7 @@ pthread_key_allocate_data(void)
+ int
+ _pthread_setspecific(pthread_key_t key, const void *value)
+ {
+-	struct pthread	*pthread;
++	pthread_t	pthread;
+ 	int		ret = 0;
+ 
+ 	/* Point to the running thread: */
+@@ -224,7 +224,7 @@ _pthread_setspecific(pthread_key_t key, const void *value)
+ void *
+ _pthread_getspecific(pthread_key_t key)
+ {
+-	struct pthread	*pthread;
++	pthread_t	pthread;
+ 	const void	*data;
+ 
+ 	/* Point to the running thread: */
+diff --git a/lib/libthread_xu/thread/thr_spinlock.c b/lib/libthread_xu/thread/thr_spinlock.c
+index 92c5b119dc..817573f80f 100644
+--- a/lib/libthread_xu/thread/thr_spinlock.c
++++ b/lib/libthread_xu/thread/thr_spinlock.c
+@@ -62,7 +62,7 @@ static void	init_spinlock(spinlock_t *lck);
+ void
+ _spinunlock(spinlock_t *lck)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 
+ 	THR_UMTX_UNLOCK(curthread, (volatile umtx_t *)&lck->access_lock);
+ }
+@@ -70,7 +70,7 @@ _spinunlock(spinlock_t *lck)
+ void
+ _spinlock(spinlock_t *lck)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 
+ 	if (!__isthreaded)
+ 		PANIC("Spinlock called when not threaded.");
+@@ -89,7 +89,7 @@ _spinlock(spinlock_t *lck)
+ int
+ _spintrylock(spinlock_t *lck)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 
+ 	if (!__isthreaded)
+ 		PANIC("Spinlock called when not threaded.");
+@@ -113,7 +113,7 @@ static void
+ init_spinlock(spinlock_t *lck)
+ {
+ 	static int count = 0;
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 
+ 	THR_UMTX_LOCK(curthread, &spinlock_static_lock);
+ 	if ((lck->fname == NULL) && (spinlock_count < MAX_SPINLOCKS)) {
+diff --git a/lib/libthread_xu/thread/thr_stack.c b/lib/libthread_xu/thread/thr_stack.c
+index f5051ff398..f02af853ca 100644
+--- a/lib/libthread_xu/thread/thr_stack.c
++++ b/lib/libthread_xu/thread/thr_stack.c
+@@ -82,9 +82,9 @@ round_up(size_t size)
+ }
+ 
+ int
+-_thr_stack_alloc(struct pthread_attr *attr)
++_thr_stack_alloc(pthread_attr_t attr)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	struct stack *spare_stack;
+ 	size_t stacksize;
+ 	size_t guardsize;
+@@ -200,7 +200,7 @@ _thr_stack_alloc(struct pthread_attr *attr)
+ 
+ /* This function must be called with _thread_list_lock held. */
+ void
+-_thr_stack_free(struct pthread_attr *attr)
++_thr_stack_free(pthread_attr_t attr)
+ {
+ 	struct stack *spare_stack;
+ 
+diff --git a/lib/libthread_xu/thread/thr_suspend_np.c b/lib/libthread_xu/thread/thr_suspend_np.c
+index d490ecfeb5..0676ff4fa5 100644
+--- a/lib/libthread_xu/thread/thr_suspend_np.c
++++ b/lib/libthread_xu/thread/thr_suspend_np.c
+@@ -36,14 +36,13 @@
+ 
+ #include "thr_private.h"
+ 
+-static int suspend_common(struct pthread *, struct pthread *,
+-		int);
++static int suspend_common(pthread_t, pthread_t, int);
+ 
+ /* Suspend a thread: */
+ int
+ _pthread_suspend_np(pthread_t thread)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int ret;
+ 
+ 	/* Suspending the current thread doesn't make sense. */
+@@ -68,8 +67,8 @@ _pthread_suspend_np(pthread_t thread)
+ void
+ _pthread_suspend_all_np(void)
+ {
+-	struct pthread *curthread = tls_get_curthread();
+-	struct pthread *thread;
++	pthread_t curthread = tls_get_curthread();
++	pthread_t thread;
+ 	int ret;
+ 
+ 	THREAD_LIST_LOCK(curthread);
+@@ -114,8 +113,7 @@ _pthread_suspend_all_np(void)
+ }
+ 
+ static int
+-suspend_common(struct pthread *curthread, struct pthread *thread,
+-	int waitok)
++suspend_common(pthread_t curthread, pthread_t thread, int waitok)
+ {
+ 	umtx_t tmp;
+ 
+diff --git a/lib/libthread_xu/thread/thr_symbols.c b/lib/libthread_xu/thread/thr_symbols.c
+index bd2d4aae50..78516bc29e 100644
+--- a/lib/libthread_xu/thread/thr_symbols.c
++++ b/lib/libthread_xu/thread/thr_symbols.c
+@@ -41,16 +41,16 @@
+ 
+ int _libthread_xu_debug;
+ int _thread_max_keys = PTHREAD_KEYS_MAX;
+-int _thread_off_attr_flags = offsetof(struct pthread, attr.flags);
+-int _thread_off_event_buf = offsetof(struct pthread, event_buf);
+-int _thread_off_event_mask = offsetof(struct pthread, event_mask);
++int _thread_off_attr_flags = offsetof(struct __pthread_s, attr.flags);
++int _thread_off_event_buf = offsetof(struct __pthread_s, event_buf);
++int _thread_off_event_mask = offsetof(struct __pthread_s, event_mask);
+ int _thread_off_key_allocated = offsetof(struct pthread_key, allocated);
+ int _thread_off_key_destructor = offsetof(struct pthread_key, destructor);
+-int _thread_off_next = offsetof(struct pthread, tle.tqe_next);
+-int _thread_off_report_events = offsetof(struct pthread, report_events);
+-int _thread_off_state = offsetof(struct pthread, state);
+-int _thread_off_tcb = offsetof(struct pthread, tcb);
+-int _thread_off_tid = offsetof(struct pthread, tid);
++int _thread_off_next = offsetof(struct __pthread_s, tle.tqe_next);
++int _thread_off_report_events = offsetof(struct __pthread_s, report_events);
++int _thread_off_state = offsetof(struct __pthread_s, state);
++int _thread_off_tcb = offsetof(struct __pthread_s, tcb);
++int _thread_off_tid = offsetof(struct __pthread_s, tid);
+ int _thread_size_key = sizeof(struct pthread_key);
+ int _thread_state_running = PS_RUNNING;
+ int _thread_state_zoombie = PS_DEAD;
+diff --git a/lib/libthread_xu/thread/thr_syscalls.c b/lib/libthread_xu/thread/thr_syscalls.c
+index bbec3fdcb4..ca0fce309e 100644
+--- a/lib/libthread_xu/thread/thr_syscalls.c
++++ b/lib/libthread_xu/thread/thr_syscalls.c
+@@ -162,7 +162,7 @@ pid_t	_wait(int *);
+ int
+ __accept(int s, struct sockaddr *addr, socklen_t *addrlen)
+ {
+-	struct pthread *curthread;
++	pthread_t curthread;
+ 	int oldcancel;
+ 	int ret;
+ 
+@@ -180,7 +180,7 @@ int
+ _aio_suspend(const struct aiocb * const iocbs[], int niocb, const struct
+     timespec *timeout)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	int ret;
+ 
+@@ -196,7 +196,7 @@ __strong_reference(_aio_suspend, aio_suspend);
+ int
+ __close(int fd)
+ {
+-	struct pthread	*curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	int	ret;
+ 
+@@ -212,7 +212,7 @@ __strong_reference(__close, close);
+ int
+ __connect(int fd, const struct sockaddr *name, socklen_t namelen)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	int ret;
+ 
+@@ -228,7 +228,7 @@ __strong_reference(__connect, connect);
+ int
+ ___creat(const char *path, mode_t mode)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	int ret;
+ 
+@@ -244,7 +244,7 @@ __strong_reference(___creat, creat);
+ int
+ __fcntl(int fd, int cmd,...)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	int	ret;
+ 	va_list	ap;
+@@ -279,7 +279,7 @@ __strong_reference(__fcntl, fcntl);
+ int
+ __fsync(int fd)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	int	ret;
+ 
+@@ -295,7 +295,7 @@ __strong_reference(__fsync, fsync);
+ int
+ __msync(void *addr, size_t len, int flags)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	int	ret;
+ 
+@@ -312,7 +312,7 @@ int
+ __nanosleep(const struct timespec *time_to_sleep,
+     struct timespec *time_remaining)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int		oldcancel;
+ 	int		ret;
+ 
+@@ -328,7 +328,7 @@ __strong_reference(__nanosleep, nanosleep);
+ int
+ __open(const char *path, int flags,...)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	int	ret;
+ 	int	mode = 0;
+@@ -356,7 +356,7 @@ __strong_reference(__open, open);
+ int
+ __openat(int fd, const char *path, int flags,...)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	int	ret;
+ 	int	mode = 0;
+@@ -384,7 +384,7 @@ __strong_reference(__openat, openat);
+ int
+ _pause(void)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	int	ret;
+ 
+@@ -400,7 +400,7 @@ __strong_reference(_pause, pause);
+ int
+ __poll(struct pollfd *fds, unsigned int nfds, int timeout)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	int ret;
+ 
+@@ -417,7 +417,7 @@ int
+ __ppoll(struct pollfd *fds, unsigned int nfds, const struct timespec *ts,
+ 	const sigset_t *mask)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	int ret;
+ 
+@@ -434,7 +434,7 @@ int
+ __pselect(int count, fd_set *rfds, fd_set *wfds, fd_set *efds,
+ 	const struct timespec *timo, const sigset_t *mask)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	int ret;
+ 
+@@ -464,7 +464,7 @@ __strong_reference(_raise, raise);
+ ssize_t
+ __read(int fd, void *buf, size_t nbytes)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	ssize_t	ret;
+ 
+@@ -479,7 +479,7 @@ __strong_reference(__read, read);
+ ssize_t
+ __readv(int fd, const struct iovec *iov, int iovcnt)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	ssize_t ret;
+ 
+@@ -495,7 +495,7 @@ ssize_t
+ __recvfrom(int s, void *b, size_t l, int f, struct sockaddr *from,
+     socklen_t *fl)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	ssize_t ret;
+ 
+@@ -510,7 +510,7 @@ __strong_reference(__recvfrom, recvfrom);
+ ssize_t
+ __recvmsg(int s, struct msghdr *m, int f)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	ssize_t ret;
+ 	int oldcancel;
+ 
+@@ -526,7 +526,7 @@ int
+ __select(int numfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+ 	struct timeval *timeout)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	int ret;
+ 
+@@ -541,7 +541,7 @@ __strong_reference(__select, select);
+ ssize_t
+ __sendmsg(int s, const struct msghdr *m, int f)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	ssize_t ret;
+ 	int oldcancel;
+ 
+@@ -557,7 +557,7 @@ ssize_t
+ __sendto(int s, const void *m, size_t l, int f, const struct sockaddr *t,
+     socklen_t tl)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	ssize_t ret;
+ 	int oldcancel;
+ 
+@@ -572,7 +572,7 @@ __strong_reference(__sendto, sendto);
+ unsigned int
+ _sleep(unsigned int seconds)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t	curthread = tls_get_curthread();
+ 	int		oldcancel;
+ 	unsigned int	ret;
+ 
+@@ -587,7 +587,7 @@ __strong_reference(_sleep, sleep);
+ int
+ _system(const char *string)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	int	ret;
+ 
+@@ -602,7 +602,7 @@ __strong_reference(_system, system);
+ int
+ _tcdrain(int fd)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	int	ret;
+ 
+@@ -617,7 +617,7 @@ __strong_reference(_tcdrain, tcdrain);
+ int
+ ___usleep(unsigned int useconds)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t	curthread = tls_get_curthread();
+ 	int		oldcancel;
+ 	int		ret;
+ 
+@@ -646,7 +646,7 @@ __strong_reference(_vfork, vfork);
+ pid_t
+ _wait(int *istat)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	pid_t	ret;
+ 
+@@ -661,7 +661,7 @@ __strong_reference(_wait, wait);
+ pid_t
+ __wait4(pid_t pid, int *istat, int options, struct rusage *rusage)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int oldcancel;
+ 	pid_t ret;
+ 
+@@ -676,7 +676,7 @@ __strong_reference(__wait4, wait4);
+ pid_t
+ _waitpid(pid_t wpid, int *status, int options)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	pid_t	ret;
+ 
+@@ -691,7 +691,7 @@ __strong_reference(_waitpid, waitpid);
+ ssize_t
+ __write(int fd, const void *buf, size_t nbytes)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	ssize_t	ret;
+ 
+@@ -706,7 +706,7 @@ __strong_reference(__write, write);
+ ssize_t
+ __writev(int fd, const struct iovec *iov, int iovcnt)
+ {
+-	struct pthread *curthread = tls_get_curthread();
++	pthread_t curthread = tls_get_curthread();
+ 	int	oldcancel;
+ 	ssize_t ret;
+ 
+diff --git a/sys/sys/_pthreadtypes.h b/sys/sys/_pthreadtypes.h
+index 9e8cf3841e..ee46ff7858 100644
+--- a/sys/sys/_pthreadtypes.h
++++ b/sys/sys/_pthreadtypes.h
+@@ -1,7 +1,5 @@
+ /*
+- * Copyright (c) 1993, 1994 by Chris Provenzano, proven@mit.edu
+- * Copyright (c) 1995-1998 by John Birrell <jb@cimlogic.com.au>
+- * All rights reserved.
++ * Copyright (c) 2019 The DragonFly Project.  All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+  * modification, are permitted provided that the following conditions
+@@ -11,83 +9,71 @@
+  * 2. Redistributions in binary form must reproduce the above copyright
+  *    notice, this list of conditions and the following disclaimer in the
+  *    documentation and/or other materials provided with the distribution.
+- * 3. All advertising materials mentioning features or use of this software
+- *    must display the following acknowledgement:
+- *    This product includes software developed by Chris Provenzano.
+- * 4. The name of Chris Provenzano may not be used to endorse or promote
+- *    products derived from this software without specific prior written
+- *    permission.
+  *
+- * THIS SOFTWARE IS PROVIDED BY CHRIS PROVENZANO ``AS IS'' AND
+- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+- * ARE DISCLAIMED.  IN NO EVENT SHALL CHRIS PROVENZANO BE LIABLE FOR ANY
+- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
++ * COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+  * SUCH DAMAGE.
+  */
+ 
+ #ifndef _SYS__PTHREADTYPES_H_
+-#define _SYS__PTHREADTYPES_H_
++#define	_SYS__PTHREADTYPES_H_
+ 
+-/*
+- * Forward structure definitions.
+- *
+- * These are mostly opaque to the user.
+- */
+-struct pthread;
+-struct pthread_attr;
+-struct pthread_cond;
+-struct pthread_cond_attr;
+-struct pthread_mutex;
+-struct pthread_mutex_attr;
+-struct pthread_once;
+-struct pthread_rwlock;
+-struct pthread_rwlockattr;
+-struct pthread_barrier;
+-struct pthread_barrier_attr;
+-struct pthread_spinlock;
++#include <sys/cdefs.h>
+ 
+ /*
+- * Primitive system data type definitions required by P1003.1c.
+- *
+- * Note that P1003.1c specifies that there are no defined comparison
+- * or assignment operators for the types pthread_attr_t, pthread_cond_t,
+- * pthread_condattr_t, pthread_mutex_t, pthread_mutexattr_t.
++ * Forward opaque structure definitions that do not pollute namespaces.
++ * To be used in headers where visibility is an issue.
+  */
+-typedef struct	pthread			*pthread_t;
+-typedef struct	pthread_attr		*pthread_attr_t;
+-typedef struct	pthread_mutex		*pthread_mutex_t;
+-typedef struct	pthread_mutex_attr	*pthread_mutexattr_t;
+-typedef struct	pthread_cond		*pthread_cond_t;
+-typedef struct	pthread_cond_attr	*pthread_condattr_t;
+-typedef int				pthread_key_t;
+-typedef struct	pthread_once		pthread_once_t;
+-typedef struct	pthread_rwlock		*pthread_rwlock_t;
+-typedef struct	pthread_rwlockattr	*pthread_rwlockattr_t;
+-typedef struct	pthread_barrier		*pthread_barrier_t;
+-typedef struct	pthread_barrierattr	*pthread_barrierattr_t;
+-typedef struct	pthread_spinlock	*pthread_spinlock_t;
++struct __pthread_s;
++struct __pthread_attr_s;
++struct __pthread_barrier_s;
++struct __pthread_barrierattr_s;
++struct __pthread_cond_s;
++struct __pthread_condattr_s;
++struct __pthread_mutex_s;
++struct __pthread_mutexattr_s;
++struct __pthread_once_s;
++struct __pthread_rwlock_s;
++struct __pthread_rwlockattr_s;
++struct __pthread_spinlock_s;
+ 
+ /*
+- * Additional type definitions:
+- *
+- * Note that P1003.1c reserves the prefixes pthread_ and PTHREAD_ for
+- * use in header symbols.
++ * Basic pthread types to be used in function prototypes.
+  */
+-typedef void    *pthread_addr_t;
+-typedef void    *(*pthread_startroutine_t) (void *);
++typedef	struct __pthread_s		*pthread_t;
++typedef	struct __pthread_attr_s		*pthread_attr_t;
++typedef	struct __pthread_barrier_s	*pthread_barrier_t;
++typedef	struct __pthread_barrierattr_s	*pthread_barrierattr_t;
++typedef	struct __pthread_cond_s		*pthread_cond_t;
++typedef	struct __pthread_condattr_s	*pthread_condattr_t;
++typedef	struct __pthread_mutex_s	*pthread_mutex_t;
++typedef	struct __pthread_mutexattr_s	*pthread_mutexattr_t;
++typedef	int				pthread_key_t;
++typedef	struct	__pthread_once_s	pthread_once_t;
++
++#if __POSIX_VISIBLE >= 200112 || __XSI_VISIBLE
++typedef	struct __pthread_rwlock_s	*pthread_rwlock_t;
++typedef	struct __pthread_rwlockattr_s	*pthread_rwlockattr_t;
++#endif
++#if __POSIX_VISIBLE >= 200112 || __XSI_VISIBLE >= 600
++typedef	struct __pthread_spinlock_s	*pthread_spinlock_t;
++#endif
+ 
+ /*
+- * Once definitions.
++ * Once-only structure (partly public).
+  */
+-struct pthread_once {
+-	int		state;
+-	pthread_mutex_t	mutex;
++struct __pthread_once_s {
++	int		__state;
++	void		*__private;
+ };
+ 
+-#endif /* ! _SYS__PTHREADTYPES_H_ */
++#endif	/* !_SYS__PTHREADTYPES_H_ */
+-- 
+2.23.0
+

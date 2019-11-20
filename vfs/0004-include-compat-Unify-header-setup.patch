@@ -1,7 +1,7 @@
-From 71a538a33a8fad9f041fbb8c1581a9eb377cc74e Mon Sep 17 00:00:00 2001
+From c2abd6a124fa20a35c228dec6d016f90c380b332 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Mon, 18 Nov 2019 12:51:52 +0200
-Subject: [PATCH 4/4] include/compat: Unify header setup.
+Subject: [PATCH 04/12] include/compat: Unify header setup.
 
  Use small forwarding header wrappers.  These headers are privided for
  ports benefits and should not be used during buildworld/buildkernel.
@@ -133,12 +133,12 @@ index 0000000000..9298d9e9e5
 +#endif
 diff --git a/include/compat/cam/scsi/scsi_all.h b/include/compat/cam/scsi/scsi_all.h
 new file mode 100644
-index 0000000000..29a3c78c01
+index 0000000000..fe1faf9e41
 --- /dev/null
 +++ b/include/compat/cam/scsi/scsi_all.h
 @@ -0,0 +1,4 @@
-+#ifndef _COMPAT_BUS_CAM_SCSI_SCSI_ALL_H_
-+#define	_COMPAT_BUS_CAM_SCSI_SCSI_ALL_H_
++#ifndef _COMPAT_CAM_SCSI_SCSI_ALL_H_
++#define	_COMPAT_CAM_SCSI_SCSI_ALL_H_
 +#include <bus/cam/scsi/scsi_all.h>
 +#endif
 diff --git a/include/compat/cam/scsi/scsi_da.h b/include/compat/cam/scsi/scsi_da.h

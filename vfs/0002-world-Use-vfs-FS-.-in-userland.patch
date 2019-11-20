@@ -1,7 +1,7 @@
-From cc2838523514a04f18ea03075e859247faee003f Mon Sep 17 00:00:00 2001
+From 127c473e7a0c5b02ccb8ca68ffb6ef3808442e97 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Fri, 15 Nov 2019 21:40:40 +0200
-Subject: [PATCH 2/4] world: Use <vfs/FS/...> in userland.
+Subject: [PATCH 02/12] world: Use <vfs/FS/...> in userland.
 
 ---
  contrib/smbfs/mount_smbfs/mount_smbfs.c | 2 +-

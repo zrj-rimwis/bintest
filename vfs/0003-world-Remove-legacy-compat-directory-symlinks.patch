@@ -1,7 +1,7 @@
-From 9a22e727cef34e7278f381d147c07086b7836f06 Mon Sep 17 00:00:00 2001
+From e62f2779a8cc2b2367f9097c07987e684d126711 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Fri, 15 Nov 2019 21:41:12 +0200
-Subject: [PATCH 3/4] world: Remove legacy compat directory symlinks.
+Subject: [PATCH 03/12] world: Remove legacy compat directory symlinks.
 
  If compatibility paths are needed for 3rd-party software, then create
  paths in /usr/include/compat/ using real directories without use of the
@@ -9,16 +9,16 @@ Subject: [PATCH 3/4] world: Remove legacy compat directory symlinks.
 
  While there, remove ata.h symlink too.
 ---
- Makefile_upgrade.inc | 10 ++++++++++
+ Makefile_upgrade.inc | 11 +++++++++++
  etc/Makefile         |  2 --
  include/Makefile     | 13 +------------
- 3 files changed, 11 insertions(+), 14 deletions(-)
+ 3 files changed, 12 insertions(+), 14 deletions(-)
 
 diff --git a/Makefile_upgrade.inc b/Makefile_upgrade.inc
-index d3329dcf61..53c84eb515 100644
+index d3329dcf61..3c9fa68408 100644
 --- a/Makefile_upgrade.inc
 +++ b/Makefile_upgrade.inc
-@@ -3873,6 +3873,16 @@ TO_REMOVE+=/usr/share/calendar/uk_UA.KOI8-U
+@@ -3873,6 +3873,17 @@ TO_REMOVE+=/usr/share/calendar/uk_UA.KOI8-U
  TO_REMOVE+=/usr/lib/thread/libc_r.a
  TO_REMOVE+=/usr/lib/thread/libc_r.so
  TO_REMOVE+=/usr/lib/thread/libc_r.so.5
@@ -29,6 +29,7 @@ index d3329dcf61..53c84eb515 100644
 +TO_REMOVE+=/usr/include/msdosfs
 +TO_REMOVE+=/usr/include/nfs
 +TO_REMOVE+=/usr/include/ntfs
++TO_REMOVE+=/usr/include/pccard
 +TO_REMOVE+=/usr/include/ufs
 +TO_REMOVE+=/usr/include/vfs/ffs
 +TO_REMOVE+=/usr/include/sys/ata.h

@@ -1,0 +1,64 @@
+From d6bf2ab340f8e5fddc059d839fac86b550964622 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Wed, 20 Nov 2019 09:21:21 +0200
+Subject: [PATCH 11/12] sys/boot: Define _STANDALONE while building.
+
+ It will be used to limit visibility.  Do the same for lib/libstand.
+---
+ lib/libstand/Makefile      | 1 +
+ sys/boot/dloader/Makefile  | 1 +
+ sys/boot/efi/Makefile.inc  | 1 +
+ sys/boot/pc32/Makefile.inc | 1 +
+ 4 files changed, 4 insertions(+)
+
+diff --git a/lib/libstand/Makefile b/lib/libstand/Makefile
+index 8aef675588..1aa6decc39 100644
+--- a/lib/libstand/Makefile
++++ b/lib/libstand/Makefile
+@@ -21,6 +21,7 @@ LIBSTAND_ARCH?=	${MACHINE_ARCH}
+ LIBC_SRC=	${LIBSTAND_SRC}/../libc
+ 
+ CFLAGS+=-D_LIBSTAND_
++CFLAGS+=	-D_STANDALONE
+ 
+ # Mostly OK, some of the libc imports are a bit noisy
+ CFLAGS+=	-ffreestanding
+diff --git a/sys/boot/dloader/Makefile b/sys/boot/dloader/Makefile
+index 70fc8fb394..cf37f690db 100644
+--- a/sys/boot/dloader/Makefile
++++ b/sys/boot/dloader/Makefile
+@@ -13,6 +13,7 @@ CFLAGS+=	-fno-stack-protector
+ .if ${MACHINE_ARCH} != "i386"
+ CFLAGS+=	-fPIC -mno-red-zone
+ CFLAGS+=	-ffreestanding
++CFLAGS+=	-D_STANDALONE
+ .endif
+ 
+ .if ${MACHINE_ARCH} == "x86_64"
+diff --git a/sys/boot/efi/Makefile.inc b/sys/boot/efi/Makefile.inc
+index 2f0bba4b41..9e206ddd63 100644
+--- a/sys/boot/efi/Makefile.inc
++++ b/sys/boot/efi/Makefile.inc
+@@ -5,6 +5,7 @@ BINDIR?=	/boot
+ # Options used when building app-specific efi components
+ # See conf/kern.mk for the correct set of these
+ CFLAGS+=	-O
++CFLAGS+=	-D_STANDALONE
+ CFLAGS+=	-ffreestanding -Wformat
+ CFLAGS+=	-mno-mmx -mno-3dnow -mno-sse -mno-sse2 -mno-sse3 -msoft-float
+ LDFLAGS+=	-nostdlib
+diff --git a/sys/boot/pc32/Makefile.inc b/sys/boot/pc32/Makefile.inc
+index 19de89aa94..730a3f52cc 100644
+--- a/sys/boot/pc32/Makefile.inc
++++ b/sys/boot/pc32/Makefile.inc
+@@ -5,6 +5,7 @@ __pc32__:
+ 
+ LOADER_ADDRESS?= 0x200000
+ WORLD_CCOPTLEVEL=	1 # Force -O1, -O2 implodes
++CFLAGS+=	-D_STANDALONE
+ CFLAGS+=	-ffreestanding -fno-omit-frame-pointer
+ CFLAGS+=	-mno-mmx -mno-3dnow -mno-sse -mno-sse2 -mno-sse3 -msoft-float
+ 
+-- 
+2.23.0
+

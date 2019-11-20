@@ -1,7 +1,7 @@
-From b73c283b90824bc587d8d4ae662ac0abea75ba9a Mon Sep 17 00:00:00 2001
+From 0a187e98855a905d346af2bf952956074fe4e8cd Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Fri, 15 Nov 2019 20:20:52 +0200
-Subject: [PATCH 1/4] world: Use <bus/cam/...> in userland.
+Subject: [PATCH 01/12] world: Use <bus/cam/...> in userland.
 
 ---
  lib/libcam/camlib.c                      |  8 +--
