@@ -1,0 +1,37 @@
+From f837cc1c62d56a2b7ccaf83f2eab6cf55777df20 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 20 Dec 2019 11:17:08 +0200
+Subject: [PATCH 1/4] libexecinfo(3): Prevent use of unitialized.
+
+ The gelf_getshdr() and gelf_getsy() can return NULL in certain cases.
+---
+ lib/libexecinfo/symtab.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/lib/libexecinfo/symtab.c b/lib/libexecinfo/symtab.c
+index 83d3ab6575..a99c7c5d0e 100644
+--- a/lib/libexecinfo/symtab.c
++++ b/lib/libexecinfo/symtab.c
+@@ -108,7 +108,8 @@ symtab_create(int fd, int bind, int type)
+ 		size_t ns;
+ 		struct symbol *s;
+ 
+-		gelf_getshdr(scn, &shdr);
++		if (gelf_getshdr(scn, &shdr) == NULL)
++			goto out;	/* XXX prevent use of unitialized */
+ 		if(shdr.sh_type != SHT_SYMTAB)
+ 			continue;
+ 
+@@ -123,7 +124,8 @@ symtab_create(int fd, int bind, int type)
+ 
+ 		for (size_t i = 0; i < ns; i++) {
+ 			GElf_Sym sym;
+-                        gelf_getsym(edata, (int)i, &sym);
++			if (gelf_getsym(edata, (int)i, &sym) == NULL)
++				goto out;	/* XXX prevent unitialized */
+ 
+ 			if (bind != -1 &&
+ 			    (unsigned)bind != ELF_ST_BIND(sym.st_info))
+-- 
+2.23.0
+

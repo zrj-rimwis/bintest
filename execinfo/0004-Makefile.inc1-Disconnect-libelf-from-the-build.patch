@@ -1,0 +1,46 @@
+From c97256ae9dbb7349ed9e8815b7b7d1571c3aa70e Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Fri, 20 Dec 2019 11:33:51 +0200
+Subject: [PATCH 4/4] Makefile.inc1: Disconnect libelf from the build.
+
+ Internal lib is no longer needed after libexecinfo changes.
+---
+ Makefile.inc1 | 1 -
+ lib/Makefile  | 2 --
+ 2 files changed, 3 deletions(-)
+
+diff --git a/Makefile.inc1 b/Makefile.inc1
+index fa62f36d43..7156e04ff8 100644
+--- a/Makefile.inc1
++++ b/Makefile.inc1
+@@ -1069,7 +1069,6 @@ lib/libc__L: lib/csu__L
+ _prebuild_libs=		lib/libbz2 lib/liblzma lib/libz
+ _prebuild_libs+=	lib/libutil
+ 
+-_prebuild_libs+=	lib/libelf
+ _prebuild_libs+=	lib/libpcap
+ 
+ _generic_libs=	gnu/lib
+diff --git a/lib/Makefile b/lib/Makefile
+index c3ebbc7e4e..92fb25633b 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -16,7 +16,6 @@
+ # libsbuf must be built before libcam.
+ # libpcap must be built before libipfw3.
+ # libpthread must be built before librt, and libusb.
+-# libelf must be built before libexecinfo.
+ #
+ # Otherwise, the SUBDIR list should be in alphabetical order.
+ 
+@@ -40,7 +39,6 @@ SUBDIR_ORDERED= \
+ 	libprop \
+ 	librt \
+ 	libusb \
+-	libelf \
+ 	libexecinfo
+ 
+ SUBDIR=	${SUBDIR_ORDERED} \
+-- 
+2.23.0
+
