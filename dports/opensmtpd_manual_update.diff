@@ -1,0 +1,527 @@
+diff --git a/mail/opensmtpd-extras-queue-python/Makefile b/mail/opensmtpd-extras-queue-python/Makefile
+index a712634d085..ef6979e9754 100644
+--- a/mail/opensmtpd-extras-queue-python/Makefile
++++ b/mail/opensmtpd-extras-queue-python/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=		-queue-python
+-PORTREVISION=		3
++PORTREVISION=		0
+ 
+ COMMENT=		Python queue support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-queue-ram/Makefile b/mail/opensmtpd-extras-queue-ram/Makefile
+index d7708172f25..c00a93b4484 100644
+--- a/mail/opensmtpd-extras-queue-ram/Makefile
++++ b/mail/opensmtpd-extras-queue-ram/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=		-queue-ram
+-PORTREVISION=		2
++PORTREVISION=		0
+ 
+ COMMENT=		RAM queue support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-scheduler-python/Makefile b/mail/opensmtpd-extras-scheduler-python/Makefile
+index d72869980e7..82a84e09ea4 100644
+--- a/mail/opensmtpd-extras-scheduler-python/Makefile
++++ b/mail/opensmtpd-extras-scheduler-python/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=		-scheduler-python
+-PORTREVISION=		3
++PORTREVISION=		0
+ 
+ COMMENT=		Python scheduler support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-scheduler-ram/Makefile b/mail/opensmtpd-extras-scheduler-ram/Makefile
+index 85a2b211e09..a89f7e1bf94 100644
+--- a/mail/opensmtpd-extras-scheduler-ram/Makefile
++++ b/mail/opensmtpd-extras-scheduler-ram/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=		-scheduler-ram
+-PORTREVISION=		2
++PORTREVISION=		0
+ 
+ COMMENT=		RAM scheduler support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-table-ldap/Makefile b/mail/opensmtpd-extras-table-ldap/Makefile
+index 59fba25e0c1..999b3337d7e 100644
+--- a/mail/opensmtpd-extras-table-ldap/Makefile
++++ b/mail/opensmtpd-extras-table-ldap/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=		-table-ldap
+-PORTREVISION=		2
++PORTREVISION=		0
+ 
+ COMMENT=		LDAP table support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-table-mysql/Makefile b/mail/opensmtpd-extras-table-mysql/Makefile
+index 3ca319828af..dcbb4f0487a 100644
+--- a/mail/opensmtpd-extras-table-mysql/Makefile
++++ b/mail/opensmtpd-extras-table-mysql/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=	-table-mysql
+-PORTREVISION=	2
++PORTREVISION=	0
+ 
+ COMMENT=	MySQL table support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-table-passwd/Makefile b/mail/opensmtpd-extras-table-passwd/Makefile
+index cb092f8ca79..1aa7e03cee8 100644
+--- a/mail/opensmtpd-extras-table-passwd/Makefile
++++ b/mail/opensmtpd-extras-table-passwd/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=	-table-passwd
+-PORTREVISION=	2
++PORTREVISION=	0
+ 
+ COMMENT=	passwd(5) table support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-table-postgresql/Makefile b/mail/opensmtpd-extras-table-postgresql/Makefile
+index dcd75ae8277..dea39cbcf50 100644
+--- a/mail/opensmtpd-extras-table-postgresql/Makefile
++++ b/mail/opensmtpd-extras-table-postgresql/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=	-table-postgresql
+-PORTREVISION=	4
++PORTREVISION=	0
+ 
+ COMMENT=	PostgreSQL table support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-table-python/Makefile b/mail/opensmtpd-extras-table-python/Makefile
+index 05ff19e8435..a8de819625d 100644
+--- a/mail/opensmtpd-extras-table-python/Makefile
++++ b/mail/opensmtpd-extras-table-python/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=	-table-python
+-PORTREVISION=	3
++PORTREVISION=	0
+ 
+ COMMENT=	Python table support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-table-redis/Makefile b/mail/opensmtpd-extras-table-redis/Makefile
+index 9ad179c0765..5e0ee794b7e 100644
+--- a/mail/opensmtpd-extras-table-redis/Makefile
++++ b/mail/opensmtpd-extras-table-redis/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=	-table-redis
+-PORTREVISION=	2
++PORTREVISION=	0
+ 
+ COMMENT=	Redis table support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-table-socketmap/Makefile b/mail/opensmtpd-extras-table-socketmap/Makefile
+index 2232eb30077..6a9174d1ab4 100644
+--- a/mail/opensmtpd-extras-table-socketmap/Makefile
++++ b/mail/opensmtpd-extras-table-socketmap/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=	-table-socketmap
+-PORTREVISION=	2
++PORTREVISION=	0
+ 
+ COMMENT=	Socketmap table support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras-table-sqlite/Makefile b/mail/opensmtpd-extras-table-sqlite/Makefile
+index e52930d0d15..81ef6e1bc92 100644
+--- a/mail/opensmtpd-extras-table-sqlite/Makefile
++++ b/mail/opensmtpd-extras-table-sqlite/Makefile
+@@ -2,7 +2,7 @@
+ # $FreeBSD$
+ 
+ PKGNAMESUFFIX=	-table-sqlite
+-PORTREVISION=	2
++PORTREVISION=	0
+ 
+ COMMENT=	SQLite table support for OpenSMTPD
+ 
+diff --git a/mail/opensmtpd-extras/Makefile b/mail/opensmtpd-extras/Makefile
+index f4106554d68..04220a47059 100644
+--- a/mail/opensmtpd-extras/Makefile
++++ b/mail/opensmtpd-extras/Makefile
+@@ -2,8 +2,9 @@
+ # $FreeBSD$
+ 
+ PORTNAME=	opensmtpd-extras
+-PORTVERSION=	201606230001
+-PORTREVISION?=	5
++PORTVERSION?=	6.6.0
++PORTREVISION?=	0
++PORTEPOCH?=	1
+ CATEGORIES+=	mail
+ MASTER_SITES=	http://www.opensmtpd.org/archives/
+ 
+@@ -22,12 +23,15 @@ GNU_CONFIGURE=	yes
+ LDFLAGS+=	-L${OPENSSLLIB}
+ CFLAGS+=	-I${OPENSSLINC}
+ 
+-CONFIGURE_ARGS+=	--sysconfdir="${PREFIX}/etc/mail"
++WRKSRC=		${WRKDIR}/OpenSMTPD-extras-${PORTVERSION}
++
++CONFIGURE_ARGS+=	--sysconfdir="${PREFIX}/etc/mail" \
++			--with-libevent=${LOCALBASE} \
++			--with-libssl=${OPENSSLBASE}
+ 
+ NO_OPTIONS_SORT=	yes
+ 
+ # NB: Please *DO NOT* add the following; they are NOT for end-users:
+-# filter-stub, filter-trace, filter-void
+ # queue-null, queue-stub
+ # scheduler-stub
+ # table-stub
+@@ -35,43 +39,28 @@ NO_OPTIONS_SORT=	yes
+ #
+ # Pass OpenSMTPD branch selection to all extras
+ #
+-OPTIONS_DEFINE=	OPENSMTP_DEVEL
++#OPTIONS_DEFINE=	OPENSMTP_DEVEL
++
++#OPENSMTP_DEVEL_DESC=	Depend on opensmtpd-devel (opensmtpd if off)
++#OPENSMTP_DEVEL_BUILD_DEPENDS_OFF=	smtpctl:mail/opensmtpd
++#OPENSMTP_DEVEL_RUN_DEPENDS_OFF=		smtpctl:mail/opensmtpd
++#OPENSMTP_DEVEL_BUILD_DEPENDS=	smtpctl:mail/opensmtpd-devel
++#OPENSMTP_DEVEL_RUN_DEPENDS=	smtpctl:mail/opensmtpd-devel
++BUILD_DEPENDS=	smtpctl:mail/opensmtpd
++RUN_DEPENDS=	smtpctl:mail/opensmtpd
+ 
+-OPENSMTP_DEVEL_DESC=	Depend on opensmtpd-devel (opensmtpd if off)
+-OPENSMTP_DEVEL_BUILD_DEPENDS_OFF=	smtpctl:mail/opensmtpd
+-OPENSMTP_DEVEL_RUN_DEPENDS_OFF=		smtpctl:mail/opensmtpd
+-OPENSMTP_DEVEL_BUILD_DEPENDS=	smtpctl:mail/opensmtpd-devel
+-OPENSMTP_DEVEL_RUN_DEPENDS=	smtpctl:mail/opensmtpd-devel
+ 
+ .if empty(SLAVE_PORT)
+-OPTIONS_GROUP=			TOOLS TABLE FILTER FILTER_EXP QUEUE SCHEDULER
+-OPTIONS_GROUP_FILTER=		FILTER_CLAMAV FILTER_DKIM FILTER_DNSBL FILTER_MONKEY FILTER_PAUSE FILTER_REGEX FILTER_SPAMASSASSIN
+-OPTIONS_GROUP_FILTER_EXP=	FILTER_LUA FILTER_PERL FILTER_PYTHON
++OPTIONS_GROUP=			TABLE QUEUE SCHEDULER
+ OPTIONS_GROUP_QUEUE=		QUEUE_PYTHON QUEUE_RAM
+ OPTIONS_GROUP_SCHEDULER=	SCHEDULER_PYTHON SCHEDULER_RAM
+ OPTIONS_GROUP_TABLE=		TABLE_LDAP TABLE_MYSQL TABLE_PASSWD TABLE_PGSQL TABLE_PYTHON TABLE_REDIS TABLE_SOCKETMAP TABLE_SQLITE
+-OPTIONS_GROUP_TOOLS=		TOOL_STATS
+-OPTIONS_DEFAULT=		${OPTIONS_GROUP_FILTER} ${OPTIONS_GROUP_TABLE} ${OPTIONS_GROUP_TOOLS}
++OPTIONS_DEFAULT=		${OPTIONS_GROUP_TABLE}
+ 
+ # Groups
+-FILTER_DESC=			BASE FILTERS
+-FILTER_EXP_DESC=		EXPERIMENTAL FILTERS
+ QUEUE_DESC=			EXPERIMENTAL QUEUES
+ SCHEDULER_DESC=			EXPERIMENTAL SCHEDULERS
+ TABLE_DESC=			BASE TABLES
+-TOOLS_DESC=			BASE TOOLS
+-
+-# Filters
+-FILTER_CLAMAV_DESC=		Check messages with ClamAV
+-FILTER_DKIM_DESC=		Sign messages with DKIM
+-FILTER_DNSBL_DESC=		Check incoming senders against DNSBLs
+-FILTER_LUA_DESC=		Lua-filter interface
+-FILTER_MONKEY_DESC=		Filter to arbitrary reject or delay mails
+-FILTER_PAUSE_DESC=		Pause before SMTP greeting to reduce spam
+-FILTER_PERL_DESC=		Perl-filter interface
+-FILTER_PYTHON_DESC=		Python-filter interface
+-FILTER_REGEX_DESC=		${REGEX_DESC}
+-FILTER_SPAMASSASSIN_DESC=	Check messages with SpamAssassin
+ 
+ # Queues
+ QUEUE_PYTHON_DESC=		The queue-python
+@@ -91,26 +80,10 @@ TABLE_REDIS_DESC=		REDIS table support
+ TABLE_SOCKETMAP_DESC=		Socketmap protocol support
+ TABLE_SQLITE_DESC=		SQLite table support
+ 
+-# Tools
+-TOOL_STATS_DESC=		Stats tool for OpenSMTPD
+-
+-PLIST_FILES=			man/man3/filter_api.3.gz
+ INSTALL_DIR=			${LOCALBASE}/libexec/opensmtpd
+ 
+ NO_ARCH=	yes
+ 
+-# Filters
+-FILTER_CLAMAV_RUN_DEPENDS=		${INSTALL_DIR}/filter-clamav:mail/opensmtpd-extras-filter-clamav
+-FILTER_DKIM_RUN_DEPENDS=		${INSTALL_DIR}/filter-dkim-signer:mail/opensmtpd-extras-filter-dkim
+-FILTER_DNSBL_RUN_DEPENDS=		${INSTALL_DIR}/filter-dnsbl:mail/opensmtpd-extras-filter-dnsbl
+-FILTER_LUA_RUN_DEPENDS=			${INSTALL_DIR}/filter-lua:mail/opensmtpd-extras-filter-lua
+-FILTER_MONKEY_RUN_DEPENDS=		${INSTALL_DIR}/filter-monkey:mail/opensmtpd-extras-filter-monkey
+-FILTER_PAUSE_RUN_DEPENDS=		${INSTALL_DIR}/filter-pause:mail/opensmtpd-extras-filter-pause
+-FILTER_PERL_RUN_DEPENDS=		${INSTALL_DIR}/filter-perl:mail/opensmtpd-extras-filter-perl
+-FILTER_PYTHON_RUN_DEPENDS=		${INSTALL_DIR}/filter-python:mail/opensmtpd-extras-filter-python
+-FILTER_REGEX_RUN_DEPENDS=		${INSTALL_DIR}/filter-regex:mail/opensmtpd-extras-filter-regex
+-FILTER_SPAMASSASSIN_RUN_DEPENDS=	${INSTALL_DIR}/filter-spamassassin:mail/opensmtpd-extras-filter-spamassassin
+-
+ # Queues
+ QUEUE_PYTHON_RUN_DEPENDS=		${INSTALL_DIR}/queue-python:mail/opensmtpd-extras-queue-python
+ QUEUE_RAM_RUN_DEPENDS=			${INSTALL_DIR}/queue-ram:mail/opensmtpd-extras-queue-ram
+@@ -129,16 +102,7 @@ TABLE_REDIS_RUN_DEPENDS=		${INSTALL_DIR}/table-redis:mail/opensmtpd-extras-table
+ TABLE_SOCKETMAP_RUN_DEPENDS=		${INSTALL_DIR}/table-socketmap:mail/opensmtpd-extras-table-socketmap
+ TABLE_SQLITE_RUN_DEPENDS=		${INSTALL_DIR}/table-sqlite:mail/opensmtpd-extras-table-sqlite
+ 
+-# Tools
+-TOOL_STATS_RUN_DEPENDS=			tool-stats:mail/opensmtpd-extras-tool-stats
+-.else
+-
+-# Only install this for the opensmtpd-extras master port
+-pre-patch:
+-	@${REINPLACE_CMD} -e '/man_MANS.*filter_api.3/s/^/#/' \
+-		${WRKSRC}/extras/filters/Makefile.am
+-# While filters still experimental feature, suppress extra call warnings from logs
+-	${REINPLACE_CMD} -e '/is EXPERIMENTAL/d' ${WRKSRC}/api/filter_api.c
++#.else
+ 
+ .endif
+ 
+diff --git a/mail/opensmtpd-extras/distinfo b/mail/opensmtpd-extras/distinfo
+index 68b9ce75a1a..ab7c3613549 100644
+--- a/mail/opensmtpd-extras/distinfo
++++ b/mail/opensmtpd-extras/distinfo
+@@ -1,3 +1,3 @@
+-TIMESTAMP = 1466658022
+-SHA256 (opensmtpd-extras-201606230001.tar.gz) = 4675ed506cd6dc277a6b784cdbf5abeb5710b8ee56b44faeec71c1cfec48174d
+-SIZE (opensmtpd-extras-201606230001.tar.gz) = 630831
++TIMESTAMP = 1573830614
++SHA256 (opensmtpd-extras-6.6.0.tar.gz) = 126b023602e8bb222bf24543a056ee0a548343dc86d184669ff9d82dfca1fbdf
++SIZE (opensmtpd-extras-6.6.0.tar.gz) = 124234
+diff --git a/mail/opensmtpd/Makefile b/mail/opensmtpd/Makefile
+index 1012e1c17c5..6a06d2be76c 100644
+--- a/mail/opensmtpd/Makefile
++++ b/mail/opensmtpd/Makefile
+@@ -2,12 +2,12 @@
+ # $FreeBSD$
+ 
+ PORTNAME=	opensmtpd
+-PORTVERSION=	5.9.2p1
++PORTVERSION=	6.6.1
++DISTVERSIONSUFFIX=	p1
+ PORTEPOCH=	1
+-PORTREVISION=	7
++PORTREVISION=	0
+ CATEGORIES=	mail
+-MASTER_SITES=	http://www.opensmtpd.org/archives/ \
+-		http://distfiles.pirateparty.in/ashish/
++MASTER_SITES=	http://www.opensmtpd.org/archives/
+ 
+ MAINTAINER=	fluffy@FreeBSD.org
+ COMMENT=	Security- and simplicity-focused SMTP server from OpenBSD
+@@ -15,8 +15,8 @@ COMMENT=	Security- and simplicity-focused SMTP server from OpenBSD
+ LICENSE=	ISCL
+ LICENSE_FILE=	${WRKSRC}/LICENSE
+ 
+-BROKEN_SSL=	openssl111
+-BROKEN_SSL_REASON_openssl111=		Incompatible with Openssl 1.1.x yet
++BROKEN_SSL=	openssl
++BROKEN_SSL_REASON_openssl=		Openssl 1.0 API is EoL, upgrade to FreeBSD 12.x/13.x or add DEFAULT_VERSIONS+=ssl=[openssl111|libressl*] to /etc/make.conf
+ 
+ LIB_DEPENDS=	libevent.so:devel/libevent
+ 
+@@ -24,7 +24,7 @@ OPTIONS_DEFINE=	CA_BUNDLE LIBASRDEVEL MAILERCONF PAM TABLE_DB
+ 
+ OPTIONS_DEFAULT=	CA_BUNDLE PAM TABLE_DB
+ 
+-CA_BUNDLE_DESC=	Install CA bundle for SSL
++CA_BUNDLE_DESC=		Use NSS CA bundle for SSL instead of /etc/ssl/cert.pem
+ LIBASRDEVEL_DESC=	Use development version of libasr
+ MAILERCONF_DESC=	Activate OpenSMTPD in mailer.conf(5)
+ TABLE_DB_DESC=		Build table-db plugin (aliases)
+@@ -55,20 +55,16 @@ TABLE_DB_CONFIGURE_WITH=	table-db
+ 
+ CONFIGURE_ARGS+=	--with-libasr=${LOCALBASE} \
+ 			--with-libevent=${LOCALBASE} \
+-			--with-libssl=${OPENSSLBASE} \
+ 			--sysconfdir=${PREFIX}/etc/mail/
+ 
+ .include <bsd.port.pre.mk>
+ 
+ .if ${OPSYS} == FreeBSD && \
+-    ((${OSVERSION} > 1200084 && ${SSL_DEFAULT} == "base") || \
+-    (${SSL_DEFAULT} == "openssl111"))
+-BROKEN=		Incompatible with Openssl 1.1.x yet
++    ((${OSVERSION} < 1200084 && ${SSL_DEFAULT} == "base") || \
++    (${SSL_DEFAULT} == "openssl"))
++BROKEN=		Openssl 1.0 API is EoL, upgrade to FreeBSD 12.x/13.x or add DEFAULT_VERSIONS+=ssl=[openssl111|libressl*] to /etc/make.conf
+ .endif
+ 
+-post-patch:
+-	${REINPLACE_CMD} -e '/chmod 2555/d' ${WRKSRC}/mk/smtpctl/Makefile.in
+-
+ post-install-TABLE_DB-on:
+ 	@${LN} -sf ${PREFIX}/sbin/smtpctl ${STAGEDIR}${PREFIX}/libexec/opensmtpd/makemap
+ 
+diff --git a/mail/opensmtpd/Makefile.DragonFly b/mail/opensmtpd/Makefile.DragonFly
+deleted file mode 100644
+index cc8775ac079..00000000000
+--- a/mail/opensmtpd/Makefile.DragonFly
++++ /dev/null
+@@ -1,6 +0,0 @@
+-CFLAGS+= -DHAVE_LIMITS_H=1
+-
+-pre-configure:
+-	${RM} -rf ${WRKSRC}/openbsd-compat/vis.h ${WRKSRC}/openbsd-compat/sys
+-	${REINPLACE_CMD} -e 's|TAILQ_FOREACH_SAFE|TAILQ_FOREACH_MUTABLE|' \
+-		${WRKSRC}/smtpd/rfc2822.c
+diff --git a/mail/opensmtpd/distinfo b/mail/opensmtpd/distinfo
+index 36c0919540d..490db13b4a9 100644
+--- a/mail/opensmtpd/distinfo
++++ b/mail/opensmtpd/distinfo
+@@ -1,3 +1,3 @@
+-TIMESTAMP = 1463428051
+-SHA256 (opensmtpd-5.9.2p1.tar.gz) = 3522f273c1630c781facdb2b921228e338ed4e651909316735df775d6a70a71d
+-SIZE (opensmtpd-5.9.2p1.tar.gz) = 681855
++TIMESTAMP = 1573040217
++SHA256 (opensmtpd-6.6.1p1.tar.gz) = eb1bedbfb23d9f08f509d92d8efcaf51d56fb2f44492f40ec059d41124a2f1d9
++SIZE (opensmtpd-6.6.1p1.tar.gz) = 776538
+diff --git a/mail/opensmtpd/dragonfly/patch-smtpd_queue__fs.c b/mail/opensmtpd/dragonfly/patch-smtpd_queue__fs.c
+new file mode 100644
+index 00000000000..d0ae74d0477
+--- /dev/null
++++ b/mail/opensmtpd/dragonfly/patch-smtpd_queue__fs.c
+@@ -0,0 +1,20 @@
++--- smtpd/queue_fs.c.orig	2019-11-05 19:08:33 UTC
+++++ smtpd/queue_fs.c
++@@ -16,6 +16,17 @@
++  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++  */
++ 
+++#ifdef __DragonFly__
+++#include <sys/queue.h>
+++/*
+++ * XXX: the openbsd-compat/sys/queue.h intercepts <sys/queue.h> and our
+++ * <sys/mount.h> needs "STAILQ_ENTRY(vfsconf) vfc_next;".
+++ */
+++#ifndef STAILQ_ENTRY
+++#define STAILQ_ENTRY(type) struct { struct type *stqe_next; /* next element */ }
+++#endif
+++#endif
+++
++ #include "includes.h"
++ 
++ #include <sys/types.h>
+diff --git a/mail/opensmtpd/files/patch-mk_smtpd_Makefile.in b/mail/opensmtpd/files/patch-mk_smtpd_Makefile.in
+index d702255d55f..e1597ed92f0 100644
+--- a/mail/opensmtpd/files/patch-mk_smtpd_Makefile.in
++++ b/mail/opensmtpd/files/patch-mk_smtpd_Makefile.in
+@@ -1,6 +1,6 @@
+---- mk/smtpd/Makefile.in.orig	2016-02-02 20:40:51 UTC
++--- mk/smtpd/Makefile.in.orig	2019-10-26 11:56:36 UTC
+ +++ mk/smtpd/Makefile.in
+-@@ -1365,13 +1365,7 @@ install-exec-hook: $(CONFIGFILES) $(MANP
++@@ -1404,13 +1404,7 @@ install-exec-hook: $(CONFIGFILES) $(MANPAGES)
+  	$(MKDIR_P) $(DESTDIR)$(bindir)
+  	$(MKDIR_P) $(DESTDIR)$(mandir)/$(mansubdir)5
+  	$(MKDIR_P) $(DESTDIR)$(mandir)/$(mansubdir)8
+diff --git a/mail/opensmtpd/files/patch-smtpd-rfc2822.c b/mail/opensmtpd/files/patch-smtpd-rfc2822.c
+deleted file mode 100644
+index 67952346556..00000000000
+--- a/mail/opensmtpd/files/patch-smtpd-rfc2822.c
++++ /dev/null
+@@ -1,19 +0,0 @@
+---- smtpd/rfc2822.c.orig	2018-05-01 13:33:10.000000000 +0000
+-+++ smtpd/rfc2822.c	2018-05-01 13:34:47.931554000 +0000
+-@@ -53,4 +53,7 @@
+- 	struct rfc2822_hdr_miss_cb	*hdr_miss_cb;
+-+ 	
+-+ 	if (!rp->in_hdr)
+-+		goto end;
+- 
+- 	TAILQ_FOREACH(hdr_cb, &rp->hdr_cb, next)
+- 	    if (strcasecmp(hdr_cb->name, rp->header.name) == 0) {
+-@@ -151,6 +152,8 @@
+- 		return;
+- 
+- 	header_callback(rp);
+-+
+-+	missing_headers_callback(rp);
+- }
+- 
+- void
+diff --git a/mail/opensmtpd/files/patch-smtpd-smtp_session.c b/mail/opensmtpd/files/patch-smtpd-smtp_session.c
+deleted file mode 100644
+index 990888bf463..00000000000
+--- a/mail/opensmtpd/files/patch-smtpd-smtp_session.c
++++ /dev/null
+@@ -1,11 +0,0 @@
+---- smtpd/smtp_session.c.orig	2018-05-01 13:35:00.375262000 +0000
+-+++ smtpd/smtp_session.c	2018-05-01 13:37:22.637096000 +0000
+-@@ -1345,6 +1345,8 @@
+- 			s->dataeom = 1;
+- 			if (iobuf_queued(&s->obuf) == 0)
+- 				smtp_data_io_done(s);
+-+			else
+-+				io_reload(&s->oev);
+- 			return;
+- 		}
+- 
+diff --git a/mail/opensmtpd/files/patch-src_mda.c b/mail/opensmtpd/files/patch-src_mda.c
+deleted file mode 100644
+index 3f4e0b1bf9e..00000000000
+--- a/mail/opensmtpd/files/patch-src_mda.c
++++ /dev/null
+@@ -1,11 +0,0 @@
+---- smtpd/mda.c.orig	2016-05-13 02:56:04.000000000 +1000
+-+++ smtpd/mda.c	2018-04-26 10:28:45.373358000 +1000
+-@@ -274,7 +274,7 @@
+- 					 * if any
+- 					 */
+- 					n = iobuf_fqueue(&s->iobuf,
+--					    "Return-Path: %s\n"
+-+					    "Return-Path: <%s>\n"
+- 					    "Delivered-To: %s\n",
+- 					    e->sender,
+- 					    e->rcpt ? e->rcpt : e->dest);
+diff --git a/mail/opensmtpd/files/pkg-message.in b/mail/opensmtpd/files/pkg-message.in
+index abab3da6218..6000c8988eb 100644
+--- a/mail/opensmtpd/files/pkg-message.in
++++ b/mail/opensmtpd/files/pkg-message.in
+@@ -1,13 +1,13 @@
+ [
+ { type: install
+   message: <<EOM
+-If you are upgrading from OpenSMTPD version 5.7.3 or earlier, please
++If you are upgrading from OpenSMTPD version 5.7.3/201303011853 or earlier, please
+ follow the procedure below to update the permissions on the OpenSMTPD
+ spool directories:
+ 
+   1. Stop 'smtpd' service:
+ 
+-     # %%PREFIX%%/sbin/smtpctl stop
++     # service smtpd stop
+ 
+   2. Update permissions:
+ 
+diff --git a/mail/opensmtpd/pkg-plist b/mail/opensmtpd/pkg-plist
+index eab4e70b82e..9c67ff01fe3 100644
+--- a/mail/opensmtpd/pkg-plist
++++ b/mail/opensmtpd/pkg-plist
+@@ -1,9 +1,15 @@
+ @sample etc/mail/smtpd.conf.sample
++bin/smtp
+ libexec/opensmtpd/encrypt
++libexec/opensmtpd/mail.lmtp
+ libexec/opensmtpd/mail.local
++libexec/opensmtpd/mail.maildir
++libexec/opensmtpd/mail.mboxfile
++libexec/opensmtpd/mail.mda
+ %%TABLE_DB%%libexec/opensmtpd/makemap
+ @(,,2555) sbin/smtpctl
+ sbin/smtpd
++man/man1/smtp.1.gz
+ man/man5/aliases.5.gz
+ man/man5/forward.5.gz
+ man/man5/smtpd.conf.5.gz
