@@ -18,3 +18,25 @@ index e9104a460a6..5293a8ddb6b 100644
  # Mono has been behaving for a while, so let it build on pkgbox64
  # for a while (provisionally)
  #
+diff --git a/math/gotoblas/dragonfly/patch-cpuid_x86.c b/math/gotoblas/dragonfly/patch-cpuid_x86.c
+new file mode 100644
+index 00000000000..66ef3f025cc
+--- /dev/null
++++ b/math/gotoblas/dragonfly/patch-cpuid_x86.c
+@@ -0,0 +1,16 @@
++To allow to build on ZEN TR.
++
++--- cpuid_x86.c.orig	2010-11-05 13:57:49 UTC
+++++ cpuid_x86.c
++@@ -1004,6 +1004,11 @@ int get_cpuname(void){
++       case  2:
++ 	return CPUTYPE_OPTERON;
++       case  1:
+++      case  3:
+++      case  5:
+++      case  6:
+++      case  7:
+++      case  8:
++       case 10:
++ 	return CPUTYPE_BARCELONA;
++       }
