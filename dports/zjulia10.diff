@@ -1,0 +1,1800 @@
+diff --git a/lang/julia10/Makefile b/lang/julia10/Makefile
+new file mode 100644
+index 00000000000..a3045001a87
+--- /dev/null
++++ b/lang/julia10/Makefile
+@@ -0,0 +1,188 @@
++# Created by: Iblis Lin <iblis@hs.ntnu.edu.tw>
++# $FreeBSD$
++
++PORTNAME=	julia
++PORTVERSION=	1.0.4
++PORTREVISION=	1
++DISTVERSIONSUFFIX=	-full
++CATEGORIES=	lang math
++MASTER_SITES=	https://github.com/JuliaLang/julia/releases/download/v${PORTVERSION}/
++PKGNAMESUFFIX=	10
++
++MAINTAINER=	iblis@hs.ntnu.edu.tw
++COMMENT=	Julia Language: A fresh approach to technical computing
++
++LICENSE=	MIT
++LICENSE_FILE=	${WRKSRC}/LICENSE.md
++
++ONLY_FOR_ARCHS=	amd64 i386
++
++LIB_DEPENDS=	libcurl.so:ftp/curl \
++		libgit2.so:devel/libgit2 \
++		libgmp.so:math/gmp \
++		libmbedtls.so:security/mbedtls \
++		libmpfr.so:math/mpfr \
++		libpcre2-8.so:devel/pcre2 \
++		libssh2.so:security/libssh2 \
++		libutf8proc.so:textproc/utf8proc
++EXTRACT_DEPENDS=gmake:devel/gmake
++BUILD_DEPENDS=	patchelf:sysutils/patchelf \
++		pcre2-config:devel/pcre2 \
++		cmake:devel/cmake
++
++USES=		gmake compiler:c++11-lib fortran python:2.7,build perl5 \
++		shebangfix
++USE_LDCONFIG=	yes
++
++DESCR=		${.CURDIR}/../julia/pkg-descr
++
++SHEBANG_GLOB=	*.sh
++
++WRKSRC=	${WRKDIR}/julia-${PORTVERSION}
++INSTALLDIR=	julia/${PORTNAME}${PKGNAMESUFFIX}
++MANDIRS+=	${PREFIX}/${INSTALLDIR}/man
++
++ALL_TARGET=	default
++INSTALL_TARGET=	install
++TEST_TARGET=	test
++
++PLIST_SUB=	VERSION="${PORTVERSION:R}" \
++		JULIA="${INSTALLDIR}"
++
++CXXFLAGS+=	-stdlib=libc++ -std=c++11
++MAKE_ARGS+=	prefix=${PREFIX}/${INSTALLDIR} \
++		JCXXFLAGS="${CXXFLAGS}" \
++		FORCE_ASSERTIONS=${FORCE_ASSERTIONS} \
++		USE_GPL_LIBS=${USE_GPL_LIBS} \
++		USE_SYSTEM_CURL=1 \
++		USE_SYSTEM_GMP=1 \
++		USE_SYSTEM_LAPACK=1 \
++		USE_SYSTEM_LIBGIT2=1 \
++		USE_SYSTEM_LIBSSH2=1 \
++		USE_SYSTEM_LIBUV=0 \
++		USE_SYSTEM_MBEDTLS=1 \
++		USE_SYSTEM_MPFR=1 \
++		USE_SYSTEM_PATCHELF=1 \
++		USE_SYSTEM_PCRE=1 \
++		USE_SYSTEM_UTF8PROC=1 \
++		NO_GIT=1
++
++OPTIONS_DEFINE=	DEBUG DOCS GPL_LIBS DESKTOP NATIVE
++OPTIONS_DEFAULT=	OPENLIBM
++OPTIONS_GROUP=	PRIVATE
++OPTIONS_GROUP_PRIVATE=	OPENBLAS
++OPTIONS_SINGLE=	LIBM
++OPTIONS_SINGLE_LIBM=	SYSLIBM OPENLIBM
++OPTIONS_SUB=	yes
++
++PRIVATE_DESC=	Build self-shipped private depends
++LIBM_DESC=	Math library implementation
++
++DEBUG_VARS=	FORCE_ASSERTIONS=1 \
++		ALL_TARGET=all
++DEBUG_MAKE_ARGS=	BUNDLE_DEBUG_LIBS=1
++
++DOCSDIR=	${PREFIX}/share/doc/${PORTNAME}${PKGNAMESUFFIX}
++PORTDOCS=	html
++DOCS_VARS=	INSTALL_TARGET+=install-docs
++
++GPL_LIBS_DESC=	Build with GPL lib: SUITESPARSE
++GPL_LIBS_MAKE_ARGS=	USE_SYSTEM_SUITESPARSE=0
++GPL_LIBS_VARS=	USE_GPL_LIBS=1
++
++DESKTOP_DESC=	Install icon, .desktop and appdata files
++DESKTOP_USES=	gnome
++DESKTOP_VARS=	INSTALL_TARGET+=install-desktop \
++		INSTALLS_ICONS=yes
++
++SYSLIBM_DESC=	Build with system libm
++SYSLIBM_MAKE_ARGS=	USE_SYSTEM_LIBM=1
++
++OPENLIBM_DESC=	Build with OpenLibm (math/openlibm)
++OPENLIBM_MAKE_ARGS=	USE_SYSTEM_OPENLIBM=1
++OPENLIBM_LIB_DEPENDS=	libopenlibm.so:math/openlibm
++
++OPENBLAS_DESC=	Private OpenBLAS v0.3.2\
++		(ports tree: v${:!${MAKE} -C ${PORTSDIR}/math/openblas -V PORTVERSION!})
++OPENBLAS_MAKE_ARGS=	USE_SYSTEM_BLAS=0 OPENBLAS_DYNAMIC_ARCH=1
++OPENBLAS_MAKE_ARGS_OFF=	USE_SYSTEM_BLAS=1
++OPENBLAS_LIB_DEPENDS_OFF=	libopenblasp.so:math/openblas
++
++.include <bsd.port.options.mk>
++
++NATIVE_DESC=		Build with native CPU JIT tuning
++.if ${PORT_OPTIONS:MNATIVE}
++MAKE_ARGS+=	JULIA_CPU_TARGET=native
++.else
++.if ${ARCH} == "x86_64"
++MAKE_ARGS+=	JULIA_CPU_TARGET=x86-64
++.elif ${ARCH} == "i386"
++MAKE_ARGS+=	JULIA_CPU_TARGET=pentium4
++.else
++MAKE_ARGS+=	JULIA_CPU_TARGET=generic
++.endif
++.endif  # .if ${PORT_OPTIONS:MNATIVE}
++
++# OPENBLAS plist
++.if ${PORT_OPTIONS:MOPENBLAS}
++.if ${ARCH} == "x86_64"
++PLIST_SUB+=	OPENBLAS64="64_"
++.else
++PLIST_SUB+=	OPENBLAS64=""
++.endif
++.endif  # .if ${PORT_OPTIONS:MOPENBLAS}
++
++.if ${ARCH} == "i386"
++EXTRA_PATCHES+=	${PATCHDIR}/extra-patch-ui_Makefile
++.endif
++
++post-extract:
++	${MAKE_CMD} -C ${WRKSRC}/deps extract
++	${MAKE_CMD} -C ${WRKSRC}/stdlib install
++
++post-patch:
++	echo "override TAGGED_RELEASE_BANNER=\"FreeBSD port lang/${PORTNAME}${PKGNAMESUFFIX} build\"" >> ${WRKSRC}/Make.user
++	# unset ARCH for auto-detection
++	# Julia build script uses the name x86_86/x86, which are different from ports framework
++	echo "ARCH=" >> ${WRKSRC}/Make.user
++
++post-patch-OPENBLAS-on:
++	${CP} ${FILESDIR}/extra-patch-openblas-fix-arch.patch ${WRKSRC}/deps/patches/openblas-fix-arch.patch
++
++post-patch-OPENBLAS-off:
++	echo "LIBBLAS= -lopenblasp -L${LOCALBASE}/lib" >> ${WRKSRC}/Make.user
++	echo "LIBBLASNAME=libopenblasp" >> ${WRKSRC}/Make.user
++	echo 'LIBLAPACK= $$(LIBBLAS)' >> ${WRKSRC}/Make.user
++	echo 'LIBLAPACKNAME= $$(LIBBLASNAME)' >> ${WRKSRC}/Make.user
++
++post-configure-OPENBLAS-off:
++	${CC} ${CFLAGS} -lopenblas ${LDFLAGS} -o ${WRKSRC}/check_openblas \
++		${FILESDIR}/check_openblas.c
++	${WRKSRC}/check_openblas && ( \
++		echo "USE_BLAS64=1" >> ${WRKSRC}/Make.user \
++	) || ( \
++		echo "USE_BLAS64=0" >> ${WRKSRC}/Make.user \
++	)
++
++post-install:
++	${RLN} ${STAGEDIR}${PREFIX}/${INSTALLDIR}/bin/julia ${STAGEDIR}${PREFIX}/bin/${PORTNAME}${PKGNAMESUFFIX}
++	${RLN} ${STAGEDIR}${PREFIX}/${INSTALLDIR}/man/man1/julia.1 ${STAGEDIR}${PREFIX}/man/man1/${PORTNAME}${PKGNAMESUFFIX}.1
++
++	# clean up for Pkg3.jl
++.for file in .codecov.yml .travis.yml appveyor.yml bors.toml .gitignore source-extracted
++	${RM} ${STAGEDIR}${PREFIX}/${INSTALLDIR}/share/julia/stdlib/v${PORTVERSION:R}/Pkg/${file}
++	${RM} ${STAGEDIR}${PREFIX}/${INSTALLDIR}/share/julia/stdlib/v${PORTVERSION:R}/Pkg/ext/TOML/${file}
++.endfor
++
++post-install-DEBUG-on:
++	${RLN} ${STAGEDIR}${PREFIX}/${INSTALLDIR}/bin/julia-debug ${STAGEDIR}${PREFIX}/bin/${PORTNAME}${PKGNAMESUFFIX}-debug
++
++post-install-DOCS-on:
++	${MV} ${STAGEDIR}${PREFIX}/${INSTALLDIR}/share/doc/julia ${STAGEDIR}${DOCSDIR}
++	${RMDIR} ${STAGEDIR}${PREFIX}/${INSTALLDIR}/share/doc
++
++post-install-DOCS-off:
++	# remove empty dir
++	${RM} -r ${STAGEDIR}${PREFIX}/${INSTALLDIR}/share/doc
++
++.include <bsd.port.mk>
+diff --git a/lang/julia10/Makefile.DragonFly b/lang/julia10/Makefile.DragonFly
+new file mode 100644
+index 00000000000..5a49a2a875f
+--- /dev/null
++++ b/lang/julia10/Makefile.DragonFly
+@@ -0,0 +1,7 @@
++
++USES+=	localbase:ldflags
++
++CXXFLAGS:=	${CXXFLAGS:N-stdlib=*} -Wno-class-memaccess
++
++dfly-patch:
++	${CP} ${DFLY_FILESDIR}/bundled_libuv_dfly.patch ${WRKSRC}/deps/patches/
+diff --git a/lang/julia10/distinfo b/lang/julia10/distinfo
+new file mode 100644
+index 00000000000..7f7181ced73
+--- /dev/null
++++ b/lang/julia10/distinfo
+@@ -0,0 +1,3 @@
++TIMESTAMP = 1559889707
++SHA256 (julia-1.0.4-full.tar.gz) = bbc5c88a4acfecd3b059a01680926c693b82cf3b41733719c384fb0b371ca581
++SIZE (julia-1.0.4-full.tar.gz) = 95865812
+diff --git a/lang/julia10/dragonfly/bundled_libuv_dfly.patch b/lang/julia10/dragonfly/bundled_libuv_dfly.patch
+new file mode 100644
+index 00000000000..506da682c34
+--- /dev/null
++++ b/lang/julia10/dragonfly/bundled_libuv_dfly.patch
+@@ -0,0 +1,92 @@
++--- Makefile.in.orig	2017-01-05 13:19:52.420507000 +0200
+++++ Makefile.in
++@@ -201,6 +201,7 @@ check_PROGRAMS = test/run-tests$(EXEEXT)
++ 
++ @DARWIN_TRUE@am__append_21 = -lutil
++ @DRAGONFLY_TRUE@am__append_22 = include/uv-bsd.h
+++@DRAGONFLY_TRUE@am__append_25 = src/unix/freebsd.c src/unix/kqueue.c
++ @DRAGONFLY_TRUE@am__append_23 = -lutil
++ @FREEBSD_TRUE@am__append_24 = include/uv-bsd.h
++ @FREEBSD_TRUE@am__append_25 = src/unix/freebsd.c src/unix/kqueue.c
++@@ -344,6 +345,8 @@ am__dirstamp = $(am__leading_dot)dirstam
++ @DARWIN_TRUE@	src/unix/libuv_la-fsevents.lo \
++ @DARWIN_TRUE@	src/unix/libuv_la-kqueue.lo \
++ @DARWIN_TRUE@	src/unix/libuv_la-proctitle.lo
+++@DRAGONFLY_TRUE@am__objects_6 = src/unix/libuv_la-freebsd.lo \
+++@DRAGONFLY_TRUE@	src/unix/libuv_la-kqueue.lo
++ @FREEBSD_TRUE@am__objects_6 = src/unix/libuv_la-freebsd.lo \
++ @FREEBSD_TRUE@	src/unix/libuv_la-kqueue.lo
++ @LINUX_TRUE@am__objects_7 = src/unix/libuv_la-linux-core.lo \
++--- include/uv-bsd.h.orig	2016-08-18 06:38:44.000000000 +0300
+++++ include/uv-bsd.h
++@@ -23,7 +23,9 @@
++ #define UV_BSD_H
++ 
++ #include <pthread_np.h>
+++#ifndef __DragonFly__
++ typedef cpuset_t cpu_set_t;
+++#endif
++ 
++ #define UV_PLATFORM_FS_EVENT_FIELDS                                           \
++   uv__io_t event_watcher;                                                     \
++--- src/uv-common.c.orig	2016-08-18 06:38:44.000000000 +0300
+++++ src/uv-common.c
++@@ -371,7 +371,7 @@ int uv_thread_setaffinity(uv_thread_t *t
++ 
++   return 0;
++ #else
++-#if defined(__APPLE__) || defined(_AIX)
+++#if defined(__APPLE__) || defined(_AIX) || defined(__DragonFly__)
++   return -ENOTSUP;
++ #else
++   int i, r;
++@@ -420,7 +420,7 @@ int uv_thread_getaffinity(uv_thread_t *t
++ 
++   return 0;
++ #else
++-#if defined(__APPLE__) || defined(_AIX)
+++#if defined(__APPLE__) || defined(_AIX) || defined(__DragonFly__)
++   return -ENOTSUP;
++ #else
++   int i;
++--- include/uv.h.orig	2016-08-18 06:38:44.000000000 +0300
+++++ include/uv.h
++@@ -1468,7 +1468,7 @@ UV_EXTERN void uv_key_set(uv_key_t* key,
++ #  define UV_CPU_SETSIZE        32
++ # endif
++ #else
++-# if defined(__APPLE__) || defined(_AIX)
+++# if defined(__APPLE__) || defined(_AIX) || defined(__DragonFly__)
++ #  define UV_CPU_SETSIZE        8
++ # else
++ #  define UV_CPU_SETSIZE        CPU_SETSIZE
++--- src/unix/freebsd.c	2016-08-18 06:38:44.000000000 +0300
+++++ src/unix/freebsd.c
++@@ -75,7 +75,8 @@ uint64_t uv__hrtime(uv_clocktype_t type)
++ 
++ 
++ #ifdef __DragonFly__
++-int uv_exepath(char* buffer, size_t* size) {
+++/* deprecated long ago, use KERN_PROC_PATHNAME sysctl */
+++int uv_exepath_procfs(char* buffer, size_t* size) {
++   char abspath[PATH_MAX * 2 + 1];
++   ssize_t abspath_size;
++ 
++@@ -97,7 +98,8 @@ int uv_exepath(char* buffer, size_t* siz
++ 
++   return 0;
++ }
++-#else
+++#endif
+++
++ int uv_exepath(char* buffer, size_t* size) {
++   char abspath[PATH_MAX * 2 + 1];
++   int mib[4];
++@@ -127,7 +129,6 @@ int uv_exepath(char* buffer, size_t* siz
++ 
++   return 0;
++ }
++-#endif
++ 
++ uint64_t uv_get_free_memory(void) {
++   int freecount;
+diff --git a/lang/julia10/dragonfly/patch-Make.inc b/lang/julia10/dragonfly/patch-Make.inc
+new file mode 100644
+index 00000000000..7e4ba4ae46a
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-Make.inc
+@@ -0,0 +1,19 @@
++--- Make.in.intermediate	2020-01-02 21:28:20.000000000 +0000
+++++ Make.inc
++@@ -1007,6 +1007,16 @@ else #Linux
++ JLIBLDFLAGS :=
++ endif
++ 
+++ifeq ($(OS), DragonFly)
+++USE_GCC : = 1
+++USECLANG := 0
+++DISABLE_LIBUNWIND := 1
+++OSLIBS += -lkvm -lrt
+++OSLIBS += -lgcc_pic
+++OSLIBS += -Wl,--export-dynamic -Wl,--version-script=$(JULIAHOME)/src/julia.expmap \
+++	$(NO_WHOLE_ARCHIVE)
+++endif
+++
++ ifeq ($(OS), FreeBSD)
++ JLDFLAGS := -Wl,-Bdynamic
++ OSLIBS += -lelf -lkvm -lrt
+diff --git a/lang/julia10/dragonfly/patch-deps_srccache_llvm-6.0.0_cmake_modules_HandleLLVMOptions.cmake b/lang/julia10/dragonfly/patch-deps_srccache_llvm-6.0.0_cmake_modules_HandleLLVMOptions.cmake
+new file mode 100644
+index 00000000000..ff73b58d616
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-deps_srccache_llvm-6.0.0_cmake_modules_HandleLLVMOptions.cmake
+@@ -0,0 +1,11 @@
++--- deps/srccache/llvm-6.0.0/cmake/modules/HandleLLVMOptions.cmake.orig	2017-11-29 18:05:32 UTC
+++++ deps/srccache/llvm-6.0.0/cmake/modules/HandleLLVMOptions.cmake
++@@ -145,7 +145,7 @@ endif()
++ # Pass -Wl,-z,defs. This makes sure all symbols are defined. Otherwise a DSO
++ # build might work on ELF but fail on MachO/COFF.
++ if(NOT (${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR WIN32 OR CYGWIN OR
++-        ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD" OR
+++        ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD" OR ${CMAKE_SYSTEM_NAME} MATCHES "DragonFly" OR
++         ${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD") AND
++    NOT LLVM_USE_SANITIZER)
++   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,defs")
+diff --git a/lang/julia10/dragonfly/patch-deps_srccache_llvm-6.0.0_lib_Support_Unix_Path.inc b/lang/julia10/dragonfly/patch-deps_srccache_llvm-6.0.0_lib_Support_Unix_Path.inc
+new file mode 100644
+index 00000000000..e466f9c0b79
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-deps_srccache_llvm-6.0.0_lib_Support_Unix_Path.inc
+@@ -0,0 +1,18 @@
++--- deps/srccache/llvm-6.0.0/lib/Support/Unix/Path.inc.orig	2017-11-07 00:47:04 UTC
+++++ deps/srccache/llvm-6.0.0/lib/Support/Unix/Path.inc
++@@ -68,13 +68,13 @@
++ 
++ #include <sys/types.h>
++ #if !defined(__APPLE__) && !defined(__OpenBSD__) && !defined(__FreeBSD__) &&   \
++-    !defined(__linux__)
+++    !defined(__linux__) && !defined(__DragonFly__)
++ #include <sys/statvfs.h>
++ #define STATVFS statvfs
++ #define FSTATVFS fstatvfs
++ #define STATVFS_F_FRSIZE(vfs) vfs.f_frsize
++ #else
++-#if defined(__OpenBSD__) || defined(__FreeBSD__)
+++#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__DragonFly__)
++ #include <sys/mount.h>
++ #include <sys/param.h>
++ #elif defined(__linux__)
+diff --git a/lang/julia10/dragonfly/patch-src_cgmemmgr.cpp b/lang/julia10/dragonfly/patch-src_cgmemmgr.cpp
+new file mode 100644
+index 00000000000..1913bb6020c
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_cgmemmgr.cpp
+@@ -0,0 +1,11 @@
++--- src/cgmemmgr.cpp.orig	2019-05-16 03:46:35 UTC
+++++ src/cgmemmgr.cpp
++@@ -21,7 +21,7 @@
++ #    define MAP_ANONYMOUS MAP_ANON
++ #  endif
++ #endif
++-#ifdef _OS_FREEBSD_
+++#if defined(_OS_FREEBSD_) || defined(_OS_DRAGONFLY_)
++ #  include <sys/types.h>
++ #endif
++ #include "julia_assert.h"
+diff --git a/lang/julia10/dragonfly/patch-src_codegen.cpp b/lang/julia10/dragonfly/patch-src_codegen.cpp
+new file mode 100644
+index 00000000000..32d1fea89df
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_codegen.cpp
+@@ -0,0 +1,11 @@
++--- src/codegen.cpp.orig	2019-05-16 03:46:57 UTC
+++++ src/codegen.cpp
++@@ -13,7 +13,7 @@
++ // also, use ELF because RuntimeDyld COFF X86_64 doesn't seem to work (fails to generate function pointers)?
++ #define FORCE_ELF
++ #endif
++-#if defined(_OS_WINDOWS_) || defined(_OS_FREEBSD_)
+++#if defined(_OS_WINDOWS_) || defined(_OS_FREEBSD_) || defined(_OS_DRAGONFLY_)
++ #  define JL_DISABLE_FPO
++ #endif
++ #if defined(_CPU_X86_)
+diff --git a/lang/julia10/dragonfly/patch-src_debuginfo.cpp b/lang/julia10/dragonfly/patch-src_debuginfo.cpp
+new file mode 100644
+index 00000000000..5c5251c97a8
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_debuginfo.cpp
+@@ -0,0 +1,29 @@
++--- src/debuginfo.cpp.orig	2019-05-16 03:46:57 UTC
+++++ src/debuginfo.cpp
++@@ -749,7 +749,7 @@ static void get_function_name_and_base(c
++     bool needs_name = name && (!*name || untrusted_dladdr);
++     // Try platform specific methods first since they are usually faster
++     if (needs_saddr) {
++-#if (defined(_OS_LINUX_) || defined(_OS_FREEBSD_)) && !defined(JL_DISABLE_LIBUNWIND)
+++#if (defined(_OS_LINUX_) || defined(_OS_FREEBSD_) || defined(_OS_DRAGONFLY_)) && !defined(JL_DISABLE_LIBUNWIND)
++         unw_proc_info_t pip;
++         // Seems that libunwind may return NULL IP depending on what info it finds...
++         if (unw_get_proc_info_by_ip(unw_local_addr_space, pointer,
++@@ -828,7 +828,7 @@ static objfileentry_t &find_object_file(
++     int isdarwin = 0, islinux = 0, iswindows = 0;
++ #if defined(_OS_DARWIN_)
++     isdarwin = 1;
++-#elif defined(_OS_LINUX_) || defined(_OS_FREEBSD_)
+++#elif defined(_OS_LINUX_) || defined(_OS_FREEBSD_) || defined(_OS_DRAGONFLY_)
++     islinux = 1;
++ #elif defined(_OS_WINDOWS_)
++     iswindows = 1;
++@@ -983,7 +983,7 @@ bool jl_dylib_DI_for_fptr(size_t pointer
++     // checks the symbol size so they do not have this problem.
++     // On systems with an untrusted dladdr, the result cannot be used for sysimg
++     // (it's always wrong) and should in general be used only as the last fallback.
++-#if defined(_OS_FREEBSD_) || defined(_OS_WINDOWS_)
+++#if defined(_OS_FREEBSD_) || defined(_OS_WINDOWS_) || defined(_OS_DRAGONFLY_)
++     bool untrusted_dladdr = true;
++ #else
++     bool untrusted_dladdr = false;
+diff --git a/lang/julia10/dragonfly/patch-src_init.c b/lang/julia10/dragonfly/patch-src_init.c
+new file mode 100644
+index 00000000000..3262524ece6
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_init.c
+@@ -0,0 +1,11 @@
++--- src/init.c.orig	2019-05-16 03:46:57 UTC
+++++ src/init.c
++@@ -104,7 +104,7 @@ void jl_init_stack_limits(int ismaster)
++         ptls->stack_lo = (char*)stackaddr;
++         ptls->stack_hi = (char*)stackaddr + stacksize;
++         return;
++-#    elif defined(_OS_FREEBSD_)
+++#    elif defined(_OS_FREEBSD_) || defined(_OS_DRAGONFLY_)
++         pthread_attr_t attr;
++         pthread_attr_init(&attr);
++         pthread_attr_get_np(pthread_self(), &attr);
+diff --git a/lang/julia10/dragonfly/patch-src_interpreter-stacktrace.c b/lang/julia10/dragonfly/patch-src_interpreter-stacktrace.c
+new file mode 100644
+index 00000000000..3eb9a2cd2dd
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_interpreter-stacktrace.c
+@@ -0,0 +1,20 @@
++--- src/interpreter-stacktrace.c.orig	2019-05-16 03:46:57 UTC
+++++ src/interpreter-stacktrace.c
++@@ -3,7 +3,7 @@
++ // #include'd from interpreter.c
++ 
++ // Backtrace support
++-#if defined(_OS_LINUX_) || defined(_OS_FREEBSD_) || defined(_OS_WINDOWS_)
+++#if defined(_OS_LINUX_) || defined(_OS_FREEBSD_) || defined(_OS_WINDOWS_) || defined(_OS_DRAGONFLY_)
++ extern uintptr_t __start_jl_interpreter_frame_val;
++ uintptr_t __start_jl_interpreter_frame = (uintptr_t)&__start_jl_interpreter_frame_val;
++ extern uintptr_t __stop_jl_interpreter_frame_val;
++@@ -16,7 +16,7 @@ uintptr_t __stop_jl_interpreter_frame =
++ #define MANGLE(x) x
++ #endif
++ 
++-#if defined(_OS_LINUX_) || defined(_OS_FREEBSD_)
+++#if defined(_OS_LINUX_) || defined(_OS_FREEBSD_) || defined(_OS_DRAGONFLY_)
++ #if defined(_CPU_ARM_)
++ #  define ASM_FUNCTION_TYPE "%function"
++ #else
+diff --git a/lang/julia10/dragonfly/patch-src_signals-unix.c b/lang/julia10/dragonfly/patch-src_signals-unix.c
+new file mode 100644
+index 00000000000..1904d0e3f43
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_signals-unix.c
+@@ -0,0 +1,20 @@
++--- src/signals-unix.c.orig	2019-05-16 03:46:57 UTC
+++++ src/signals-unix.c
++@@ -23,7 +23,7 @@
++ #ifdef __APPLE__ // Darwin's mach ports allow signal-free thread management
++ #define HAVE_MACH
++ #define HAVE_KEVENT
++-#elif defined(__FreeBSD__) // generic bsd
+++#elif defined(__FreeBSD__) || defined(__DragonFly__) // generic bsd
++ #define HAVE_ITIMER
++ #else // generic linux
++ #define HAVE_TIMER
++@@ -105,7 +105,7 @@ static void jl_call_in_ctx(jl_ptls_t ptl
++     *(void**)rsp = NULL;
++     ctx->uc_mcontext.gregs[REG_RSP] = rsp;
++     ctx->uc_mcontext.gregs[REG_RIP] = (uintptr_t)fptr;
++-#elif defined(_OS_FREEBSD_) && defined(_CPU_X86_64_)
+++#elif (defined(_OS_FREEBSD_) || defined(_OS_DRAGONFLY_)) && defined(_CPU_X86_64_)
++     ucontext_t *ctx = (ucontext_t*)_ctx;
++     rsp -= sizeof(void*);
++     *(void**)rsp = NULL;
+diff --git a/lang/julia10/dragonfly/patch-src_support_END.h b/lang/julia10/dragonfly/patch-src_support_END.h
+new file mode 100644
+index 00000000000..fc88e0b4f3e
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_support_END.h
+@@ -0,0 +1,11 @@
++--- src/support/END.h.orig	2019-05-16 03:46:57 UTC
+++++ src/support/END.h
++@@ -33,7 +33,7 @@
++  * $FreeBSD: src/sys/i386/include/asm.h,v 1.14 2007/08/22 04:26:07 jkoshy Exp $
++  */
++ 
++-#if defined(__linux__) || defined(__FreeBSD__) || defined(__ELF__)
+++#if defined(__linux__) || defined(__FreeBSD__) || defined(__ELF__) || defined(__DragonFly__)
++ .size CNAME, . - CNAME
++ #else
++ #ifndef _MSC_VER
+diff --git a/lang/julia10/dragonfly/patch-src_support_ENTRY.amd64.h b/lang/julia10/dragonfly/patch-src_support_ENTRY.amd64.h
+new file mode 100644
+index 00000000000..0e1cca64524
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_support_ENTRY.amd64.h
+@@ -0,0 +1,11 @@
++--- src/support/ENTRY.amd64.h.orig	2019-05-16 03:46:57 UTC
+++++ src/support/ENTRY.amd64.h
++@@ -36,7 +36,7 @@
++ #define _START_ENTRY .p2align 4,0x90
++ #define STR(csym)           #csym
++ #define XSTR(csym)          STR(csym)
++-#if defined(__linux__) || defined(__FreeBSD__) || defined(__ELF__)
+++#if defined(__linux__) || defined(__FreeBSD__) || defined(__ELF__) || defined(__DragonFly__)
++ #ifndef __APPLE__
++ #define EXT_(csym)          csym
++ #define EXT(csym)           EXT_(csym)
+diff --git a/lang/julia10/dragonfly/patch-src_support_ENTRY.i387.h b/lang/julia10/dragonfly/patch-src_support_ENTRY.i387.h
+new file mode 100644
+index 00000000000..915e34db969
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_support_ENTRY.i387.h
+@@ -0,0 +1,11 @@
++--- src/support/ENTRY.i387.h.orig	2019-05-16 03:46:35 UTC
+++++ src/support/ENTRY.i387.h
++@@ -36,7 +36,7 @@
++ #define _START_ENTRY .p2align 2,0x90
++ #define STR(csym)           #csym
++ #define XSTR(csym)          STR(csym)
++-#if defined(__linux__) || defined(__FreeBSD__) || defined(__ELF__)
+++#if defined(__linux__) || defined(__FreeBSD__) || defined(__ELF__) || defined(__DragonFly__)
++ #ifndef __APPLE__
++ #define EXT_(csym)          csym
++ #define EXT(csym)           EXT_(csym)
+diff --git a/lang/julia10/dragonfly/patch-src_support_dtypes.h b/lang/julia10/dragonfly/patch-src_support_dtypes.h
+new file mode 100644
+index 00000000000..cd573a44b37
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_support_dtypes.h
+@@ -0,0 +1,11 @@
++--- src/support/dtypes.h.orig	2019-05-16 03:46:57 UTC
+++++ src/support/dtypes.h
++@@ -77,7 +77,7 @@
++ #define BYTE_ORDER     __BYTE_ORDER
++ #endif
++ 
++-#if defined(__APPLE__) || defined(__FreeBSD__)
+++#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__DragonFly__)
++ #include <machine/endian.h>
++ #define __LITTLE_ENDIAN  LITTLE_ENDIAN
++ #define __BIG_ENDIAN     BIG_ENDIAN
+diff --git a/lang/julia10/dragonfly/patch-src_support_platform.h b/lang/julia10/dragonfly/patch-src_support_platform.h
+new file mode 100644
+index 00000000000..8adfc1992ba
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_support_platform.h
+@@ -0,0 +1,11 @@
++--- src/support/platform.h.orig	2019-05-16 03:46:57 UTC
+++++ src/support/platform.h
++@@ -65,6 +65,8 @@
++ 
++ #if defined(__FreeBSD__)
++ #define _OS_FREEBSD_
+++#elif defined(__DragonFly__)
+++#define _OS_DRAGONFLY_
++ #elif defined(__linux__)
++ #define _OS_LINUX_
++ #elif defined(_WIN32) || defined(_WIN64)
+diff --git a/lang/julia10/dragonfly/patch-src_support_strtod.c b/lang/julia10/dragonfly/patch-src_support_strtod.c
+new file mode 100644
+index 00000000000..435f95430a5
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_support_strtod.c
+@@ -0,0 +1,11 @@
++--- src/support/strtod.c.orig	2019-05-16 03:46:35 UTC
+++++ src/support/strtod.c
++@@ -3,7 +3,7 @@
++ #include <stdlib.h>
++ #include <locale.h>
++ 
++-#if defined(__APPLE__) || defined(__FreeBSD__)
+++#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__DragonFly__)
++ #include <xlocale.h>
++ #endif
++ 
+diff --git a/lang/julia10/dragonfly/patch-src_sys.c b/lang/julia10/dragonfly/patch-src_sys.c
+new file mode 100644
+index 00000000000..ad1350564d5
+--- /dev/null
++++ b/lang/julia10/dragonfly/patch-src_sys.c
+@@ -0,0 +1,25 @@
++--- src/sys.c.orig	2019-05-16 03:46:57 UTC
+++++ src/sys.c
++@@ -18,7 +18,7 @@
++ #include <psapi.h>
++ #else
++ #include <unistd.h>
++-#if !defined(_SC_NPROCESSORS_ONLN) || defined(_OS_FREEBSD_) || defined(_OS_DARWIN_)
+++#if !defined(_SC_NPROCESSORS_ONLN) || defined(_OS_FREEBSD_) || defined(_OS_DARWIN_) || defined(_OS_DRAGONFLY_)
++ // try secondary location for _SC_NPROCESSORS_ONLN, or for HW_AVAILCPU on BSDs
++ #include <sys/sysctl.h>
++ #endif
++@@ -637,11 +637,11 @@ JL_DLLEXPORT size_t jl_maxrss(void)
++ 
++ // FIXME: `rusage` is available on OpenBSD, DragonFlyBSD and NetBSD as well.
++ //        All of them return `ru_maxrss` in kilobytes.
++-#elif defined(_OS_LINUX_) || defined(_OS_DARWIN_) || defined (_OS_FREEBSD_)
+++#elif defined(_OS_LINUX_) || defined(_OS_DARWIN_) || defined (_OS_FREEBSD_) || defined (_OS_DRAGONFLY_)
++     struct rusage rusage;
++     getrusage( RUSAGE_SELF, &rusage );
++ 
++-#if defined(_OS_LINUX_) || defined(_OS_FREEBSD_)
+++#if defined(_OS_LINUX_) || defined(_OS_FREEBSD_) || defined(_OS_DRAGONFLY_)
++     return (size_t)(rusage.ru_maxrss * 1024);
++ #else
++     return (size_t)rusage.ru_maxrss;
+diff --git a/lang/julia10/files/check_openblas.c b/lang/julia10/files/check_openblas.c
+new file mode 100644
+index 00000000000..6218d3507c6
+--- /dev/null
++++ b/lang/julia10/files/check_openblas.c
+@@ -0,0 +1,10 @@
++#include <string.h>
++
++char* openblas_get_config(void);
++
++int main()
++{
++    if (strstr(openblas_get_config(), "USE64BITINT") == NULL)
++        return 1;
++    return 0;
++}
+diff --git a/lang/julia10/files/extra-patch-openblas-fix-arch.patch b/lang/julia10/files/extra-patch-openblas-fix-arch.patch
+new file mode 100644
+index 00000000000..cc965ecbe18
+--- /dev/null
++++ b/lang/julia10/files/extra-patch-openblas-fix-arch.patch
+@@ -0,0 +1,19 @@
++--- Makefile.system.orig	2019-02-06 00:50:04.658572000 +0800
+++++ Makefile.system	2019-02-06 00:51:30.598745000 +0800
++@@ -9,6 +9,16 @@
++ TOPDIR = .
++ endif
++ 
+++ifeq ($(ARCH), amd64)
+++override ARCH=x86_64
+++else ifeq ($(ARCH), powerpc64)
+++override ARCH=power
+++else ifeq ($(ARCH), i386)
+++override ARCH=x86
+++else ifeq ($(ARCH), aarch64)
+++override ARCH=arm64
+++endif
+++
++ NETLIB_LAPACK_DIR = $(TOPDIR)/lapack-netlib
++ 
++ # Default C compiler
+diff --git a/lang/julia10/files/extra-patch-ui_Makefile b/lang/julia10/files/extra-patch-ui_Makefile
+new file mode 100644
+index 00000000000..2c3a834537d
+--- /dev/null
++++ b/lang/julia10/files/extra-patch-ui_Makefile
+@@ -0,0 +1,11 @@
++--- ui/Makefile.orig	2016-09-20 02:54:22 UTC
+++++ ui/Makefile
++@@ -14,7 +14,7 @@ SRCS := repl
++ HEADERS := $(addprefix $(JULIAHOME)/src/,julia.h julia_threads.h julia_internal.h options.h) \
++ 	$(BUILDDIR)/../src/julia_version.h $(wildcard $(JULIAHOME)/src/support/*.h) $(LIBUV_INC)/uv.h
++ 
++-FLAGS := -I$(BUILDROOT)/src -I$(JULIAHOME)/src -I$(JULIAHOME)/src/support -I$(build_includedir)
+++FLAGS := -I$(BUILDROOT)/src -I$(JULIAHOME)/src -I$(JULIAHOME)/src/support -I$(build_includedir) -latomic
++ ifneq ($(USEMSVC), 1)
++ FLAGS += -Wall -Wno-strict-aliasing -fno-omit-frame-pointer -Wc++-compat
++ endif
+diff --git a/lang/julia10/files/patch-Make.inc b/lang/julia10/files/patch-Make.inc
+new file mode 100644
+index 00000000000..1ac15fb8c97
+--- /dev/null
++++ b/lang/julia10/files/patch-Make.inc
+@@ -0,0 +1,53 @@
++--- Make.inc.orig	2018-12-18 01:38:57 UTC
+++++ Make.inc
++@@ -130,12 +130,7 @@ endif
++ # disable automatic Makefile rules
++ .SUFFIXES:
++ 
++-# find out if git repository is available
++-ifeq ($(shell [ -e $(JULIAHOME)/.git ] && echo true || echo "Warning: git information unavailable; versioning information limited" >&2), true)
++-NO_GIT := 0
++-else
++ NO_GIT := 1
++-endif
++ 
++ # Julia's Semantic Versioning system labels the three decimal places in a version number as
++ # the major, minor and patch versions.  Typically the major version would be incremented
++@@ -185,7 +180,7 @@ libdir := $(prefix)/lib
++ libexecdir := $(prefix)/libexec
++ datarootdir := $(prefix)/share
++ docdir := $(datarootdir)/doc/julia
++-mandir := $(datarootdir)/man
+++mandir := $(prefix)/man
++ man1dir := $(mandir)/man1
++ includedir := $(prefix)/include
++ sysconfdir := $(prefix)/etc
++@@ -198,7 +193,7 @@ build_depsbindir := $(build_prefix)/tools
++ build_libdir := $(build_prefix)/lib
++ build_libexecdir := $(build_prefix)/libexec
++ build_datarootdir := $(build_prefix)/share
++-build_mandir := $(build_datarootdir)/man
+++build_mandir := $(build_prefix)/man
++ build_man1dir := $(build_mandir)/man1
++ build_includedir := $(build_prefix)/include
++ build_sysconfdir := $(build_prefix)/etc
++@@ -364,7 +359,7 @@ endif
++ ifeq ($(USEIFC), 1)
++ FC := ifort
++ else
++-FC := $(CROSS_COMPILE)gfortran
+++FC ?= $(CROSS_COMPILE)gfortran
++ endif
++ 
++ STDLIBCPP_FLAG :=
++@@ -417,8 +412,8 @@ SHIPFLAGS := -O3 -ggdb2 -falign-functions
++ endif
++ 
++ ifeq ($(USECLANG),1)
++-CC := $(CROSS_COMPILE)clang
++-CXX := $(CROSS_COMPILE)clang++
+++CC ?= $(CROSS_COMPILE)clang
+++CXX ?= $(CROSS_COMPILE)clang++
++ JCFLAGS := -pipe $(fPIC) -fno-strict-aliasing -D_FILE_OFFSET_BITS=64
++ # AArch64 needs this flag to generate the .eh_frame used by libunwind
++ JCPPFLAGS := -fasynchronous-unwind-tables
+diff --git a/lang/julia10/files/patch-Makefile b/lang/julia10/files/patch-Makefile
+new file mode 100644
+index 00000000000..e11bdb8eee7
+--- /dev/null
++++ b/lang/julia10/files/patch-Makefile
+@@ -0,0 +1,122 @@
++--- Makefile.orig	2018-12-18 01:38:57 UTC
+++++ Makefile
++@@ -264,24 +264,6 @@ endif
++ endif
++ endif
++ 
++-# On FreeBSD, /lib/libgcc_s.so.1 is incompatible with Fortran; to use Fortran on FreeBSD,
++-# we need to link to the libgcc_s that ships with the same GCC version used by libgfortran.
++-# To work around this, we copy the GCC libraries we need, namely libgfortran, libgcc_s,
++-# and libquadmath, into our build library directory, $(build_libdir). We also add them to
++-# JL_PRIVATE_LIBS-0 so that they know where they need to live at install time.
++-ifeq ($(OS),FreeBSD)
++-define std_so
++-julia-deps: | $$(build_libdir)/$(1).so
++-$$(build_libdir)/$(1).so: | $$(build_libdir)
++-	$$(INSTALL_M) $$(GCCPATH)/$(1).so* $$(build_libdir)
++-JL_PRIVATE_LIBS-0 += $(1)
++-endef
++-
++-$(eval $(call std_so,libgfortran))
++-$(eval $(call std_so,libgcc_s))
++-$(eval $(call std_so,libquadmath))
++-endif # FreeBSD
++-
++ ifeq ($(OS),WINNT)
++ define std_dll
++ julia-deps: | $$(build_bindir)/lib$(1).dll $$(build_depsbindir)/lib$(1).dll
++@@ -328,8 +310,7 @@ JL_PRIVATE_LIBS-0 += libgfortran libgcc_s libquadmath
++ endif
++ 
++ 
++-install: $(build_depsbindir)/stringreplace $(BUILDROOT)/doc/_build/html/en/index.html
++-	@$(MAKE) $(QUIET_MAKE) all
+++install: $(build_depsbindir)/stringreplace
++ 	@for subdir in $(bindir) $(datarootdir)/julia/stdlib/$(VERSDIR) $(docdir) $(man1dir) $(includedir)/julia $(libdir) $(private_libdir) $(sysconfdir); do \
++ 		mkdir -p $(DESTDIR)$$subdir; \
++ 	done
++@@ -371,10 +352,6 @@ endif
++ 			fi \
++ 		done \
++ 	done
++-	for suffix in $(JL_PRIVATE_LIBS-1) ; do \
++-		lib=$(build_private_libdir)/$${suffix}.$(SHLIB_EXT); \
++-		$(INSTALL_M) $$lib $(DESTDIR)$(private_libdir) ; \
++-	done
++ endif
++ 
++ 	# Copy public headers
++@@ -389,8 +366,6 @@ endif
++ 	$(INSTALL_M) $(JULIAHOME)/contrib/build_sysimg.jl $(DESTDIR)$(datarootdir)/julia/
++ 	# Copy in all .jl sources as well
++ 	cp -R -L $(build_datarootdir)/julia $(DESTDIR)$(datarootdir)/
++-	# Copy documentation
++-	cp -R -L $(BUILDROOT)/doc/_build/html $(DESTDIR)$(docdir)/
++ 	# Remove various files which should not be installed
++ 	-rm -f $(DESTDIR)$(datarootdir)/julia/base/version_git.sh
++ 	-rm -f $(DESTDIR)$(datarootdir)/julia/test/Makefile
++@@ -400,16 +375,6 @@ endif
++ 	-rm -f $(DESTDIR)$(datarootdir)/julia/stdlib/$(VERSDIR)/*/build-checked
++ 	# Copy in beautiful new man page
++ 	$(INSTALL_F) $(build_man1dir)/julia.1 $(DESTDIR)$(man1dir)/
++-	# Copy icon and .desktop file
++-	mkdir -p $(DESTDIR)$(datarootdir)/icons/hicolor/scalable/apps/
++-	$(INSTALL_F) $(JULIAHOME)/contrib/julia.svg $(DESTDIR)$(datarootdir)/icons/hicolor/scalable/apps/
++-	-touch -c $(DESTDIR)$(datarootdir)/icons/hicolor/
++-	-gtk-update-icon-cache $(DESTDIR)$(datarootdir)/icons/hicolor/
++-	mkdir -p $(DESTDIR)$(datarootdir)/applications/
++-	$(INSTALL_F) $(JULIAHOME)/contrib/julia.desktop $(DESTDIR)$(datarootdir)/applications/
++-	# Install appdata file
++-	mkdir -p $(DESTDIR)$(datarootdir)/appdata/
++-	$(INSTALL_F) $(JULIAHOME)/contrib/julia.appdata.xml $(DESTDIR)$(datarootdir)/appdata/
++ 
++ 	# Update RPATH entries and JL_SYSTEM_IMAGE_PATH if $(private_libdir_rel) != $(build_private_libdir_rel)
++ ifneq ($(private_libdir_rel),$(build_private_libdir_rel))
++@@ -420,7 +385,7 @@ ifeq ($(OS), Darwin)
++ 	done
++ else ifneq (,$(findstring $(OS),Linux FreeBSD))
++ 	for j in $(JL_TARGETS) ; do \
++-		patchelf --set-rpath '$$ORIGIN/$(private_libdir_rel):$$ORIGIN/$(libdir_rel)' $(DESTDIR)$(bindir)/$$j; \
+++		patchelf --set-rpath '$(GCCPATH):$$ORIGIN/$(private_libdir_rel):$$ORIGIN/$(libdir_rel)' $(DESTDIR)$(bindir)/$$j; \
++ 	done
++ endif
++ 
++@@ -431,22 +396,24 @@ ifeq ($(BUNDLE_DEBUG_LIBS),1)
++ endif
++ 
++ endif
++-	# On FreeBSD, remove the build's libdir from each library's RPATH
++-ifeq ($(OS),FreeBSD)
++-	$(JULIAHOME)/contrib/fixup-rpath.sh $(build_depsbindir)/patchelf $(DESTDIR)$(libdir) $(build_libdir)
++-	$(JULIAHOME)/contrib/fixup-rpath.sh $(build_depsbindir)/patchelf $(DESTDIR)$(private_libdir) $(build_libdir)
++-	$(JULIAHOME)/contrib/fixup-rpath.sh $(build_depsbindir)/patchelf $(DESTDIR)$(bindir) $(build_libdir)
++-	# Set libgfortran's RPATH to ORIGIN instead of GCCPATH. It's only libgfortran that
++-	# needs to be fixed here, as libgcc_s and libquadmath don't have RPATHs set. If we
++-	# don't set libgfortran's RPATH, it won't be able to find its friends on systems
++-	# that don't have the exact GCC port installed used for the build.
++-	for lib in $(DESTDIR)$(private_libdir)/libgfortran*$(SHLIB_EXT)*; do \
++-		$(build_depsbindir)/patchelf --set-rpath '$$ORIGIN' $$lib; \
++-	done
++-endif
++-
++ 	mkdir -p $(DESTDIR)$(sysconfdir)
++ 	cp -R $(build_sysconfdir)/julia $(DESTDIR)$(sysconfdir)/
+++
+++install-docs:
+++	# Copy documentation
+++	cp -R -L $(BUILDROOT)/doc/_build/html $(DESTDIR)$(docdir)/
+++
+++install-desktop:
+++	# Copy icon and .desktop file
+++	mkdir -p $(DESTDIR)$(datarootdir)/icons/hicolor/scalable/apps/
+++	$(INSTALL_F) $(JULIAHOME)/contrib/julia.svg $(DESTDIR)$(datarootdir)/icons/hicolor/scalable/apps/
+++	-touch -c $(DESTDIR)$(datarootdir)/icons/hicolor/
+++	-gtk-update-icon-cache $(DESTDIR)$(datarootdir)/icons/hicolor/
+++	mkdir -p $(DESTDIR)$(datarootdir)/applications/
+++	$(INSTALL_F) $(JULIAHOME)/contrib/julia.desktop $(DESTDIR)$(datarootdir)/applications/
+++	# Install appdata file
+++	mkdir -p $(DESTDIR)$(datarootdir)/appdata/
+++	$(INSTALL_F) $(JULIAHOME)/contrib/julia.appdata.xml $(DESTDIR)$(datarootdir)/appdata/
++ 
++ distclean:
++ 	-rm -fr $(BUILDROOT)/julia-*.tar.gz $(BUILDROOT)/julia*.exe $(BUILDROOT)/julia-*.7z $(BUILDROOT)/julia-$(JULIA_COMMIT)
+diff --git a/lang/julia10/files/patch-base_Makefile b/lang/julia10/files/patch-base_Makefile
+new file mode 100644
+index 00000000000..95a549c14f9
+--- /dev/null
++++ b/lang/julia10/files/patch-base_Makefile
+@@ -0,0 +1,11 @@
++--- base/Makefile.orig 2018-09-20 04:08:53 UTC
+++++ base/Makefile
++@@ -109,7 +109,7 @@ ifneq ($(OS), WINNT)
++ # put a symlink in the private libdir.
++ # System package managers may want to install these links manually,
++ # but if not, this will try to create the proper symlink to the right minor version.
++-all: symlink_system_libraries
+++all:
++ SYMLINK_SYSTEM_LIBRARIES :=
++ 
++ # if it's a symlink, pick up the symlink target instead, for one level of indirection
+diff --git a/lang/julia10/files/patch-deps_blas.mk b/lang/julia10/files/patch-deps_blas.mk
+new file mode 100644
+index 00000000000..1d999807f36
+--- /dev/null
++++ b/lang/julia10/files/patch-deps_blas.mk
+@@ -0,0 +1,17 @@
++--- deps/blas.mk.orig	2018-08-07 16:34:08 UTC
+++++ deps/blas.mk
++@@ -94,6 +94,14 @@ OPENBLAS_BUILD_OPTS += MAKE_NB_JOBS=0
++ 
++ $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/build-configured: $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/source-extracted
++ 	perl -i -ple 's/^\s*(EXTRALIB\s*\+=\s*-lSystemStubs)\s*$$/# $$1/g' $(dir $<)/Makefile.system
+++	cd $(BUILDDIR)/$(OPENBLAS_SRC_DIR) && \
+++		patch -p1 -f < $(SRCDIR)/patches/openblas-fix-arch.patch
+++	/usr/bin/sed -i.bak -e "s+(ARCH)+(AR)+" \
+++		$(BUILDDIR)/$(OPENBLAS_SRC_DIR)/lapack-netlib/SRC/Makefile \
+++		$(BUILDDIR)/$(OPENBLAS_SRC_DIR)/lapack-netlib/SRC/VARIANTS/Makefile \
+++		$(BUILDDIR)/$(OPENBLAS_SRC_DIR)/lapack-netlib/TESTING/MATGEN/Makefile \
+++		$(BUILDDIR)/$(OPENBLAS_SRC_DIR)/lapack-netlib/LAPACKE/src/Makefile \
+++		$(BUILDDIR)/$(OPENBLAS_SRC_DIR)/lapack-netlib/LAPACKE/utils/Makefile
++ 	echo 1 > $@
++ 
++ $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/build-compiled: $(BUILDDIR)/$(OPENBLAS_SRC_DIR)/build-configured
+diff --git a/lang/julia10/files/patch-src_Makefile b/lang/julia10/files/patch-src_Makefile
+new file mode 100644
+index 00000000000..ecc60998c78
+--- /dev/null
++++ b/lang/julia10/files/patch-src_Makefile
+@@ -0,0 +1,20 @@
++--- src/Makefile.orig	2018-12-18 01:38:57 UTC
+++++ src/Makefile
++@@ -266,7 +266,7 @@ else
++ endif
++ 
++ $(build_shlibdir)/libjulia-debug.$(JL_MAJOR_MINOR_SHLIB_EXT): $(SRCDIR)/julia.expmap $(DOBJS) $(BUILDDIR)/flisp/libflisp-debug.a $(BUILDDIR)/support/libsupport-debug.a $(LIBUV)
++-	@$(call PRINT_LINK, $(CXXLD) $(CXXFLAGS) $(CXXLDFLAGS) $(DEBUGFLAGS) $(DOBJS) $(RPATH_LIB) -o $@ $(LDFLAGS) $(JLIBLDFLAGS) $(DEBUG_LIBS) $(SONAME_DEBUG))
+++	@$(call PRINT_LINK, $(CXXLD) $(CXXFLAGS) $(CXXLDFLAGS) $(DEBUGFLAGS) $(DOBJS) $(RPATH_LIB) -o $@ $(LDFLAGS) $(JLIBLDFLAGS) $(DEBUG_LIBS) $(SONAME_DEBUG)) -lgcc_s
++ 	$(INSTALL_NAME_CMD)libjulia-debug.$(SHLIB_EXT) $@
++ ifneq ($(OS), WINNT)
++ 	@ln -sf libjulia-debug.$(JL_MAJOR_MINOR_SHLIB_EXT) $(build_shlibdir)/libjulia-debug.$(JL_MAJOR_SHLIB_EXT)
++@@ -281,7 +281,7 @@ $(BUILDDIR)/libjulia-debug.a: $(SRCDIR)/julia.expmap $
++ libjulia-debug: $(build_shlibdir)/libjulia-debug.$(JL_MAJOR_MINOR_SHLIB_EXT) $(PUBLIC_HEADER_TARGETS)
++ 
++ $(build_shlibdir)/libjulia.$(JL_MAJOR_MINOR_SHLIB_EXT): $(SRCDIR)/julia.expmap $(OBJS) $(BUILDDIR)/flisp/libflisp.a $(BUILDDIR)/support/libsupport.a $(LIBUV)
++-	@$(call PRINT_LINK, $(CXXLD) $(CXXFLAGS) $(CXXLDFLAGS) $(SHIPFLAGS) $(OBJS) $(RPATH_LIB) -o $@ $(LDFLAGS) $(JLIBLDFLAGS) $(RELEASE_LIBS) $(SONAME))
+++	@$(call PRINT_LINK, $(CXXLD) $(CXXFLAGS) $(CXXLDFLAGS) $(SHIPFLAGS) $(OBJS) $(RPATH_LIB) -o $@ $(LDFLAGS) $(JLIBLDFLAGS) $(RELEASE_LIBS) $(SONAME)) -lgcc_s
++ 	$(INSTALL_NAME_CMD)libjulia.$(SHLIB_EXT) $@
++ ifneq ($(OS), WINNT)
++ 	@ln -sf libjulia.$(JL_MAJOR_MINOR_SHLIB_EXT) $(build_shlibdir)/libjulia.$(JL_MAJOR_SHLIB_EXT)
+diff --git a/lang/julia10/pkg-message b/lang/julia10/pkg-message
+new file mode 100644
+index 00000000000..5ded02bedf6
+--- /dev/null
++++ b/lang/julia10/pkg-message
+@@ -0,0 +1,9 @@
++[
++{ type: install
++  message: <<EOM
++ If you're looking for the other version of Julia,
++ there is a meta port lang/julia.
++ Please checkout "make -C /usr/ports/lang/julia config" as well.
++EOM
++}
++]
+diff --git a/lang/julia10/pkg-plist b/lang/julia10/pkg-plist
+new file mode 100644
+index 00000000000..8bb7901b915
+--- /dev/null
++++ b/lang/julia10/pkg-plist
+@@ -0,0 +1,817 @@
++bin/julia10
++%%JULIA%%/bin/julia
++%%DEBUG%%bin/julia10-debug
++%%DEBUG%%%%JULIA%%/bin/julia-debug
++%%JULIA%%/etc/julia/startup.jl
++%%JULIA%%/include/julia/END.h
++%%JULIA%%/include/julia/ENTRY.amd64.h
++%%JULIA%%/include/julia/ENTRY.i387.h
++%%JULIA%%/include/julia/MurmurHash3.h
++%%JULIA%%/include/julia/analyzer_annotations.h
++%%JULIA%%/include/julia/arraylist.h
++%%JULIA%%/include/julia/atomics.h
++%%JULIA%%/include/julia/bitvector.h
++%%JULIA%%/include/julia/dirpath.h
++%%JULIA%%/include/julia/dtypes.h
++%%JULIA%%/include/julia/hashing.h
++%%JULIA%%/include/julia/htable.h
++%%JULIA%%/include/julia/ios.h
++%%JULIA%%/include/julia/julia.h
++%%JULIA%%/include/julia/julia_assert.h
++%%JULIA%%/include/julia/julia_threads.h
++%%JULIA%%/include/julia/julia_version.h
++%%JULIA%%/include/julia/libsupport.h
++%%JULIA%%/include/julia/locks.h
++%%JULIA%%/include/julia/platform.h
++%%JULIA%%/include/julia/ptrhash.h
++%%JULIA%%/include/julia/strtod.h
++%%JULIA%%/include/julia/timefuncs.h
++%%JULIA%%/include/julia/tls.h
++%%JULIA%%/include/julia/tzfile.h
++%%JULIA%%/include/julia/utf8.h
++%%JULIA%%/include/julia/utils.h
++%%JULIA%%/include/julia/uv.h
++%%JULIA%%/include/julia/uv/bsd.h
++%%JULIA%%/include/julia/uv/errno.h
++%%JULIA%%/include/julia/uv/threadpool.h
++%%JULIA%%/include/julia/uv/unix.h
++%%JULIA%%/include/julia/uv/version.h
++%%JULIA%%/lib/julia/libLLVM-6.0.0.so
++%%JULIA%%/lib/julia/libLLVM-6.0.so
++%%JULIA%%/lib/julia/libLLVM.so
++%%JULIA%%/lib/julia/libccalltest.so
++%%JULIA%%/lib/julia/libdSFMT.so
++%%JULIA%%/lib/julia/sys.so
++%%DEBUG%%%%JULIA%%/lib/julia/sys-debug.so
++%%DEBUG%%%%JULIA%%/lib/libjulia-debug.so
++%%DEBUG%%%%JULIA%%/lib/libjulia-debug.so.1
++%%DEBUG%%%%JULIA%%/lib/libjulia-debug.so.%%VERSION%%
++%%GPL_LIBS%%%%JULIA%%/lib/julia/libamd.so
++%%GPL_LIBS%%%%JULIA%%/lib/julia/libcamd.so
++%%GPL_LIBS%%%%JULIA%%/lib/julia/libccolamd.so
++%%GPL_LIBS%%%%JULIA%%/lib/julia/libcholmod.so
++%%GPL_LIBS%%%%JULIA%%/lib/julia/libcolamd.so
++%%GPL_LIBS%%%%JULIA%%/lib/julia/libspqr.so
++%%GPL_LIBS%%%%JULIA%%/lib/julia/libsuitesparse_wrapper.so
++%%GPL_LIBS%%%%JULIA%%/lib/julia/libsuitesparseconfig.so
++%%GPL_LIBS%%%%JULIA%%/lib/julia/libumfpack.so
++%%OPENBLAS%%%%JULIA%%/lib/julia/libopenblas%%OPENBLAS64%%.so
++%%JULIA%%/lib/libjulia.so
++%%JULIA%%/lib/libjulia.so.1
++%%JULIA%%/lib/libjulia.so.%%VERSION%%
++man/man1/julia10.1.gz
++%%JULIA%%/man/man1/julia.1.gz
++%%DESKTOP%%%%JULIA%%/share/appdata/julia.appdata.xml
++%%DESKTOP%%%%JULIA%%/share/applications/julia.desktop
++%%DESKTOP%%%%JULIA%%/share/icons/hicolor/scalable/apps/julia.svg
++%%JULIA%%/share/julia/base.cache
++%%JULIA%%/share/julia/base/Enums.jl
++%%JULIA%%/share/julia/base/Makefile
++%%JULIA%%/share/julia/base/abstractarray.jl
++%%JULIA%%/share/julia/base/abstractarraymath.jl
++%%JULIA%%/share/julia/base/abstractdict.jl
++%%JULIA%%/share/julia/base/abstractset.jl
++%%JULIA%%/share/julia/base/accumulate.jl
++%%JULIA%%/share/julia/base/array.jl
++%%JULIA%%/share/julia/base/arraymath.jl
++%%JULIA%%/share/julia/base/arrayshow.jl
++%%JULIA%%/share/julia/base/asyncmap.jl
++%%JULIA%%/share/julia/base/atomics.jl
++%%JULIA%%/share/julia/base/bitarray.jl
++%%JULIA%%/share/julia/base/bitset.jl
++%%JULIA%%/share/julia/base/bool.jl
++%%JULIA%%/share/julia/base/boot.jl
++%%JULIA%%/share/julia/base/broadcast.jl
++%%JULIA%%/share/julia/base/build_h.jl
++%%JULIA%%/share/julia/base/c.jl
++%%JULIA%%/share/julia/base/cartesian.jl
++%%JULIA%%/share/julia/base/channels.jl
++%%JULIA%%/share/julia/base/char.jl
++%%JULIA%%/share/julia/base/checked.jl
++%%JULIA%%/share/julia/base/client.jl
++%%JULIA%%/share/julia/base/combinatorics.jl
++%%JULIA%%/share/julia/base/compiler/abstractinterpretation.jl
++%%JULIA%%/share/julia/base/compiler/bootstrap.jl
++%%JULIA%%/share/julia/base/compiler/compiler.jl
++%%JULIA%%/share/julia/base/compiler/inferenceresult.jl
++%%JULIA%%/share/julia/base/compiler/inferencestate.jl
++%%JULIA%%/share/julia/base/compiler/optimize.jl
++%%JULIA%%/share/julia/base/compiler/params.jl
++%%JULIA%%/share/julia/base/compiler/ssair/domtree.jl
++%%JULIA%%/share/julia/base/compiler/ssair/driver.jl
++%%JULIA%%/share/julia/base/compiler/ssair/inlining.jl
++%%JULIA%%/share/julia/base/compiler/ssair/ir.jl
++%%JULIA%%/share/julia/base/compiler/ssair/legacy.jl
++%%JULIA%%/share/julia/base/compiler/ssair/passes.jl
++%%JULIA%%/share/julia/base/compiler/ssair/queries.jl
++%%JULIA%%/share/julia/base/compiler/ssair/show.jl
++%%JULIA%%/share/julia/base/compiler/ssair/slot2ssa.jl
++%%JULIA%%/share/julia/base/compiler/ssair/verify.jl
++%%JULIA%%/share/julia/base/compiler/tfuncs.jl
++%%JULIA%%/share/julia/base/compiler/typeinfer.jl
++%%JULIA%%/share/julia/base/compiler/typelattice.jl
++%%JULIA%%/share/julia/base/compiler/typelimits.jl
++%%JULIA%%/share/julia/base/compiler/typeutils.jl
++%%JULIA%%/share/julia/base/compiler/utilities.jl
++%%JULIA%%/share/julia/base/compiler/validation.jl
++%%JULIA%%/share/julia/base/complex.jl
++%%JULIA%%/share/julia/base/coreio.jl
++%%JULIA%%/share/julia/base/ctypes.jl
++%%JULIA%%/share/julia/base/deepcopy.jl
++%%JULIA%%/share/julia/base/deprecated.jl
++%%JULIA%%/share/julia/base/dict.jl
++%%JULIA%%/share/julia/base/docs/Docs.jl
++%%JULIA%%/share/julia/base/docs/basedocs.jl
++%%JULIA%%/share/julia/base/docs/bindings.jl
++%%JULIA%%/share/julia/base/docs/core.jl
++%%JULIA%%/share/julia/base/docs/utils.jl
++%%JULIA%%/share/julia/base/download.jl
++%%JULIA%%/share/julia/base/env.jl
++%%JULIA%%/share/julia/base/errno_h.jl
++%%JULIA%%/share/julia/base/error.jl
++%%JULIA%%/share/julia/base/errorshow.jl
++%%JULIA%%/share/julia/base/essentials.jl
++%%JULIA%%/share/julia/base/event.jl
++%%JULIA%%/share/julia/base/exports.jl
++%%JULIA%%/share/julia/base/expr.jl
++%%JULIA%%/share/julia/base/fastmath.jl
++%%JULIA%%/share/julia/base/file.jl
++%%JULIA%%/share/julia/base/file_constants.jl
++%%JULIA%%/share/julia/base/filesystem.jl
++%%JULIA%%/share/julia/base/float.jl
++%%JULIA%%/share/julia/base/floatfuncs.jl
++%%JULIA%%/share/julia/base/gcutils.jl
++%%JULIA%%/share/julia/base/generator.jl
++%%JULIA%%/share/julia/base/gmp.jl
++%%JULIA%%/share/julia/base/grisu/bignum.jl
++%%JULIA%%/share/julia/base/grisu/bignums.jl
++%%JULIA%%/share/julia/base/grisu/fastfixed.jl
++%%JULIA%%/share/julia/base/grisu/fastprecision.jl
++%%JULIA%%/share/julia/base/grisu/fastshortest.jl
++%%JULIA%%/share/julia/base/grisu/float.jl
++%%JULIA%%/share/julia/base/grisu/grisu.jl
++%%JULIA%%/share/julia/base/hashing.jl
++%%JULIA%%/share/julia/base/hashing2.jl
++%%JULIA%%/share/julia/base/indices.jl
++%%JULIA%%/share/julia/base/initdefs.jl
++%%JULIA%%/share/julia/base/int.jl
++%%JULIA%%/share/julia/base/intfuncs.jl
++%%JULIA%%/share/julia/base/io.jl
++%%JULIA%%/share/julia/base/iobuffer.jl
++%%JULIA%%/share/julia/base/iostream.jl
++%%JULIA%%/share/julia/base/irrationals.jl
++%%JULIA%%/share/julia/base/iterators.jl
++%%JULIA%%/share/julia/base/libc.jl
++%%JULIA%%/share/julia/base/libuv.jl
++%%JULIA%%/share/julia/base/loading.jl
++%%JULIA%%/share/julia/base/lock.jl
++%%JULIA%%/share/julia/base/locks.jl
++%%JULIA%%/share/julia/base/logging.jl
++%%JULIA%%/share/julia/base/math.jl
++%%JULIA%%/share/julia/base/mathconstants.jl
++%%JULIA%%/share/julia/base/meta.jl
++%%JULIA%%/share/julia/base/methodshow.jl
++%%JULIA%%/share/julia/base/missing.jl
++%%JULIA%%/share/julia/base/mpfr.jl
++%%JULIA%%/share/julia/base/multidimensional.jl
++%%JULIA%%/share/julia/base/multimedia.jl
++%%JULIA%%/share/julia/base/multinverses.jl
++%%JULIA%%/share/julia/base/namedtuple.jl
++%%JULIA%%/share/julia/base/number.jl
++%%JULIA%%/share/julia/base/operators.jl
++%%JULIA%%/share/julia/base/options.jl
++%%JULIA%%/share/julia/base/ordering.jl
++%%JULIA%%/share/julia/base/osutils.jl
++%%JULIA%%/share/julia/base/pair.jl
++%%JULIA%%/share/julia/base/parse.jl
++%%JULIA%%/share/julia/base/path.jl
++%%JULIA%%/share/julia/base/pcre.jl
++%%JULIA%%/share/julia/base/pcre_h.jl
++%%JULIA%%/share/julia/base/permuteddimsarray.jl
++%%JULIA%%/share/julia/base/pointer.jl
++%%JULIA%%/share/julia/base/printf.jl
++%%JULIA%%/share/julia/base/process.jl
++%%JULIA%%/share/julia/base/promotion.jl
++%%JULIA%%/share/julia/base/range.jl
++%%JULIA%%/share/julia/base/rational.jl
++%%JULIA%%/share/julia/base/reduce.jl
++%%JULIA%%/share/julia/base/reducedim.jl
++%%JULIA%%/share/julia/base/reflection.jl
++%%JULIA%%/share/julia/base/refpointer.jl
++%%JULIA%%/share/julia/base/refvalue.jl
++%%JULIA%%/share/julia/base/regex.jl
++%%JULIA%%/share/julia/base/reinterpretarray.jl
++%%JULIA%%/share/julia/base/reshapedarray.jl
++%%JULIA%%/share/julia/base/rounding.jl
++%%JULIA%%/share/julia/base/secretbuffer.jl
++%%JULIA%%/share/julia/base/set.jl
++%%JULIA%%/share/julia/base/shell.jl
++%%JULIA%%/share/julia/base/show.jl
++%%JULIA%%/share/julia/base/simdloop.jl
++%%JULIA%%/share/julia/base/some.jl
++%%JULIA%%/share/julia/base/sort.jl
++%%JULIA%%/share/julia/base/special/cbrt.jl
++%%JULIA%%/share/julia/base/special/exp.jl
++%%JULIA%%/share/julia/base/special/exp10.jl
++%%JULIA%%/share/julia/base/special/hyperbolic.jl
++%%JULIA%%/share/julia/base/special/log.jl
++%%JULIA%%/share/julia/base/special/rem_pio2.jl
++%%JULIA%%/share/julia/base/special/trig.jl
++%%JULIA%%/share/julia/base/stacktraces.jl
++%%JULIA%%/share/julia/base/stat.jl
++%%JULIA%%/share/julia/base/stream.jl
++%%JULIA%%/share/julia/base/strings/basic.jl
++%%JULIA%%/share/julia/base/strings/io.jl
++%%JULIA%%/share/julia/base/strings/search.jl
++%%JULIA%%/share/julia/base/strings/string.jl
++%%JULIA%%/share/julia/base/strings/strings.jl
++%%JULIA%%/share/julia/base/strings/substring.jl
++%%JULIA%%/share/julia/base/strings/unicode.jl
++%%JULIA%%/share/julia/base/strings/util.jl
++%%JULIA%%/share/julia/base/subarray.jl
++%%JULIA%%/share/julia/base/summarysize.jl
++%%JULIA%%/share/julia/base/sysimg.jl
++%%JULIA%%/share/julia/base/sysinfo.jl
++%%JULIA%%/share/julia/base/task.jl
++%%JULIA%%/share/julia/base/threadcall.jl
++%%JULIA%%/share/julia/base/threadingconstructs.jl
++%%JULIA%%/share/julia/base/threads.jl
++%%JULIA%%/share/julia/base/traits.jl
++%%JULIA%%/share/julia/base/tuple.jl
++%%JULIA%%/share/julia/base/twiceprecision.jl
++%%JULIA%%/share/julia/base/util.jl
++%%JULIA%%/share/julia/base/uuid.jl
++%%JULIA%%/share/julia/base/uv_constants.jl
++%%JULIA%%/share/julia/base/version.jl
++%%JULIA%%/share/julia/base/version_git.jl
++%%JULIA%%/share/julia/base/views.jl
++%%JULIA%%/share/julia/base/weakkeydict.jl
++%%JULIA%%/share/julia/build_sysimg.jl
++%%JULIA%%/share/julia/julia-config.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Base64/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Base64/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Base64/src/Base64.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Base64/src/buffer.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Base64/src/decode.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Base64/src/encode.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Base64/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/CRC32c/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/CRC32c/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/CRC32c/src/CRC32c.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/CRC32c/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/Dates.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/accessors.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/adjusters.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/arithmetic.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/conversions.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/deprecated.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/io.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/parse.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/periods.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/query.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/ranges.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/rounding.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/src/types.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/accessors.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/adjusters.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/arithmetic.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/conversions.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/io.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/periods.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/query.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/ranges.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/rounding.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/testgroups
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Dates/test/types.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/DelimitedFiles/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/DelimitedFiles/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/DelimitedFiles/src/DelimitedFiles.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/DelimitedFiles/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/Distributed.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/cluster.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/clusterserialize.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/macros.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/managers.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/messages.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/pmap.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/precompile.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/process_messages.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/remotecall.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/src/workerpool.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/test/distributed_exec.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Distributed/test/topology.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/FileWatching/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/FileWatching/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/FileWatching/src/FileWatching.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/FileWatching/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Future/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Future/src/Future.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Future/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/InteractiveUtils/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/InteractiveUtils/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/InteractiveUtils/src/InteractiveUtils.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/InteractiveUtils/src/clipboard.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/InteractiveUtils/src/codeview.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/InteractiveUtils/src/editless.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/InteractiveUtils/src/macros.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/InteractiveUtils/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/LibGit2.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/blame.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/blob.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/callbacks.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/commit.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/config.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/consts.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/diff.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/error.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/gitcredential.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/index.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/merge.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/oid.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/rebase.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/reference.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/remote.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/repository.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/signature.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/status.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/strarray.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/tag.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/tree.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/types.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/utils.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/src/walker.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/keys/invalid
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/keys/invalid.pub
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/keys/valid
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/keys/valid-passphrase
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/keys/valid-passphrase.pub
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/keys/valid.pub
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/libgit2-helpers.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/libgit2.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/online.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LibGit2/test/testgroups
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Libdl/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Libdl/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Libdl/src/Libdl.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Libdl/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/LinearAlgebra.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/adjtrans.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/bidiag.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/bitarray.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/blas.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/bunchkaufman.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/cholesky.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/dense.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/deprecated.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/diagonal.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/eigen.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/exceptions.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/factorization.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/generic.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/givens.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/hessenberg.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/lapack.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/ldlt.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/lq.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/lu.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/matmul.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/qr.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/schur.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/special.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/structuredbroadcast.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/svd.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/symmetric.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/transpose.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/triangular.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/tridiag.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/src/uniformscaling.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/adjtrans.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/ambiguous_exec.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/bidiag.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/blas.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/bunchkaufman.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/cholesky.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/dense.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/diagonal.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/eigen.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/generic.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/givens.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/hessenberg.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/lapack.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/lq.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/lu.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/matmul.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/pinv.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/qr.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/schur.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/special.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/structuredbroadcast.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/svd.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/symmetric.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/testgroups
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/testutils.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/triangular.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/trickyarithmetic.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/tridiag.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/LinearAlgebra/test/uniformscaling.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Logging/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Logging/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Logging/src/ConsoleLogger.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Logging/src/Logging.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Logging/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/Common/Common.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/Common/block.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/Common/inline.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/GitHub/GitHub.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/GitHub/table.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/IPython/IPython.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/Julia/Julia.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/Julia/interp.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/Markdown.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/parse/config.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/parse/parse.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/parse/util.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/render/html.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/render/latex.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/render/plain.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/render/rich.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/render/rst.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/render/terminal/formatting.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/src/render/terminal/render.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Markdown/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Mmap/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Mmap/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Mmap/src/Mmap.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Mmap/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/CHANGELOG.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/Compat.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/LICENSE.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/README.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/bin/generate.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/bin/genstdlib.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/bin/gitmeta.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/bin/loadmeta.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/bin/sha1map.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/bin/stdlib.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/bin/update.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/bin/utils.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/docs/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/docs/make.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/ext/TOML/LICENSE.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/ext/TOML/README.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/ext/TOML/REQUIRE
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/ext/TOML/src/TOML.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/ext/TOML/src/parser.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/ext/TOML/src/print.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/ext/TOML/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/API.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/Display.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/GitTools.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/GraphType.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/Operations.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/Pkg.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/Pkg2/Pkg2.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/Pkg2/reqs.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/Pkg2/types.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/PlatformEngines.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/REPLMode.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/Resolve.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/Types.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/generate.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/resolve/FieldValues.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/resolve/MaxSum.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/resolve/VersionWeights.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/src/versions.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/NastyGenerator.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/api.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/pkg.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/project/good/pkg.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/repl.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/resolve.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/resolvedata1.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/RecursiveDep/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/RecursiveDep/src/RecursiveDep.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/RecursiveDep2/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/RecursiveDep2/src/RecursiveDep2.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/SubModule/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/SubModule/deps/build.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/SubModule/src/SubModule.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/SubModule/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/SubModule2/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/SubModule2/deps/build.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/SubModule2/src/SubModule2.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/SubModule2/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/deps/build.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/src/BigProject.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/test/LibFoo.jl/Manifest.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/test/LibFoo.jl/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/test/LibFoo.jl/src/LibFoo.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/test/LibFoo.jl/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/test/REQUIRE
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BigProject/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BuildProjectFixedDeps/Manifest.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BuildProjectFixedDeps/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BuildProjectFixedDeps/deps/build.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/BuildProjectFixedDeps/src/BuildProjectFixedDeps.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/PackageWithBuildSpecificTestDeps/src/PackageWithBuildSpecificTestDeps.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/PackageWithBuildSpecificTestDeps/test/REQUIRE
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/PackageWithBuildSpecificTestDeps/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/RequireDependency/REQUIRE
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/RequireDependency/src/RequireDependency.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/UnregisteredWithProject/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/UnregisteredWithProject/src/UnregisteredWithProject.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/UnregisteredWithProject/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/UnregisteredWithoutProject/deps/build.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/UnregisteredWithoutProject/src/UnregisteredWithoutProject.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/UnregisteredWithoutProject/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/x1/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/x1/src/x1.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/x2/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/x2/src/x2.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/x3/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/x3/src/x3.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/test_packages/x3/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/testgroups
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Pkg/test/utils.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Printf/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Printf/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Printf/src/Printf.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Printf/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Profile/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Profile/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Profile/src/Profile.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Profile/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/LineEdit.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/REPL.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/REPLCompletions.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/TerminalMenus/AbstractMenu.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/TerminalMenus/LICENSE.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/TerminalMenus/MultiSelectMenu.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/TerminalMenus/RadioMenu.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/TerminalMenus/TerminalMenus.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/TerminalMenus/config.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/TerminalMenus/util.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/Terminals.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/docview.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/emoji_symbols.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/src/latex_symbols.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/test/FakeTerminals.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/test/TerminalMenus/multiselect_menu.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/test/TerminalMenus/radio_menu.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/test/TerminalMenus/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/test/lineedit.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/test/repl.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/test/replcompletions.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/REPL/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Random/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Random/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Random/src/DSFMT.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Random/src/RNGs.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Random/src/Random.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Random/src/generation.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Random/src/misc.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Random/src/normal.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Random/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/LICENSE.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/src/SHA.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/src/base_functions.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/src/common.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/src/constants.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/src/hmac.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/src/sha1.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/src/sha2.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/src/sha3.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/src/types.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/test/perf.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SHA/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Serialization/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Serialization/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Serialization/src/Serialization.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Serialization/src/precompile.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Serialization/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SharedArrays/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SharedArrays/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SharedArrays/src/SharedArrays.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SharedArrays/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Sockets/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Sockets/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Sockets/src/IPAddr.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Sockets/src/PipeServer.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Sockets/src/Sockets.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Sockets/src/addrinfo.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Sockets/test/nettest.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Sockets/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/src/SparseArrays.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/src/abstractsparse.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/src/deprecated.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/src/higherorderfns.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/src/linalg.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/src/sparsematrix.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/src/sparsevector.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/test/higherorderfns.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/test/sparse.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/test/sparsevector.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SparseArrays/test/testgroups
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Statistics/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Statistics/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Statistics/src/Statistics.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Statistics/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/src/SuiteSparse.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/src/cholmod.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/src/cholmod_h.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/src/deprecated.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/src/spqr.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/src/umfpack.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/src/umfpack_h.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/test/cholmod.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/test/spqr.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/SuiteSparse/test/umfpack.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Test/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Test/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Test/src/Test.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Test/src/logging.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Test/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/UUIDs/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/UUIDs/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/UUIDs/src/UUIDs.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/UUIDs/test/runtests.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Unicode/Project.toml
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Unicode/docs/src/index.md
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Unicode/src/Unicode.jl
++%%JULIA%%/share/julia/stdlib/v%%VERSION%%/Unicode/test/runtests.jl
++%%JULIA%%/share/julia/test/TestPkg/Manifest.toml
++%%JULIA%%/share/julia/test/TestPkg/Project.toml
++%%JULIA%%/share/julia/test/TestPkg/src/TestPkg.jl
++%%JULIA%%/share/julia/test/abstractarray.jl
++%%JULIA%%/share/julia/test/ambiguous.jl
++%%JULIA%%/share/julia/test/arrayops.jl
++%%JULIA%%/share/julia/test/asyncmap.jl
++%%JULIA%%/share/julia/test/backtrace.jl
++%%JULIA%%/share/julia/test/bigfloat.jl
++%%JULIA%%/share/julia/test/bigint.jl
++%%JULIA%%/share/julia/test/bitarray.jl
++%%JULIA%%/share/julia/test/bitset.jl
++%%JULIA%%/share/julia/test/boundscheck.jl
++%%JULIA%%/share/julia/test/boundscheck_exec.jl
++%%JULIA%%/share/julia/test/broadcast.jl
++%%JULIA%%/share/julia/test/cartesian.jl
++%%JULIA%%/share/julia/test/ccall.jl
++%%JULIA%%/share/julia/test/channels.jl
++%%JULIA%%/share/julia/test/char.jl
++%%JULIA%%/share/julia/test/checked.jl
++%%JULIA%%/share/julia/test/choosetests.jl
++%%JULIA%%/share/julia/test/cmdlineargs.jl
++%%JULIA%%/share/julia/test/codegen.jl
++%%JULIA%%/share/julia/test/combinatorics.jl
++%%JULIA%%/share/julia/test/compiler/compiler.jl
++%%JULIA%%/share/julia/test/compiler/irpasses.jl
++%%JULIA%%/share/julia/test/compiler/ssair.jl
++%%JULIA%%/share/julia/test/compiler/validation.jl
++%%JULIA%%/share/julia/test/complex.jl
++%%JULIA%%/share/julia/test/copy.jl
++%%JULIA%%/share/julia/test/core.jl
++%%JULIA%%/share/julia/test/depot/packages/Baz/81oLe/src/Baz.jl
++%%JULIA%%/share/julia/test/depot/packages/Foo/I05Qq/src/Foo.jl
++%%JULIA%%/share/julia/test/deprecation_exec.jl
++%%JULIA%%/share/julia/test/dict.jl
++%%JULIA%%/share/julia/test/docs.jl
++%%JULIA%%/share/julia/test/download.jl
++%%JULIA%%/share/julia/test/embedding/LocalModule.jl
++%%JULIA%%/share/julia/test/embedding/Makefile
++%%JULIA%%/share/julia/test/embedding/embedding-test.jl
++%%JULIA%%/share/julia/test/embedding/embedding.c
++%%JULIA%%/share/julia/test/enums.jl
++%%JULIA%%/share/julia/test/env.jl
++%%JULIA%%/share/julia/test/error.jl
++%%JULIA%%/share/julia/test/errorshow.jl
++%%JULIA%%/share/julia/test/euler.jl
++%%JULIA%%/share/julia/test/fastmath.jl
++%%JULIA%%/share/julia/test/file.jl
++%%JULIA%%/share/julia/test/float16.jl
++%%JULIA%%/share/julia/test/floatapprox.jl
++%%JULIA%%/share/julia/test/floatfuncs.jl
++%%JULIA%%/share/julia/test/functional.jl
++%%JULIA%%/share/julia/test/generic_map_tests.jl
++%%JULIA%%/share/julia/test/goto.jl
++%%JULIA%%/share/julia/test/grisu.jl
++%%JULIA%%/share/julia/test/hashing.jl
++%%JULIA%%/share/julia/test/inline.jl
++%%JULIA%%/share/julia/test/int.jl
++%%JULIA%%/share/julia/test/intfuncs.jl
++%%JULIA%%/share/julia/test/intrinsics.jl
++%%JULIA%%/share/julia/test/iobuffer.jl
++%%JULIA%%/share/julia/test/iostream.jl
++%%JULIA%%/share/julia/test/iterators.jl
++%%JULIA%%/share/julia/test/keywordargs.jl
++%%JULIA%%/share/julia/test/llvmcall.jl
++%%JULIA%%/share/julia/test/llvmcall2.jl
++%%JULIA%%/share/julia/test/llvmpasses/Makefile
++%%JULIA%%/share/julia/test/llvmpasses/alloc-opt.jl
++%%JULIA%%/share/julia/test/llvmpasses/alloc-opt2.jl
++%%JULIA%%/share/julia/test/llvmpasses/gcroots.ll
++%%JULIA%%/share/julia/test/llvmpasses/lit.cfg
++%%JULIA%%/share/julia/test/llvmpasses/lower-handlers.ll
++%%JULIA%%/share/julia/test/llvmpasses/muladd.ll
++%%JULIA%%/share/julia/test/llvmpasses/propagate-addrspace.ll
++%%JULIA%%/share/julia/test/llvmpasses/refinements.ll
++%%JULIA%%/share/julia/test/llvmpasses/returnstwicegc.ll
++%%JULIA%%/share/julia/test/llvmpasses/safepoint_stress.jl
++%%JULIA%%/share/julia/test/llvmpasses/simdloop.ll
++%%JULIA%%/share/julia/test/loading.jl
++%%JULIA%%/share/julia/test/logging.jl
++%%JULIA%%/share/julia/test/math.jl
++%%JULIA%%/share/julia/test/meta.jl
++%%JULIA%%/share/julia/test/misc.jl
++%%JULIA%%/share/julia/test/missing.jl
++%%JULIA%%/share/julia/test/mod2pi.jl
++%%JULIA%%/share/julia/test/mpfr.jl
++%%JULIA%%/share/julia/test/namedtuple.jl
++%%JULIA%%/share/julia/test/netload/memtest.jl
++%%JULIA%%/share/julia/test/numbers.jl
++%%JULIA%%/share/julia/test/offsetarray.jl
++%%JULIA%%/share/julia/test/operators.jl
++%%JULIA%%/share/julia/test/osutils.jl
++%%JULIA%%/share/julia/test/parse.jl
++%%JULIA%%/share/julia/test/path.jl
++%%JULIA%%/share/julia/test/precompile.jl
++%%JULIA%%/share/julia/test/project/Manifest.toml
++%%JULIA%%/share/julia/test/project/Project.toml
++%%JULIA%%/share/julia/test/project/deps/Bar/src/Bar.jl
++%%JULIA%%/share/julia/test/project/deps/Foo1/src/Foo.jl
++%%JULIA%%/share/julia/test/project/deps/Foo2.jl/src/Foo.jl
++%%JULIA%%/share/julia/test/project/deps/Qux.jl
++%%JULIA%%/share/julia/test/ranges.jl
++%%JULIA%%/share/julia/test/rational.jl
++%%JULIA%%/share/julia/test/read.jl
++%%JULIA%%/share/julia/test/reduce.jl
++%%JULIA%%/share/julia/test/reducedim.jl
++%%JULIA%%/share/julia/test/reflection.jl
++%%JULIA%%/share/julia/test/regex.jl
++%%JULIA%%/share/julia/test/reinterpretarray.jl
++%%JULIA%%/share/julia/test/rounding.jl
++%%JULIA%%/share/julia/test/runtests.jl
++%%JULIA%%/share/julia/test/secretbuffer.jl
++%%JULIA%%/share/julia/test/sets.jl
++%%JULIA%%/share/julia/test/show.jl
++%%JULIA%%/share/julia/test/simdloop.jl
++%%JULIA%%/share/julia/test/some.jl
++%%JULIA%%/share/julia/test/sorting.jl
++%%JULIA%%/share/julia/test/spawn.jl
++%%JULIA%%/share/julia/test/specificity.jl
++%%JULIA%%/share/julia/test/stacktraces.jl
++%%JULIA%%/share/julia/test/staged.jl
++%%JULIA%%/share/julia/test/stress.jl
++%%JULIA%%/share/julia/test/strings/basic.jl
++%%JULIA%%/share/julia/test/strings/io.jl
++%%JULIA%%/share/julia/test/strings/search.jl
++%%JULIA%%/share/julia/test/strings/types.jl
++%%JULIA%%/share/julia/test/strings/util.jl
++%%JULIA%%/share/julia/test/subarray.jl
++%%JULIA%%/share/julia/test/subtype.jl
++%%JULIA%%/share/julia/test/syntax.jl
++%%JULIA%%/share/julia/test/sysinfo.jl
++%%JULIA%%/share/julia/test/test_exec.jl
++%%JULIA%%/share/julia/test/test_sourcepath.jl
++%%JULIA%%/share/julia/test/testdefs.jl
++%%JULIA%%/share/julia/test/testenv.jl
++%%JULIA%%/share/julia/test/testhelpers/FakePTYs.jl
++%%JULIA%%/share/julia/test/testhelpers/Furlongs.jl
++%%JULIA%%/share/julia/test/testhelpers/MacroCalls.jl
++%%JULIA%%/share/julia/test/testhelpers/OffsetArrays.jl
++%%JULIA%%/share/julia/test/testhelpers/PhysQuantities.jl
++%%JULIA%%/share/julia/test/threads.jl
++%%JULIA%%/share/julia/test/triplequote.jl
++%%JULIA%%/share/julia/test/tuple.jl
++%%JULIA%%/share/julia/test/unicode/utf8.jl
++%%JULIA%%/share/julia/test/util/segfault.jl
++%%JULIA%%/share/julia/test/util/throw_error_exception.jl
++%%JULIA%%/share/julia/test/vecelement.jl
++%%JULIA%%/share/julia/test/version.jl
++%%JULIA%%/share/julia/test/worlds.jl
