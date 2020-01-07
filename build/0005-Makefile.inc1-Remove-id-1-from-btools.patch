@@ -1,0 +1,26 @@
+From b9a63333d8dffba1bea0dfa34062807ae5cefb6c Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 7 Jan 2020 10:32:35 +0200
+Subject: [PATCH 5/9] Makefile.inc1: Remove id(1) from btools.
+
+ No longer required for buildworld/installworld.
+---
+ Makefile.inc1 | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile.inc1 b/Makefile.inc1
+index 7156e04ff8..355b1f8bc8 100644
+--- a/Makefile.inc1
++++ b/Makefile.inc1
+@@ -909,7 +909,7 @@ BSTRAPDIRS2= \
+ 	usr.bin/tsort usr.bin/tr usr.bin/join usr.bin/wc usr.bin/basename \
+ 	usr.bin/gencat usr.bin/chflags \
+ 	usr.bin/uuencode usr.bin/cap_mkdb usr.bin/true usr.bin/false \
+-	usr.bin/cmp usr.bin/xargs usr.bin/id usr.bin/env usr.bin/dirname \
++	usr.bin/cmp usr.bin/xargs usr.bin/env usr.bin/dirname \
+ 	usr.bin/tail usr.bin/unifdef \
+ 	usr.sbin/chown usr.sbin/mtree usr.sbin/config \
+ 	usr.sbin/zic usr.sbin/pwd_mkdb \
+-- 
+2.24.1
+

@@ -1,0 +1,25 @@
+From 3d6d0426f7546b404dc080f0c71e928631ad4ba1 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 7 Jan 2020 10:30:20 +0200
+Subject: [PATCH 3/9] kernel/kmod.mk: Do not hardcode awk path.
+
+---
+ sys/conf/kmod.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sys/conf/kmod.mk b/sys/conf/kmod.mk
+index 361fbab880..7c6f567b9e 100644
+--- a/sys/conf/kmod.mk
++++ b/sys/conf/kmod.mk
+@@ -155,7 +155,7 @@ CFLAGS+=	-fno-omit-frame-pointer
+ .include <bsd.patch.mk>
+ 
+ .if defined(FIRMWS)
+-AWK=/usr/bin/awk
++#AWK=/usr/bin/awk
+ .if !exists(@)
+ ${KMOD:S/$/.c/}: @
+ .else
+-- 
+2.24.1
+

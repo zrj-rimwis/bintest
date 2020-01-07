@@ -1,0 +1,29 @@
+From 020be626f6f6884a7a570b4801b75ab3b9532ef9 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 7 Jan 2020 10:23:43 +0200
+Subject: [PATCH 1/9] kernel: Include syscons fonts in src-sys.tar.bz2 archive.
+
+ This will be used to reduce host dependencies when building
+ nativekernel from src-sys.tar.bz2.  Building kernel without syscons
+ fonts is possible if SC_DFLT_FONT kernel options are not enabled.
+---
+ nrelease/Makefile | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/nrelease/Makefile b/nrelease/Makefile
+index 6f61f87ae0..5f8b67c53b 100644
+--- a/nrelease/Makefile
++++ b/nrelease/Makefile
+@@ -208,7 +208,8 @@ srcs:
+ .else
+ 	( cd ${SRCDIR} && \
+ 		tar --exclude .git -s '/^\./src/' -cf - \
+-			./Makefile ./Makefile.inc1 ./sys | \
++			./Makefile ./Makefile.inc1 ./sys \
++			./share/syscons/fonts | \
+ 			bzip2 -9 > ${ISOROOT}/usr/src-sys.tar.bz2 )
+ .endif
+ .endif
+-- 
+2.24.1
+

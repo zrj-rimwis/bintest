@@ -1,0 +1,25 @@
+From 9db94ddb6bf1e0c1c532bde9f46110baa803cbd9 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 7 Jan 2020 10:27:04 +0200
+Subject: [PATCH 2/9] kernel: Use relative paths for syscons fonts.
+
+---
+ sys/platform/pc64/conf/files | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sys/platform/pc64/conf/files b/sys/platform/pc64/conf/files
+index 73d0dd9aad..5eb97d6439 100644
+--- a/sys/platform/pc64/conf/files
++++ b/sys/platform/pc64/conf/files
+@@ -2,7 +2,7 @@
+ # files marked standard are always included.
+ #
+ font.h				optional	sc_dflt_font		\
+-	compile-with	"uudecode < /usr/share/syscons/fonts/${SC_DFLT_FONT}-8x16.fnt && file2c 'static u_char dflt_font_16[16*256] = {' '};' < ${SC_DFLT_FONT}-8x16 > font.h && uudecode < /usr/share/syscons/fonts/${SC_DFLT_FONT}-8x14.fnt && file2c 'static u_char dflt_font_14[14*256] = {' '};' < ${SC_DFLT_FONT}-8x14 >> font.h && uudecode < /usr/share/syscons/fonts/${SC_DFLT_FONT}-8x8.fnt && file2c 'static u_char dflt_font_8[8*256] = {' '};' < ${SC_DFLT_FONT}-8x8 >> font.h" \
++	compile-with	"uudecode < $S/../share/syscons/fonts/${SC_DFLT_FONT}-8x16.fnt && file2c 'static u_char dflt_font_16[16*256] = {' '};' < ${SC_DFLT_FONT}-8x16 > font.h && uudecode < $S/../share/syscons/fonts/${SC_DFLT_FONT}-8x14.fnt && file2c 'static u_char dflt_font_14[14*256] = {' '};' < ${SC_DFLT_FONT}-8x14 >> font.h && uudecode < $S/../share/syscons/fonts/${SC_DFLT_FONT}-8x8.fnt && file2c 'static u_char dflt_font_8[8*256] = {' '};' < ${SC_DFLT_FONT}-8x8 >> font.h" \
+ 	no-obj no-implicit-rule before-depend				\
+ 	clean		"font.h"
+ #
+-- 
+2.24.1
+

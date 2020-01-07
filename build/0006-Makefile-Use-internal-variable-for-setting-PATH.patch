@@ -1,0 +1,28 @@
+From 30c61e1c838ac8c5926ed9383ff4924ebb135a22 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 7 Jan 2020 10:45:22 +0200
+Subject: [PATCH 6/9] Makefile: Use internal variable for setting PATH.
+
+ Mainly to prevent double override PATH when invoking submakes.
+---
+ Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 8abb280c22..c8233df16c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -110,8 +110,8 @@ BITGTS:=${BITGTS} ${BITGTS:S/^/build/} ${BITGTS:S/^/install/}
+ .ORDER: realquickkernel reinstallkernel
+ .ORDER: build-all install-all
+ 
+-PATH=	/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:/usr/pkg/bin
+-MAKE=	PATH=${PATH} make -m ${.CURDIR}/share/mk -f Makefile.inc1
++_HOSTPATH=	/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:/usr/pkg/bin
++MAKE=	PATH=${_HOSTPATH} make -m ${.CURDIR}/share/mk -f Makefile.inc1
+ 
+ #
+ # Handle the user-driven targets, using the source relative mk files.
+-- 
+2.24.1
+

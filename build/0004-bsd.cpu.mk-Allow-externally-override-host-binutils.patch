@@ -1,0 +1,32 @@
+From d333af4bd90f7913f9a5693d66422a4286683ffb Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 7 Jan 2020 10:31:18 +0200
+Subject: [PATCH 4/9] bsd.cpu.mk: Allow externally override host binutils.
+
+ Will be used from buildworld/buildkernel from OpenBSD hosts.
+---
+ share/mk/bsd.cpu.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/share/mk/bsd.cpu.mk b/share/mk/bsd.cpu.mk
+index 5ece8a5851..8c8fcf4f94 100644
+--- a/share/mk/bsd.cpu.mk
++++ b/share/mk/bsd.cpu.mk
+@@ -25,12 +25,14 @@ HOST_CCVER?= ${_CCVER}
+ HOST_CCVER?= ${_DEFAULT_CCVER}
+ .endif
+ 
++.if !defined(HOST_BINUTILSVER)
+ .if exists(/usr/libexec/${_DEFAULT_BINUTILSVER}/elf/as)
+ HOST_BINUTILSVER?=	${_DEFAULT_BINUTILSVER}
+ .else
+ _NEXTAS!=		find -s /usr/libexec/binutils* -name as -print0 -quit
+ HOST_BINUTILSVER?=	${_NEXTAS:H:H:T}
+ .endif
++.endif
+ 
+ .if defined(FORCE_CPUTYPE)
+ CPUTYPE= ${FORCE_CPUTYPE}
+-- 
+2.24.1
+

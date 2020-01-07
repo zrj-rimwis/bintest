@@ -1,0 +1,75 @@
+From 19e56fce14f964612d7ccbc43f60ecce2f303b4d Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 7 Jan 2020 10:50:44 +0200
+Subject: [PATCH 9/9] world: Introduce NO_INITRD option.
+
+ Sometimes it is useful to skip rebuilding initrd during development.
+---
+ Makefile.inc1              | 6 ++++++
+ etc/defaults/make.conf     | 1 +
+ share/man/man5/make.conf.5 | 3 +++
+ 3 files changed, 10 insertions(+)
+
+diff --git a/Makefile.inc1 b/Makefile.inc1
+index 355b1f8bc8..53dc4ebeba 100644
+--- a/Makefile.inc1
++++ b/Makefile.inc1
+@@ -405,7 +405,9 @@ _initrd:
+ 	@echo "--------------------------------------------------------------"
+ 	@echo ">>> stage 5: building rescue and initrd"
+ 	@echo "--------------------------------------------------------------"
++.if !defined(NO_INITRD)
+ 	cd ${.CURDIR}/initrd; ${WMAKEENV} make all
++.endif
+ _bwdone:
+ 	@echo "--------------------------------------------------------------"
+ 	@echo ">>> buildworld target complete"
+@@ -546,7 +548,9 @@ installworld: installcheck
+ 	${INSTALL} -o root -g wheel -m 644 ${.CURDIR}/Makefile_upgrade.inc \
+ 	    ${DESTDIR}/etc/upgrade/
+ 	cd ${.CURDIR}; ${IMAKE} -DWORLDINSTALL os-release
++.if !defined(NO_INITRD)
+ 	cd ${.CURDIR}; ${IMAKE} -DWORLDINSTALL initrd
++.endif
+ 	sync
+ 	@echo "--------------------------------------------------------------"
+ 	@echo ">>> installworld target complete"
+@@ -600,7 +604,9 @@ installworld-force:
+ 	sleep 5
+ 	(cd ${.CURDIR}; ${MAKE} installworld OVERRIDE_CHECKS=TRUE)
+ 	(cd ${.CURDIR}; ${MAKE} upgrade OVERRIDE_CHECKS=TRUE)
++.if !defined(NO_INITRD)
+ 	(cd ${.CURDIR}; ${MAKE} initrd)
++.endif
+ 
+ # reinstall
+ #
+diff --git a/etc/defaults/make.conf b/etc/defaults/make.conf
+index 52a3307ce0..37f7d4220f 100644
+--- a/etc/defaults/make.conf
++++ b/etc/defaults/make.conf
+@@ -117,6 +117,7 @@ THREAD_LIB?=	thread_xu
+ #NO_CVS=	true	# do not build CVS
+ #NO_GAMES=	true	# do not enter the games subdirectory
+ #NO_GDB=	true	# do not build GDB
++#NO_INITRD=	true	# do not build initrd
+ #NO_LPR=	true	# do not build lpr and related programs
+ #NO_MODULES=	true	# do not build modules with the kernel
+ #NO_SHARE=	true	# do not enter the share subdirectory
+diff --git a/share/man/man5/make.conf.5 b/share/man/man5/make.conf.5
+index 377e0a6ae4..72608581fe 100644
+--- a/share/man/man5/make.conf.5
++++ b/share/man/man5/make.conf.5
+@@ -405,6 +405,9 @@ Set to not build games.
+ .Pq Vt bool
+ Set to not build
+ .Xr gdb 1
++.It Va NO_INITRD
++.Pq Vt bool
++Set to not build initrd image.
+ .It Va NO_LPR
+ .Pq Vt bool
+ Set to not build
+-- 
+2.24.1
+

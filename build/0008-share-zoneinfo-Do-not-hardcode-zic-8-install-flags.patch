@@ -1,0 +1,35 @@
+From e5d23fece02614a5e25d0532b4cd70edfd4eed69 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Tue, 7 Jan 2020 10:47:15 +0200
+Subject: [PATCH 8/9] share/zoneinfo: Do not hardcode zic(8) install flags.
+
+ Will be used for unpriv builds.
+---
+ share/zoneinfo/Makefile | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/share/zoneinfo/Makefile b/share/zoneinfo/Makefile
+index aa20ba6ca4..126be6ea65 100644
+--- a/share/zoneinfo/Makefile
++++ b/share/zoneinfo/Makefile
+@@ -8,6 +8,8 @@ LEAPFILE=	-L leapseconds
+ LEAPFILE=
+ .endif
+ 
++ZIC_UG_FLAGS=	-u ${BINOWN} -g ${BINGRP}
++
+ TZFILES=	africa antarctica asia australasia etcetera europe \
+ 		northamerica southamerica systemv
+ TZFILES+=	dragonfly
+@@ -37,7 +39,6 @@ yearistype: yearistype.sh
+ beforeinstall:
+ 	umask 022; cd ${.CURDIR}; \
+ 	zic -D -d ${DESTDIR}/usr/share/zoneinfo -p ${POSIXRULES} \
+-	    -u ${BINOWN} -g ${BINGRP} \
+-	    ${LEAPFILE} -y ${YEARISTYPE} ${TZFILES}
++	    ${ZIC_UG_FLAGS} ${LEAPFILE} -y ${YEARISTYPE} ${TZFILES}
+ 
+ .include <bsd.prog.mk>
+-- 
+2.24.1
+
