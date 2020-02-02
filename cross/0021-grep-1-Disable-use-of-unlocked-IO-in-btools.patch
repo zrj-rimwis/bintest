@@ -1,0 +1,102 @@
+From 14a3d747daef7912a1f6f61a6a466ce5cfed4cb0 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 13:14:22 +0200
+Subject: [PATCH 21/22] grep(1): Disable use of unlocked IO in btools.
+
+ Our use of grep during bootstrapping process does not require it and
+ solves issues when bootstrapping utility on OpenBSD.
+---
+ contrib/grep/src/system.h              |  2 ++
+ gnu/usr.bin/grep/grep/Makefile         |  4 ++++
+ gnu/usr.bin/grep/libgreputils/Makefile |  4 ++++
+ gnu/usr.bin/grep/libgreputils/config.h | 10 ++++++++++
+ 4 files changed, 20 insertions(+)
+
+diff --git a/contrib/grep/src/system.h b/contrib/grep/src/system.h
+index 15a1abbd0e..7a37079cbf 100644
+--- a/contrib/grep/src/system.h
++++ b/contrib/grep/src/system.h
+@@ -48,7 +48,9 @@ enum { EXIT_TROUBLE = 2 };
+ # define initialize_main(argcp, argvp)
+ #endif
+ 
++#ifndef BOOTSTRAPPING
+ #include "unlocked-io.h"
++#endif
+ 
+ _GL_INLINE_HEADER_BEGIN
+ #ifndef SYSTEM_INLINE
+diff --git a/gnu/usr.bin/grep/grep/Makefile b/gnu/usr.bin/grep/grep/Makefile
+index 65239c72cd..b1854fa963 100644
+--- a/gnu/usr.bin/grep/grep/Makefile
++++ b/gnu/usr.bin/grep/grep/Makefile
+@@ -11,6 +11,10 @@ CFLAGS+=	-I${BASEDIR}/src -I${.OBJDIR}
+ CFLAGS+=	-I${BASEDIR}/lib -I${.CURDIR}/../libgreputils
+ CFLAGS+=	-DHAVE_CONFIG_H
+ 
++.if defined(BOOTSTRAPPING)
++CFLAGS+=	-DBOOTSTRAPPING
++.endif
++
+ DPADD=		../libgreputils/libgreputils.a
+ LDADD=		../libgreputils/libgreputils.a
+ BINDIR?=	/usr/bin
+diff --git a/gnu/usr.bin/grep/libgreputils/Makefile b/gnu/usr.bin/grep/libgreputils/Makefile
+index a838760a74..51734132b8 100644
+--- a/gnu/usr.bin/grep/libgreputils/Makefile
++++ b/gnu/usr.bin/grep/libgreputils/Makefile
+@@ -10,6 +10,10 @@ CONTRIBDIR=	${BASEDIR}/lib
+ CFLAGS+=	-I${CONTRIBDIR} -I${.CURDIR} -I${.OBJDIR}
+ CFLAGS+=	-DHAVE_CONFIG_H
+ 
++.if defined(BOOTSTRAPPING)
++CFLAGS+=	-DBOOTSTRAPPING
++.endif
++
+ SRCS=		argmatch.c \
+ 		c-strcasecmp.c \
+ 		c-strncasecmp.c \
+diff --git a/gnu/usr.bin/grep/libgreputils/config.h b/gnu/usr.bin/grep/libgreputils/config.h
+index 1b24fa73db..17489206c3 100644
+--- a/gnu/usr.bin/grep/libgreputils/config.h
++++ b/gnu/usr.bin/grep/libgreputils/config.h
+@@ -412,7 +412,11 @@
+ 
+ /* Define to 1 if you have the declaration of `ferror_unlocked', and to 0 if
+    you don't. */
++#ifdef BOOTSTRAPPING
++#define HAVE_DECL_FERROR_UNLOCKED 0
++#else
+ #define HAVE_DECL_FERROR_UNLOCKED 1
++#endif
+ 
+ /* Define to 1 if you have the declaration of `fflush_unlocked', and to 0 if
+    you don't. */
+@@ -619,10 +623,14 @@
+ #define HAVE_GETTIMEOFDAY 1
+ 
+ /* Define if you have the iconv() function and it works. */
++#ifndef BOOTSTRAPPING
+ #define HAVE_ICONV 1
++#endif
+ 
+ /* Define to 1 if you have the <iconv.h> header file. */
++#ifndef BOOTSTRAPPING
+ #define HAVE_ICONV_H 1
++#endif
+ 
+ /* Define to 1 if the compiler supports one of the keywords 'inline',
+    '__inline__', '__inline' and effectively inlines functions marked as such.
+@@ -1731,7 +1739,9 @@
+ /* Define to 1 if you want getc etc. to use unlocked I/O if available.
+    Unlocked I/O can improve performance in unithreaded apps, but it is not
+    safe for multithreaded apps. */
++#ifndef BOOTSTRAPPING
+ #define USE_UNLOCKED_IO 1
++#endif
+ 
+ /* Define if the native Windows multithreading API can be used. */
+ /* #undef USE_WINDOWS_THREADS */
+-- 
+2.25.0
+

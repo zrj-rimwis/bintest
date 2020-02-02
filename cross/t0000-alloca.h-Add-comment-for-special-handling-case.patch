@@ -1,0 +1,25 @@
+From e903e2d01332de0c32fbd40717a00edee6f5f159 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 11:10:47 +0200
+Subject: [PATCH] <alloca.h>: Add comment for special handling case.
+
+---
+ include/alloca.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/alloca.h b/include/alloca.h
+index 9599886c80..3396c631eb 100644
+--- a/include/alloca.h
++++ b/include/alloca.h
+@@ -31,7 +31,7 @@
+ #include <stddef.h>
+ 
+ /*
+- * This header is for compatibility only.
++ * This header is for compatibility only.  Keep __GNUC__ >= 2 for ports tests.
+  */
+ 
+ __BEGIN_DECLS
+-- 
+2.25.0
+

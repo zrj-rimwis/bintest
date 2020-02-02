@@ -1,0 +1,48 @@
+From 171a984a87fd1ba2c109b44e659fb49444e90a4e Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 12:28:47 +0200
+Subject: [PATCH 12/22] mv(1): Install signal handler only if SIGINFO is
+ available.
+
+---
+ bin/mv/mv.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/bin/mv/mv.c b/bin/mv/mv.c
+index 81f0354b0d..c162083ab4 100644
+--- a/bin/mv/mv.c
++++ b/bin/mv/mv.c
+@@ -64,7 +64,9 @@ static int	copy(const char *, const char *);
+ static int	do_move(const char *, const char *);
+ static int	fastcopy(const char *, const char *, struct stat *);
+ static void	usage(void);
++#ifdef SIGINFO
+ static void	siginfo(int);
++#endif
+ 
+ int
+ main(int argc, char *argv[])
+@@ -102,7 +104,9 @@ main(int argc, char *argv[])
+ 	argc -= optind;
+ 	argv += optind;
+ 
++#ifdef SIGINFO
+ 	signal(SIGINFO, siginfo);
++#endif
+ 
+ 	if (argc < 2)
+ 		usage();
+@@ -445,8 +449,10 @@ usage(void)
+ 	exit(EX_USAGE);
+ }
+ 
++#ifdef SIGINFO
+ static void
+ siginfo(int notused __unused)
+ {
+ 	info = 1;
+ }
++#endif
+-- 
+2.25.0
+

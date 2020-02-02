@@ -1,0 +1,52 @@
+From 3d203adf57579df2feaf82eb41a03dff3778184a Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 13:05:16 +0200
+Subject: [PATCH 20/22] find(1): Disable use of getvfsbyname(3) in btools.
+
+ Not needed by our buildworld/buildkernel infrastructure.
+ This allows utility to be used on OpenBSD host.
+---
+ usr.bin/find/function.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/usr.bin/find/function.c b/usr.bin/find/function.c
+index 98a46de3c5..0c67eef705 100644
+--- a/usr.bin/find/function.c
++++ b/usr.bin/find/function.c
+@@ -850,7 +850,9 @@ f_fstype(PLAN *plan, FTSENT *entry)
+ 		 * always copy both of them.
+ 		 */
+ 		val_flags = sb.f_flags;
++#ifndef BOOTSTRAPPING
+ 		val_type = sb.f_type;
++#endif
+ 	}
+ 	switch (plan->flags & F_MTMASK) {
+ 	case F_MTFLAG:
+@@ -867,7 +869,9 @@ c_fstype(OPTION *option, char ***argvp)
+ {
+ 	char *fsname;
+ 	PLAN *new;
++#ifndef BOOTSTRAPPING
+ 	struct vfsconf vfc;
++#endif
+ 
+ 	fsname = nextarg(option, argvp);
+ 	ftsoptions &= ~FTS_NOSTAT;
+@@ -877,11 +881,13 @@ c_fstype(OPTION *option, char ***argvp)
+ 	/*
+ 	 * Check first for a filesystem name.
+ 	 */
++#ifndef BOOTSTRAPPING
+ 	if (getvfsbyname(fsname, &vfc) == 0) {
+ 		new->flags |= F_MTTYPE;
+ 		new->mt_data = vfc.vfc_typenum;
+ 		return new;
+ 	}
++#endif
+ 
+ 	switch (*fsname) {
+ 	case 'l':
+-- 
+2.25.0
+

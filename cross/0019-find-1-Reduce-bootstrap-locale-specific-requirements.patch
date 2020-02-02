@@ -1,0 +1,75 @@
+From 1cf0e02122cc5cd229e616839980faab45361a7a Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 13:03:09 +0200
+Subject: [PATCH 19/22] find(1): Reduce bootstrap locale specific requirements.
+
+ The F_TIME2_T functionality is not available on all OSes.
+
+ While there, check for D_MD_ORDER availability and fallback to month
+ first if not available.
+---
+ usr.bin/find/Makefile   | 9 +++++++--
+ usr.bin/find/function.c | 4 ++++
+ usr.bin/find/ls.c       | 4 ++++
+ 3 files changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/usr.bin/find/Makefile b/usr.bin/find/Makefile
+index 0990787ac8..fa3674034d 100644
+--- a/usr.bin/find/Makefile
++++ b/usr.bin/find/Makefile
+@@ -2,8 +2,13 @@
+ # $FreeBSD: src/usr.bin/find/Makefile,v 1.20 2010/02/10 07:15:21 ed Exp $
+ 
+ PROG=	find
+-SRCS=	find.c function.c ls.c main.c misc.c operator.c option.c \
+-	getdate.y
++SRCS=	find.c function.c ls.c main.c misc.c operator.c option.c
++
++.if defined(BOOTSTRAPPING)
++CFLAGS+= -DBOOTSTRAPPING
++.else
++SRCS+=	getdate.y
+ YFLAGS=
++.endif
+ 
+ .include <bsd.prog.mk>
+diff --git a/usr.bin/find/function.c b/usr.bin/find/function.c
+index 2a7f2b0922..98a46de3c5 100644
+--- a/usr.bin/find/function.c
++++ b/usr.bin/find/function.c
+@@ -1134,11 +1134,15 @@ c_newer(OPTION *option, char ***argvp)
+ 	new = palloc(option);
+ 	/* compare against what */
+ 	if (option->flags & F_TIME2_T) {
++#ifdef BOOTSTRAPPING
++		err(1, "disabled in BTOOLS");
++#else
+ 		new->t_data.tv_sec = get_date(fn_or_tspec);
+ 		if (new->t_data.tv_sec == (time_t) -1)
+ 			errx(1, "Can't parse date/time: %s", fn_or_tspec);
+ 		/* Use the seconds only in the comparison. */
+ 		new->t_data.tv_nsec = 999999999;
++#endif
+ 	} else {
+ 		if (stat(fn_or_tspec, &sb))
+ 			err(1, "%s", fn_or_tspec);
+diff --git a/usr.bin/find/ls.c b/usr.bin/find/ls.c
+index 1c4b77e8ae..e090968d72 100644
+--- a/usr.bin/find/ls.c
++++ b/usr.bin/find/ls.c
+@@ -82,8 +82,12 @@ printtime(time_t ftime)
+ 	const char *format;
+ 	static int d_first = -1;
+ 
++#ifdef D_MD_ORDER
+ 	if (d_first < 0)
+ 		d_first = (*nl_langinfo(D_MD_ORDER) == 'd');
++#else
++	d_first = 0;
++#endif
+ 	if (lnow == 0)
+ 		lnow = time(NULL);
+ 
+-- 
+2.25.0
+

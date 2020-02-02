@@ -1,0 +1,73 @@
+From fea6686bce4d73aa63a52b5b9f8e828baa324e2b Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 11:34:00 +0200
+Subject: [PATCH 01/22] mtree(8): Disable -N option in btools.
+
+ Our installworld has installcheck and preupgrade and we do not make use
+ of mtree -N option.  This removes hard dependency on pwcache(3).
+---
+ usr.sbin/mtree/Makefile | 12 +++++++-----
+ usr.sbin/mtree/mtree.c  |  4 ++++
+ 2 files changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/usr.sbin/mtree/Makefile b/usr.sbin/mtree/Makefile
+index f35d21c897..47e687dec1 100644
+--- a/usr.sbin/mtree/Makefile
++++ b/usr.sbin/mtree/Makefile
+@@ -6,7 +6,7 @@
+ PROG=	mtree
+ MAN=	mtree.8
+ SRCS=	compare.c crc.c create.c excludes.c misc.c mtree.c spec.c verify.c
+-SRCS+=	specspec.c getid.c only.c
++SRCS+=	specspec.c only.c
+ 
+ SRCS+=	pack_dev.c stat_flags.c
+ CFLAGS+=-DHAVE_NETDB_H
+@@ -14,6 +14,10 @@ CFLAGS+=-DHAVE_NETDB_H
+ DPADD+=	${LIBUTIL}
+ LDADD+=	-lutil
+ 
++.if !defined(BOOTSTRAPPING)
++SRCS+= getid.c
++.endif
++
+ .if !defined(BOOTSTRAPPING) && !defined(RESCUE)
+ SRCS+= hash.c
+ CFLAGS+= 	${PRIVATELIB_CFLAGS}
+@@ -22,12 +26,10 @@ LDADD+=		-lprivate_crypto
+ LDFLAGS+=	${PRIVATELIB_LDFLAGS}
+ .else
+ CFLAGS+=-DNO_MD5 -DNO_SHA -DNO_RMD160
++CFLAGS+=-DBOOTSTRAPPING
+ .if ${WORLD_VERSION} < 500302 # pwcache(3)/vis(3) upgrades came in about here
+ .PATH: ${.CURDIR}/../../lib/libc/gen
+-SRCS+=	pwcache.c vis.c
+-CFLAGS+=-I${.CURDIR}/../../lib/libc/include
+-CFLAGS+=-include ${.CURDIR}/../../include/grp.h
+-CFLAGS+=-include ${.CURDIR}/../../include/pwd.h
++SRCS+=	vis.c
+ CFLAGS+=-include ${.CURDIR}/../../include/vis.h
+ .endif
+ .endif
+diff --git a/usr.sbin/mtree/mtree.c b/usr.sbin/mtree/mtree.c
+index c66af03243..40bcd52718 100644
+--- a/usr.sbin/mtree/mtree.c
++++ b/usr.sbin/mtree/mtree.c
+@@ -159,10 +159,14 @@ main(int argc, char **argv)
+ 			nflag = 1;
+ 			break;
+ 		case 'N':
++#ifdef BOOTSTRAPPING
++			mtree_err("The -N is disabled in btools");
++#else
+ 			if (! setup_getid(optarg))
+ 				mtree_err(
+ 			    "Unable to use user and group databases in `%s'",
+ 				    optarg);
++#endif
+ 			break;
+ 		case 'O':
+ 			load_only(optarg);
+-- 
+2.25.0
+

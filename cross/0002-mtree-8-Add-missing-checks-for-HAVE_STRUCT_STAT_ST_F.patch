@@ -1,0 +1,142 @@
+From 85b8ce0e7440984aee6f155283738b7edf82c131 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 11:38:54 +0200
+Subject: [PATCH 02/22] mtree(8): Add missing checks for
+ HAVE_STRUCT_STAT_ST_FLAGS.
+
+ This make mtree(8) usable when building on OpenBSD host.
+
+ While there, adjust few included headers too.
+---
+ usr.sbin/mtree/compare.c    | 6 +++++-
+ usr.sbin/mtree/create.c     | 2 ++
+ usr.sbin/mtree/extern.h     | 6 ++++--
+ usr.sbin/mtree/only.c       | 1 +
+ usr.sbin/mtree/pack_dev.c   | 2 +-
+ usr.sbin/mtree/stat_flags.c | 4 ++++
+ usr.sbin/mtree/verify.c     | 2 ++
+ 7 files changed, 19 insertions(+), 4 deletions(-)
+
+diff --git a/usr.sbin/mtree/compare.c b/usr.sbin/mtree/compare.c
+index 7d400d05c1..10a50b129f 100644
+--- a/usr.sbin/mtree/compare.c
++++ b/usr.sbin/mtree/compare.c
+@@ -32,6 +32,7 @@
+ 
+ #include <sys/param.h>
+ #include <sys/stat.h>
++#include <sys/time.h>
+ 
+ #include <errno.h>
+ #include <fcntl.h>
+@@ -120,7 +121,10 @@ do {									\
+ int
+ compare(NODE *s, FTSENT *p)
+ {
+-	u_int32_t len, val, flags;
++	u_int32_t len, val;
++#if HAVE_STRUCT_STAT_ST_FLAGS
++	u_int32_t flags;
++#endif
+ 	int fd, label;
+ 	const char *cp, *tab;
+ #if !defined(NO_MD5) || !defined(NO_RMD160) || !defined(NO_SHA)
+diff --git a/usr.sbin/mtree/create.c b/usr.sbin/mtree/create.c
+index 3b4bb23a04..5ca5bb83a5 100644
+--- a/usr.sbin/mtree/create.c
++++ b/usr.sbin/mtree/create.c
+@@ -323,7 +323,9 @@ statd(FILE *fp, FTS *t, FTSENT *parent, uid_t *puid, gid_t *pgid, mode_t *pmode,
+ 	gid_t sgid;
+ 	uid_t suid;
+ 	mode_t smode;
++#if HAVE_STRUCT_STAT_ST_FLAGS
+ 	u_long sflags = 0;
++#endif
+ 	const char *name = NULL;
+ 	gid_t savegid;
+ 	uid_t saveuid;
+diff --git a/usr.sbin/mtree/extern.h b/usr.sbin/mtree/extern.h
+index a457c00f8e..95f7659235 100644
+--- a/usr.sbin/mtree/extern.h
++++ b/usr.sbin/mtree/extern.h
+@@ -33,9 +33,11 @@
+ 
+ #include "mtree.h"
+ 
++#ifdef __DragonFly__
+ #define HAVE_STRUCT_STAT_ST_FLAGS 1
+- 
+-#include <err.h> 
++#endif
++
++#include <err.h>
+ #include <fts.h>
+ #include <libutil.h>
+ #include <stdbool.h>
+diff --git a/usr.sbin/mtree/only.c b/usr.sbin/mtree/only.c
+index b1fbcb0605..f86665dc54 100644
+--- a/usr.sbin/mtree/only.c
++++ b/usr.sbin/mtree/only.c
+@@ -35,6 +35,7 @@
+ #include <sys/param.h>
+ 
+ #include <stdio.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <stdbool.h>
+diff --git a/usr.sbin/mtree/pack_dev.c b/usr.sbin/mtree/pack_dev.c
+index cf46dd8a30..e4178f8948 100644
+--- a/usr.sbin/mtree/pack_dev.c
++++ b/usr.sbin/mtree/pack_dev.c
+@@ -29,7 +29,7 @@
+  * POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+-#include <sys/types.h>
++#include <sys/param.h>
+ #include <sys/stat.h>
+ 
+ #include <limits.h>
+diff --git a/usr.sbin/mtree/stat_flags.c b/usr.sbin/mtree/stat_flags.c
+index 1964438657..34b5b621e8 100644
+--- a/usr.sbin/mtree/stat_flags.c
++++ b/usr.sbin/mtree/stat_flags.c
+@@ -30,7 +30,9 @@
+  * SUCH DAMAGE.
+  */
+ 
++#ifdef __DragonFly__
+ #define HAVE_STRUCT_STAT_ST_FLAGS 1
++#endif
+ 
+ #include <sys/types.h>
+ #include <sys/stat.h>
+@@ -113,8 +115,10 @@ flags_to_string(u_long flags, const char *def)
+ int
+ string_to_flags(char **stringp, u_long *setp, u_long *clrp)
+ {
++#if HAVE_STRUCT_STAT_ST_FLAGS
+ 	int clear;
+ 	char *string, *p;
++#endif
+ 
+ 	if (setp)
+ 		*setp = 0;
+diff --git a/usr.sbin/mtree/verify.c b/usr.sbin/mtree/verify.c
+index 23d5bcdbdd..55237c8c64 100644
+--- a/usr.sbin/mtree/verify.c
++++ b/usr.sbin/mtree/verify.c
+@@ -163,7 +163,9 @@ miss(NODE *p, char *tail)
+ 	int create;
+ 	char *tp;
+ 	const char *type;
++#if HAVE_STRUCT_STAT_ST_FLAGS
+ 	u_int32_t flags;
++#endif
+ 
+ 	for (; p; p = p->next) {
+ 		if (p->flags & F_OPT && !(p->flags & F_VISIT))
+-- 
+2.25.0
+

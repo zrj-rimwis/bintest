@@ -1,0 +1,38 @@
+From cb1a8ac444e9b4121345d82364a75e228840811f Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 11:11:25 +0200
+Subject: [PATCH 1/2] hostprog: Remove NO_WERROR from btools tic.
+
+Pointed-out-by: swildner
+---
+ lib/libncurses/libtic/Makefile   | 1 -
+ lib/libncurses/tic_next/Makefile | 1 -
+ 2 files changed, 2 deletions(-)
+
+diff --git a/lib/libncurses/libtic/Makefile b/lib/libncurses/libtic/Makefile
+index e30cfb8b95..a83cd63434 100644
+--- a/lib/libncurses/libtic/Makefile
++++ b/lib/libncurses/libtic/Makefile
+@@ -3,7 +3,6 @@ LIB=	tic
+ 
+ # keep at low warns, hostlib
+ WARNS=	1
+-NO_WERROR=
+ 
+ ZTIC=	yes
+ CFLAGS+=	-DDRAGONFLY_NATIVE
+diff --git a/lib/libncurses/tic_next/Makefile b/lib/libncurses/tic_next/Makefile
+index daccc232b5..5b99fb9b2a 100644
+--- a/lib/libncurses/tic_next/Makefile
++++ b/lib/libncurses/tic_next/Makefile
+@@ -4,7 +4,6 @@ TERMINFO_CAPS=	${NCURSESDIR}/include/Caps
+ 
+ PROG=		tic_next
+ 
+-NO_WERROR=
+ CFLAGS+=	-D_XOPEN_SOURCE_EXTENDED
+ CFLAGS+=	-DENABLE_WIDEC
+ CFLAGS+=	-DSET_NCURSES_CH_T=cchar_t
+-- 
+2.25.0
+

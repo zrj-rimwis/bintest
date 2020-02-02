@@ -1,0 +1,53 @@
+From e02a917c6c7ccd8a583d5724579bf5b53b6ae851 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 12:29:06 +0200
+Subject: [PATCH 13/22] mv(1): Check for _ST_FLAGS_PRESENT_ availability.
+
+ While there, check for MNAMELEN availability that indicates presence of
+ f_mntonname field in struct statfs.
+---
+ bin/mv/mv.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/bin/mv/mv.c b/bin/mv/mv.c
+index c162083ab4..dded66527d 100644
+--- a/bin/mv/mv.c
++++ b/bin/mv/mv.c
+@@ -224,7 +224,6 @@ do_move(const char *from, const char *to)
+ 	}
+ 
+ 	if (errno == EXDEV) {
+-		struct statfs sfs;
+ 		char path[PATH_MAX];
+ 		int target_is_file = 0;
+ 
+@@ -249,11 +248,14 @@ do_move(const char *from, const char *to)
+ 				warn("cannot resolve %s: %s", from, path);
+ 				return (1);
+ 			}
++#ifdef MNAMELEN
++			struct statfs sfs;
+ 			if (!statfs(path, &sfs) &&
+ 			    !strcmp(path, sfs.f_mntonname)) {
+ 				warnx("cannot rename a mount point");
+ 				return (1);
+ 			}
++#endif
+ 		}
+ 	} else {
+ 		warn("rename %s to %s", from, to);
+@@ -336,9 +338,11 @@ err:		if (unlink(to))
+ 	 * on a file that we copied, i.e., that we didn't create.)
+ 	 */
+ 	errno = 0;
++#ifdef _ST_FLAGS_PRESENT_
+ 	if (fchflags(to_fd, sbp->st_flags))
+ 		if (errno != EOPNOTSUPP || sbp->st_flags != 0)
+ 			warn("%s: set flags (was: 0%07o)", to, sbp->st_flags);
++#endif
+ 
+ 	tval[0].tv_sec = sbp->st_atime;
+ 	tval[1].tv_sec = sbp->st_mtime;
+-- 
+2.25.0
+

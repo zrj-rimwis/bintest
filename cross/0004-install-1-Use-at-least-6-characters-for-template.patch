@@ -1,0 +1,26 @@
+From 906e9db29de19b42e42e4e99846c84a55c4b045a Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 11:50:09 +0200
+Subject: [PATCH 04/22] install(1): Use at least 6 characters for template.
+
+ Glibc mkstemp(3) requires at least 6 characters in template.
+---
+ usr.bin/xinstall/xinstall.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/usr.bin/xinstall/xinstall.c b/usr.bin/xinstall/xinstall.c
+index db722e7652..853947e7f5 100644
+--- a/usr.bin/xinstall/xinstall.c
++++ b/usr.bin/xinstall/xinstall.c
+@@ -934,7 +934,7 @@ create_tempfile(const char *path, char *temp, size_t tsize)
+ 		p++;
+ 	else
+ 		p = temp;
+-	(void)strncpy(p, "INS@XXXX", &temp[tsize - 1] - p);
++	(void)strncpy(p, "INS@XXXXXX", &temp[tsize - 1] - p);
+ 	temp[tsize - 1] = '\0';
+ 	return (mkstemp(temp));
+ }
+-- 
+2.25.0
+

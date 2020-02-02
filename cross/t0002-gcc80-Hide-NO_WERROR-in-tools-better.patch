@@ -1,0 +1,38 @@
+From 17220a06dc1233f5b935c98c555f4a80fa99ed86 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 11:12:34 +0200
+Subject: [PATCH 2/2] gcc80: Hide NO_WERROR in tools better.
+
+---
+ gnu/usr.bin/cc80/cc_tools/Makefile.inc   | 1 +
+ gnu/usr.bin/cc80/cc_tools/tools/Makefile | 2 --
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/gnu/usr.bin/cc80/cc_tools/Makefile.inc b/gnu/usr.bin/cc80/cc_tools/Makefile.inc
+index 62d89f1b29..0fe7239bf0 100644
+--- a/gnu/usr.bin/cc80/cc_tools/Makefile.inc
++++ b/gnu/usr.bin/cc80/cc_tools/Makefile.inc
+@@ -6,6 +6,7 @@ __<cctools80.Makefile.inc>__:
+ 
+ # Hint HOST_CCVER handling.
+ __USE_HOST_CCVER=
++NO_WERROR=
+ 
+ TOP_PREFIX=	../
+ GCC_NO_LIBS=	# yes
+diff --git a/gnu/usr.bin/cc80/cc_tools/tools/Makefile b/gnu/usr.bin/cc80/cc_tools/tools/Makefile
+index db6a7a76ba..6cea1ecb97 100644
+--- a/gnu/usr.bin/cc80/cc_tools/tools/Makefile
++++ b/gnu/usr.bin/cc80/cc_tools/tools/Makefile
+@@ -4,8 +4,6 @@
+ .include "../Makefile.inc"
+ .include "../../Makefile.langs"
+ 
+-NO_WERROR=
+-
+ NXCXXFLAGS+=		-DGENERATOR_FILE -I${.OBJDIR}
+ BUILD_LIBS=		../libiberty/libiberty.na
+ BUILD_LIBS_genmatch=	../libcpp/libcpp.na
+-- 
+2.25.0
+

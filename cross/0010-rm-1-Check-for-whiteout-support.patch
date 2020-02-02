@@ -1,0 +1,80 @@
+From f940e85a6ee55a47a2aa4835ab6a748b6016af5d Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 12:24:31 +0200
+Subject: [PATCH 10/22] rm(1): Check for whiteout support.
+
+ The S_IFWHT is not available on all OSes.
+---
+ bin/rm/rm.c | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/bin/rm/rm.c b/bin/rm/rm.c
+index 2c3cd63ea3..97037059b6 100644
+--- a/bin/rm/rm.c
++++ b/bin/rm/rm.c
+@@ -136,7 +136,9 @@ main(int argc, char *argv[])
+ 			vflag = 1;
+ 			break;
+ 		case 'W':
++#ifdef S_IFWHT
+ 			Wflag = 1;
++#endif
+ 			break;
+ 		case 'x':
+ 			xflag = 1;
+@@ -201,8 +203,10 @@ rm_tree(char **argv)
+ 	flags = FTS_PHYSICAL;
+ 	if (!needstat)
+ 		flags |= FTS_NOSTAT;
++#ifdef S_IFWHT
+ 	if (Wflag)
+ 		flags |= FTS_WHITEOUT;
++#endif
+ 	if (xflag)
+ 		flags |= FTS_XDEV;
+ 	if ((fts = fts_open(argv, flags, NULL)) == NULL) {
+@@ -288,7 +292,7 @@ rm_tree(char **argv)
+ 					continue;
+ 				}
+ 				break;
+-
++#ifdef S_IFWHT
+ 			case FTS_W:
+ 				rval = undelete(p->fts_accpath);
+ 				if (rval == 0 && (fflag && errno == ENOENT)) {
+@@ -298,7 +302,7 @@ rm_tree(char **argv)
+ 					continue;
+ 				}
+ 				break;
+-
++#endif
+ 			case FTS_NS:
+ 			/*
+ 			 * Assume that since fts_read() couldn't stat
+@@ -349,7 +353,9 @@ rm_file(char **argv)
+ 		/* Assume if can't stat the file, can't unlink it. */
+ 		if (lstat(f, &sb)) {
+ 			if (Wflag) {
++#ifdef S_IFWHT
+ 				sb.st_mode = S_IFWHT|S_IWUSR|S_IRUSR;
++#endif
+ 			} else {
+ 				if (!fflag || errno != ENOENT) {
+ 					warn("%s", f);
+@@ -376,9 +382,12 @@ rm_file(char **argv)
+ 		    !(sb.st_flags & (SF_APPEND|SF_IMMUTABLE)))
+ 			rval = lchflags(f, sb.st_flags & ~(UF_APPEND|UF_IMMUTABLE));
+ 		if (rval == 0) {
++#ifdef S_IFWHT
+ 			if (S_ISWHT(sb.st_mode))
+ 				rval = undelete(f);
+-			else if (S_ISDIR(sb.st_mode))
++			else
++#endif
++			if (S_ISDIR(sb.st_mode))
+ 				rval = rmdir(f);
+ 			else {
+ 				if (Pflag)
+-- 
+2.25.0
+

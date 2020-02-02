@@ -1,0 +1,32 @@
+From 2d4088d0c21625fc3dfff96bd79669121303f8a4 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 12:33:39 +0200
+Subject: [PATCH 15/22] cp(1): Check for _ST_FLAGS_PRESENT_ availability.
+
+---
+ bin/cp/utils.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/bin/cp/utils.c b/bin/cp/utils.c
+index 85cf876901..e6344a645b 100644
+--- a/bin/cp/utils.c
++++ b/bin/cp/utils.c
+@@ -325,6 +325,7 @@ setfile(struct stat *fs, int fd)
+ 			rval = 1;
+ 		}
+ 
++#ifdef _ST_FLAGS_PRESENT_
+ 	if (!gotstat || fs->st_flags != ts.st_flags)
+ 		if (fdval ?
+ 		    fchflags(fd, fs->st_flags) :
+@@ -333,6 +334,7 @@ setfile(struct stat *fs, int fd)
+ 			warn("chflags: %s", to.p_path);
+ 			rval = 1;
+ 		}
++#endif
+ 
+ 	return (rval);
+ }
+-- 
+2.25.0
+

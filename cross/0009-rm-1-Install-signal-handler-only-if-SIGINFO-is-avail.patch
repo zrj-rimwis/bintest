@@ -1,0 +1,58 @@
+From de95f2dd46e95f998742b4af3475aa91e60c1da0 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 12:22:14 +0200
+Subject: [PATCH 09/22] rm(1): Install signal handler only if SIGINFO is
+ available.
+
+---
+ bin/rm/rm.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/bin/rm/rm.c b/bin/rm/rm.c
+index 97d70823a5..2c3cd63ea3 100644
+--- a/bin/rm/rm.c
++++ b/bin/rm/rm.c
+@@ -44,6 +44,7 @@
+ #include <pwd.h>
+ #include <signal.h>
+ #include <stdio.h>
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sysexits.h>
+@@ -60,7 +61,9 @@ static void	checkdot(char **);
+ static void	rm_file(char **);
+ static int	rm_overwrite(const char *, struct stat *);
+ static void	rm_tree(char **);
++#ifdef SIGINFO
+ static void 	siginfo(int);
++#endif
+ static void	usage(void);
+ 
+ /*
+@@ -153,8 +156,10 @@ main(int argc, char *argv[])
+ 
+ 	checkdot(argv);
+ 	uid = geteuid();
+-	
++
++#ifdef SIGINFO
+ 	signal(SIGINFO, siginfo);
++#endif
+ 
+ 	if (*argv) {
+ 		stdin_ok = isatty(STDIN_FILENO);
+@@ -630,8 +635,10 @@ usage(void)
+ 	exit(EX_USAGE);
+ }
+ 
++#ifdef SIGINFO
+ static void
+ siginfo(int notused __unused)
+ {
+ 	info = 1;
+ }
++#endif
+-- 
+2.25.0
+

@@ -1,0 +1,73 @@
+From f535121862ca0be34ec33e83270c44c4ac06c72b Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 11:44:01 +0200
+Subject: [PATCH 03/22] install(1): Disable -N option in btools.
+
+ Our installworld has installcheck and preupgrade and we do not make use
+ of mtree -N option.  This removes hard dependency on pwcache(3).
+---
+ usr.bin/xinstall/Makefile   | 15 +++++----------
+ usr.bin/xinstall/xinstall.c |  6 ++++++
+ 2 files changed, 11 insertions(+), 10 deletions(-)
+
+diff --git a/usr.bin/xinstall/Makefile b/usr.bin/xinstall/Makefile
+index 590d50dd7f..cf99d293f7 100644
+--- a/usr.bin/xinstall/Makefile
++++ b/usr.bin/xinstall/Makefile
+@@ -3,20 +3,15 @@
+ 
+ PROG=		xinstall
+ PROGNAME=	install
+-SRCS=		xinstall.c getid.c
++SRCS=		xinstall.c
+ MAN=		install.1
+ 
++.if defined(BOOTSTRAPPING)
++CFLAGS+=	-DBOOTSTRAPPING
++.else
+ .PATH:          ${.CURDIR}/../../usr.sbin/mtree
++SRCS+=		getid.c
+ CFLAGS+=        -DHAVE_NETDB_H -I${.CURDIR}/../../usr.sbin/mtree
+-
+-.if defined(BOOTSTRAPPING)
+-.if ${WORLD_VERSION} < 500302 # pwcache(3) upgrades came in about here
+-.PATH: ${.CURDIR}/../../lib/libc/gen
+-SRCS+=	pwcache.c
+-CFLAGS+=-I${.CURDIR}/../../lib/libc/include
+-CFLAGS+=-include ${.CURDIR}/../../include/grp.h
+-CFLAGS+=-include ${.CURDIR}/../../include/pwd.h
+-.endif
+ .endif
+ 
+ .include <bsd.prog.mk>
+diff --git a/usr.bin/xinstall/xinstall.c b/usr.bin/xinstall/xinstall.c
+index 5c9d79334e..db722e7652 100644
+--- a/usr.bin/xinstall/xinstall.c
++++ b/usr.bin/xinstall/xinstall.c
+@@ -52,7 +52,9 @@
+ #include <utime.h>
+ #include <vis.h>
+ 
++#ifndef BOOTSTRAPPING
+ #include "mtree.h"
++#endif
+ 
+ /* Bootstrap aid - this doesn't exist in most older releases */
+ #ifndef MAP_FAILED
+@@ -189,9 +191,13 @@ main(int argc, char *argv[])
+ 			warnx("Option -L is deprecated, use -N instead");
+ 			/* FALLTHROUGH */
+ 		case 'N':
++#ifdef BOOTSTRAPPING
++			err(1, "-N disabled in btools");
++#else
+ 			if (!setup_getid(optarg))
+ 				err(EX_OSERR, "Unable to use user and group "
+ 				    "databases in `%s'", optarg);
++#endif
+ 			break;
+ 		case 'o':
+ 			haveopt_o = 1;
+-- 
+2.25.0
+

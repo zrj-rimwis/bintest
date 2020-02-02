@@ -1,0 +1,25 @@
+From ff7e02a78abecbc9b864c22fdaeb12fd3a42bce5 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 12:11:05 +0200
+Subject: [PATCH 07/22] m4(1): Add const attribute to __progname.
+
+---
+ usr.bin/m4/misc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/usr.bin/m4/misc.c b/usr.bin/m4/misc.c
+index e2473abd74..0eeaba164a 100644
+--- a/usr.bin/m4/misc.c
++++ b/usr.bin/m4/misc.c
+@@ -260,7 +260,7 @@ killdiv(void)
+ 		}
+ }
+ 
+-extern char *__progname;
++extern const char *__progname;
+ 
+ void
+ m4errx(int evaluation, const char *fmt, ...)
+-- 
+2.25.0
+

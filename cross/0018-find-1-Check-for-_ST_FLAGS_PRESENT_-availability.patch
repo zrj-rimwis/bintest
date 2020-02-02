@@ -1,0 +1,71 @@
+From de8234835822497a0ed6079043b00f235b11e448 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 12:55:34 +0200
+Subject: [PATCH 18/22] find(1): Check for _ST_FLAGS_PRESENT_ availability.
+
+---
+ usr.bin/find/function.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/usr.bin/find/function.c b/usr.bin/find/function.c
+index f2ad57f77e..2a7f2b0922 100644
+--- a/usr.bin/find/function.c
++++ b/usr.bin/find/function.c
+@@ -377,11 +377,13 @@ f_delete(PLAN *plan __unused, FTSENT *entry)
+ 			entry->fts_accpath);
+ 
+ 	/* Turn off user immutable bits if running as root */
++#ifdef _ST_FLAGS_PRESENT_
+ 	if ((entry->fts_statp->st_flags & (UF_APPEND|UF_IMMUTABLE)) &&
+ 	    !(entry->fts_statp->st_flags & (SF_APPEND|SF_IMMUTABLE)) &&
+ 	    geteuid() == 0)
+ 		lchflags(entry->fts_accpath,
+ 		       entry->fts_statp->st_flags &= ~(UF_APPEND|UF_IMMUTABLE));
++#endif
+ 
+ 	/* rmdir directories, unlink everything else */
+ 	if (S_ISDIR(entry->fts_statp->st_mode)) {
+@@ -733,7 +735,11 @@ f_flags(PLAN *plan, FTSENT *entry)
+ {
+ 	u_long flags;
+ 
++#ifdef _ST_FLAGS_PRESENT_
+ 	flags = entry->fts_statp->st_flags;
++#else
++	flags = 0;
++#endif
+ 	if (plan->flags & F_ATLEAST)
+ 		return (flags | plan->fl_flags) == flags &&
+ 		    !(flags & plan->fl_notflags);
+@@ -750,7 +756,7 @@ c_flags(OPTION *option, char ***argvp)
+ {
+ 	char *flags_str;
+ 	PLAN *new;
+-	u_long flags, notflags;
++	u_long flags = 0, notflags = 0;
+ 
+ 	flags_str = nextarg(option, argvp);
+ 	ftsoptions &= ~FTS_NOSTAT;
+@@ -764,8 +770,10 @@ c_flags(OPTION *option, char ***argvp)
+ 		new->flags |= F_ANY;
+ 		flags_str++;
+ 	}
++#ifdef _ST_FLAGS_PRESENT_
+ 	if (strtofflags(&flags_str, &flags, &notflags) == 1)
+ 		errx(1, "%s: %s: illegal flags string", option->name, flags_str);
++#endif
+ 
+ 	new->fl_flags = flags;
+ 	new->fl_notflags = notflags;
+@@ -1515,7 +1523,7 @@ c_type(OPTION *option, char ***argvp)
+ 	case 's':
+ 		mask = S_IFSOCK;
+ 		break;
+-#ifdef FTS_WHITEOUT
++#if defined(S_IFWHT) && defined(FTS_WHITEOUT)
+ 	case 'w':
+ 		mask = S_IFWHT;
+ 		ftsoptions |= FTS_WHITEOUT;
+-- 
+2.25.0
+

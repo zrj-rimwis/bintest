@@ -1,0 +1,27 @@
+From 9ac903d2b80cc9f0329e642811011a398bd3c562 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sun, 2 Feb 2020 12:12:38 +0200
+Subject: [PATCH 08/22] gzip(1): Check for _ST_FLAGS_PRESENT_ availability.
+
+---
+ usr.bin/gzip/gzip.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/usr.bin/gzip/gzip.c b/usr.bin/gzip/gzip.c
+index d2b937dfc9..641080b5ff 100644
+--- a/usr.bin/gzip/gzip.c
++++ b/usr.bin/gzip/gzip.c
+@@ -1057,8 +1057,10 @@ copymodes(int fd, const struct stat *sbp, const char *file)
+ 		maybe_warn("couldn't fchmod: %s", file);
+ 
+ 	/* only try flags if they exist already */
++#ifdef _ST_FLAGS_PRESENT_
+         if (sb.st_flags != 0 && fchflags(fd, sb.st_flags) < 0)
+ 		maybe_warn("couldn't fchflags: %s", file);
++#endif
+ 
+ 	TIMESPEC_TO_TIMEVAL(&times[0], &sb.st_atimespec);
+ 	TIMESPEC_TO_TIMEVAL(&times[1], &sb.st_mtimespec);
+-- 
+2.25.0
+
