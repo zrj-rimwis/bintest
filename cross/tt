@@ -1,0 +1,76 @@
+$ cat test.c
+#include <errno.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+int main(int argc, char *argv[]) {
+  char buf[PATH_MAX];
+  if (argc == 1)
+    argv[1] = NULL;
+  char *res = realpath(argv[1], buf);
+  printf("errno= %d ", errno);
+  fflush(stdout);
+  if (res) {
+    printf("This source is at %s.\n", buf);
+  } else {
+    perror("realpath");
+    exit(EXIT_FAILURE);
+  }
+  return 0;
+}
+
+[rw@_ tmp]$ gcc -Wall -Wextra test.c
+[rw@_ tmp]$ ./a.out adsfdasfasdffffffffffffffaaaaaaaaaafafffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+errno= 63 realpath: File name too long
+:[ 1 [rw@_ tmp]$ ./a.out
+errno= 22 realpath: Invalid argument
+:[ 1 [rw@_ tmp]$ ./a.out goo
+errno= 2 realpath: No such file or directory
+:[ 1 [rw@_ tmp]$ ./a.out a.out
+errno= 0 This source is at /tmp/a.out.
+[rw@_ tmp]$ ./a.out ~
+errno= 0 This source is at /usr/home/rw.
+[rw@_ tmp]$ ./a.out /root
+errno= 0 This source is at /root.
+[rw@_ tmp]$ ./a.out /root/kernels
+errno= 13 realpath: Permission denied
+:[ 1 [rw@_ tmp]$ ./a.out /root/new.md5
+errno= 13 realpath: Permission denied
+:[ 1 [rw@_ tmp]$ ./a.out ~/.bashrc
+errno= 0 This source is at /usr/home/rw/.bashrc.
+[rw@_ tmp]$ ./a.out ~/.config
+errno= 0 This source is at /usr/home/rw/.config.
+[rw@_ tmp]$ ./a.out /tmp/a.out
+errno= 0 This source is at /tmp/a.out.
+[rw@_ tmp]$ ./a.out /tmp/a.out/test
+errno= 20 realpath: Not a directory
+:[ 1 [rw@_ tmp]$ ln -sv blet blet
+replace blet? y
+blet -> blet
+[rw@_ tmp]$ ./a.out /tmp/blet
+errno= 62 realpath: Too many levels of symbolic links
+:[ 1 [rw@_ tmp]$ ./a.out blet
+errno= 62 realpath: Too many levels of symbolic links
+:[ 1 [rw@_ tmp]$ ./a.out ~/../../../tmp/blet
+errno= 62 realpath: Too many levels of symbolic links
+:[ 1 [rw@_ tmp]$ ./a.out ~/../../../tmp/a.out
+errno= 0 This source is at /tmp/a.out.
+[rw@_ tmp]$ ./a.out ../tmp/a.out
+errno= 0 This source is at /tmp/a.out.
+[rw@_ tmp]$ ./a.out /dev/null
+errno= 0 This source is at /dev/null.
+[rw@_ tmp]$ ./a.out /dev/fd/63
+errno= 0 This source is at /dev/fd/63.
+[rw@_ tmp]$ ./a.out /../tmp/a.out
+errno= 0 This source is at /tmp/a.out.
+[rw@_ tmp]$ ./a.out /../../tmp/a.out
+errno= 0 This source is at /tmp/a.out.
+[rw@_ tmp]$ ./a.out /../../tmp/a.out/
+errno= 20 realpath: Not a directory
+:[ 1 [rw@_ tmp]$ ./a.out /../../tmp/a.out//
+errno= 20 realpath: Not a directory
+:[ 1 [rw@_ tmp]$ ./a.out /../../tmp///
+errno= 0 This source is at /tmp.
+[rw@_ tmp]$ ./a.out /../../tmp///..
+errno= 0 This source is at /.
+[rw@_ tmp]$
