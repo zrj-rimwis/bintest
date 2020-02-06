@@ -1,0 +1,1319 @@
+From ff9b37b3a66e628a294f98c6c0d38454c8b68646 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 3 Feb 2020 11:20:45 +0200
+Subject: [PATCH 3/8] binutils234: Add build dirs.
+
+---
+ gnu/usr.bin/binutils234/Makefile              |  21 +++
+ gnu/usr.bin/binutils234/Makefile.inc1         |   3 +
+ gnu/usr.bin/binutils234/Makefile.zhack        |  27 ++++
+ gnu/usr.bin/binutils234/block1/Makefile       |   6 +
+ .../binutils234/block1/Makefile.block1        |  39 ++++++
+ .../binutils234/block1/bulibs/Makefile        |  17 +++
+ .../binutils234/block1/libbfd/Makefile        |  90 ++++++++++++
+ .../binutils234/block1/libctf/Makefile        |  18 +++
+ .../binutils234/block1/libiberty/Makefile     |  48 +++++++
+ .../binutils234/block1/libopcodes/Makefile    |  20 +++
+ gnu/usr.bin/binutils234/block2/Makefile       |  31 +++++
+ .../binutils234/block2/Makefile.block2        |  30 ++++
+ .../binutils234/block2/addr2line/Makefile     |  15 ++
+ gnu/usr.bin/binutils234/block2/ar/Makefile    |  27 ++++
+ .../binutils234/block2/cxxfilt/Makefile       |  16 +++
+ .../binutils234/block2/elfedit/Makefile       |  16 +++
+ gnu/usr.bin/binutils234/block2/gas/Makefile   |  68 +++++++++
+ .../block2/gas/x86_64-dragonfly/Makefile      |   8 ++
+ gnu/usr.bin/binutils234/block2/gprof/Makefile |  33 +++++
+ gnu/usr.bin/binutils234/block2/ld/Makefile    |  91 ++++++++++++
+ .../binutils234/block2/ld/Makefile.x86_64     | 130 ++++++++++++++++++
+ .../binutils234/block2/libgold/Makefile       |  62 +++++++++
+ gnu/usr.bin/binutils234/block2/nm/Makefile    |  21 +++
+ .../binutils234/block2/objcopy/Makefile       |  19 +++
+ .../binutils234/block2/objdump/Makefile       |  22 +++
+ .../binutils234/block2/ranlib/Makefile        |  27 ++++
+ .../binutils234/block2/readelf/Makefile       |  20 +++
+ gnu/usr.bin/binutils234/block2/size/Makefile  |  15 ++
+ .../binutils234/block2/strings/Makefile       |  15 ++
+ gnu/usr.bin/binutils234/block2/strip/Makefile |  21 +++
+ gnu/usr.bin/binutils234/block3/Makefile       |   6 +
+ gnu/usr.bin/binutils234/block3/Makefile.gld   |  42 ++++++
+ .../binutils234/block3/gold-linker/Makefile   |  20 +++
+ 33 files changed, 1044 insertions(+)
+ create mode 100644 gnu/usr.bin/binutils234/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/Makefile.inc1
+ create mode 100644 gnu/usr.bin/binutils234/Makefile.zhack
+ create mode 100644 gnu/usr.bin/binutils234/block1/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block1/Makefile.block1
+ create mode 100644 gnu/usr.bin/binutils234/block1/bulibs/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block1/libbfd/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block1/libctf/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block1/libiberty/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block1/libopcodes/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/Makefile.block2
+ create mode 100644 gnu/usr.bin/binutils234/block2/addr2line/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/ar/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/cxxfilt/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/elfedit/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/gas/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/gprof/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/ld/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/ld/Makefile.x86_64
+ create mode 100644 gnu/usr.bin/binutils234/block2/libgold/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/nm/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/objcopy/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/objdump/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/ranlib/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/readelf/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/size/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/strings/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block2/strip/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block3/Makefile
+ create mode 100644 gnu/usr.bin/binutils234/block3/Makefile.gld
+ create mode 100644 gnu/usr.bin/binutils234/block3/gold-linker/Makefile
+
+diff --git a/gnu/usr.bin/binutils234/Makefile b/gnu/usr.bin/binutils234/Makefile
+new file mode 100644
+index 0000000000..4a9d917255
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/Makefile
+@@ -0,0 +1,21 @@
++# if wrapper mode
++.if (defined(NO_CROSSTOOLS) && defined(BOOTSTRAPPING)) || \
++    (!defined(BOOTSTRAPPING) && defined(NO_TOOLCHAIN))
++.include "Makefile.zhack"
++.else
++
++# normal mode
++# Binutils 2.34 builds 3 blocks in series
++SUBDIR=	block1 block2
++
++# Don't build gold linker during stage 3 cross-tools unless
++# WORLD_LDVER has been set to ld.gold.  This same check must be included
++# in block 2 where libgold and ld.bfd are built.
++.if !defined(SELECT_LINKER) || ${SELECT_LINKER:Mld.gold}
++SUBDIR+=	block3
++.endif
++
++SUBDIR_ORDERED= ${SUBDIR}
++
++.include <bsd.subdir.mk>
++.endif
+diff --git a/gnu/usr.bin/binutils234/Makefile.inc1 b/gnu/usr.bin/binutils234/Makefile.inc1
+new file mode 100644
+index 0000000000..8b042ade58
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/Makefile.inc1
+@@ -0,0 +1,3 @@
++BINDIR?=	/usr/libexec/binutils234/elf
++BUVERSION=	binutils234
++.include "../Makefile.buo"
+diff --git a/gnu/usr.bin/binutils234/Makefile.zhack b/gnu/usr.bin/binutils234/Makefile.zhack
+new file mode 100644
+index 0000000000..f47faeeb2f
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/Makefile.zhack
+@@ -0,0 +1,27 @@
++.if defined(NO_CROSSTOOLS) && defined(BOOTSTRAPPING)
++
++SCRIPTS=	${GENTOOLS}
++GENTOOLS=	ar.sh as.sh elfedit.sh ld.bfd.sh ld.gold.sh \
++		nm.sh ranlib.sh objcopy.sh strip.sh
++NOMAN=
++BINDIR?=	${REALBINUTILS}
++
++REALBINUTILS=	/usr/libexec/binutils234/elf
++
++.for _tool in ${GENTOOLS}
++${_tool}:
++	echo "#!/bin/sh" > ${.TARGET}
++	echo "" >> ${.TARGET}
++	echo "exec ${REALBINUTILS}/${.TARGET:T:R}" '"$$@"' >> ${.TARGET}
++.endfor
++
++.if !defined(DESTDIR) || ${DESTDIR} == "" || ${DESTDIR} == "/"
++.error "refusing to install wrappers to base"
++.endif
++
++CLEANFILES= ${GENTOOLS}
++
++.else
++# dummy
++.endif
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block1/Makefile b/gnu/usr.bin/binutils234/block1/Makefile
+new file mode 100644
+index 0000000000..f0e48b4f36
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/Makefile
+@@ -0,0 +1,6 @@
++# Build in parallel
++SUBDIR=	libbfd libctf libiberty libopcodes bulibs
++
++SUBDIR_ORDERED=
++
++.include <bsd.subdir.mk>
+diff --git a/gnu/usr.bin/binutils234/block1/Makefile.block1 b/gnu/usr.bin/binutils234/block1/Makefile.block1
+new file mode 100644
+index 0000000000..3b5e9be740
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/Makefile.block1
+@@ -0,0 +1,39 @@
++# This is included explicitly at the top of each sub-Makefile.  We can't
++# use the normal "Makefile.inc" mechanism, because we need some of these
++# definitions before the sub-Makefile is processed.
++
++RELTOP:= ../..
++
++# RELTOP is the relative path to this point in the source or object
++# tree, from any subdirectory of same.  It gets extra "../" prefixes
++# added to it as we descend into subdirectories.
++
++RELSRC=	${RELTOP}/../../../contrib/binutils-2.34
++SRCDIR=	${.CURDIR}/${RELSRC}
++
++CFLAGS+= -I${.CURDIR} -I${.OBJDIR}
++CFLAGS+= -I${SRCDIR}/include
++
++TARGET_CANONICAL=		x86_64-pc-dragonfly
++BFD_HOST_64_BIT_DEFINED?=	1
++BFD_HOST_64BIT_LONG?=		1
++BFD_HOST_64BIT_LONG_LONG?=	0
++BFD_HOST_64_BIT?=		long
++BFD_HOST_U_64_BIT?=		unsigned long
++BFD_HOSTPTR_T?=			unsigned long
++BFD_ARCH_SIZE?=			64
++BFD_DEFAULT_TARGET_SIZE?=	64
++
++bfd.h:	${SRCDIR}/bfd/bfd-in2.h
++	sed -e "s/@supports_plugins@/1/g" \
++	    -e "s/@wordsize@/${BFD_ARCH_SIZE}/g" \
++	    -e "s/@bfd_default_target_size@/${BFD_DEFAULT_TARGET_SIZE}/g" \
++	    -e "s/@BFD_HOST_64BIT_LONG@/${BFD_HOST_64BIT_LONG}/g" \
++	    -e "s/@BFD_HOST_64BIT_LONG_LONG@/${BFD_HOST_64BIT_LONG_LONG}/g" \
++	    -e "s/@BFD_HOST_64_BIT@/${BFD_HOST_64_BIT}/g" \
++	    -e "s/@BFD_HOST_U_64_BIT@/${BFD_HOST_U_64_BIT}/g" \
++	    -e "s/@BFD_HOST_64_BIT_DEFINED@/${BFD_HOST_64_BIT_DEFINED}/g" \
++	    -e "s/@bfd_file_ptr@/${BFD_HOST_64_BIT}/g" \
++	    -e "s/@BFD_HOSTPTR_T@/${BFD_HOSTPTR_T}/g" \
++	    < ${.ALLSRC} > bfd.h.new
++	mv -f bfd.h.new bfd.h
+diff --git a/gnu/usr.bin/binutils234/block1/bulibs/Makefile b/gnu/usr.bin/binutils234/block1/bulibs/Makefile
+new file mode 100644
+index 0000000000..e27e6d33e7
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/bulibs/Makefile
+@@ -0,0 +1,17 @@
++.include "../Makefile.block1"
++
++.PATH: ${SRCDIR}/binutils
++
++LIB=	bu
++SRCS=	bucomm.c version.c filemode.c
++
++CFLAGS+=	-DHAVE_CONFIG_H -I${SRCDIR}/bfd \
++		-Dbin_dummy_emulation=bin_vanilla_emulation \
++		-DTARGET=\"${TARGET_CANONICAL}\"
++INTERNALLIB=	true
++
++${SRCS}: bfd.h
++
++CLEANFILES=	bfd.h
++
++.include <bsd.lib.mk>
+diff --git a/gnu/usr.bin/binutils234/block1/libbfd/Makefile b/gnu/usr.bin/binutils234/block1/libbfd/Makefile
+new file mode 100644
+index 0000000000..fef5db6b36
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libbfd/Makefile
+@@ -0,0 +1,90 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block1"
++
++LIB=		bfd
++INTERNALLIB=	true
++
++CONTRIBDIR=	${SRCDIR}/bfd
++.PATH:		${CONTRIBDIR}
++
++CFLAGS+=	-I${SRCDIR}/include -I${CONTRIBDIR} -I${.CURDIR} -I${.OBJDIR}
++CFLAGS+=	-DDEBUGDIR='"/usr/lib/debug"'  # no clue why this is needed
++FLAGS_GROUPS=	target plugins
++
++# BFD32_LIBS_CFILES
++SRCS=	archive.c archures.c bfd.c bfdio.c cache.c \
++	coff-bfd.c compress.c corefile.c elf-properties.c format.c \
++	hash.c init.c libbfd.c linker.c merge.c opncls.c reloc.c \
++	section.c simple.c stab-syms.c stabs.c syms.c targets.c \
++	binary.c ihex.c srec.c tekhex.c verilog.c
++
++# only when USE_MMAP (--with-mmap)
++#SRCS+= bfdwin.c
++
++# from Makefile, BFD_BACKENDS  (x86-64 specific)
++SRCS+=	elf64-x86-64.co elfxx-x86.c elf-ifunc.c elf-nacl.c elf-vxworks.c \
++	elf64.c elf.c elflink.c elf-attrs.c elf-strtab.c elf-eh-frame.c \
++	dwarf1.c dwarf2.c elf32-i386.c elf32.c \
++	pei-x86_64.c pex64igen.c cofflink.c coffgen.c \
++	elf64-gen.c elf32-gen.c
++
++# ALL_MACHINES_CFILES
++SRCS+=	cpu-i386.c cpu-iamcu.c cpu-l1om.c cpu-k1om.c
++
++# BFD64_LIBS_CFILES
++SRCS+=		archive64.c
++
++VECTORS=	x86_64_elf64_vec \
++		x86_64_pei_vec \
++		i386_elf32_vec \
++		iamcu_elf32_vec \
++		l1om_elf64_vec \
++		k1om_elf64_vec \
++		elf64_le_vec \
++		elf64_be_vec \
++		elf32_le_vec \
++		elf32_be_vec
++
++# plugin support mainly for LTO ar, nm, ranlib
++SRCS+=		plugin.c
++VECTORS+=	plugin_vec
++# allow users to put plugin dirs in common place for testing, but use relative to exec
++plugins_FLAGS+=	-DBINDIR=\"${TOOLS_PREFIX}${BINDIR}\" -DPLUGINLIBDIR=\"/usr/lib\"
++plugins_FLAGS+=	-DRELPLUGINDIR=\"/../bfd-plugins\" # standard one uses lib/bfd-plugins
++plugins_FLAGS_FILES=	plugin.c
++
++DEFAULT_VECTOR=	x86_64_elf64_vec
++ARCHITECTURES=	bfd_i386_arch bfd_iamcu_arch bfd_l1om_arch bfd_k1om_arch
++
++_selvec=
++.for _v in ${VECTORS}
++target_FLAGS+= -DHAVE_${_v}
++.if !empty(_selvec)
++_selvec+= ,
++.endif
++_selvec+= &${_v}
++.endfor
++target_FLAGS+= -DSELECT_VECS='${_selvec}'
++target_FLAGS+= -DSELECT_ARCHITECTURES='${ARCHITECTURES:S/^/\&/:S/$/,/} 0'
++target_FLAGS+= -DDEFAULT_VECTOR=${DEFAULT_VECTOR}
++target_FLAGS_FILES=	targets.c archures.c
++
++${SRCS}: bfd.h
++targets.c: targmatch.h
++elf32-gen.c elf32-i386.c elf64-x86-64.c: elf32-target.h
++elf64-gen.c elf64-x86-64.c: elf64-target.h
++
++targmatch.h: config.bfd targmatch.sed
++	sed -f ${CONTRIBDIR}/targmatch.sed < ${CONTRIBDIR}/config.bfd \
++	> ${.TARGET}
++
++elf32-target.h: elfxx-target.h
++	sed -e s/NN/32/g < ${CONTRIBDIR}/elfxx-target.h > ${.TARGET}
++elf64-target.h: elfxx-target.h
++	sed -e s/NN/64/g < ${CONTRIBDIR}/elfxx-target.h > ${.TARGET}
++pex64igen.c: peXXigen.c
++	sed -e s/XX/pex64/g < ${CONTRIBDIR}/peXXigen.c > ${.TARGET}
++
++CLEANFILES=	bfd.h elf64-target.h elf32-target.h targmatch.h pex64igen.c
++
++.include <bsd.lib.mk>
+diff --git a/gnu/usr.bin/binutils234/block1/libctf/Makefile b/gnu/usr.bin/binutils234/block1/libctf/Makefile
+new file mode 100644
+index 0000000000..9b10151a6a
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libctf/Makefile
+@@ -0,0 +1,18 @@
++.include "../Makefile.block1"
++
++.PATH: ${SRCDIR}/libctf
++
++LIB=	ctf
++SRCS=	ctf-archive.c ctf-dump.c ctf-create.c ctf-decl.c ctf-error.c \
++	ctf-hash.c ctf-labels.c ctf-link.c ctf-lookup.c ctf-open.c \
++	ctf-string.c ctf-subr.c ctf-types.c ctf-util.c ctf-open-bfd.c
++
++CFLAGS+=	-DHAVE_CONFIG_H -I${SRCDIR}/include -I${SRCDIR}/libctf
++CFLAGS+=	-I${SRCDIR}/bfd -I${.CURDIR} -I${.OBJDIR}
++INTERNALLIB=	true
++
++${SRCS}: bfd.h
++
++CLEANFILES=	bfd.h
++
++.include <bsd.lib.mk>
+diff --git a/gnu/usr.bin/binutils234/block1/libiberty/Makefile b/gnu/usr.bin/binutils234/block1/libiberty/Makefile
+new file mode 100644
+index 0000000000..7b74b86307
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libiberty/Makefile
+@@ -0,0 +1,48 @@
++.include "../Makefile.block1"
++
++.PATH: ${SRCDIR}/libiberty
++
++LIB=	iberty
++
++# REQUIRED_OFILES
++SRCS=	regex.c cplus-dem.c cp-demangle.c \
++	md5.c sha1.c alloca.c \
++	argv.c \
++	choose-temp.c concat.c \
++	cp-demint.c crc32.c d-demangle.c \
++	dwarfnames.c dyn-string.c \
++	fdmatch.c fibheap.c \
++	filedescriptor.c \
++	filename_cmp.c floatformat.c \
++	fnmatch.c fopen_unlocked.c \
++	getopt.c getopt1.c getpwd.c \
++	getruntime.c hashtab.c hex.c \
++	lbasename.c lrealpath.c \
++	make-relative-prefix.c make-temp-file.c \
++	objalloc.c \
++	obstack.c \
++	partition.c pexecute.c physmem.c \
++	pex-common.c pex-one.c \
++	vprintf-support.c \
++	rust-demangle.c \
++	safe-ctype.c \
++	simple-object.c simple-object-coff.c \
++	simple-object-elf.c simple-object-mach-o.c \
++	simple-object-xcoff.c \
++	sort.c spaces.c \
++	splay-tree.c stack-limit.c \
++	strerror.c strsignal.c \
++	timeval-utils.c unlink-if-ordinary.c \
++	xasprintf.c xatexit.c xexit.c \
++	xmalloc.c xmemdup.c xstrdup.c \
++	xstrerror.c xstrndup.c \
++	xvasprintf.c
++
++#	\
++	pex-unix.c \
++	strverscmp.c \
++
++CFLAGS+=	-DHAVE_CONFIG_H
++INTERNALLIB=	true
++
++.include <bsd.lib.mk>
+diff --git a/gnu/usr.bin/binutils234/block1/libopcodes/Makefile b/gnu/usr.bin/binutils234/block1/libopcodes/Makefile
+new file mode 100644
+index 0000000000..82e2efddef
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libopcodes/Makefile
+@@ -0,0 +1,20 @@
++.include "../Makefile.block1"
++
++LIB=		opcodes
++INTERNALLIB=	true
++
++CONTRIBDIR=	${SRCDIR}/opcodes
++.PATH:		${CONTRIBDIR}
++
++CFLAGS+=		-I${.OBJDIR}
++FLAGS_GROUPS=		assy
++assy_FLAGS=		-DARCH_i386 -DARCH_iamcu -DARCH_l1om -DARCH_k1om
++assy_FLAGS_FILES=	disassemble.c
++
++SRCS=	i386-dis.c i386-opc.c dis-buf.c dis-init.c disassemble.c
++
++i386-dis.c disassemble.c dis-buf.c: bfd.h
++
++CLEANFILES=	bfd.h
++
++.include <bsd.lib.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/Makefile b/gnu/usr.bin/binutils234/block2/Makefile
+new file mode 100644
+index 0000000000..22c44e91f6
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/Makefile
+@@ -0,0 +1,31 @@
++# Build in parallel
++SUBDIR=	addr2line \
++	ar \
++	cxxfilt \
++	elfedit \
++	gas \
++	gprof \
++	nm \
++	objcopy \
++	objdump \
++	ranlib \
++	readelf \
++	size \
++	strings \
++	strip
++
++# Don't build gold linker during stage 3 cross-tools unless
++# WORLD_LDVER has been set to ld.gold (and then don't build ld.bfd)
++.if defined(SELECT_LINKER)
++. if ${SELECT_LINKER:Mld.gold}
++SUBDIR+=	libgold
++. else
++SUBDIR+=	ld
++. endif
++.else
++SUBDIR+=	ld libgold
++.endif
++
++SUBDIR_ORDERED=
++
++.include <bsd.subdir.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/Makefile.block2 b/gnu/usr.bin/binutils234/block2/Makefile.block2
+new file mode 100644
+index 0000000000..6d11ee9df4
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/Makefile.block2
+@@ -0,0 +1,30 @@
++# This is included explicitly at the top of each sub-Makefile.  We can't
++# use the normal "Makefile.inc" mechanism, because we need some of these
++# definitions before the sub-Makefile is processed.
++
++RELTOP:= ../..
++
++# RELTOP is the relative path to this point in the source or object
++# tree, from any subdirectory of same.  It gets extra "../" prefixes
++# added to it as we descend into subdirectories.
++
++RELSRC=	${RELTOP}/../../../contrib/binutils-2.34
++SRCDIR=	${.CURDIR}/${RELSRC}
++BINTOP=	${.CURDIR}/${RELTOP}
++OBJTOP=	${.OBJDIR}/${RELTOP}
++
++# Keep these, block2/ld and block2/gas will want to override BULIBS_INC.
++_BULIBS_INC=	-I${OBJTOP}/block1/bulibs -I${BINTOP}/block1/bulibs
++BULIBS_INC=	${_BULIBS_INC}
++
++CFLAGS+=	${BULIBS_INC}
++CFLAGS+=	-I${SRCDIR}/include
++CFLAGS+=	-I${SRCDIR}/bfd
++
++LDADD_BU=	${OBJTOP}/block1/bulibs/libbu.a
++LDADD_BFD=	${OBJTOP}/block1/libbfd/libbfd.a
++LDADD_CTF=	${OBJTOP}/block1/libctf/libctf.a
++LDADD_IBERTY=	${OBJTOP}/block1/libiberty/libiberty.a
++LDADD_OPCODE=	${OBJTOP}/block1/libopcodes/libopcodes.a
++
++STD_LDADD=	${LDADD_BU} ${LDADD_BFD} ${LDADD_IBERTY} ${CROSS_LIBDL}
+diff --git a/gnu/usr.bin/binutils234/block2/addr2line/Makefile b/gnu/usr.bin/binutils234/block2/addr2line/Makefile
+new file mode 100644
+index 0000000000..ce2ae31c6b
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/addr2line/Makefile
+@@ -0,0 +1,15 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	addr2line
++MFILE=	addr2line${MANPAGEVER}.1
++MAN=	${MFILE}
++LDADD=	${STD_LDADD} -lz
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} addr2line.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/ar/Makefile b/gnu/usr.bin/binutils234/block2/ar/Makefile
+new file mode 100644
+index 0000000000..460e6f8f5c
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/ar/Makefile
+@@ -0,0 +1,27 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	ar
++SRCS=	ar.c not-ranlib.c arsup.c rename.c binemul.c emul_vanilla.c \
++	arparse.y arlex.l
++MFILE=	ar${MANPAGEVER}.1
++MAN=	${MFILE}
++DPADD=	${LIBL} ${LIBZ}
++LDADD=	${STD_LDADD} -ll -lz
++
++CFLAGS+=	-I${SRCDIR}/binutils \
++		-Dbin_dummy_emulation=bin_vanilla_emulation
++
++# link-time optimization requires dlopen() which means ar cannot be built
++# statically and also support -plugin, not even for cross-tools.
++.if !defined(REALLY_NOSHARED)
++.undef NOSHARED
++.endif
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} ar.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/cxxfilt/Makefile b/gnu/usr.bin/binutils234/block2/cxxfilt/Makefile
+new file mode 100644
+index 0000000000..af5f157b92
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/cxxfilt/Makefile
+@@ -0,0 +1,16 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	c++filt
++SRCS=   cxxfilt.c
++MFILE=	c++filt${MANPAGEVER}.1
++MAN=	${MFILE}
++LDADD=	${STD_LDADD} -lz
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} c++filt.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/elfedit/Makefile b/gnu/usr.bin/binutils234/block2/elfedit/Makefile
+new file mode 100644
+index 0000000000..c4d646e1e8
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/elfedit/Makefile
+@@ -0,0 +1,16 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	elfedit
++SRCS=   elfedit.c version.c elfcomm.c
++MFILE=	elfedit${MANPAGEVER}.1
++MAN=	${MFILE}
++LDADD=	${LDADD_IBERTY}
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} elfedit.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/gas/Makefile b/gnu/usr.bin/binutils234/block2/gas/Makefile
+new file mode 100644
+index 0000000000..2e52e11f59
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/gas/Makefile
+@@ -0,0 +1,68 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++.include "x86_64-dragonfly/Makefile"
++
++.PATH: ${SRCDIR}/gas ${SRCDIR}/gas/config
++
++PROG=	as
++MFILE=	as${MANPAGEVER}.1
++MAN=	${MFILE}
++SRCS+=	app.c \
++	as.c \
++	atof-generic.c \
++	compress-debug.c \
++	cond.c \
++	depend.c \
++	dwarf2dbg.c \
++	dw2gencfi.c \
++	ecoff.c \
++	ehopt.c \
++	expr.c \
++	flonum-copy.c \
++	flonum-konst.c \
++	flonum-mult.c \
++	frags.c \
++	hash.c \
++	input-file.c \
++	input-scrub.c \
++	listing.c \
++	macro.c \
++	messages.c \
++	output-file.c \
++	read.c \
++	remap.c \
++	sb.c \
++	stabs.c \
++	subsegs.c \
++	symbols.c \
++	write.c
++
++# only when NEED_LITERAL_POOL
++#SRCS+=	literal.c
++
++LDADD=	${STD_LDADD} ${LDADD_OPCODE} -lz
++
++# We need to change CFLAGS, so that not to pick up bulibs's config.h first.
++BULIBS_INC:=	# empty
++
++CFLAGS+=	-I${SRCDIR}/gas -I${SRCDIR}/gas/config
++CFLAGS+=	-I${.OBJDIR} -I${.CURDIR} -I${SRCDIR}
++CFLAGS+=	-I${.CURDIR}/x86_64-dragonfly
++CFLAGS+=	${_BULIBS_INC}	# for bfd.h
++
++CFLAGS+=	-DTARGET_ALIAS=\"${TARGET_ALIAS}\"
++CFLAGS+=	-DTARGET_CANONICAL=\"${TARGET_CANONICAL}\"
++CFLAGS+=	-DTARGET_CPU=\"${TARGET_CPU}\"
++CFLAGS+=	-DDEFAULT_ARCH=\"${DEFAULT_ARCH}\"
++CFLAGS+=	-DTARGET_OS=\"dragonfly\"
++CFLAGS+=	"-DEMULATIONS=${EMULATIONS}"
++CFLAGS+=	-DDEFAULT_EMULATION=\"${DEFAULT_EMULATION}\"
++CFLAGS+=	-DTE_DragonFly -DHAVE_ERRNO_H
++
++NOSHARED?=	yes
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} as.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/Makefile b/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/Makefile
+new file mode 100644
+index 0000000000..ca9e021b0a
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/Makefile
+@@ -0,0 +1,8 @@
++DEFAULT_ARCH=           x86_64
++EMULATIONS=             &i386elf,
++DEFAULT_EMULATION=      i386elf
++TARGET_ALIAS=           x86_64-pc-dragonfly
++TARGET_CANONICAL=       x86_64-pc-dragonfly
++TARGET_CPU=             x86_64
++
++SRCS+=	obj-elf.c tc-i386.c atof-ieee.c
+diff --git a/gnu/usr.bin/binutils234/block2/gprof/Makefile b/gnu/usr.bin/binutils234/block2/gprof/Makefile
+new file mode 100644
+index 0000000000..f8688b00ca
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/gprof/Makefile
+@@ -0,0 +1,33 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/gprof
++
++PROG=	gprof
++SRCS=   ${gprof_SOURCES}
++MFILE=	gprof${MANPAGEVER}.1
++MAN=	${MFILE}
++LDADD=	${LDADD_BFD} ${LDADD_IBERTY} -lz ${CROSS_LIBDL}
++
++#verbatim from gprof/Makefile
++sources = basic_blocks.c call_graph.c cg_arcs.c cg_dfn.c \
++	cg_print.c corefile.c gmon_io.c gprof.c hertz.c hist.c source.c \
++	search_list.c symtab.c sym_ids.c utils.c \
++	i386.c alpha.c vax.c sparc.c mips.c aarch64.c
++gprof_SOURCES = $(sources) flat_bl.c bsd_callg_bl.c fsf_callg_bl.c
++
++CFLAGS+=	-DHAVE_CONFIG_H
++CFLAGS+=	-I${.CURDIR}
++
++flat_bl.c bsd_callg_bl.c fsf_callg_bl.c:
++	/usr/bin/awk -f ${SRCDIR}/gprof/gen-c-prog.awk > ${.TARGET} \
++	FUNCTION=`(echo ${.TARGET:R}|sed -e 's,.*/,,g' -e 's/_bl//')`_blurb \
++	FILE=${.TARGET:.c=.m} ${SRCDIR}/gprof/${.TARGET:.c=.m}
++
++CLEANFILES+=	flat_bl.c bsd_callg_bl.c fsf_callg_bl.c
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} gprof.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/ld/Makefile b/gnu/usr.bin/binutils234/block2/ld/Makefile
+new file mode 100644
+index 0000000000..a13574b117
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/ld/Makefile
+@@ -0,0 +1,91 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/ld
++
++PROG=	ld.bfd
++MFILE=	ld${MANPAGEVER}.1
++MAN=	${MFILE}
++SRCS+=	ldgram.y	\
++	ldlex.l		\
++	lexsup.c	\
++	ldlang.c	\
++	mri.c		\
++	ldctor.c	\
++	ldmain.c	\
++	ldwrite.c	\
++	ldexp.c		\
++	ldemul.c	\
++	ldver.c		\
++	ldmisc.c	\
++	ldfile.c	\
++	ldcref.c	\
++	plugin.c	\
++	ldbuildid.c
++LDADD=	${LDADD_CTF} ${LDADD_BFD} ${LDADD_IBERTY} -lz
++
++LIBEXEC_BINUTILS=	${BINDIR}/..
++SCRIPTDIR=		${LIBEXEC_BINUTILS}/ldscripts
++ELF_SCR_EXT=		x xbn xc xd xdc xdw xn xr xs xsc xsw xu xw
++
++.include "Makefile.x86_64"
++
++# We need to change CFLAGS, so that not to pick up bulibs's config.h first.
++BULIBS_INC:=	# empty
++
++CFLAGS+=	-I${SRCDIR}/include -I${SRCDIR}/bfd
++CFLAGS+=	-I${SRCDIR}/ld -I${.OBJDIR} -I${.CURDIR}
++CFLAGS+=	${_BULIBS_INC}	# for bfd.h
++
++CFLAGS+=	-DSCRIPTDIR=\"${TOOLS_PREFIX}${LIBEXEC_BINUTILS}\"
++CFLAGS+=	-DBINDIR=\"${TOOLS_PREFIX}${LIBEXEC_BINUTILS}\"
++CFLAGS+=	-DTOOLBINDIR=\"${TOOLS_PREFIX}${LIBEXEC_BINUTILS}\"
++CFLAGS+=	-DENABLE_PLUGINS -DHAVE_CONFIG_H
++CFLAGS+=	-DTARGET_SYSTEM_ROOT=\"${USRDATA_PREFIX}\"
++
++CFLAGS+=	-DELF_LIST_OPTIONS=TRUE
++CFLAGS+=	-DELF_SHLIB_LIST_OPTIONS=TRUE
++CFLAGS+=	-DELF_PLT_UNWIND_LIST_OPTIONS=TRUE
++
++# XXX: Do we want -Wl,-z,relro on by default? Differs for ld.bfd and lg.gold.
++CFLAGS+=	-DDEFAULT_LD_Z_RELRO=0
++
++# link-time optimization requires dlopen() which means ld cannot be built
++# statically and also support -plugin, not even for cross-tools.
++.if !defined(REALLY_NOSHARED)
++.undef NOSHARED
++.endif
++
++ldemul.c: ldemul-list.h
++
++CLEANDIRS+=	ldscripts tmpdir
++CLEANFILES+=	ldemul-list.h stringify.sed
++
++EMXFR=
++EMLST=
++.for _e in ${EMS}
++EMXFR+=	extern ld_emulation_xfer_type ld_${_e}_emulation;
++EMLST+=	&ld_${_e}_emulation,
++.endfor
++
++ldemul-list.h:
++	echo "${EMXFR}" > ${.TARGET}
++	echo "#define EMULATION_LIST ${EMLST} 0" >> ${.TARGET}
++
++stringify.sed:
++	${LN} -sf ${SRCDIR}/ld/emultempl/astring.sed ${.TARGET}
++
++install-ldscripts: ${LDSCRIPTS:S|^|ldscripts/|}
++	${INSTALL} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
++	     ${.ALLSRC} ${DESTDIR}${SCRIPTDIR}
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} ld.1
++.endif
++
++afterinstall: install-ldscripts
++
++CLEANDIRS+=	ldscripts tmpdir
++CLEANFILES+=	ldemul-list.h stringify.sed
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/ld/Makefile.x86_64 b/gnu/usr.bin/binutils234/block2/ld/Makefile.x86_64
+new file mode 100644
+index 0000000000..f8acee9b41
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/ld/Makefile.x86_64
+@@ -0,0 +1,130 @@
++TARGET_TUPLE?=	x86_64-pc-dragonfly
++
++NATIVE_EMULATION=	elf_x86_64
++X86_EMULATION=		elf_i386
++IAMCU_EMULATION=	elf_iamcu
++L1OM_EMULATION=		elf_l1om
++K1OM_EMULATION=		elf_k1om
++HOST=			${TARGET_TUPLE}
++FLAGS_GROUPS=		emul
++emul_FLAGS=		-DDEFAULT_EMULATION=\"${NATIVE_EMULATION}\" \
++			-DTARGET=\"${TARGET_TUPLE}\"
++emul_FLAGS_FILES=	ldmain.c
++
++_x86_64_path=	${USRDATA_PREFIX}/lib:${USRDATA_PREFIX}/usr/lib
++_i386_path=	${USRDATA_PREFIX}/lib/i386:${USRDATA_PREFIX}/usr/lib/i386
++
++.for EMUL in ${NATIVE_EMULATION} ${X86_EMULATION} ${IAMCU_EMULATION} ${L1OM_EMULATION} ${K1OM_EMULATION}
++EMS+=			${EMUL}
++SRCS+=			e${EMUL}.c
++CLEANFILES+=		e${EMUL}.c
++. for ext in ${ELF_SCR_EXT}
++LDSCRIPTS_${EMUL}+=	${EMUL}.${ext}
++. endfor
++LDSCRIPTS+=		${LDSCRIPTS_${EMUL}}
++.endfor
++
++SRCS+=			ldelf.c ldelfgen.c
++
++# newer binutils now search standard directories first (before x86_64-pc-dragonfly/libs)
++# change it to /opt/dflycross/x86_64-pc-dragonfly/libs for crosscompile on other hosts
++
++e${NATIVE_EMULATION}.c ${LDSCRIPTS_${NATIVE_EMULATION}}: \
++    emulparams/${NATIVE_EMULATION}.sh emultempl/elf-x86.em \
++    scripttempl/elf.sc genscripts.sh stringify.sed
++	sh ${SRCDIR}/ld/genscripts.sh \
++		${SRCDIR:Q}/ld \
++		"" \
++		"" \
++		"/opt/dflycross" \
++		${HOST} \
++		${TARGET_TUPLE:Q} \
++		${TARGET_TUPLE:Q} \
++		"nodeps" \
++		${_x86_64_path:Q} \
++		${NATIVE_EMULATION:Q} \
++		"" \
++		no \
++		yes \
++		${NATIVE_EMULATION:Q} \
++		${TARGET_TUPLE:Q}
++
++e${X86_EMULATION}.c ${LDSCRIPTS_${X86_EMULATION}}: \
++    emulparams/${X86_EMULATION}.sh emultempl/elf-x86.em \
++    scripttempl/elf.sc genscripts.sh stringify.sed
++	sh ${SRCDIR}/ld/genscripts.sh \
++		${SRCDIR:Q}/ld \
++		"" \
++		"" \
++		"/opt/dflycross" \
++		${HOST} \
++		${TARGET_TUPLE:Q} \
++		${TARGET_TUPLE:Q} \
++		"nodeps" \
++		${_i386_path:Q} \
++		${X86_EMULATION:Q} \
++		"" \
++		no \
++		yes \
++		${X86_EMULATION:Q} \
++		${TARGET_TUPLE:Q}
++
++e${IAMCU_EMULATION}.c ${LDSCRIPTS_${IAMCU_EMULATION}}: \
++    emulparams/${IAMCU_EMULATION}.sh emultempl/elf-x86.em \
++    scripttempl/elf.sc genscripts.sh stringify.sed
++	sh ${SRCDIR}/ld/genscripts.sh \
++		${SRCDIR:Q}/ld \
++		"" \
++		"" \
++		"/opt/dflycross" \
++		${HOST} \
++		${TARGET_TUPLE:Q} \
++		${TARGET_TUPLE:Q} \
++		"nodeps" \
++		${_x86_64_path:Q} \
++		${IAMCU_EMULATION:Q} \
++		"" \
++		no \
++		yes \
++		${IAMCU_EMULATION:Q} \
++		${TARGET_TUPLE:Q}
++
++e${L1OM_EMULATION}.c ${LDSCRIPTS_${L1OM_EMULATION}}: \
++    emulparams/${L1OM_EMULATION}.sh emultempl/elf-x86.em \
++    scripttempl/elf.sc genscripts.sh stringify.sed
++	sh ${SRCDIR}/ld/genscripts.sh \
++		${SRCDIR:Q}/ld \
++		"" \
++		"" \
++		"/opt/dflycross" \
++		${HOST} \
++		${TARGET_TUPLE:Q} \
++		${TARGET_TUPLE:Q} \
++		"nodeps" \
++		${_x86_64_path:Q} \
++		${L1OM_EMULATION:Q} \
++		"" \
++		no \
++		yes \
++		${L1OM_EMULATION:Q} \
++		${TARGET_TUPLE:Q}
++
++e${K1OM_EMULATION}.c ${LDSCRIPTS_${K1OM_EMULATION}}: \
++    emulparams/${K1OM_EMULATION}.sh emultempl/elf-x86.em \
++    scripttempl/elf.sc genscripts.sh stringify.sed
++	sh ${SRCDIR}/ld/genscripts.sh \
++		${SRCDIR:Q}/ld \
++		"" \
++		"" \
++		"/opt/dflycross" \
++		${HOST} \
++		${TARGET_TUPLE:Q} \
++		${TARGET_TUPLE:Q} \
++		"nodeps" \
++		${_x86_64_path:Q} \
++		${K1OM_EMULATION:Q} \
++		"" \
++		no \
++		yes \
++		${K1OM_EMULATION:Q} \
++		${TARGET_TUPLE:Q}
+diff --git a/gnu/usr.bin/binutils234/block2/libgold/Makefile b/gnu/usr.bin/binutils234/block2/libgold/Makefile
+new file mode 100644
+index 0000000000..ea01bd8329
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/libgold/Makefile
+@@ -0,0 +1,62 @@
++.include "../../Makefile.inc1"
++.include "../../block3/Makefile.gld"
++
++LIB=		gold
++INTERNALLIB=	true
++
++# copied from gold/Makefile
++SRCS=	archive.cc \
++	attributes.cc \
++	binary.cc \
++	common.cc \
++	compressed_output.cc \
++	copy-relocs.cc \
++	cref.cc \
++	defstd.cc \
++	descriptors.cc \
++	dirsearch.cc \
++	dynobj.cc \
++	dwarf_reader.cc \
++	ehframe.cc \
++	errors.cc \
++	expression.cc \
++	fileread.cc \
++        gc.cc \
++        gdb-index.cc \
++	gold.cc \
++	gold-threads.cc \
++	icf.cc \
++	incremental.cc \
++	int_encoding.cc \
++	layout.cc \
++	mapfile.cc \
++	merge.cc \
++	nacl.cc \
++	object.cc \
++	options.cc \
++	output.cc \
++	parameters.cc \
++	plugin.cc \
++	readsyms.cc \
++	reduced_debug_output.cc \
++	reloc.cc \
++	resolve.cc \
++	script-sections.cc \
++	script.cc \
++	stringpool.cc \
++	symtab.cc \
++	target.cc \
++	target-select.cc \
++	timer.cc \
++	version.cc \
++	workqueue.cc
++
++# only when ENABLE_THREADS
++.if defined(TOOLCHAIN_THREADED)
++SRCS+=	workqueue-threads.cc
++.endif
++
++# extra sources
++SRCS+=	yyscript.c mremap.c
++
++.include <bsd.lib.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/nm/Makefile b/gnu/usr.bin/binutils234/block2/nm/Makefile
+new file mode 100644
+index 0000000000..761dfcdb9c
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/nm/Makefile
+@@ -0,0 +1,21 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	nm
++MFILE=	nm${MANPAGEVER}.1
++MAN=	${MFILE}
++LDADD=	${STD_LDADD} -lz
++
++# link-time optimization requires dlopen() which means nm cannot be built
++# statically and also support -plugin, not even for cross-tools.
++.if !defined(REALLY_NOSHARED)
++.undef NOSHARED
++.endif
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} nm.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/objcopy/Makefile b/gnu/usr.bin/binutils234/block2/objcopy/Makefile
+new file mode 100644
+index 0000000000..a646b7d1db
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/objcopy/Makefile
+@@ -0,0 +1,19 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	objcopy
++SRCS=	objcopy.c not-strip.c rename.c ${WRITE_DEBUG_SRCS}
++MFILE=	objcopy${MANPAGEVER}.1
++MAN=	${MFILE}
++LDADD=	${STD_LDADD} -lz
++
++DEBUG_SRCS=		rddbg.c debug.c stabs.c rdcoff.c
++WRITE_DEBUG_SRCS=	${DEBUG_SRCS} wrstabs.c
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} objcopy.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/objdump/Makefile b/gnu/usr.bin/binutils234/block2/objdump/Makefile
+new file mode 100644
+index 0000000000..a626e4d690
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/objdump/Makefile
+@@ -0,0 +1,22 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	objdump
++SRCS=	objdump.c dwarf.c prdbg.c $(DEBUG_SRCS) elfcomm.c
++MFILE=	objdump${MANPAGEVER}.1
++MAN=	${MFILE}
++LDADD=	${LDADD_CTF} ${STD_LDADD} ${LDADD_OPCODE} -lz
++
++DEBUG_SRCS=		rddbg.c debug.c stabs.c rdcoff.c
++CFLAGS+=		-I${.OBJDIR}
++FLAGS_GROUPS=		objdump
++objdump_FLAGS=		-DOBJDUMP_PRIVATE_VECTORS=""
++objdump_FLAGS_FILES=	objdump.c
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} objdump.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/ranlib/Makefile b/gnu/usr.bin/binutils234/block2/ranlib/Makefile
+new file mode 100644
+index 0000000000..fbcc68997c
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/ranlib/Makefile
+@@ -0,0 +1,27 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	ranlib
++SRCS=	ar.c is-ranlib.c arparse.y arlex.l arsup.c rename.c binemul.c \
++	emul_vanilla.c
++MFILE=	ranlib${MANPAGEVER}.1
++MAN=	${MFILE}
++DPADD=	${LIBL} ${LIBZ}
++LDADD=	${STD_LDADD} -ll -lz
++
++CFLAGS+=	-I${SRCDIR}/binutils \
++		-Dbin_dummy_emulation=bin_vanilla_emulation
++
++# link-time optimization requires dlopen() which means ranlib cannot be built
++# statically and also support -plugin, not even for cross-tools.
++.if !defined(REALLY_NOSHARED)
++.undef NOSHARED
++.endif
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} ranlib.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/readelf/Makefile b/gnu/usr.bin/binutils234/block2/readelf/Makefile
+new file mode 100644
+index 0000000000..fe0698ef52
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/readelf/Makefile
+@@ -0,0 +1,20 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	readelf
++SRCS=	readelf.c version.c unwind-ia64.c dwarf.c elfcomm.c
++MFILE=	readelf${MANPAGEVER}.1
++MAN=	${MFILE}
++# this is a bit of cheat, should link with libctf_nobfd.a (no ctf-open-bfd.o)
++# adjust if needed later on (done to avoid to have two separate versions)
++LDADD=	${LDADD_CTF} ${LDADD_IBERTY} -lz
++
++CFLAGS+=	-I${.OBJDIR}
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} readelf.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/size/Makefile b/gnu/usr.bin/binutils234/block2/size/Makefile
+new file mode 100644
+index 0000000000..013b242eac
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/size/Makefile
+@@ -0,0 +1,15 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	size
++MFILE=	size${MANPAGEVER}.1
++MAN=	${MFILE}
++LDADD=	${STD_LDADD} -lz
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} size.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/strings/Makefile b/gnu/usr.bin/binutils234/block2/strings/Makefile
+new file mode 100644
+index 0000000000..eef60666f7
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/strings/Makefile
+@@ -0,0 +1,15 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	strings
++MFILE=	strings${MANPAGEVER}.1
++MAN=	${MFILE}
++LDADD=	${STD_LDADD} -lz
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} strings.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block2/strip/Makefile b/gnu/usr.bin/binutils234/block2/strip/Makefile
+new file mode 100644
+index 0000000000..3754588751
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/strip/Makefile
+@@ -0,0 +1,21 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.block2"
++
++.PATH: ${SRCDIR}/binutils
++
++PROG=	strip
++SRCS=	objcopy.c is-strip.c rename.c ${WRITE_DEBUG_SRCS}
++MFILE=	strip${MANPAGEVER}.1
++MAN=	${MFILE}
++LDADD=	${STD_LDADD} -lz
++# install(1) might call strip(1) on itself
++INSTALLFLAGS= -S
++
++DEBUG_SRCS=		rddbg.c debug.c stabs.c rdcoff.c
++WRITE_DEBUG_SRCS=	${DEBUG_SRCS} wrstabs.c
++
++.if defined(IS_PRIMARY)
++MLINKS+=	${MFILE} strip.1
++.endif
++
++.include <bsd.prog.mk>
+diff --git a/gnu/usr.bin/binutils234/block3/Makefile b/gnu/usr.bin/binutils234/block3/Makefile
+new file mode 100644
+index 0000000000..2059c8fa70
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block3/Makefile
+@@ -0,0 +1,6 @@
++# Build in serial
++SUBDIR=	gold-linker
++
++SUBDIR_ORDERED= ${SUBDIR}
++
++.include <bsd.subdir.mk>
+diff --git a/gnu/usr.bin/binutils234/block3/Makefile.gld b/gnu/usr.bin/binutils234/block3/Makefile.gld
+new file mode 100644
+index 0000000000..bf8f92ce08
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block3/Makefile.gld
+@@ -0,0 +1,42 @@
++# This is included explicitly at the top of each sub-Makefile.  We can't
++# use the normal "Makefile.inc" mechanism, because we need some of these
++# definitions before the sub-Makefile is processed.
++
++RELTOP:= ../..
++
++# RELTOP is the relative path to this point in the source or object
++# tree, from any subdirectory of same.  It gets extra "../" prefixes
++# added to it as we descend into subdirectories.
++
++RELSRC=	${RELTOP}/../../../contrib/binutils-2.34
++SRCDIR=	${.CURDIR}/${RELSRC}
++OBJTOP=	${.OBJDIR}/${RELTOP}
++TSR=	/${USRDATA_PREFIX}
++
++.PATH: ${SRCDIR}/gold
++
++CFLAGS+= -DHAVE_CONFIG_H
++CFLAGS+= -D_LARGEFILE_SOURCE
++CFLAGS+= -D_FILE_OFFSET_BITS=64
++CFLAGS+= -DBINDIR="\"${TOOLS_PREFIX}${BINDIR}\""
++CFLAGS+= -DTOOLBINDIR="\"${TOOLS_PREFIX}${BINDIR}\""
++CFLAGS+= -DTOOLLIBDIR="\"${TOOLS_PREFIX}${LIBDIR}\""
++CFLAGS+= -DTARGET_SYSTEM_ROOT="\"${TSR:S|//|/|}\""
++CFLAGS+= -I. -I${.CURDIR} -I${SRCDIR}/gold
++CFLAGS+= -I${SRCDIR}/include -I${SRCDIR}/elfcpp
++
++# XXX: Do we want -Wl,-z,relro on by default? Differs for ld.bfd and lg.gold.
++CFLAGS+=	-DDEFAULT_LD_Z_RELRO=0
++
++.if defined(TOOLCHAIN_THREADED)
++CFLAGS+=	-DENABLE_THREADS
++.endif
++
++LDADD_IBERTY=	${OBJTOP}/block1/libiberty/libiberty.a
++LDADD_GOLD=	${OBJTOP}/block2/libgold/libgold.a
++STD_LDADD=	${LDADD_GOLD} ${LDADD_IBERTY} -lz ${CROSS_LIBDL}
++
++# source files common to ld.gold
++
++GOLD_COMMON=	i386.cc \
++		x86_64.cc
+diff --git a/gnu/usr.bin/binutils234/block3/gold-linker/Makefile b/gnu/usr.bin/binutils234/block3/gold-linker/Makefile
+new file mode 100644
+index 0000000000..1332f8824a
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block3/gold-linker/Makefile
+@@ -0,0 +1,20 @@
++.include "../../Makefile.inc1"
++.include "../Makefile.gld"
++
++PROG_CXX=	ld.gold
++SRCS=		main.cc ${GOLD_COMMON}
++CFLAGS+=	-I${.CURDIR}/../../block2/libgold
++LDADD=		${STD_LDADD}
++NOMAN=
++
++.if defined(TOOLCHAIN_THREADED)
++LDFLAGS+=	-pthread
++.endif
++
++# link-time optimization requires dlopen() which means ld cannot be built
++# statically and also support -plugin, not even for cross-tools.
++.if !defined(REALLY_NOSHARED)
++.undef NOSHARED
++.endif
++
++.include <bsd.prog.mk>
+-- 
+2.25.0
+

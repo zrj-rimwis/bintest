@@ -1,0 +1,2842 @@
+From 1a72a2275e9ac2ce54ad12102e8080500d3c8fb7 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Mon, 3 Feb 2020 11:25:41 +0200
+Subject: [PATCH 4/8] binutils234: Add configs and pregenrated headers.
+
+---
+ .../binutils234/block1/bulibs/bfd_stdint.h    |   9 +
+ .../binutils234/block1/bulibs/config.h        | 305 +++++++++
+ .../binutils234/block1/libbfd/bfd_stdint.h    |   9 +
+ .../binutils234/block1/libbfd/config.h        | 395 ++++++++++++
+ .../binutils234/block1/libctf/bfd_stdint.h    |   9 +
+ .../binutils234/block1/libctf/config.h        | 158 +++++
+ .../binutils234/block1/libiberty/config.h     | 578 ++++++++++++++++++
+ .../block1/libopcodes/bfd_stdint.h            |   9 +
+ .../binutils234/block1/libopcodes/config.h    | 123 ++++
+ gnu/usr.bin/binutils234/block2/gas/config.h   | 417 +++++++++++++
+ .../block2/gas/x86_64-dragonfly/itbl-cpu.h    |   1 +
+ .../block2/gas/x86_64-dragonfly/obj-format.h  |   1 +
+ .../block2/gas/x86_64-dragonfly/targ-cpu.h    |   1 +
+ .../block2/gas/x86_64-dragonfly/targ-env.h    |   1 +
+ .../binutils234/block2/gprof/gconfig.h        | 122 ++++
+ gnu/usr.bin/binutils234/block2/ld/config.h    | 257 ++++++++
+ .../binutils234/block2/libgold/config.h       | 300 +++++++++
+ 17 files changed, 2695 insertions(+)
+ create mode 100644 gnu/usr.bin/binutils234/block1/bulibs/bfd_stdint.h
+ create mode 100644 gnu/usr.bin/binutils234/block1/bulibs/config.h
+ create mode 100644 gnu/usr.bin/binutils234/block1/libbfd/bfd_stdint.h
+ create mode 100644 gnu/usr.bin/binutils234/block1/libbfd/config.h
+ create mode 100644 gnu/usr.bin/binutils234/block1/libctf/bfd_stdint.h
+ create mode 100644 gnu/usr.bin/binutils234/block1/libctf/config.h
+ create mode 100644 gnu/usr.bin/binutils234/block1/libiberty/config.h
+ create mode 100644 gnu/usr.bin/binutils234/block1/libopcodes/bfd_stdint.h
+ create mode 100644 gnu/usr.bin/binutils234/block1/libopcodes/config.h
+ create mode 100644 gnu/usr.bin/binutils234/block2/gas/config.h
+ create mode 100644 gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/itbl-cpu.h
+ create mode 100644 gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/obj-format.h
+ create mode 100644 gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/targ-cpu.h
+ create mode 100644 gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/targ-env.h
+ create mode 100644 gnu/usr.bin/binutils234/block2/gprof/gconfig.h
+ create mode 100644 gnu/usr.bin/binutils234/block2/ld/config.h
+ create mode 100644 gnu/usr.bin/binutils234/block2/libgold/config.h
+
+diff --git a/gnu/usr.bin/binutils234/block1/bulibs/bfd_stdint.h b/gnu/usr.bin/binutils234/block1/bulibs/bfd_stdint.h
+new file mode 100644
+index 0000000000..c4b6598b0e
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/bulibs/bfd_stdint.h
+@@ -0,0 +1,9 @@
++/* generated for  gcc 8.3 [DragonFly] Release/2019-02-22 */
++
++#ifndef GCC_GENERATED_STDINT_H
++#define GCC_GENERATED_STDINT_H 1
++
++#include <sys/types.h>
++#include <stdint.h>
++
++#endif /* GCC_GENERATED_STDINT_H */
+diff --git a/gnu/usr.bin/binutils234/block1/bulibs/config.h b/gnu/usr.bin/binutils234/block1/bulibs/config.h
+new file mode 100644
+index 0000000000..57eec2f50a
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/bulibs/config.h
+@@ -0,0 +1,305 @@
++/* config.h.  Generated from config.in by configure.  */
++/* config.in.  Generated from configure.ac by autoheader.  */
++
++/* Check that config.h is #included before system headers
++   (this works only for glibc, but that should be enough).  */
++#if defined(__GLIBC__) && !defined(__FreeBSD_kernel__) && !defined(__CONFIG_H__)
++#  error config.h must be #included before system headers
++#endif
++#define __CONFIG_H__ 1
++
++/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
++   systems. This function is required for `alloca.c' support on those systems.
++   */
++/* #undef CRAY_STACKSEG_END */
++
++/* Define to 1 if using `alloca.c'. */
++/* #undef C_ALLOCA */
++
++/* Should ar and ranlib use -D behavior by default? */
++#define DEFAULT_AR_DETERMINISTIC 1
++
++/* Should strings use -a behavior by default? */
++#define DEFAULT_STRINGS_ALL 1
++
++/* Define to 1 if translation of program messages to the user's native
++   language is requested. */
++/* #undef ENABLE_NLS */
++
++/* Suffix used for executables, if any. */
++#define EXECUTABLE_SUFFIX ""
++
++/* Define to 1 if you have `alloca', as a function or macro. */
++#define HAVE_ALLOCA 1
++
++/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
++   */
++/* explictly disabled #define HAVE_ALLOCA_H 1 */
++
++/* Define to 1 if you have the declaration of `asprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_ASPRINTF 1
++
++/* Define to 1 if you have the declaration of `environ', and to 0 if you
++   don't. */
++#define HAVE_DECL_ENVIRON 0
++
++/* Define to 1 if you have the declaration of `fprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_FPRINTF 1
++
++/* Define to 1 if you have the declaration of `getc_unlocked', and to 0 if you
++   don't. */
++#define HAVE_DECL_GETC_UNLOCKED 1
++
++/* Define to 1 if you have the declaration of `getenv', and to 0 if you don't.
++   */
++#define HAVE_DECL_GETENV 1
++
++/* Is the prototype for getopt in <unistd.h> in the expected format? */
++#define HAVE_DECL_GETOPT 1
++
++/* Define to 1 if you have the declaration of `sbrk', and to 0 if you don't.
++   */
++#define HAVE_DECL_SBRK 1
++
++/* Define to 1 if you have the declaration of `snprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_SNPRINTF 1
++
++/* Define to 1 if you have the declaration of `stpcpy', and to 0 if you don't.
++   */
++#define HAVE_DECL_STPCPY 1
++
++/* Define to 1 if you have the declaration of `strnlen', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRNLEN 1
++
++/* Define to 1 if you have the declaration of `strstr', and to 0 if you don't.
++   */
++#define HAVE_DECL_STRSTR 1
++
++/* Define to 1 if you have the declaration of `vsnprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_VSNPRINTF 1
++
++/* Define to 1 if you have the <dlfcn.h> header file. */
++#define HAVE_DLFCN_H 1
++
++/* Does the platform use an executable suffix? */
++/* #undef HAVE_EXECUTABLE_SUFFIX */
++
++/* Define to 1 if you have the <fcntl.h> header file. */
++#define HAVE_FCNTL_H 1
++
++/* Define to 1 if you have the `getc_unlocked' function. */
++#define HAVE_GETC_UNLOCKED 1
++
++/* Define to 1 if you have the `getpagesize' function. */
++#define HAVE_GETPAGESIZE 1
++
++/* Does <utime.h> define struct utimbuf? */
++#define HAVE_GOOD_UTIME_H 1
++
++/* Define if you have the iconv() function. */
++#define HAVE_ICONV 1
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#define HAVE_INTTYPES_H 1
++
++/* Define if your <locale.h> file defines LC_MESSAGES. */
++#define HAVE_LC_MESSAGES 1
++
++/* Define to 1 if debuginfod is enabled. */
++/* #undef HAVE_LIBDEBUGINFOD */
++
++/* Define to 1 if you have the <limits.h> header file. */
++#define HAVE_LIMITS_H 1
++
++/* Define to 1 if you have the <locale.h> header file. */
++#define HAVE_LOCALE_H 1
++
++/* Define to 1 if the system has the type `long long'. */
++#define HAVE_LONG_LONG 1
++
++/* Define if mbstate_t exists in wchar.h. */
++#define HAVE_MBSTATE_T 1
++
++/* Define to 1 if you have the <memory.h> header file. */
++#define HAVE_MEMORY_H 1
++
++/* Define to 1 if you have the `mkdtemp' function. */
++#define HAVE_MKDTEMP 1
++
++/* Define to 1 if you have the `mkstemp' function. */
++#define HAVE_MKSTEMP 1
++
++/* Define to 1 if you have a working `mmap' system call. */
++#define HAVE_MMAP 1
++
++/* Define to 1 if you have the `sbrk' function. */
++#define HAVE_SBRK 1
++
++/* Define to 1 if you have the `setlocale' function. */
++#define HAVE_SETLOCALE 1
++
++/* Define to 1 if you have the `setmode' function. */
++#define HAVE_SETMODE 1
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#define HAVE_STDINT_H 1
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#define HAVE_STDLIB_H 1
++
++/* Define to 1 if you have the `strcoll' function. */
++#define HAVE_STRCOLL 1
++
++/* Define to 1 if you have the <strings.h> header file. */
++#define HAVE_STRINGS_H 1
++
++/* Define to 1 if you have the <string.h> header file. */
++#define HAVE_STRING_H 1
++
++/* Define to 1 if you have the <sys/file.h> header file. */
++#define HAVE_SYS_FILE_H 1
++
++/* Define to 1 if you have the <sys/param.h> header file. */
++#define HAVE_SYS_PARAM_H 1
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#define HAVE_SYS_STAT_H 1
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#define HAVE_SYS_TYPES_H 1
++
++/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
++#define HAVE_SYS_WAIT_H 1
++
++/* Is the type time_t defined in <time.h>? */
++#define HAVE_TIME_T_IN_TIME_H 1
++
++/* Is the type time_t defined in <sys/types.h>? */
++#define HAVE_TIME_T_IN_TYPES_H 1
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#define HAVE_UNISTD_H 1
++
++/* Define to 1 if you have the `utimes' function. */
++#define HAVE_UTIMES 1
++
++/* Define to 1 if you have the <wchar.h> header file. */
++#define HAVE_WCHAR_H 1
++
++/* Define to 1 if you have the <windows.h> header file. */
++/* #undef HAVE_WINDOWS_H */
++
++/* Define as const if the declaration of iconv() needs const. */
++#define ICONV_CONST
++
++/* Define to the sub-directory in which libtool stores uninstalled libraries.
++   */
++#define LT_OBJDIR ".libs/"
++
++/* Name of package */
++#define PACKAGE "binutils"
++
++/* Define to the address where bug reports for this package should be sent. */
++#define PACKAGE_BUGREPORT ""
++
++/* Define to the full name of this package. */
++#define PACKAGE_NAME "binutils"
++
++/* Define to the full name and version of this package. */
++#define PACKAGE_STRING "binutils 2.34"
++
++/* Define to the one symbol short name of this package. */
++#define PACKAGE_TARNAME "binutils"
++
++/* Define to the home page for this package. */
++#define PACKAGE_URL ""
++
++/* Define to the version of this package. */
++#define PACKAGE_VERSION "2.34"
++
++/* The size of `long', as computed by sizeof. */
++#define SIZEOF_LONG 8
++
++/* The size of `long long', as computed by sizeof. */
++#define SIZEOF_LONG_LONG 8
++
++/* If using the C implementation of alloca, define if you know the
++   direction of stack growth for your system; otherwise it will be
++   automatically deduced at runtime.
++	STACK_DIRECTION > 0 => grows toward higher addresses
++	STACK_DIRECTION < 0 => grows toward lower addresses
++	STACK_DIRECTION = 0 => direction of growth unknown */
++/* #undef STACK_DIRECTION */
++
++/* Define to 1 if you have the ANSI C header files. */
++#define STDC_HEADERS 1
++
++/* Define if you can safely include both <string.h> and <strings.h>. */
++#define STRING_WITH_STRINGS 1
++
++/* Configured target name. */
++/* handled by makefiles #define TARGET "x86_64-unknown-dragonfly5.7" */
++
++/* Define to 1 if user symbol names have a leading underscore, 0 if not. */
++#define TARGET_PREPENDS_UNDERSCORE 0
++
++/* Use b modifier when opening binary files? */
++/* #undef USE_BINARY_FOPEN */
++
++/* Enable extensions on AIX 3, Interix.  */
++#ifndef _ALL_SOURCE
++# define _ALL_SOURCE 1
++#endif
++/* Enable GNU extensions on systems that have them.  */
++#ifndef _GNU_SOURCE
++# define _GNU_SOURCE 1
++#endif
++/* Enable threading extensions on Solaris.  */
++#ifndef _POSIX_PTHREAD_SEMANTICS
++# define _POSIX_PTHREAD_SEMANTICS 1
++#endif
++/* Enable extensions on HP NonStop.  */
++#ifndef _TANDEM_SOURCE
++# define _TANDEM_SOURCE 1
++#endif
++/* Enable general extensions on Solaris.  */
++#ifndef __EXTENSIONS__
++# define __EXTENSIONS__ 1
++#endif
++
++
++/* Version number of package */
++#define VERSION "2.34"
++
++/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
++   `char[]'. */
++#define YYTEXT_POINTER 1
++
++/* Enable large inode numbers on Mac OS X 10.5.  */
++#ifndef _DARWIN_USE_64_BIT_INODE
++# define _DARWIN_USE_64_BIT_INODE 1
++#endif
++
++/* Number of bits in a file offset, on hosts where this is settable. */
++/* #undef _FILE_OFFSET_BITS */
++
++/* Define for large files, on AIX-style hosts. */
++/* #undef _LARGE_FILES */
++
++/* Define to 1 if on MINIX. */
++/* #undef _MINIX */
++
++/* Define to 2 if the system does not provide POSIX.1 features except with
++   this defined. */
++/* #undef _POSIX_1_SOURCE */
++
++/* Define to 1 if you need to in order for `stat' and other things to work. */
++/* #undef _POSIX_SOURCE */
++
++/* Define to `unsigned int' if <sys/types.h> does not define. */
++/* #undef size_t */
+diff --git a/gnu/usr.bin/binutils234/block1/libbfd/bfd_stdint.h b/gnu/usr.bin/binutils234/block1/libbfd/bfd_stdint.h
+new file mode 100644
+index 0000000000..c4b6598b0e
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libbfd/bfd_stdint.h
+@@ -0,0 +1,9 @@
++/* generated for  gcc 8.3 [DragonFly] Release/2019-02-22 */
++
++#ifndef GCC_GENERATED_STDINT_H
++#define GCC_GENERATED_STDINT_H 1
++
++#include <sys/types.h>
++#include <stdint.h>
++
++#endif /* GCC_GENERATED_STDINT_H */
+diff --git a/gnu/usr.bin/binutils234/block1/libbfd/config.h b/gnu/usr.bin/binutils234/block1/libbfd/config.h
+new file mode 100644
+index 0000000000..ea20f32cb8
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libbfd/config.h
+@@ -0,0 +1,395 @@
++/* config.h.  Generated from config.in by configure.  */
++/* config.in.  Generated from configure.ac by autoheader.  */
++
++/* Check that config.h is #included before system headers
++    (this works only for glibc, but that should be enough).  */
++#if defined(__GLIBC__) && !defined(__FreeBSD_kernel__) && !defined(__CONFIG_H__)
++#  error config.h must be #included before system headers
++#endif
++#define __CONFIG_H__ 1
++
++/* Name of host specific core header file to include in elf.c. */
++/* #undef CORE_HEADER */
++
++/* Define to 1 if translation of program messages to the user's native
++   language is requested. */
++/* #undef ENABLE_NLS */
++
++/* Define to 1 if you have the <alloca.h> header file. */
++/* #undef HAVE_ALLOCA_H */
++
++/* Define to 1 if you have the declaration of `asprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_ASPRINTF 1
++
++/* Define to 1 if you have the declaration of `basename', and to 0 if you
++   don't. */
++#define HAVE_DECL_BASENAME 0
++
++/* Define to 1 if you have the declaration of `ffs', and to 0 if you don't. */
++#define HAVE_DECL_FFS 1
++
++/* Define to 1 if you have the declaration of `free', and to 0 if you don't.
++   */
++#define HAVE_DECL_FREE 1
++
++/* Define to 1 if you have the declaration of `fseeko', and to 0 if you don't.
++   */
++#define HAVE_DECL_FSEEKO 1
++
++/* Define to 1 if you have the declaration of `fseeko64', and to 0 if you
++   don't. */
++#define HAVE_DECL_FSEEKO64 0
++
++/* Define to 1 if you have the declaration of `ftello', and to 0 if you don't.
++   */
++#define HAVE_DECL_FTELLO 1
++
++/* Define to 1 if you have the declaration of `ftello64', and to 0 if you
++   don't. */
++#define HAVE_DECL_FTELLO64 0
++
++/* Define to 1 if you have the declaration of `getenv', and to 0 if you don't.
++   */
++#define HAVE_DECL_GETENV 1
++
++/* Define to 1 if you have the declaration of `malloc', and to 0 if you don't.
++   */
++#define HAVE_DECL_MALLOC 1
++
++/* Define to 1 if you have the declaration of `realloc', and to 0 if you
++   don't. */
++#define HAVE_DECL_REALLOC 1
++
++/* Define to 1 if you have the declaration of `snprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_SNPRINTF 1
++
++/* Define to 1 if you have the declaration of `stpcpy', and to 0 if you don't.
++   */
++#define HAVE_DECL_STPCPY 1
++
++/* Define to 1 if you have the declaration of `strnlen', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRNLEN 1
++
++/* Define to 1 if you have the declaration of `strstr', and to 0 if you don't.
++   */
++#define HAVE_DECL_STRSTR 1
++
++/* Define to 1 if you have the declaration of `vasprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_VASPRINTF 1
++
++/* Define to 1 if you have the declaration of `vsnprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_VSNPRINTF 1
++
++/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
++   */
++#define HAVE_DIRENT_H 1
++
++/* Define to 1 if you have the <dlfcn.h> header file. */
++#define HAVE_DLFCN_H 1
++
++/* Define to 1 if you have the `fcntl' function. */
++#define HAVE_FCNTL 1
++
++/* Define to 1 if you have the <fcntl.h> header file. */
++#define HAVE_FCNTL_H 1
++
++/* Define to 1 if you have the `fdopen' function. */
++#define HAVE_FDOPEN 1
++
++/* Define to 1 if you have the `fileno' function. */
++#define HAVE_FILENO 1
++
++/* Define to 1 if you have the `fopen64' function. */
++/* #undef HAVE_FOPEN64 */
++
++/* Define to 1 if you have the `fseeko' function. */
++#define HAVE_FSEEKO 1
++
++/* Define to 1 if you have the `fseeko64' function. */
++/* #undef HAVE_FSEEKO64 */
++
++/* Define to 1 if you have the `ftello' function. */
++#define HAVE_FTELLO 1
++
++/* Define to 1 if you have the `ftello64' function. */
++/* #undef HAVE_FTELLO64 */
++
++/* Define to 1 if you have the `getgid' function. */
++#define HAVE_GETGID 1
++
++/* Define to 1 if you have the `getpagesize' function. */
++#define HAVE_GETPAGESIZE 1
++
++/* Define to 1 if you have the `getrlimit' function. */
++#define HAVE_GETRLIMIT 1
++
++/* Define to 1 if you have the `getuid' function. */
++#define HAVE_GETUID 1
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#define HAVE_INTTYPES_H 1
++
++/* Define if <sys/procfs.h> has lwpstatus_t. */
++/* #undef HAVE_LWPSTATUS_T */
++
++/* Define if <sys/procfs.h> has lwpstatus_t.pr_context. */
++/* #undef HAVE_LWPSTATUS_T_PR_CONTEXT */
++
++/* Define if <sys/procfs.h> has lwpstatus_t.pr_fpreg. */
++/* #undef HAVE_LWPSTATUS_T_PR_FPREG */
++
++/* Define if <sys/procfs.h> has lwpstatus_t.pr_reg. */
++/* #undef HAVE_LWPSTATUS_T_PR_REG */
++
++/* Define if <sys/procfs.h> has lwpxstatus_t. */
++/* #undef HAVE_LWPXSTATUS_T */
++
++/* Define to 1 if you have the `madvise' function. */
++#define HAVE_MADVISE 1
++
++/* Define to 1 if you have the <memory.h> header file. */
++#define HAVE_MEMORY_H 1
++
++/* Define to 1 if you have a working `mmap' system call. */
++#define HAVE_MMAP 1
++
++/* Define to 1 if you have the `mprotect' function. */
++#define HAVE_MPROTECT 1
++
++/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
++/* #undef HAVE_NDIR_H */
++
++/* Define if <sys/procfs.h> has prpsinfo32_t. */
++/* #undef HAVE_PRPSINFO32_T */
++
++/* Define if <sys/procfs.h> has prpsinfo32_t.pr_pid. */
++/* #undef HAVE_PRPSINFO32_T_PR_PID */
++
++/* Define if <sys/procfs.h> has prpsinfo_t. */
++#define HAVE_PRPSINFO_T 1
++
++/* Define if <sys/procfs.h> has prpsinfo_t.pr_pid. */
++/* #undef HAVE_PRPSINFO_T_PR_PID */
++
++/* Define if <sys/procfs.h> has prstatus32_t. */
++/* #undef HAVE_PRSTATUS32_T */
++
++/* Define if <sys/procfs.h> has prstatus32_t.pr_who. */
++/* #undef HAVE_PRSTATUS32_T_PR_WHO */
++
++/* Define if <sys/procfs.h> has prstatus_t. */
++#define HAVE_PRSTATUS_T 1
++
++/* Define if <sys/procfs.h> has prstatus_t.pr_who. */
++/* #undef HAVE_PRSTATUS_T_PR_WHO */
++
++/* Define if <sys/procfs.h> has psinfo32_t. */
++/* #undef HAVE_PSINFO32_T */
++
++/* Define if <sys/procfs.h> has psinfo32_t.pr_pid. */
++/* #undef HAVE_PSINFO32_T_PR_PID */
++
++/* Define if <sys/procfs.h> has psinfo_t. */
++/* #undef HAVE_PSINFO_T */
++
++/* Define if <sys/procfs.h> has psinfo_t.pr_pid. */
++/* #undef HAVE_PSINFO_T_PR_PID */
++
++/* Define if <sys/procfs.h> has pstatus32_t. */
++/* #undef HAVE_PSTATUS32_T */
++
++/* Define if <sys/procfs.h> has pstatus_t. */
++/* #undef HAVE_PSTATUS_T */
++
++/* Define if <sys/procfs.h> has pxstatus_t. */
++/* #undef HAVE_PXSTATUS_T */
++
++/* Define to 1 if you have the `setitimer' function. */
++#define HAVE_SETITIMER 1
++
++/* Define to 1 if you have the <stddef.h> header file. */
++#define HAVE_STDDEF_H 1
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#define HAVE_STDINT_H 1
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#define HAVE_STDLIB_H 1
++
++/* Define to 1 if you have the <strings.h> header file. */
++#define HAVE_STRINGS_H 1
++
++/* Define to 1 if you have the <string.h> header file. */
++#define HAVE_STRING_H 1
++
++/* Define to 1 if you have the `strtoull' function. */
++#define HAVE_STRTOULL 1
++
++/* Define if struct core_dumpx has member c_impl */
++/* #undef HAVE_ST_C_IMPL */
++
++/* Define to 1 if you have the `sysconf' function. */
++#define HAVE_SYSCONF 1
++
++/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
++   */
++/* #undef HAVE_SYS_DIR_H */
++
++/* Define to 1 if you have the <sys/file.h> header file. */
++#define HAVE_SYS_FILE_H 1
++
++/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
++   */
++/* #undef HAVE_SYS_NDIR_H */
++
++/* Define to 1 if you have the <sys/procfs.h> header file. */
++#define HAVE_SYS_PROCFS_H 1
++
++/* Define to 1 if you have the <sys/resource.h> header file. */
++#define HAVE_SYS_RESOURCE_H 1
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#define HAVE_SYS_STAT_H 1
++
++/* Define to 1 if you have the <sys/time.h> header file. */
++#define HAVE_SYS_TIME_H 1
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#define HAVE_SYS_TYPES_H 1
++
++/* Define to 1 if you have the <time.h> header file. */
++#define HAVE_TIME_H 1
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#define HAVE_UNISTD_H 1
++
++/* Define to 1 if you have the <wchar.h> header file. */
++#define HAVE_WCHAR_H 1
++
++/* Define to 1 if you have the <wctype.h> header file. */
++#define HAVE_WCTYPE_H 1
++
++/* Define if <sys/procfs.h> has win32_pstatus_t. */
++/* #undef HAVE_WIN32_PSTATUS_T */
++
++/* Define to 1 if you have the <windows.h> header file. */
++/* #undef HAVE_WINDOWS_H */
++
++/* Define to the sub-directory in which libtool stores uninstalled libraries.
++   */
++#define LT_OBJDIR ".libs/"
++
++/* Name of package */
++#define PACKAGE "bfd"
++
++/* Define to the address where bug reports for this package should be sent. */
++#define PACKAGE_BUGREPORT ""
++
++/* Define to the full name of this package. */
++#define PACKAGE_NAME "bfd"
++
++/* Define to the full name and version of this package. */
++#define PACKAGE_STRING "bfd 2.27"
++
++/* Define to the one symbol short name of this package. */
++#define PACKAGE_TARNAME "bfd"
++
++/* Define to the home page for this package. */
++#define PACKAGE_URL ""
++
++/* Define to the version of this package. */
++#define PACKAGE_VERSION "2.27"
++
++/* The size of `char', as computed by sizeof. */
++/* #undef SIZEOF_CHAR */
++
++/* The size of `int', as computed by sizeof. */
++/* #undef SIZEOF_INT */
++
++/* The size of `long', as computed by sizeof. */
++#define SIZEOF_LONG 8
++
++/* The size of `long long', as computed by sizeof. */
++#define SIZEOF_LONG_LONG 8
++
++/* The size of `off_t', as computed by sizeof. */
++#define SIZEOF_OFF_T 8
++
++/* The size of `short', as computed by sizeof. */
++/* #undef SIZEOF_SHORT */
++
++/* The size of `void *', as computed by sizeof. */
++#define SIZEOF_VOID_P 8
++
++/* Define to 1 if you have the ANSI C header files. */
++#define STDC_HEADERS 1
++
++/* Define if you can safely include both <string.h> and <strings.h>. */
++#define STRING_WITH_STRINGS 1
++
++/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
++#define TIME_WITH_SYS_TIME 1
++
++/* Name of host specific header file to include in trad-core.c. */
++/* #undef TRAD_HEADER */
++
++/* Define if we should use 64-bit archives. */
++/* #undef USE_64_BIT_ARCHIVE */
++
++/* Use b modifier when opening binary files? */
++/* #undef USE_BINARY_FOPEN */
++
++/* Define if we should use leading underscore on 64 bit mingw targets */
++/* #undef USE_MINGW64_LEADING_UNDERSCORES */
++
++/* Use mmap if it's available? */
++/* #undef USE_MMAP */
++
++/* Define if we should default to creating read-only plt entries */
++#define USE_SECUREPLT 1
++
++/* Enable extensions on AIX 3, Interix.  */
++#ifndef _ALL_SOURCE
++# define _ALL_SOURCE 1
++#endif
++/* Enable GNU extensions on systems that have them.  */
++#ifndef _GNU_SOURCE
++# define _GNU_SOURCE 1
++#endif
++/* Enable threading extensions on Solaris.  */
++#ifndef _POSIX_PTHREAD_SEMANTICS
++# define _POSIX_PTHREAD_SEMANTICS 1
++#endif
++/* Enable extensions on HP NonStop.  */
++#ifndef _TANDEM_SOURCE
++# define _TANDEM_SOURCE 1
++#endif
++/* Enable general extensions on Solaris.  */
++#ifndef __EXTENSIONS__
++# define __EXTENSIONS__ 1
++#endif
++
++
++/* Version number of package */
++#define VERSION "2.27"
++
++/* Number of bits in a file offset, on hosts where this is settable. */
++/* #undef _FILE_OFFSET_BITS */
++
++/* Define for large files, on AIX-style hosts. */
++/* #undef _LARGE_FILES */
++
++/* Define to 1 if on MINIX. */
++/* #undef _MINIX */
++
++/* Define to 2 if the system does not provide POSIX.1 features except with
++   this defined. */
++/* #undef _POSIX_1_SOURCE */
++
++/* Define to 1 if you need to in order for `stat' and other things to work. */
++/* #undef _POSIX_SOURCE */
+diff --git a/gnu/usr.bin/binutils234/block1/libctf/bfd_stdint.h b/gnu/usr.bin/binutils234/block1/libctf/bfd_stdint.h
+new file mode 100644
+index 0000000000..c4b6598b0e
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libctf/bfd_stdint.h
+@@ -0,0 +1,9 @@
++/* generated for  gcc 8.3 [DragonFly] Release/2019-02-22 */
++
++#ifndef GCC_GENERATED_STDINT_H
++#define GCC_GENERATED_STDINT_H 1
++
++#include <sys/types.h>
++#include <stdint.h>
++
++#endif /* GCC_GENERATED_STDINT_H */
+diff --git a/gnu/usr.bin/binutils234/block1/libctf/config.h b/gnu/usr.bin/binutils234/block1/libctf/config.h
+new file mode 100644
+index 0000000000..f0c879da25
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libctf/config.h
+@@ -0,0 +1,158 @@
++/* config.h.  Generated from config.h.in by configure.  */
++/* config.h.in.  Generated from configure.ac by autoheader.  */
++
++/* Define if building universal (internal helper macro) */
++/* #undef AC_APPLE_UNIVERSAL_BUILD */
++
++/* Whether libbfd was configured for an ELF target. */
++#define HAVE_BFD_ELF 1
++
++/* Define to 1 if you have the <byteswap.h> header file. */
++/* #undef HAVE_BYTESWAP_H */
++
++/* Define to 1 if you have the declaration of `asprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_ASPRINTF 1
++
++/* Define to 1 if you have the <dlfcn.h> header file. */
++#define HAVE_DLFCN_H 1
++
++/* Define to 1 if you have the <endian.h> header file. */
++/* #undef HAVE_ENDIAN_H */
++
++/* Define to 1 if you have the `getpagesize' function. */
++#define HAVE_GETPAGESIZE 1
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#define HAVE_INTTYPES_H 1
++
++/* Define to 1 if you have the <memory.h> header file. */
++#define HAVE_MEMORY_H 1
++
++/* Define to 1 if you have a working `mmap' system call. */
++#define HAVE_MMAP 1
++
++/* Whether the platform has a definition of O_CLOEXEC. */
++#define HAVE_O_CLOEXEC 1
++
++/* Define to 1 if you have the `pread' function. */
++#define HAVE_PREAD 1
++
++/* Define to 1 if you have the `qsort_r' function. */
++#define HAVE_QSORT_R 1
++
++/* Whether a qsort_r exists with a void *arg as its last arg. */
++/* #undef HAVE_QSORT_R_ARG_LAST */
++
++/* Whether a qsort_r exists with the compar function as its last arg. */
++#define HAVE_QSORT_R_COMPAR_LAST 1
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#define HAVE_STDINT_H 1
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#define HAVE_STDLIB_H 1
++
++/* Define to 1 if you have the <strings.h> header file. */
++#define HAVE_STRINGS_H 1
++
++/* Define to 1 if you have the <string.h> header file. */
++#define HAVE_STRING_H 1
++
++/* Define to 1 if you have the <sys/param.h> header file. */
++#define HAVE_SYS_PARAM_H 1
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#define HAVE_SYS_STAT_H 1
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#define HAVE_SYS_TYPES_H 1
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#define HAVE_UNISTD_H 1
++
++/* Define to the sub-directory in which libtool stores uninstalled libraries.
++   */
++#define LT_OBJDIR ".libs/"
++
++/* Name of package */
++#define PACKAGE "libctf-library"
++
++/* Define to the address where bug reports for this package should be sent. */
++#define PACKAGE_BUGREPORT ""
++
++/* Define to the full name of this package. */
++#define PACKAGE_NAME "libctf library"
++
++/* Define to the full name and version of this package. */
++#define PACKAGE_STRING "libctf library 1.2.0-pre"
++
++/* Define to the one symbol short name of this package. */
++#define PACKAGE_TARNAME "libctf-library"
++
++/* Define to the home page for this package. */
++#define PACKAGE_URL ""
++
++/* Define to the version of this package. */
++#define PACKAGE_VERSION "1.2.0-pre"
++
++/* Define to 1 if you have the ANSI C header files. */
++#define STDC_HEADERS 1
++
++/* Enable extensions on AIX 3, Interix.  */
++#ifndef _ALL_SOURCE
++# define _ALL_SOURCE 1
++#endif
++/* Enable GNU extensions on systems that have them.  */
++#ifndef _GNU_SOURCE
++# define _GNU_SOURCE 1
++#endif
++/* Enable threading extensions on Solaris.  */
++#ifndef _POSIX_PTHREAD_SEMANTICS
++# define _POSIX_PTHREAD_SEMANTICS 1
++#endif
++/* Enable extensions on HP NonStop.  */
++#ifndef _TANDEM_SOURCE
++# define _TANDEM_SOURCE 1
++#endif
++/* Enable general extensions on Solaris.  */
++#ifndef __EXTENSIONS__
++# define __EXTENSIONS__ 1
++#endif
++
++
++/* Version number of package */
++#define VERSION "1.2.0-pre"
++
++/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
++   significant byte first (like Motorola and SPARC, unlike Intel). */
++#if defined AC_APPLE_UNIVERSAL_BUILD
++# if defined __BIG_ENDIAN__
++#  define WORDS_BIGENDIAN 1
++# endif
++#else
++# ifndef WORDS_BIGENDIAN
++/* #  undef WORDS_BIGENDIAN */
++# endif
++#endif
++
++/* Enable large inode numbers on Mac OS X 10.5.  */
++#ifndef _DARWIN_USE_64_BIT_INODE
++# define _DARWIN_USE_64_BIT_INODE 1
++#endif
++
++/* Number of bits in a file offset, on hosts where this is settable. */
++/* #undef _FILE_OFFSET_BITS */
++
++/* Define for large files, on AIX-style hosts. */
++/* #undef _LARGE_FILES */
++
++/* Define to 1 if on MINIX. */
++/* #undef _MINIX */
++
++/* Define to 2 if the system does not provide POSIX.1 features except with
++   this defined. */
++/* #undef _POSIX_1_SOURCE */
++
++/* Define to 1 if you need to in order for `stat' and other things to work. */
++/* #undef _POSIX_SOURCE */
+diff --git a/gnu/usr.bin/binutils234/block1/libiberty/config.h b/gnu/usr.bin/binutils234/block1/libiberty/config.h
+new file mode 100644
+index 0000000000..04d9d9d485
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libiberty/config.h
+@@ -0,0 +1,578 @@
++/* config.h.  Generated from config.in by configure.  */
++/* config.in.  Generated from configure.ac by autoheader.  */
++
++/* Define if building universal (internal helper macro) */
++/* #undef AC_APPLE_UNIVERSAL_BUILD */
++
++/* Define to one of _getb67, GETB67, getb67 for Cray-2 and Cray-YMP systems.
++   This function is required for alloca.c support on those systems. */
++/* #undef CRAY_STACKSEG_END */
++
++/* Define to 1 if you have the <alloca.h> header file. */
++/* explicitly disabled #define HAVE_ALLOCA_H 1 */
++
++/* Define to 1 if you have the `asprintf' function. */
++#define HAVE_ASPRINTF 1
++
++/* Define to 1 if you have the `atexit' function. */
++#define HAVE_ATEXIT 1
++
++/* Define to 1 if you have the `basename' function. */
++#define HAVE_BASENAME 1
++
++/* Define to 1 if you have the `bcmp' function. */
++#define HAVE_BCMP 1
++
++/* Define to 1 if you have the `bcopy' function. */
++#define HAVE_BCOPY 1
++
++/* Define to 1 if you have the `bsearch' function. */
++#define HAVE_BSEARCH 1
++
++/* Define to 1 if you have the `bzero' function. */
++#define HAVE_BZERO 1
++
++/* Define to 1 if you have the `calloc' function. */
++#define HAVE_CALLOC 1
++
++/* Define to 1 if you have the `canonicalize_file_name' function. */
++/* #undef HAVE_CANONICALIZE_FILE_NAME */
++
++/* Define to 1 if you have the `clock' function. */
++#define HAVE_CLOCK 1
++
++/* Define to 1 if you have the declaration of `asprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_ASPRINTF 1
++
++/* Define to 1 if you have the declaration of `basename(char *)', and to 0 if
++   you don't. */
++#define HAVE_DECL_BASENAME 0
++
++/* Define to 1 if you have the declaration of `calloc', and to 0 if you don't.
++   */
++#define HAVE_DECL_CALLOC 1
++
++/* Define to 1 if you have the declaration of `ffs', and to 0 if you don't. */
++#define HAVE_DECL_FFS 1
++
++/* Define to 1 if you have the declaration of `getenv', and to 0 if you don't.
++   */
++#define HAVE_DECL_GETENV 1
++
++/* Define to 1 if you have the declaration of `getopt', and to 0 if you don't.
++   */
++#define HAVE_DECL_GETOPT 1
++
++/* Define to 1 if you have the declaration of `malloc', and to 0 if you don't.
++   */
++#define HAVE_DECL_MALLOC 1
++
++/* Define to 1 if you have the declaration of `realloc', and to 0 if you
++   don't. */
++#define HAVE_DECL_REALLOC 1
++
++/* Define to 1 if you have the declaration of `sbrk', and to 0 if you don't.
++   */
++#define HAVE_DECL_SBRK 1
++
++/* Define to 1 if you have the declaration of `snprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_SNPRINTF 1
++
++/* Define to 1 if you have the declaration of `strnlen', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRNLEN 1
++
++/* Define to 1 if you have the declaration of `strtol', and to 0 if you don't.
++   */
++#define HAVE_DECL_STRTOL 1
++
++/* Define to 1 if you have the declaration of `strtoll', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRTOLL 1
++
++/* Define to 1 if you have the declaration of `strtoul', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRTOUL 1
++
++/* Define to 1 if you have the declaration of `strtoull', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRTOULL 1
++
++/* Define to 1 if you have the declaration of `strverscmp', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRVERSCMP 0
++
++/* Define to 1 if you have the declaration of `vasprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_VASPRINTF 1
++
++/* Define to 1 if you have the declaration of `vsnprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_VSNPRINTF 1
++
++/* Define to 1 if you have the `dup3' function. */
++/* do not enable yet #define HAVE_DUP3 1 */
++
++/* Define to 1 if you have the <fcntl.h> header file. */
++#define HAVE_FCNTL_H 1
++
++/* Define to 1 if you have the `ffs' function. */
++#define HAVE_FFS 1
++
++/* Define to 1 if you have the `fork' function. */
++#define HAVE_FORK 1
++
++/* Define to 1 if you have the `getcwd' function. */
++#define HAVE_GETCWD 1
++
++/* Define to 1 if you have the `getpagesize' function. */
++#define HAVE_GETPAGESIZE 1
++
++/* Define to 1 if you have the `getrlimit' function. */
++#define HAVE_GETRLIMIT 1
++
++/* Define to 1 if you have the `getrusage' function. */
++#define HAVE_GETRUSAGE 1
++
++/* Define to 1 if you have the `getsysinfo' function. */
++/* #undef HAVE_GETSYSINFO */
++
++/* Define to 1 if you have the `gettimeofday' function. */
++#define HAVE_GETTIMEOFDAY 1
++
++/* Define to 1 if you have the `index' function. */
++#define HAVE_INDEX 1
++
++/* Define to 1 if you have the `insque' function. */
++#define HAVE_INSQUE 1
++
++/* Define to 1 if the system has the type `intptr_t'. */
++#define HAVE_INTPTR_T 1
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#define HAVE_INTTYPES_H 1
++
++/* Define to 1 if you have the <limits.h> header file. */
++#define HAVE_LIMITS_H 1
++
++/* Define if you have the `long long' type. */
++#define HAVE_LONG_LONG 1
++
++/* Define to 1 if you have the <machine/hal_sysinfo.h> header file. */
++/* #undef HAVE_MACHINE_HAL_SYSINFO_H */
++
++/* Define to 1 if you have the <malloc.h> header file. */
++/* #undef HAVE_MALLOC_H */
++
++/* Define to 1 if you have the `memchr' function. */
++#define HAVE_MEMCHR 1
++
++/* Define to 1 if you have the `memcmp' function. */
++#define HAVE_MEMCMP 1
++
++/* Define to 1 if you have the `memcpy' function. */
++#define HAVE_MEMCPY 1
++
++/* Define to 1 if you have the `memmem' function. */
++#define HAVE_MEMMEM 1
++
++/* Define to 1 if you have the `memmove' function. */
++#define HAVE_MEMMOVE 1
++
++/* Define to 1 if you have the <memory.h> header file. */
++#define HAVE_MEMORY_H 1
++
++/* Define to 1 if you have the `memset' function. */
++#define HAVE_MEMSET 1
++
++/* Define to 1 if you have the `mkstemps' function. */
++#define HAVE_MKSTEMPS 1
++
++/* Define to 1 if you have a working `mmap' system call. */
++#define HAVE_MMAP 1
++
++/* Define to 1 if you have the `on_exit' function. */
++/* #undef HAVE_ON_EXIT */
++
++/* Define to 1 if you have the `pipe2' function. */
++#define HAVE_PIPE2 1
++
++/* Define to 1 if you have the <process.h> header file. */
++/* #undef HAVE_PROCESS_H */
++
++/* Define to 1 if you have the `psignal' function. */
++#define HAVE_PSIGNAL 1
++
++/* Define to 1 if you have the `pstat_getdynamic' function. */
++/* #undef HAVE_PSTAT_GETDYNAMIC */
++
++/* Define to 1 if you have the `pstat_getstatic' function. */
++/* #undef HAVE_PSTAT_GETSTATIC */
++
++/* Define to 1 if you have the `putenv' function. */
++#define HAVE_PUTENV 1
++
++/* Define to 1 if you have the `random' function. */
++#define HAVE_RANDOM 1
++
++/* Define to 1 if you have the `realpath' function. */
++#define HAVE_REALPATH 1
++
++/* Define to 1 if you have the `rename' function. */
++#define HAVE_RENAME 1
++
++/* Define to 1 if you have the `rindex' function. */
++#define HAVE_RINDEX 1
++
++/* Define to 1 if you have the `sbrk' function. */
++#define HAVE_SBRK 1
++
++/* Define to 1 if you have the `setenv' function. */
++#define HAVE_SETENV 1
++
++/* Define to 1 if you have the `setproctitle' function. */
++#define HAVE_SETPROCTITLE 1
++
++/* Define to 1 if you have the `setrlimit' function. */
++#define HAVE_SETRLIMIT 1
++
++/* Define to 1 if you have the `sigsetmask' function. */
++#define HAVE_SIGSETMASK 1
++
++/* Define to 1 if you have the `snprintf' function. */
++#define HAVE_SNPRINTF 1
++
++/* Define to 1 if you have the `spawnve' function. */
++/* #undef HAVE_SPAWNVE */
++
++/* Define to 1 if you have the `spawnvpe' function. */
++/* #undef HAVE_SPAWNVPE */
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#define HAVE_STDINT_H 1
++
++/* Define to 1 if you have the <stdio_ext.h> header file. */
++/* #undef HAVE_STDIO_EXT_H */
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#define HAVE_STDLIB_H 1
++
++/* Define to 1 if you have the `stpcpy' function. */
++#define HAVE_STPCPY 1
++
++/* Define to 1 if you have the `stpncpy' function. */
++#define HAVE_STPNCPY 1
++
++/* Define to 1 if you have the `strcasecmp' function. */
++#define HAVE_STRCASECMP 1
++
++/* Define to 1 if you have the `strchr' function. */
++#define HAVE_STRCHR 1
++
++/* Define to 1 if you have the `strdup' function. */
++#define HAVE_STRDUP 1
++
++/* Define to 1 if you have the `strerror' function. */
++#define HAVE_STRERROR 1
++
++/* Define to 1 if you have the <strings.h> header file. */
++#define HAVE_STRINGS_H 1
++
++/* Define to 1 if you have the <string.h> header file. */
++#define HAVE_STRING_H 1
++
++/* Define to 1 if you have the `strncasecmp' function. */
++#define HAVE_STRNCASECMP 1
++
++/* Define to 1 if you have the `strndup' function. */
++#define HAVE_STRNDUP 1
++
++/* Define to 1 if you have the `strnlen' function. */
++#define HAVE_STRNLEN 1
++
++/* Define to 1 if you have the `strrchr' function. */
++#define HAVE_STRRCHR 1
++
++/* Define to 1 if you have the `strsignal' function. */
++#define HAVE_STRSIGNAL 1
++
++/* Define to 1 if you have the `strstr' function. */
++#define HAVE_STRSTR 1
++
++/* Define to 1 if you have the `strtod' function. */
++#define HAVE_STRTOD 1
++
++/* Define to 1 if you have the `strtol' function. */
++#define HAVE_STRTOL 1
++
++/* Define to 1 if you have the `strtoll' function. */
++#define HAVE_STRTOLL 1
++
++/* Define to 1 if you have the `strtoul' function. */
++#define HAVE_STRTOUL 1
++
++/* Define to 1 if you have the `strtoull' function. */
++#define HAVE_STRTOULL 1
++
++/* Define to 1 if you have the `strverscmp' function. */
++/* #undef HAVE_STRVERSCMP */
++
++/* Define to 1 if you have the `sysconf' function. */
++#define HAVE_SYSCONF 1
++
++/* Define to 1 if you have the `sysctl' function. */
++#define HAVE_SYSCTL 1
++
++/* Define to 1 if you have the `sysmp' function. */
++/* #undef HAVE_SYSMP */
++
++/* Define if you have the sys_errlist variable. */
++#define HAVE_SYS_ERRLIST 1
++
++/* Define to 1 if you have the <sys/file.h> header file. */
++#define HAVE_SYS_FILE_H 1
++
++/* Define to 1 if you have the <sys/mman.h> header file. */
++#define HAVE_SYS_MMAN_H 1
++
++/* Define if you have the sys_nerr variable. */
++#define HAVE_SYS_NERR 1
++
++/* Define to 1 if you have the <sys/param.h> header file. */
++#define HAVE_SYS_PARAM_H 1
++
++/* Define to 1 if you have the <sys/prctl.h> header file. */
++/* #undef HAVE_SYS_PRCTL_H */
++
++/* Define to 1 if you have the <sys/pstat.h> header file. */
++/* #undef HAVE_SYS_PSTAT_H */
++
++/* Define to 1 if you have the <sys/resource.h> header file. */
++#define HAVE_SYS_RESOURCE_H 1
++
++/* Define if you have the sys_siglist variable. */
++#define HAVE_SYS_SIGLIST 1
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#define HAVE_SYS_STAT_H 1
++
++/* Define to 1 if you have the <sys/sysctl.h> header file. */
++#define HAVE_SYS_SYSCTL_H 1
++
++/* Define to 1 if you have the <sys/sysinfo.h> header file. */
++/* #undef HAVE_SYS_SYSINFO_H */
++
++/* Define to 1 if you have the <sys/sysmp.h> header file. */
++/* #undef HAVE_SYS_SYSMP_H */
++
++/* Define to 1 if you have the <sys/systemcfg.h> header file. */
++/* #undef HAVE_SYS_SYSTEMCFG_H */
++
++/* Define to 1 if you have the <sys/table.h> header file. */
++/* #undef HAVE_SYS_TABLE_H */
++
++/* Define to 1 if you have the <sys/time.h> header file. */
++#define HAVE_SYS_TIME_H 1
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#define HAVE_SYS_TYPES_H 1
++
++/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
++#define HAVE_SYS_WAIT_H 1
++
++/* Define to 1 if you have the `table' function. */
++/* #undef HAVE_TABLE */
++
++/* Define to 1 if you have the `times' function. */
++#define HAVE_TIMES 1
++
++/* Define to 1 if you have the <time.h> header file. */
++#define HAVE_TIME_H 1
++
++/* Define to 1 if you have the `tmpnam' function. */
++#define HAVE_TMPNAM 1
++
++/* Define if you have the \`uintptr_t' type. */
++#define HAVE_UINTPTR_T 1
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#define HAVE_UNISTD_H 1
++
++/* Define to 1 if you have the `vasprintf' function. */
++#define HAVE_VASPRINTF 1
++
++/* Define to 1 if you have the `vfork' function. */
++#define HAVE_VFORK 1
++
++/* Define to 1 if you have the <vfork.h> header file. */
++/* #undef HAVE_VFORK_H */
++
++/* Define to 1 if you have the `vfprintf' function. */
++#define HAVE_VFPRINTF 1
++
++/* Define to 1 if you have the `vprintf' function. */
++#define HAVE_VPRINTF 1
++
++/* Define to 1 if you have the `vsprintf' function. */
++#define HAVE_VSPRINTF 1
++
++/* Define to 1 if you have the `wait3' function. */
++#define HAVE_WAIT3 1
++
++/* Define to 1 if you have the `wait4' function. */
++#define HAVE_WAIT4 1
++
++/* Define to 1 if you have the `waitpid' function. */
++#define HAVE_WAITPID 1
++
++/* Define to 1 if `fork' works. */
++#define HAVE_WORKING_FORK 1
++
++/* Define to 1 if `vfork' works. */
++#define HAVE_WORKING_VFORK 1
++
++/* Define to 1 if you have the `_doprnt' function. */
++/* #undef HAVE__DOPRNT */
++
++/* Define if you have the _system_configuration variable. */
++/* #undef HAVE__SYSTEM_CONFIGURATION */
++
++/* Define to 1 if you have the `__fsetlocking' function. */
++/* #undef HAVE___FSETLOCKING */
++
++/* Define if canonicalize_file_name is not declared in system header files. */
++#define NEED_DECLARATION_CANONICALIZE_FILE_NAME 1
++
++/* Define if errno must be declared even when <errno.h> is included. */
++/* #undef NEED_DECLARATION_ERRNO */
++
++/* Define to 1 if your C compiler doesn't accept -c and -o together. */
++/* #undef NO_MINUS_C_MINUS_O */
++
++/* Define to the address where bug reports for this package should be sent. */
++#define PACKAGE_BUGREPORT ""
++
++/* Define to the full name of this package. */
++#define PACKAGE_NAME ""
++
++/* Define to the full name and version of this package. */
++#define PACKAGE_STRING ""
++
++/* Define to the one symbol short name of this package. */
++#define PACKAGE_TARNAME ""
++
++/* Define to the home page for this package. */
++#define PACKAGE_URL ""
++
++/* Define to the version of this package. */
++#define PACKAGE_VERSION ""
++
++/* The size of `int', as computed by sizeof. */
++#define SIZEOF_INT 4
++
++/* The size of `long', as computed by sizeof. */
++#define SIZEOF_LONG 8
++
++/* The size of `long long', as computed by sizeof. */
++#define SIZEOF_LONG_LONG 8
++
++/* The size of `size_t', as computed by sizeof. */
++#define SIZEOF_SIZE_T 8
++
++/* Define if you know the direction of stack growth for your system; otherwise
++   it will be automatically deduced at run-time. STACK_DIRECTION > 0 => grows
++   toward higher addresses STACK_DIRECTION < 0 => grows toward lower addresses
++   STACK_DIRECTION = 0 => direction of growth unknown */
++#define STACK_DIRECTION -1
++
++/* Define to 1 if you have the ANSI C header files. */
++#define STDC_HEADERS 1
++
++/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
++#define TIME_WITH_SYS_TIME 1
++
++/* Define to an unsigned 64-bit type available in the compiler. */
++#define UNSIGNED_64BIT_TYPE uint64_t
++
++/* Enable extensions on AIX 3, Interix.  */
++#ifndef _ALL_SOURCE
++# define _ALL_SOURCE 1
++#endif
++/* Enable GNU extensions on systems that have them.  */
++#ifndef _GNU_SOURCE
++# define _GNU_SOURCE 1
++#endif
++/* Enable threading extensions on Solaris.  */
++#ifndef _POSIX_PTHREAD_SEMANTICS
++# define _POSIX_PTHREAD_SEMANTICS 1
++#endif
++/* Enable extensions on HP NonStop.  */
++#ifndef _TANDEM_SOURCE
++# define _TANDEM_SOURCE 1
++#endif
++/* Enable general extensions on Solaris.  */
++#ifndef __EXTENSIONS__
++# define __EXTENSIONS__ 1
++#endif
++
++
++/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
++   significant byte first (like Motorola and SPARC, unlike Intel). */
++#if defined AC_APPLE_UNIVERSAL_BUILD
++# if defined __BIG_ENDIAN__
++#  define WORDS_BIGENDIAN 1
++# endif
++#else
++# ifndef WORDS_BIGENDIAN
++/* #  undef WORDS_BIGENDIAN */
++# endif
++#endif
++
++/* Enable large inode numbers on Mac OS X 10.5.  */
++#ifndef _DARWIN_USE_64_BIT_INODE
++# define _DARWIN_USE_64_BIT_INODE 1
++#endif
++
++/* Number of bits in a file offset, on hosts where this is settable. */
++/* #undef _FILE_OFFSET_BITS */
++
++/* Define for large files, on AIX-style hosts. */
++/* #undef _LARGE_FILES */
++
++/* Define to 1 if on MINIX. */
++/* #undef _MINIX */
++
++/* Define to 2 if the system does not provide POSIX.1 features except with
++   this defined. */
++/* #undef _POSIX_1_SOURCE */
++
++/* Define to 1 if you need to in order for `stat' and other things to work. */
++/* #undef _POSIX_SOURCE */
++
++/* Define to empty if `const' does not conform to ANSI C. */
++/* #undef const */
++
++/* Define to `__inline__' or `__inline' if that's what the C compiler
++   calls it, or to nothing if 'inline' is not supported under any name.  */
++#ifndef __cplusplus
++/* #undef inline */
++#endif
++
++/* Define to the type of a signed integer type wide enough to hold a pointer,
++   if such a type exists, and if the system does not define it. */
++/* #undef intptr_t */
++
++/* Define to `int' if <sys/types.h> does not define. */
++/* #undef pid_t */
++
++/* Define to `int' if <sys/types.h> does not define. */
++/* #undef ssize_t */
++
++/* Define to the type of an unsigned integer type wide enough to hold a
++   pointer, if such a type exists, and if the system does not define it. */
++/* #undef uintptr_t */
++
++/* Define as `fork' if `vfork' does not work. */
++/* #undef vfork */
+diff --git a/gnu/usr.bin/binutils234/block1/libopcodes/bfd_stdint.h b/gnu/usr.bin/binutils234/block1/libopcodes/bfd_stdint.h
+new file mode 100644
+index 0000000000..c4b6598b0e
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libopcodes/bfd_stdint.h
+@@ -0,0 +1,9 @@
++/* generated for  gcc 8.3 [DragonFly] Release/2019-02-22 */
++
++#ifndef GCC_GENERATED_STDINT_H
++#define GCC_GENERATED_STDINT_H 1
++
++#include <sys/types.h>
++#include <stdint.h>
++
++#endif /* GCC_GENERATED_STDINT_H */
+diff --git a/gnu/usr.bin/binutils234/block1/libopcodes/config.h b/gnu/usr.bin/binutils234/block1/libopcodes/config.h
+new file mode 100644
+index 0000000000..50bc7f471b
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block1/libopcodes/config.h
+@@ -0,0 +1,123 @@
++/* config.h.  Generated from config.in by configure.  */
++/* config.in.  Generated from configure.ac by autoheader.  */
++
++/* Check that config.h is #included before system headers
++   (this works only for glibc, but that should be enough).  */
++#if defined(__GLIBC__) && !defined(__FreeBSD_kernel__) && !defined(__CONFIG_H__)
++#  error config.h must be #included before system headers
++#endif
++#define __CONFIG_H__ 1
++
++/* Define to 1 if translation of program messages to the user's native
++   language is requested. */
++/* #undef ENABLE_NLS */
++
++/* Define to 1 if you have the declaration of `basename', and to 0 if you
++   don't. */
++#define HAVE_DECL_BASENAME 0
++
++/* Define to 1 if you have the declaration of `stpcpy', and to 0 if you don't.
++   */
++#define HAVE_DECL_STPCPY 1
++
++/* Define to 1 if you have the <dlfcn.h> header file. */
++#define HAVE_DLFCN_H 1
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#define HAVE_INTTYPES_H 1
++
++/* Define to 1 if you have the <limits.h> header file. */
++#define HAVE_LIMITS_H 1
++
++/* Define to 1 if you have the <memory.h> header file. */
++#define HAVE_MEMORY_H 1
++
++/* Define if sigsetjmp is available. */
++#define HAVE_SIGSETJMP 1
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#define HAVE_STDINT_H 1
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#define HAVE_STDLIB_H 1
++
++/* Define to 1 if you have the <strings.h> header file. */
++#define HAVE_STRINGS_H 1
++
++/* Define to 1 if you have the <string.h> header file. */
++#define HAVE_STRING_H 1
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#define HAVE_SYS_STAT_H 1
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#define HAVE_SYS_TYPES_H 1
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#define HAVE_UNISTD_H 1
++
++/* Define to the sub-directory in which libtool stores uninstalled libraries.
++   */
++#define LT_OBJDIR ".libs/"
++
++/* Name of package */
++#define PACKAGE "opcodes"
++
++/* Define to the address where bug reports for this package should be sent. */
++#define PACKAGE_BUGREPORT ""
++
++/* Define to the full name of this package. */
++#define PACKAGE_NAME "opcodes"
++
++/* Define to the full name and version of this package. */
++#define PACKAGE_STRING "opcodes 2.34"
++
++/* Define to the one symbol short name of this package. */
++#define PACKAGE_TARNAME "opcodes"
++
++/* Define to the home page for this package. */
++#define PACKAGE_URL ""
++
++/* Define to the version of this package. */
++#define PACKAGE_VERSION "2.34"
++
++/* Define to 1 if you have the ANSI C header files. */
++#define STDC_HEADERS 1
++
++/* Define if you can safely include both <string.h> and <strings.h>. */
++#define STRING_WITH_STRINGS 1
++
++/* Enable extensions on AIX 3, Interix.  */
++#ifndef _ALL_SOURCE
++# define _ALL_SOURCE 1
++#endif
++/* Enable GNU extensions on systems that have them.  */
++#ifndef _GNU_SOURCE
++# define _GNU_SOURCE 1
++#endif
++/* Enable threading extensions on Solaris.  */
++#ifndef _POSIX_PTHREAD_SEMANTICS
++# define _POSIX_PTHREAD_SEMANTICS 1
++#endif
++/* Enable extensions on HP NonStop.  */
++#ifndef _TANDEM_SOURCE
++# define _TANDEM_SOURCE 1
++#endif
++/* Enable general extensions on Solaris.  */
++#ifndef __EXTENSIONS__
++# define __EXTENSIONS__ 1
++#endif
++
++
++/* Version number of package */
++#define VERSION "2.34"
++
++/* Define to 1 if on MINIX. */
++/* #undef _MINIX */
++
++/* Define to 2 if the system does not provide POSIX.1 features except with
++   this defined. */
++/* #undef _POSIX_1_SOURCE */
++
++/* Define to 1 if you need to in order for `stat' and other things to work. */
++/* #undef _POSIX_SOURCE */
+diff --git a/gnu/usr.bin/binutils234/block2/gas/config.h b/gnu/usr.bin/binutils234/block2/gas/config.h
+new file mode 100644
+index 0000000000..ab0766785a
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/gas/config.h
+@@ -0,0 +1,417 @@
++/* config.h.  Generated from config.in by configure.  */
++/* config.in.  Generated from configure.ac by autoheader.  */
++
++/* Check that config.h is #included before system headers
++   (this works only for glibc, but that should be enough).  */
++#if defined(__GLIBC__) && !defined(__FreeBSD_kernel__) && !defined(__CONFIG_H__)
++#  error config.h must be #included before system headers
++#endif
++#define __CONFIG_H__ 1
++
++/* Define if building universal (internal helper macro) */
++/* #undef AC_APPLE_UNIVERSAL_BUILD */
++
++/* Define if using AIX 5.2 value for C_WEAKEXT. */
++/* #undef AIX_WEAK_SUPPORT */
++
++/* assert broken? */
++/* #undef BROKEN_ASSERT */
++
++/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
++   systems. This function is required for `alloca.c' support on those systems.
++   */
++/* #undef CRAY_STACKSEG_END */
++
++/* Compiling cross-assembler? */
++/* #undef CROSS_COMPILE */
++
++/* Define to 1 if using `alloca.c'. */
++/* #undef C_ALLOCA */
++
++/* Default architecture. */
++/* handled in makefile #define DEFAULT_ARCH "x86_64" */
++
++/* Default CRIS architecture. */
++/* #undef DEFAULT_CRIS_ARCH */
++
++/* Default emulation. */
++/* handled in makefile #define DEFAULT_EMULATION "i386elf" */
++
++/* Define if you want compressed debug sections by default. */
++/* #undef DEFAULT_FLAG_COMPRESS_DEBUG */
++
++/* Define to 1 if you want to generate GNU Build attribute notes by default,
++   if none are contained in the input. */
++#define DEFAULT_GENERATE_BUILD_NOTES 0
++
++/* Define to 1 if you want to generate ELF common symbols with the STT_COMMON
++   type by default. */
++#define DEFAULT_GENERATE_ELF_STT_COMMON 0
++
++/* Define to 1 if you want to generate x86 relax relocations by default. */
++#define DEFAULT_GENERATE_X86_RELAX_RELOCATIONS 1
++
++/* Define to 1 if you want to fix Loongson3 LLSC Errata by default. */
++#define DEFAULT_MIPS_FIX_LOONGSON3_LLSC 0
++
++/* Define to 1 if you want to generate RISC-V arch attribute by default. */
++#define DEFAULT_RISCV_ATTR 0
++
++/* Define to 1 if you want to generate GNU x86 used ISA and feature properties
++   by default. */
++#define DEFAULT_X86_USED_NOTE 0
++
++/* Supported emulations. */
++/* handled by makefile #define EMULATIONS &i386elf, */
++
++/* Define if you want run-time sanity checks. */
++/* #define ENABLE_CHECKING 1 */
++
++/* Define to 1 if translation of program messages to the user's native
++   language is requested. */
++/* #undef ENABLE_NLS */
++
++/* Define to 1 if you have `alloca', as a function or macro. */
++#define HAVE_ALLOCA 1
++
++/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
++   */
++/* explicitly disabled #define HAVE_ALLOCA_H 1 */
++
++/* Define to 1 if you have the declaration of `asprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_ASPRINTF 1
++
++/* Define to 1 if you have the declaration of `free', and to 0 if you don't.
++   */
++#define HAVE_DECL_FREE 1
++
++/* Define to 1 if you have the declaration of `getenv', and to 0 if you don't.
++   */
++#define HAVE_DECL_GETENV 1
++
++/* Is the prototype for getopt in <unistd.h> in the expected format? */
++#define HAVE_DECL_GETOPT 1
++
++/* Define to 1 if you have the declaration of `malloc', and to 0 if you don't.
++   */
++#define HAVE_DECL_MALLOC 1
++
++/* Define to 1 if you have the declaration of `mempcpy', and to 0 if you
++   don't. */
++#define HAVE_DECL_MEMPCPY 1
++
++/* Define to 1 if you have the declaration of `realloc', and to 0 if you
++   don't. */
++#define HAVE_DECL_REALLOC 1
++
++/* Define to 1 if you have the declaration of `stpcpy', and to 0 if you don't.
++   */
++#define HAVE_DECL_STPCPY 1
++
++/* Define to 1 if you have the declaration of `strstr', and to 0 if you don't.
++   */
++#define HAVE_DECL_STRSTR 1
++
++/* Define to 1 if you have the declaration of `vsnprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_VSNPRINTF 1
++
++/* Define to 1 if you have the <dlfcn.h> header file. */
++#define HAVE_DLFCN_H 1
++
++/* Define to 1 if you have the <errno.h> header file. */
++#define HAVE_ERRNO_H 1
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#define HAVE_INTTYPES_H 1
++
++/* Define if your <locale.h> file defines LC_MESSAGES. */
++#define HAVE_LC_MESSAGES 1
++
++/* Define to 1 if you have the <limits.h> header file. */
++#define HAVE_LIMITS_H 1
++
++/* Define to 1 if you have the <locale.h> header file. */
++#define HAVE_LOCALE_H 1
++
++/* Define to 1 if you have the <memory.h> header file. */
++#define HAVE_MEMORY_H 1
++
++/* Define to 1 if you have the `remove' function. */
++/* #undef HAVE_REMOVE */
++
++/* Define to 1 if you have the `sbrk' function. */
++#define HAVE_SBRK 1
++
++/* Define to 1 if you have the `setlocale' function. */
++#define HAVE_SETLOCALE 1
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#define HAVE_STDINT_H 1
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#define HAVE_STDLIB_H 1
++
++/* Define to 1 if you have the <strings.h> header file. */
++#define HAVE_STRINGS_H 1
++
++/* Define to 1 if you have the <string.h> header file. */
++#define HAVE_STRING_H 1
++
++/* Define to 1 if you have the `strsignal' function. */
++#define HAVE_STRSIGNAL 1
++
++/* Define if <sys/stat.h> has struct stat.st_mtim.tv_nsec */
++#define HAVE_ST_MTIM_TV_NSEC 1
++
++/* Define if <sys/stat.h> has struct stat.st_mtim.tv_sec */
++#define HAVE_ST_MTIM_TV_SEC 1
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#define HAVE_SYS_STAT_H 1
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#define HAVE_SYS_TYPES_H 1
++
++/* Define to 1 if you have the <time.h> header file. */
++#define HAVE_TIME_H 1
++
++/* Define if <time.h> has struct tm.tm_gmtoff. */
++#define HAVE_TM_GMTOFF 1
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#define HAVE_UNISTD_H 1
++
++/* Define to 1 if you have the `unlink' function. */
++#define HAVE_UNLINK 1
++
++/* Define to 1 if you have the <windows.h> header file. */
++/* #undef HAVE_WINDOWS_H */
++
++/* Using i386 COFF? */
++/* #undef I386COFF */
++
++/* Define to the sub-directory in which libtool stores uninstalled libraries.
++   */
++#define LT_OBJDIR ".libs/"
++
++/* Default CPU for MIPS targets. */
++/* #undef MIPS_CPU_STRING_DEFAULT */
++
++/* Generate 64-bit code by default on MIPS targets. */
++/* #undef MIPS_DEFAULT_64BIT */
++
++/* Choose a default ABI for MIPS targets. */
++/* #undef MIPS_DEFAULT_ABI */
++
++/* Define value for nds32_arch_name */
++/* #undef NDS32_DEFAULT_ARCH_NAME */
++
++/* Define default value for nds32_audio_ext */
++/* #undef NDS32_DEFAULT_AUDIO_EXT */
++
++/* Define default value for nds32_dsp_ext */
++/* #undef NDS32_DEFAULT_DSP_EXT */
++
++/* Define default value for nds32_dx_regs */
++/* #undef NDS32_DEFAULT_DX_REGS */
++
++/* Define default value for nds32_perf_ext */
++/* #undef NDS32_DEFAULT_PERF_EXT */
++
++/* Define default value for nds32_perf_ext2 */
++/* #undef NDS32_DEFAULT_PERF_EXT2 */
++
++/* Define default value for nds32_string_ext */
++/* #undef NDS32_DEFAULT_STRING_EXT */
++
++/* Define default value for nds32_zol_ext */
++/* #undef NDS32_DEFAULT_ZOL_EXT */
++
++/* Define default value for nds32_linux_toolchain */
++/* #undef NDS32_LINUX_TOOLCHAIN */
++
++/* Define if environ is not declared in system header files. */
++#define NEED_DECLARATION_ENVIRON 1
++
++/* Define if errno is not declared in system header files. */
++/* #undef NEED_DECLARATION_ERRNO */
++
++/* Define if ffs is not declared in system header files. */
++/* #undef NEED_DECLARATION_FFS */
++
++/* Define if free is not declared in system header files. */
++/* #undef NEED_DECLARATION_FREE */
++
++/* Define if malloc is not declared in system header files. */
++/* #undef NEED_DECLARATION_MALLOC */
++
++/* Define if sbrk is not declared in system header files. */
++/* #undef NEED_DECLARATION_SBRK */
++
++/* Define if strstr is not declared in system header files. */
++/* #undef NEED_DECLARATION_STRSTR */
++
++/* a.out support? */
++/* #undef OBJ_MAYBE_AOUT */
++
++/* COFF support? */
++/* #undef OBJ_MAYBE_COFF */
++
++/* ECOFF support? */
++/* #undef OBJ_MAYBE_ECOFF */
++
++/* ELF support? */
++/* #undef OBJ_MAYBE_ELF */
++
++/* generic support? */
++/* #undef OBJ_MAYBE_GENERIC */
++
++/* SOM support? */
++/* #undef OBJ_MAYBE_SOM */
++
++/* Name of package */
++#define PACKAGE "gas"
++
++/* Define to the address where bug reports for this package should be sent. */
++#define PACKAGE_BUGREPORT ""
++
++/* Define to the full name of this package. */
++#define PACKAGE_NAME "gas"
++
++/* Define to the full name and version of this package. */
++#define PACKAGE_STRING "gas 2.34"
++
++/* Define to the one symbol short name of this package. */
++#define PACKAGE_TARNAME "gas"
++
++/* Define to the home page for this package. */
++#define PACKAGE_URL ""
++
++/* Define to the version of this package. */
++#define PACKAGE_VERSION "2.34"
++
++/* If using the C implementation of alloca, define if you know the
++   direction of stack growth for your system; otherwise it will be
++   automatically deduced at runtime.
++	STACK_DIRECTION > 0 => grows toward higher addresses
++	STACK_DIRECTION < 0 => grows toward lower addresses
++	STACK_DIRECTION = 0 => direction of growth unknown */
++/* #undef STACK_DIRECTION */
++
++/* Define to 1 if you have the ANSI C header files. */
++#define STDC_HEADERS 1
++
++/* Using strict COFF? */
++/* #undef STRICTCOFF */
++
++/* Define if you can safely include both <string.h> and <strings.h>. */
++#define STRING_WITH_STRINGS 1
++
++/* Target alias. */
++/* handled by makefile #define TARGET_ALIAS "x86_64-unknown-dragonfly5.7" */
++
++/* Define as 1 if big endian. */
++/* #undef TARGET_BYTES_BIG_ENDIAN */
++
++/* Canonical target. */
++/* handled by makefile #define TARGET_CANONICAL "x86_64-unknown-dragonfly5.7" */
++
++/* Target CPU. */
++/* handled by makefile #define TARGET_CPU "x86_64" */
++
++/* Target OS. */
++/* handled by makefile #define TARGET_OS "dragonfly5.7" */
++
++/* Define if default target is PowerPC Solaris. */
++/* #undef TARGET_SOLARIS_COMMENT */
++
++/* Target vendor. */
++#define TARGET_VENDOR "pc"
++
++/* Target specific CPU. */
++/* #undef TARGET_WITH_CPU */
++
++/* Use b modifier when opening binary files? */
++/* #undef USE_BINARY_FOPEN */
++
++/* Use emulation support? */
++/* #undef USE_EMULATIONS */
++
++/* Allow use of E_MIPS_ABI_O32 on MIPS targets. */
++/* #undef USE_E_MIPS_ABI_O32 */
++
++/* Enable extensions on AIX 3, Interix.  */
++#ifndef _ALL_SOURCE
++# define _ALL_SOURCE 1
++#endif
++/* Enable GNU extensions on systems that have them.  */
++#ifndef _GNU_SOURCE
++# define _GNU_SOURCE 1
++#endif
++/* Enable threading extensions on Solaris.  */
++#ifndef _POSIX_PTHREAD_SEMANTICS
++# define _POSIX_PTHREAD_SEMANTICS 1
++#endif
++/* Enable extensions on HP NonStop.  */
++#ifndef _TANDEM_SOURCE
++# define _TANDEM_SOURCE 1
++#endif
++/* Enable general extensions on Solaris.  */
++#ifndef __EXTENSIONS__
++# define __EXTENSIONS__ 1
++#endif
++
++
++/* Using cgen code? */
++/* #undef USING_CGEN */
++
++/* Version number of package */
++#define VERSION "2.34"
++
++/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
++   significant byte first (like Motorola and SPARC, unlike Intel). */
++#if defined AC_APPLE_UNIVERSAL_BUILD
++# if defined __BIG_ENDIAN__
++#  define WORDS_BIGENDIAN 1
++# endif
++#else
++# ifndef WORDS_BIGENDIAN
++/* #  undef WORDS_BIGENDIAN */
++# endif
++#endif
++
++/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
++   `char[]'. */
++#define YYTEXT_POINTER 1
++
++/* Enable large inode numbers on Mac OS X 10.5.  */
++#ifndef _DARWIN_USE_64_BIT_INODE
++# define _DARWIN_USE_64_BIT_INODE 1
++#endif
++
++/* Number of bits in a file offset, on hosts where this is settable. */
++/* #undef _FILE_OFFSET_BITS */
++
++/* Define for large files, on AIX-style hosts. */
++/* #undef _LARGE_FILES */
++
++/* Define to 1 if on MINIX. */
++/* #undef _MINIX */
++
++/* Define to 2 if the system does not provide POSIX.1 features except with
++   this defined. */
++/* #undef _POSIX_1_SOURCE */
++
++/* Define to 1 if you need to in order for `stat' and other things to work. */
++/* #undef _POSIX_SOURCE */
++
++/* Define to `__inline__' or `__inline' if that's what the C compiler
++   calls it, or to nothing if 'inline' is not supported under any name.  */
++#ifndef __cplusplus
++/* #undef inline */
++#endif
++
++/* Define to `unsigned int' if <sys/types.h> does not define. */
++/* #undef size_t */
+diff --git a/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/itbl-cpu.h b/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/itbl-cpu.h
+new file mode 100644
+index 0000000000..54880214c7
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/itbl-cpu.h
+@@ -0,0 +1 @@
++#include "itbl-i386.h"
+diff --git a/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/obj-format.h b/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/obj-format.h
+new file mode 100644
+index 0000000000..69c64aac88
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/obj-format.h
+@@ -0,0 +1 @@
++#include "obj-elf.h"
+diff --git a/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/targ-cpu.h b/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/targ-cpu.h
+new file mode 100644
+index 0000000000..f4be0e50bd
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/targ-cpu.h
+@@ -0,0 +1 @@
++#include "tc-i386.h"
+diff --git a/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/targ-env.h b/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/targ-env.h
+new file mode 100644
+index 0000000000..6cb636daad
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/gas/x86_64-dragonfly/targ-env.h
+@@ -0,0 +1 @@
++#include "te-dragonfly.h"
+diff --git a/gnu/usr.bin/binutils234/block2/gprof/gconfig.h b/gnu/usr.bin/binutils234/block2/gprof/gconfig.h
+new file mode 100644
+index 0000000000..0076f058cd
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/gprof/gconfig.h
+@@ -0,0 +1,122 @@
++/* gconfig.h.  Generated from gconfig.in by configure.  */
++/* gconfig.in.  Generated from configure.ac by autoheader.  */
++
++/* Define to 1 if translation of program messages to the user's native
++   language is requested. */
++/* #undef ENABLE_NLS */
++
++/* Is the prototype for getopt in <unistd.h> in the expected format? */
++#define HAVE_DECL_GETOPT 1
++
++/* Define to 1 if you have the <dlfcn.h> header file. */
++#define HAVE_DLFCN_H 1
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#define HAVE_INTTYPES_H 1
++
++/* Define to 1 if you have the <memory.h> header file. */
++#define HAVE_MEMORY_H 1
++
++/* Define to 1 if you have the `setmode' function. */
++#define HAVE_SETMODE 1
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#define HAVE_STDINT_H 1
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#define HAVE_STDLIB_H 1
++
++/* Define to 1 if you have the <strings.h> header file. */
++#define HAVE_STRINGS_H 1
++
++/* Define to 1 if you have the <string.h> header file. */
++#define HAVE_STRING_H 1
++
++/* Define to 1 if you have the <sys/gmon_out.h> header file. */
++/* #undef HAVE_SYS_GMON_OUT_H */
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#define HAVE_SYS_STAT_H 1
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#define HAVE_SYS_TYPES_H 1
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#define HAVE_UNISTD_H 1
++
++/* Define to 1 if you have the <windows.h> header file. */
++/* #undef HAVE_WINDOWS_H */
++
++/* Define to the sub-directory in which libtool stores uninstalled libraries.
++   */
++#define LT_OBJDIR ".libs/"
++
++/* Name of package */
++#define PACKAGE "gprof"
++
++/* Define to the address where bug reports for this package should be sent. */
++#define PACKAGE_BUGREPORT ""
++
++/* Define to the full name of this package. */
++#define PACKAGE_NAME "gprof"
++
++/* Define to the full name and version of this package. */
++#define PACKAGE_STRING "gprof 2.34"
++
++/* Define to the one symbol short name of this package. */
++#define PACKAGE_TARNAME "gprof"
++
++/* Define to the home page for this package. */
++#define PACKAGE_URL ""
++
++/* Define to the version of this package. */
++#define PACKAGE_VERSION "2.34"
++
++/* Define to 1 if you have the ANSI C header files. */
++#define STDC_HEADERS 1
++
++/* Enable extensions on AIX 3, Interix.  */
++#ifndef _ALL_SOURCE
++# define _ALL_SOURCE 1
++#endif
++/* Enable GNU extensions on systems that have them.  */
++#ifndef _GNU_SOURCE
++# define _GNU_SOURCE 1
++#endif
++/* Enable threading extensions on Solaris.  */
++#ifndef _POSIX_PTHREAD_SEMANTICS
++# define _POSIX_PTHREAD_SEMANTICS 1
++#endif
++/* Enable extensions on HP NonStop.  */
++#ifndef _TANDEM_SOURCE
++# define _TANDEM_SOURCE 1
++#endif
++/* Enable general extensions on Solaris.  */
++#ifndef __EXTENSIONS__
++# define __EXTENSIONS__ 1
++#endif
++
++
++/* Version number of package */
++#define VERSION "2.34"
++
++/* Enable large inode numbers on Mac OS X 10.5.  */
++#ifndef _DARWIN_USE_64_BIT_INODE
++# define _DARWIN_USE_64_BIT_INODE 1
++#endif
++
++/* Number of bits in a file offset, on hosts where this is settable. */
++/* #undef _FILE_OFFSET_BITS */
++
++/* Define for large files, on AIX-style hosts. */
++/* #undef _LARGE_FILES */
++
++/* Define to 1 if on MINIX. */
++/* #undef _MINIX */
++
++/* Define to 2 if the system does not provide POSIX.1 features except with
++   this defined. */
++/* #undef _POSIX_1_SOURCE */
++
++/* Define to 1 if you need to in order for `stat' and other things to work. */
++/* #undef _POSIX_SOURCE */
+diff --git a/gnu/usr.bin/binutils234/block2/ld/config.h b/gnu/usr.bin/binutils234/block2/ld/config.h
+new file mode 100644
+index 0000000000..be435fd761
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/ld/config.h
+@@ -0,0 +1,257 @@
++/* config.h.  Generated from config.in by configure.  */
++/* config.in.  Generated from configure.ac by autoheader.  */
++
++/* Check that config.h is #included before system headers
++   (this works only for glibc, but that should be enough).  */
++#if defined(__GLIBC__) && !defined(__FreeBSD_kernel__) && !defined(__CONFIG_H__)
++#  error config.h must be #included before system headers
++#endif
++#define __CONFIG_H__ 1
++
++/* Define to 1 if you want to emit gnu hash in the ELF linker by default. */
++#define DEFAULT_EMIT_GNU_HASH 0
++
++/* Define to 1 if you want to emit sysv hash in the ELF linker by default. */
++#define DEFAULT_EMIT_SYSV_HASH 1
++
++/* Define if you want compressed debug sections by default. */
++/* #undef DEFAULT_FLAG_COMPRESS_DEBUG */
++
++/* Define to 1 if you want to enable -z relro in ELF linker by default. */
++/* handled by makefile #define DEFAULT_LD_Z_RELRO 0 */
++
++/* Define to 1 if you want to enable -z separate-code in ELF linker by
++   default. */
++#define DEFAULT_LD_Z_SEPARATE_CODE 0
++
++/* Define to 1 if you want to set DT_RUNPATH instead of DT_RPATH by default.
++   */
++#define DEFAULT_NEW_DTAGS 0
++
++/* Define to 1 if translation of program messages to the user's native
++   language is requested. */
++/* #undef ENABLE_NLS */
++
++/* Additional extension a shared object might have. */
++/* #undef EXTRA_SHLIB_EXTENSION */
++
++/* Define to choose default GOT handling scheme */
++#define GOT_HANDLING_DEFAULT GOT_HANDLING_TARGET_DEFAULT
++
++/* Define to 1 if you have the `close' function. */
++#define HAVE_CLOSE 1
++
++/* Define to 1 if you have the declaration of `environ', and to 0 if you
++   don't. */
++#define HAVE_DECL_ENVIRON 0
++
++/* Define to 1 if you have the declaration of `free', and to 0 if you don't.
++   */
++#define HAVE_DECL_FREE 1
++
++/* Define to 1 if you have the declaration of `getenv', and to 0 if you don't.
++   */
++#define HAVE_DECL_GETENV 1
++
++/* Is the prototype for getopt in <unistd.h> in the expected format? */
++#define HAVE_DECL_GETOPT 1
++
++/* Define to 1 if you have the declaration of `sbrk', and to 0 if you don't.
++   */
++#define HAVE_DECL_SBRK 1
++
++/* Define to 1 if you have the declaration of `strstr', and to 0 if you don't.
++   */
++#define HAVE_DECL_STRSTR 1
++
++/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
++   */
++#define HAVE_DIRENT_H 1
++
++/* Define to 1 if you have the <dlfcn.h> header file. */
++#define HAVE_DLFCN_H 1
++
++/* Define to 1 if you have the <elf-hints.h> header file. */
++#define HAVE_ELF_HINTS_H 1
++
++/* Define to 1 if you have the <fcntl.h> header file. */
++#define HAVE_FCNTL_H 1
++
++/* Define to 1 if you have the `getpagesize' function. */
++#define HAVE_GETPAGESIZE 1
++
++/* Define to 1 if you have the `glob' function. */
++#define HAVE_GLOB 1
++
++/* Define .init_array/.fini_array sections are available and working. */
++#define HAVE_INITFINI_ARRAY 1
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#define HAVE_INTTYPES_H 1
++
++/* Define if your <locale.h> file defines LC_MESSAGES. */
++#define HAVE_LC_MESSAGES 1
++
++/* Define to 1 if you have the <limits.h> header file. */
++#define HAVE_LIMITS_H 1
++
++/* Define to 1 if you have the <locale.h> header file. */
++#define HAVE_LOCALE_H 1
++
++/* Define to 1 if you have the `lseek' function. */
++#define HAVE_LSEEK 1
++
++/* Define to 1 if you have the <memory.h> header file. */
++#define HAVE_MEMORY_H 1
++
++/* Define to 1 if you have the `mkstemp' function. */
++#define HAVE_MKSTEMP 1
++
++/* Define to 1 if you have a working `mmap' system call. */
++#define HAVE_MMAP 1
++
++/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
++/* #undef HAVE_NDIR_H */
++
++/* Define to 1 if you have the `open' function. */
++#define HAVE_OPEN 1
++
++/* Define to 1 if you have the `realpath' function. */
++#define HAVE_REALPATH 1
++
++/* Define to 1 if you have the `sbrk' function. */
++#define HAVE_SBRK 1
++
++/* Define to 1 if you have the `setlocale' function. */
++#define HAVE_SETLOCALE 1
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#define HAVE_STDINT_H 1
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#define HAVE_STDLIB_H 1
++
++/* Define to 1 if you have the <strings.h> header file. */
++#define HAVE_STRINGS_H 1
++
++/* Define to 1 if you have the <string.h> header file. */
++#define HAVE_STRING_H 1
++
++/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
++   */
++/* #undef HAVE_SYS_DIR_H */
++
++/* Define to 1 if you have the <sys/file.h> header file. */
++#define HAVE_SYS_FILE_H 1
++
++/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
++   */
++/* #undef HAVE_SYS_NDIR_H */
++
++/* Define to 1 if you have the <sys/param.h> header file. */
++#define HAVE_SYS_PARAM_H 1
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#define HAVE_SYS_STAT_H 1
++
++/* Define to 1 if you have the <sys/time.h> header file. */
++#define HAVE_SYS_TIME_H 1
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#define HAVE_SYS_TYPES_H 1
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#define HAVE_UNISTD_H 1
++
++/* Define to 1 if you have the `waitpid' function. */
++#define HAVE_WAITPID 1
++
++/* Define to 1 if you have the <windows.h> header file. */
++/* #undef HAVE_WINDOWS_H */
++
++/* Define to the sub-directory in which libtool stores uninstalled libraries.
++   */
++#define LT_OBJDIR ".libs/"
++
++/* Name of package */
++#define PACKAGE "ld"
++
++/* Define to the address where bug reports for this package should be sent. */
++#define PACKAGE_BUGREPORT ""
++
++/* Define to the full name of this package. */
++#define PACKAGE_NAME "ld"
++
++/* Define to the full name and version of this package. */
++#define PACKAGE_STRING "ld 2.34"
++
++/* Define to the one symbol short name of this package. */
++#define PACKAGE_TARNAME "ld"
++
++/* Define to the home page for this package. */
++#define PACKAGE_URL ""
++
++/* Define to the version of this package. */
++#define PACKAGE_VERSION "2.34"
++
++/* The size of `void *', as computed by sizeof. */
++#define SIZEOF_VOID_P 8
++
++/* Define to 1 if you have the ANSI C header files. */
++#define STDC_HEADERS 1
++
++/* Define if you can safely include both <string.h> and <strings.h>. */
++#define STRING_WITH_STRINGS 1
++
++/* Use b modifier when opening binary files? */
++/* #undef USE_BINARY_FOPEN */
++
++/* Enable extensions on AIX 3, Interix.  */
++#ifndef _ALL_SOURCE
++# define _ALL_SOURCE 1
++#endif
++/* Enable GNU extensions on systems that have them.  */
++#ifndef _GNU_SOURCE
++# define _GNU_SOURCE 1
++#endif
++/* Enable threading extensions on Solaris.  */
++#ifndef _POSIX_PTHREAD_SEMANTICS
++# define _POSIX_PTHREAD_SEMANTICS 1
++#endif
++/* Enable extensions on HP NonStop.  */
++#ifndef _TANDEM_SOURCE
++# define _TANDEM_SOURCE 1
++#endif
++/* Enable general extensions on Solaris.  */
++#ifndef __EXTENSIONS__
++# define __EXTENSIONS__ 1
++#endif
++
++
++/* Version number of package */
++#define VERSION "2.34"
++
++/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
++   `char[]'. */
++#define YYTEXT_POINTER 1
++
++/* Enable large inode numbers on Mac OS X 10.5.  */
++#ifndef _DARWIN_USE_64_BIT_INODE
++# define _DARWIN_USE_64_BIT_INODE 1
++#endif
++
++/* Number of bits in a file offset, on hosts where this is settable. */
++/* #undef _FILE_OFFSET_BITS */
++
++/* Define for large files, on AIX-style hosts. */
++/* #undef _LARGE_FILES */
++
++/* Define to 1 if on MINIX. */
++/* #undef _MINIX */
++
++/* Define to 2 if the system does not provide POSIX.1 features except with
++   this defined. */
++/* #undef _POSIX_1_SOURCE */
++
++/* Define to 1 if you need to in order for `stat' and other things to work. */
++/* #undef _POSIX_SOURCE */
+diff --git a/gnu/usr.bin/binutils234/block2/libgold/config.h b/gnu/usr.bin/binutils234/block2/libgold/config.h
+new file mode 100644
+index 0000000000..647f9571b7
+--- /dev/null
++++ b/gnu/usr.bin/binutils234/block2/libgold/config.h
+@@ -0,0 +1,300 @@
++/* config.h.  Generated from config.in by configure.  */
++/* config.in.  Generated from configure.ac by autoheader.  */
++
++/* Check that config.h is #included before system headers
++   (this works only for glibc, but that should be enough).  */
++#if defined(__GLIBC__) && !defined(__FreeBSD_kernel__) && !defined(__CONFIG_H__)
++#  error config.h must be #included before system headers
++#endif
++#define __CONFIG_H__ 1
++
++/* Define if building universal (internal helper macro) */
++/* #undef AC_APPLE_UNIVERSAL_BUILD */
++
++/* Set the default --hash-style value */
++#define DEFAULT_HASH_STYLE "sysv"
++
++/* Define to 1 if you want to enable -z relro in ELF linker by default. */
++/* handled by makfile #define DEFAULT_LD_Z_RELRO 1 */
++
++/* Define to 1 if translation of program messages to the user's native
++   language is requested. */
++/* #undef ENABLE_NLS */
++
++/* Define to enable linker plugins */
++#define ENABLE_PLUGINS 1
++
++/* Define to do multi-threaded linking */
++/* handled by makefile #define ENABLE_THREADS 1 */
++
++/* Default big endian (true or false) */
++#define GOLD_DEFAULT_BIG_ENDIAN false
++
++/* Default machine code */
++#define GOLD_DEFAULT_MACHINE EM_X86_64
++
++/* Default OSABI code */
++#define GOLD_DEFAULT_OSABI ELFOSABI_NONE
++
++/* Default size (32 or 64) */
++#define GOLD_DEFAULT_SIZE 64
++
++/* Define to 1 if you have the <byteswap.h> header file. */
++/* #undef HAVE_BYTESWAP_H */
++
++/* Define to 1 if you have the `chsize' function. */
++/* #undef HAVE_CHSIZE */
++
++/* Define to 1 if you have the declaration of `asprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_ASPRINTF 1
++
++/* Define to 1 if you have the declaration of `basename', and to 0 if you
++   don't. */
++#define HAVE_DECL_BASENAME 0
++
++/* Define to 1 if you have the declaration of `ffs', and to 0 if you don't. */
++#define HAVE_DECL_FFS 1
++
++/* Define to 1 if you have the declaration of `memmem', and to 0 if you don't.
++   */
++#define HAVE_DECL_MEMMEM 1
++
++/* Define to 1 if you have the declaration of `snprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_SNPRINTF 1
++
++/* Define to 1 if you have the declaration of `strndup', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRNDUP 1
++
++/* Define to 1 if you have the declaration of `strverscmp', and to 0 if you
++   don't. */
++#define HAVE_DECL_STRVERSCMP 0
++
++/* Define to 1 if you have the declaration of `vasprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_VASPRINTF 1
++
++/* Define to 1 if you have the declaration of `vsnprintf', and to 0 if you
++   don't. */
++#define HAVE_DECL_VSNPRINTF 1
++
++/* Define to 1 if you have the <dlfcn.h> header file. */
++#define HAVE_DLFCN_H 1
++
++/* Define to 1 if you have the <ext/hash_map> header file. */
++#define HAVE_EXT_HASH_MAP 1
++
++/* Define to 1 if you have the <ext/hash_set> header file. */
++#define HAVE_EXT_HASH_SET 1
++
++/* Define to 1 if you have the `fallocate' function. */
++/* #undef HAVE_FALLOCATE */
++
++/* Define to 1 if you have the `ffsll' function. */
++#define HAVE_FFSLL 1
++
++/* Define to 1 if you have the `ftruncate' function. */
++#define HAVE_FTRUNCATE 1
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#define HAVE_INTTYPES_H 1
++
++/* Define if your <locale.h> file defines LC_MESSAGES. */
++#define HAVE_LC_MESSAGES 1
++
++/* Define to 1 if you have the `link' function. */
++#define HAVE_LINK 1
++
++/* Define to 1 if you have the <locale.h> header file. */
++#define HAVE_LOCALE_H 1
++
++/* Define to 1 if you have the `mallinfo' function. */
++/* #undef HAVE_MALLINFO */
++
++/* Define to 1 if you have the <memory.h> header file. */
++#define HAVE_MEMORY_H 1
++
++/* Define to 1 if you have the `mkdtemp' function. */
++#define HAVE_MKDTEMP 1
++
++/* Define to 1 if you have the `mmap' function. */
++#define HAVE_MMAP 1
++
++/* Define to 1 if you have the mremap function with MREMAP_MAYMOVE support */
++/* #undef HAVE_MREMAP */
++
++/* Define if compiler supports #pragma omp threadprivate */
++#define HAVE_OMP_SUPPORT 1
++
++/* Define to 1 if you have the `posix_fallocate' function. */
++/* #undef HAVE_POSIX_FALLOCATE */
++
++/* Define to 1 if you have the `pread' function. */
++#define HAVE_PREAD 1
++
++/* Have PTHREAD_PRIO_INHERIT. */
++#define HAVE_PTHREAD_PRIO_INHERIT 1
++
++/* Define to 1 if you have the `readv' function. */
++#define HAVE_READV 1
++
++/* Define to 1 if you have the `setlocale' function. */
++#define HAVE_SETLOCALE 1
++
++/* Define if struct stat has a field st_mtim with timespec for mtime */
++#define HAVE_STAT_ST_MTIM 1
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#define HAVE_STDINT_H 1
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#define HAVE_STDLIB_H 1
++
++/* Define to 1 if you have the <strings.h> header file. */
++#define HAVE_STRINGS_H 1
++
++/* Define to 1 if you have the <string.h> header file. */
++#define HAVE_STRING_H 1
++
++/* Define to 1 if you have the `sysconf' function. */
++#define HAVE_SYSCONF 1
++
++/* Define to 1 if you have the <sys/mman.h> header file. */
++#define HAVE_SYS_MMAN_H 1
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#define HAVE_SYS_STAT_H 1
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#define HAVE_SYS_TYPES_H 1
++
++/* Define to support 32-bit big-endian targets */
++/* #undef HAVE_TARGET_32_BIG */
++
++/* Define to support 32-bit little-endian targets */
++#define HAVE_TARGET_32_LITTLE 1
++
++/* Define to support 64-bit big-endian targets */
++/* #undef HAVE_TARGET_64_BIG */
++
++/* Define to support 64-bit little-endian targets */
++#define HAVE_TARGET_64_LITTLE 1
++
++/* Define if attributes work on C++ templates */
++#define HAVE_TEMPLATE_ATTRIBUTES 1
++
++/* Define to 1 if you have the `times' function. */
++#define HAVE_TIMES 1
++
++/* Define if std::tr1::hash<off_t> is usable */
++#define HAVE_TR1_HASH_OFF_T 1
++
++/* Define to 1 if you have the <tr1/unordered_map> header file. */
++#define HAVE_TR1_UNORDERED_MAP 1
++
++/* Define if ::std::tr1::unordered_map::rehash is usable */
++#define HAVE_TR1_UNORDERED_MAP_REHASH 1
++
++/* Define to 1 if you have the <tr1/unordered_set> header file. */
++#define HAVE_TR1_UNORDERED_SET 1
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#define HAVE_UNISTD_H 1
++
++/* Define to 1 if you have the <unordered_map> header file. */
++#define HAVE_UNORDERED_MAP 1
++
++/* Define to 1 if you have the <unordered_set> header file. */
++#define HAVE_UNORDERED_SET 1
++
++/* Define to 1 if you have the <windows.h> header file. */
++/* #undef HAVE_WINDOWS_H */
++
++/* Default library search path */
++#define LIB_PATH "/lib:/usr/lib"
++
++/* Whether configured as a native linker */
++#define NATIVE_LINKER 1
++
++/* Name of package */
++#define PACKAGE "gold"
++
++/* Define to the address where bug reports for this package should be sent. */
++#define PACKAGE_BUGREPORT ""
++
++/* Define to the full name of this package. */
++#define PACKAGE_NAME "gold"
++
++/* Define to the full name and version of this package. */
++#define PACKAGE_STRING "gold 0.1"
++
++/* Define to the one symbol short name of this package. */
++#define PACKAGE_TARNAME "gold"
++
++/* Define to the home page for this package. */
++#define PACKAGE_URL ""
++
++/* Define to the version of this package. */
++#define PACKAGE_VERSION "0.1"
++
++/* Define to necessary symbol if this constant uses a non-standard name on
++   your system. */
++/* #undef PTHREAD_CREATE_JOINABLE */
++
++/* Define to 1 if you have the ANSI C header files. */
++#define STDC_HEADERS 1
++
++/* System root for target files */
++/* handled by makefile #define TARGET_SYSTEM_ROOT "" */
++
++/* Whether the system root can be relocated */
++#define TARGET_SYSTEM_ROOT_RELOCATABLE 0
++
++/* Enable extensions on AIX 3, Interix.  */
++#ifndef _ALL_SOURCE
++# define _ALL_SOURCE 1
++#endif
++/* Enable GNU extensions on systems that have them.  */
++#ifndef _GNU_SOURCE
++# define _GNU_SOURCE 1
++#endif
++/* Enable threading extensions on Solaris.  */
++#ifndef _POSIX_PTHREAD_SEMANTICS
++# define _POSIX_PTHREAD_SEMANTICS 1
++#endif
++/* Enable extensions on HP NonStop.  */
++#ifndef _TANDEM_SOURCE
++# define _TANDEM_SOURCE 1
++#endif
++/* Enable general extensions on Solaris.  */
++#ifndef __EXTENSIONS__
++# define __EXTENSIONS__ 1
++#endif
++
++
++/* Version number of package */
++#define VERSION "0.1"
++
++/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
++   significant byte first (like Motorola and SPARC, unlike Intel). */
++#if defined AC_APPLE_UNIVERSAL_BUILD
++# if defined __BIG_ENDIAN__
++#  define WORDS_BIGENDIAN 1
++# endif
++#else
++# ifndef WORDS_BIGENDIAN
++/* #  undef WORDS_BIGENDIAN */
++# endif
++#endif
++
++/* Define to 1 if on MINIX. */
++/* #undef _MINIX */
++
++/* Define to 2 if the system does not provide POSIX.1 features except with
++   this defined. */
++/* #undef _POSIX_1_SOURCE */
++
++/* Define to 1 if you need to in order for `stat' and other things to work. */
++/* #undef _POSIX_SOURCE */
+-- 
+2.25.0
+
