@@ -1,0 +1,36 @@
+From 9ce968c7d1208427eaa3139df2b835696375cb72 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 13 Feb 2020 14:07:37 +0200
+Subject: [PATCH 4/4] kernel: Add handling for R_X86_64_PLT32 (type 4) in
+ kernel linker.
+
+ Newer binutils can emit R_X86_64_PLT32 for -shared compilations.
+
+Tested-with: binutils234
+---
+ sys/cpu/x86_64/misc/elf_machdep.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sys/cpu/x86_64/misc/elf_machdep.c b/sys/cpu/x86_64/misc/elf_machdep.c
+index ac1b250fa2..c23bcbc477 100644
+--- a/sys/cpu/x86_64/misc/elf_machdep.c
++++ b/sys/cpu/x86_64/misc/elf_machdep.c
+@@ -93,6 +93,7 @@ elf_reloc_internal(linker_file_t lf, Elf_Addr relocbase, const void *data,
+ 		/* Addend is 32 bit on 32 bit relocs */
+ 		switch (rtype) {
+ 		case R_X86_64_PC32:
++		case R_X86_64_PLT32:
+ 		case R_X86_64_32:
+ 		case R_X86_64_32S:
+ 			addend = *(Elf32_Addr *)where;
+@@ -127,6 +128,7 @@ elf_reloc_internal(linker_file_t lf, Elf_Addr relocbase, const void *data,
+ 			break;
+ 
+ 		case R_X86_64_PC32:	/* S + A - P */
++		case R_X86_64_PLT32:	/* XXX assume PLT as S too */
+ 			if (lookup(lf, symidx, 1, &addr))
+ 				return -1;
+ 			where32 = (Elf32_Addr *)where;
+-- 
+2.25.0
+

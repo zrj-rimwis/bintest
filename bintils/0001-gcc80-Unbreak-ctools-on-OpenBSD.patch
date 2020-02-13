@@ -1,0 +1,38 @@
+From 505518f426b399935c3250f2bf60805801618684 Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 13 Feb 2020 13:52:39 +0200
+Subject: [PATCH 1/4] gcc80: Unbreak ctools on OpenBSD.
+
+ For some reason cpp(1) has --traditional-cpp enforced in clang-cpp, that
+ does not expand macros with spaces like "FOO (blah);".
+ Use plain cc -E -P for compat in NXCC for now (both headers does not
+ depend on arch specific code or external headers, so it should be safe.
+---
+ gnu/usr.bin/cc80/cc_tools/tools/Makefile | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/gnu/usr.bin/cc80/cc_tools/tools/Makefile b/gnu/usr.bin/cc80/cc_tools/tools/Makefile
+index 6cea1ecb97..a3c2b90d80 100644
+--- a/gnu/usr.bin/cc80/cc_tools/tools/Makefile
++++ b/gnu/usr.bin/cc80/cc_tools/tools/Makefile
+@@ -184,13 +184,15 @@ pass-instances.def: ${GCCDIR}/gcc/passes.def $(PASSES_EXTRA)
+ 		${.ALLSRC} > ${.TARGET}
+ 
+ # XXX plain cpp(1) safe? also /usr/bin/awk?
++# XXX^2 cpp(1) as clang-cpp in traditional-cpp mode does not expand "FOO (blah)"
++NXCCCPP?=	${NXCC} -E -P
+ params.list: ${GCCDIR}/gcc/params-list.h ${GCCDIR}/gcc/params.def
+-	cpp ${GCCDIR}/gcc/params-list.h | sed 's/^#.*//;/^$$/d' \
++	${NXCCCPP} ${GCCDIR}/gcc/params-list.h | sed 's/^#.*//;/^$$/d' \
+ 	> tmp-params.list
+ 	${MIC} tmp-params.list params.list
+ 
+ params.options: ${GCCDIR}/gcc/params-options.h ${GCCDIR}/gcc/params.def
+-	cpp ${GCCDIR}/gcc/params-options.h | sed 's/^#.*//;/^$$/d' \
++	${NXCCCPP} ${GCCDIR}/gcc/params-options.h | sed 's/^#.*//;/^$$/d' \
+ 	> tmp-params.options
+ 	${MIC} tmp-params.options params.options
+ 
+-- 
+2.25.0
+

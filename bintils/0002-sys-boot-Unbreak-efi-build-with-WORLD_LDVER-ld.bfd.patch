@@ -1,0 +1,66 @@
+From 62daa5b6ce9b7c0596e0b3fc6df9e01a2a4d358f Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Thu, 13 Feb 2020 13:59:17 +0200
+Subject: [PATCH 2/4] sys/boot: Unbreak efi build with WORLD_LDVER=ld.bfd.
+
+ Adjust 64-bit libstand.a location to use full path if available as it is
+ done for 32-bit loaders already.
+
+ The ld.bfd when invoked with -ffreestanding will not look for /usr/lib.
+
+ Match ldscript.x86_64 to sys/platform/pc64/conf/ldscript.x86_64.
+ Our ld.bfd does not support freebsd emulation target.  Generic target is
+ enough to convert boot1.sym and loader.sym intermediates to PE32+.
+
+ While there, use something sane for section padding in ldscript.x86_64.
+---
+ sys/boot/efi/boot1/Makefile                     | 6 +++++-
+ sys/boot/efi/loader/arch/x86_64/ldscript.x86_64 | 4 ++--
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/sys/boot/efi/boot1/Makefile b/sys/boot/efi/boot1/Makefile
+index ecf38e0a4a..eecf48fd8c 100644
+--- a/sys/boot/efi/boot1/Makefile
++++ b/sys/boot/efi/boot1/Makefile
+@@ -50,13 +50,17 @@ CFLAGS+=	-fPIC
+ LDFLAGS+=	-Wl,-znocombreloc
+ .endif
+ 
++.if exists(${.OBJDIR}/../../../../lib/libstand/libstand.a)
++LIBSTAND=	${.OBJDIR}/../../../../lib/libstand/libstand.a
++.endif
++
+ #
+ # Add libstand for the runtime functions used by the compiler - for example
+ # __aeabi_* (arm) or __divdi3 (i386).
+ # as well as required string and memory functions for all platforms.
+ #
+ DPADD+=		${LIBSTAND}
+-LDADD+=		-lstand
++LDADD+=		${LIBSTAND}
+ 
+ DPADD+=		${LDSCRIPT}
+ 
+diff --git a/sys/boot/efi/loader/arch/x86_64/ldscript.x86_64 b/sys/boot/efi/loader/arch/x86_64/ldscript.x86_64
+index 2cc92f0fa0..1b957784ac 100644
+--- a/sys/boot/efi/loader/arch/x86_64/ldscript.x86_64
++++ b/sys/boot/efi/loader/arch/x86_64/ldscript.x86_64
+@@ -1,5 +1,5 @@
+ /* $FreeBSD: head/sys/boot/efi/loader/arch/amd64/ldscript.amd64 280950 2015-04-01 08:30:40Z andrew $ */
+-OUTPUT_FORMAT("elf64-x86-64-freebsd", "elf64-x86-64-freebsd", "elf64-x86-64-freebsd")
++OUTPUT_FORMAT("elf64-x86-64", "elf64-x86-64", "elf64-x86-64")
+ OUTPUT_ARCH(i386:x86-64)
+ ENTRY(_start)
+ SECTIONS
+@@ -19,7 +19,7 @@ SECTIONS
+     /* .gnu.warning sections are handled specially by elf32.em. */
+     *(.gnu.warning)
+     *(.plt)
+-  } =0x00300000010070000002000001000400
++  } =0xCCCCCCCC
+   . = ALIGN(4096);
+   .data		: {
+     *(.rodata .rodata.* .gnu.linkonce.r.*)
+-- 
+2.25.0
+
