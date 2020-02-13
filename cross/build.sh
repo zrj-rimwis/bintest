@@ -39,6 +39,7 @@ mkdir -p /tmp/dfly/cross/simple/linux
 mkdir -p /tmp/dfly/cross/compat/rpc
 mkdir -p /tmp/dfly/cross/compat/sys
 mkdir -p /tmp/dfly/cross/compat/linux
+mkdir -p /tmp/dfly/cross/compat/inlined
 
 prepare_compat() {
 #
@@ -716,148 +717,7 @@ cat << 'EOF' > /tmp/dfly/cross/compat/resolv.h
 #define __compat_resolv_h__
 #include_next <resolv.h>
 #ifdef __linux__
-
-#undef b64_ntop
-#undef b64_pton
-#include <sys/cdefs.h>
-#include <ctype.h>
-#include <stddef.h>
-#include <string.h>
-
-static const char __Base64[] =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-static const char __Pad64 = '=';
-
-static inline __always_inline int /* needed for uuencode */
-b64_ntop(u_char const *src, size_t srclength, char *target, size_t targsize)
-{
-  size_t datalength = 0;
-  unsigned char input[3];
-  unsigned char output[4];
-  size_t i;
-  while (2 < srclength) {
-    input[0] = *src++;
-    input[1] = *src++;
-    input[2] = *src++;
-    srclength -= 3;
-    output[0] = input[0] >> 2;
-    output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
-    output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
-    output[3] = input[2] & 0x3f;
-    if (datalength + 4 > targsize)
-      return (-1);
-    target[datalength++] = __Base64[output[0]];
-    target[datalength++] = __Base64[output[1]];
-    target[datalength++] = __Base64[output[2]];
-    target[datalength++] = __Base64[output[3]];
-  }
-  if (0 != srclength) {
-    input[0] = input[1] = input[2] = '\0';
-    for (i = 0; i < srclength; i++)
-      input[i] = *src++;
-    output[0] = input[0] >> 2;
-    output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
-    output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
-    if (datalength + 4 > targsize)
-      return (-1);
-    target[datalength++] = __Base64[output[0]];
-    target[datalength++] = __Base64[output[1]];
-    if (srclength == 1)
-      target[datalength++] = __Pad64;
-    else
-      target[datalength++] = __Base64[output[2]];
-    target[datalength++] = __Pad64;
-  }
-  if (datalength >= targsize)
-    return (-1);
-  target[datalength] = '\0';
-  return (datalength);
-}
-
-static inline __always_inline int /* needed for uudecode */
-b64_pton(char const *src, unsigned char *target, size_t targsize)
-{
-  int tarindex, state, ch;
-  char *pos;
-  state = 0;
-  tarindex = 0;
-  while ((ch = *src++) != '\0') {
-    if (isspace((unsigned char)ch))
-      continue;
-    if (ch == __Pad64)
-      break;
-    pos = strchr(__Base64, ch);
-    if (pos == NULL)
-      return (-1);
-    switch (state) {
-    case 0:
-      if (target) {
-        if ((size_t)tarindex >= targsize)
-          return (-1);
-        target[tarindex] = (pos - __Base64) << 2;
-      }
-      state = 1;
-      break;
-    case 1:
-      if (target) {
-        if ((size_t)tarindex + 1 >= targsize)
-          return (-1);
-        target[tarindex]   |=  (pos - __Base64) >> 4;
-        target[tarindex+1]  = ((pos - __Base64) & 0x0f) << 4 ;
-      }
-      tarindex++;
-      state = 2;
-      break;
-    case 2:
-      if (target) {
-        if ((size_t)tarindex + 1 >= targsize)
-          return (-1);
-        target[tarindex]   |=  (pos - __Base64) >> 2;
-        target[tarindex+1]  = ((pos - __Base64) & 0x03) << 6;
-      }
-      tarindex++;
-      state = 3;
-      break;
-    case 3:
-      if (target) {
-        if ((size_t)tarindex >= targsize)
-          return (-1);
-        target[tarindex] |= (pos - __Base64);
-      }
-      tarindex++;
-      state = 0;
-      break;
-    default:
-      abort();
-    }
-  }
-  if (ch == __Pad64) {
-    ch = *src++;
-    switch (state) {
-    case 0:
-    case 1:
-      return (-1);
-    case 2:
-      for ((void)NULL; ch != '\0'; ch = *src++)
-        if (!isspace((unsigned char)ch))
-          break;
-      if (ch != __Pad64)
-        return (-1);
-      ch = *src++;
-      /* FALLTHROUGH */
-    case 3:
-      for ((void)NULL; ch != '\0'; ch = *src++)
-        if (!isspace((unsigned char)ch))
-          return (-1);
-      if (target && target[tarindex] != 0)
-        return (-1);
-    }
-  } else {
-    if (state != 0)
-     return (-1);
-  }
-  return (tarindex);
-}
+#include <inlined/resolv.h> /* b64_ntop b64_pton */
 #endif
 #endif
 EOF
@@ -868,6 +728,16 @@ cat << 'EOF' > /tmp/dfly/cross/compat/paths.h
 #include_next <paths.h>
 #ifndef _PATH_CP
 #define _PATH_CP "/bin/cp"
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/fcntl.h
+#ifndef __compat_fcntl_h__
+#define __compat_fcntl_h__
+#include_next <fcntl.h>
+#ifdef __linux__
+#include <sys/file.h> /* for flock() */
 #endif
 #endif
 EOF
@@ -1343,200 +1213,7 @@ cat << 'EOF' > /tmp/dfly/cross/compat/stdio.h
 #pragma GCC diagnostic pop
 #endif
 #ifdef __linux__
-#include <sys/cdefs.h>
-#include <stdlib.h>
-#include <errno.h>
-/* work around for sort(1) and cap_mkdb(1) and citrus/mkscmapper */
-/*#if defined(WITHOUT_NLS) || defined(__compat_db_h__) || defined(USES_CITRUS)*/
-#define FILEBUF_POOL_ITEMS 32
-
-#if defined(WITHOUT_NLS) /* for sort(1) */
-#include <wchar.h>
-#define __MUL_NO_OVERFLOW ((size_t)1 << (sizeof(size_t) * 4))
-static inline __always_inline void *
-__reallocarray(void *ptr, size_t number, size_t size)
-{
-  if ((number >= __MUL_NO_OVERFLOW || size >= __MUL_NO_OVERFLOW) &&
-       number > 0 && SIZE_MAX / number < size) {
-    errno = ENOMEM;
-    return NULL;
-  }
-  return realloc(ptr, size * number);
-}
-struct filewbuf {
-  FILE *fp;
-  wchar_t *wbuf;
-  size_t len;
-};
-
-#define FILEWBUF_INIT_LEN     128
-#define FILEWBUF_POOL_ITEMS   32
-
-static struct filewbuf fbw_pool[FILEWBUF_POOL_ITEMS];
-static int fbw_pool_cur;
-
-static inline __always_inline wchar_t *
-fgetwln(FILE *stream, size_t *lenp)
-{
-  struct filewbuf *fb;
-  wint_t wc;
-  size_t wused = 0;
-  fb = &fbw_pool[fbw_pool_cur];
-  if (fb->fp != stream && fb->fp != NULL) {
-    fbw_pool_cur++;
-    fbw_pool_cur %= FILEWBUF_POOL_ITEMS;
-    fb = &fbw_pool[fbw_pool_cur];
-  }
-  fb->fp = stream;
-  while ((wc = fgetwc(stream)) != WEOF) {
-    if (!fb->len || wused >= fb->len) {
-      wchar_t *wp;
-      if (fb->len)
-        fb->len *= 2;
-      else
-        fb->len = FILEWBUF_INIT_LEN;
-      wp = __reallocarray(fb->wbuf, fb->len, sizeof(wchar_t));
-      if (wp == NULL) {
-        wused = 0;
-        break;
-      }
-      fb->wbuf = wp;
-    }
-    fb->wbuf[wused++] = wc;
-    if (wc == L'\n')
-      break;
-  }
-  *lenp = wused;
-  return wused ? fb->wbuf : NULL;
-}
-#endif
-
-struct filebuf {
-    FILE *fp;
-    char *buf;
-    size_t len;
-};
-
-static struct filebuf fb_pool[FILEBUF_POOL_ITEMS];
-static int fb_pool_cur;
-
-static inline __always_inline char *
-fgetln(FILE *stream, size_t *len)
-{
-  struct filebuf *fb;
-  ssize_t nread;
-  flockfile(stream);
-  fb = &fb_pool[fb_pool_cur];
-  if (fb->fp != stream && fb->fp != NULL) {
-    fb_pool_cur++;
-    fb_pool_cur %= FILEBUF_POOL_ITEMS;
-    fb = &fb_pool[fb_pool_cur];
-  }
-  fb->fp = stream;
-  nread = getline(&fb->buf, &fb->len, stream);
-  funlockfile(stream);
-  if (nread == -1) {
-    *len = 0;
-    return NULL;
-  } else {
-    *len = (size_t)nread;
-    return fb->buf;
-  }
-}
-/*#endif*/
-
-#define fwopen(cookie, fn) funopen(cookie, 0, fn, 0, 0)
-
-struct funopen_cookie {
-  void *orig_cookie;
-  int (*readfn)(void *cookie, char *buf, int size);
-  int (*writefn)(void *cookie, const char *buf, int size);
-  off_t (*seekfn)(void *cookie, off_t offset, int whence);
-  int (*closefn)(void *cookie);
-};
-
-static ssize_t
-funopen_read(void *cookie, char *buf, size_t size)
-{
-  struct funopen_cookie *cookiewrap = cookie;
-  if (cookiewrap->readfn == NULL) {
-    errno = EBADF;
-    return -1;
-  }
-  return cookiewrap->readfn(cookiewrap->orig_cookie, buf, size);
-}
-
-static ssize_t
-funopen_write(void *cookie, const char *buf, size_t size)
-{
-  struct funopen_cookie *cookiewrap = cookie;
-  if (cookiewrap->writefn == NULL)
-    return EOF;
-  return cookiewrap->writefn(cookiewrap->orig_cookie, buf, size);
-}
-
-static int
-funopen_seek(void *cookie, off64_t *offset, int whence)
-{
-  struct funopen_cookie *cookiewrap = cookie;
-  off_t soff = *offset;
-  if (cookiewrap->seekfn == NULL) {
-    errno = ESPIPE;
-    return -1;
-  }
-  soff = cookiewrap->seekfn(cookiewrap->orig_cookie, soff, whence);
-  *offset = soff;
-  return *offset;
-}
-
-static int
-funopen_close(void *cookie)
-{
-  struct funopen_cookie *cookiewrap = cookie;
-  int rc;
-  if (cookiewrap->closefn == NULL)
-    return 0;
-  rc = cookiewrap->closefn(cookiewrap->orig_cookie);
-  free(cookiewrap);
-  return rc;
-}
-
-static inline __always_inline FILE *
-funopen(const void *cookie,
-    int (*readfn)(void *cookie, char *buf, int size),
-    int (*writefn)(void *cookie, const char *buf, int size),
-    off_t (*seekfn)(void *cookie, off_t offset, int whence),
-    int (*closefn)(void *cookie))
-{
-  struct funopen_cookie *cookiewrap;
-  cookie_io_functions_t funcswrap = {
-  .read = funopen_read,
-  .write = funopen_write,
-  .seek = funopen_seek,
-  .close = funopen_close,
-  };
-  const char *mode;
-  if (readfn) {
-    if (writefn == NULL)
-      mode = "r";
-    else
-      mode = "r+";
-  } else if (writefn) {
-    mode = "w";
-  } else {
-    errno = EINVAL;
-    return NULL;
-  }
-  cookiewrap = malloc(sizeof(*cookiewrap));
-  if (cookiewrap == NULL)
-    return NULL;
-  cookiewrap->orig_cookie = ____DECONST(void *, cookie);
-  cookiewrap->readfn = readfn;
-  cookiewrap->writefn = writefn;
-  cookiewrap->seekfn = seekfn;
-  cookiewrap->closefn = closefn;
-  return fopencookie(cookiewrap, mode, funcswrap);
-}
+#include <inlined/stdio.h> /* fgetln funopen */
 #endif
 #ifdef __OpenBSD__
 static inline __always_inline ssize_t
@@ -1667,385 +1344,7 @@ rpmatch(const char *response)
 }
 #endif
 #ifdef __linux__
-#include <errno.h>
-#include <limits.h>
-#include <stdint.h>
-#include <string.h>
-
-#define srandomdev(...) /* stub for games/phantasia/setup */
-
-static inline __always_inline uint32_t  /* for games/fortune/strfile.nx */
-arc4random_uniform(u_int32_t upper_bound)
-{
-  uint32_t r, min;
-  if (upper_bound < 2)
-    return 0;
-  min = -upper_bound % upper_bound;
-  for (;;) {
-    r = rand();   /* should be good enough */
-    if (r >= min)
-      break;
-  }
-  return (r % upper_bound);
-}
-
-#define __ALIGNBYTES  (sizeof(long) - 1)
-#define __ALIGNPTR(p) (((unsigned long)(p) + __ALIGNBYTES) & ~__ALIGNBYTES)
-#define ALIGN(p) __ALIGNPTR(p)
-
-const char *__progname;
-
-static inline __always_inline const char *
-getprogname(void)
-{
-  if (__progname == NULL)
-    __progname = program_invocation_short_name;
-  return __progname;
-}
-
-static inline __always_inline void
-setprogname(const char *progname)
-{
-  size_t i;
-  for (i = strlen(progname); i > 0; i--) {
-    if (progname[i - 1] == '/') {
-      __progname = progname + i;
-      return;
-    }
-  }
-  __progname = progname;
-}
-
-#define __INVALID         1
-#define __TOOSMALL        2
-#define __TOOLARGE        3
-
-static inline __always_inline long long
-strtonum(const char *numstr, long long minval, long long maxval,
-    const char **errstrp)
-{
-  long long ll = 0;
-  char *ep;
-  int error = 0;
-  struct errval {
-    const char *errstr;
-    int err;
-  } ev[4] = {
-    { NULL,         0 },
-    { "invalid",    EINVAL },
-    { "too small",  ERANGE },
-    { "too large",  ERANGE },
-  };
-  ev[0].err = errno;
-  errno = 0;
-  if (minval > maxval)
-    error = __INVALID;
-  else {
-    ll = strtoll(numstr, &ep, 10);
-    if (numstr == ep || *ep != '\0')
-      error = __INVALID;
-    else if ((ll == LLONG_MIN && errno == ERANGE) || ll < minval)
-      error = __TOOSMALL;
-    else if ((ll == LLONG_MAX && errno == ERANGE) || ll > maxval)
-      error = __TOOLARGE;
-  }
-  if (errstrp != NULL)
-    *errstrp = ev[error].errstr;
-  errno = ev[error].err;
-  if (error)
-    ll = 0;
-  return (ll);
-}
-
-#define __HS_SWAP(a, b, count, size, tmp) { count = size; do { \
-        tmp = *a; *a++ = *b; *b++ = tmp; } while (--count); }
-#define __HS_COPY(a, b, count, size, tmp1, tmp2) { count = size; tmp1 = a; \
-        tmp2 = b; do { *tmp1++ = *tmp2++; } while (--count); }
-
-#define __HS_CREATE(initval, nmemb, par_i, child_i, par, child, size, count, tmp) { \
-        for (par_i = initval; (child_i = par_i * 2) <= nmemb; par_i = child_i) { \
-                child = base + child_i * size; \
-                if (child_i < nmemb && compar(child, child + size) < 0) { \
-                        child += size; \
-                        ++child_i; \
-                } \
-                par = base + par_i * size; \
-                if (compar(child, par) <= 0) \
-                        break; \
-                __HS_SWAP(par, child, count, size, tmp); \
-        } \
-}
-
-#define __HS_SELECT(par_i, child_i, nmemb, par, child, size, k, count, tmp1, tmp2) { \
-        for (par_i = 1; (child_i = par_i * 2) <= nmemb; par_i = child_i) { \
-                child = base + child_i * size; \
-                if (child_i < nmemb && compar(child, child + size) < 0) { \
-                        child += size; \
-                        ++child_i; \
-                } \
-                par = base + par_i * size; \
-                __HS_COPY(par, child, count, size, tmp1, tmp2); \
-        } \
-        for (;;) { \
-                child_i = par_i; \
-                par_i = child_i / 2; \
-                child = base + child_i * size; \
-                par = base + par_i * size; \
-                if (child_i == 1 || compar(k, par) < 0) { \
-                        __HS_COPY(child, k, count, size, tmp1, tmp2); \
-                        break; \
-                } \
-                __HS_COPY(child, par, count, size, tmp1, tmp2); \
-        } \
-}
-
-static inline __always_inline int
-heapsort(void *vbase, size_t nmemb, size_t size,
-         int (*compar)(const void *, const void *))
-{
-  size_t cnt, i, j, l;
-  char tmp, *tmp1, *tmp2;
-  char *base, *k, *p, *t;
-  if (nmemb <= 1)
-    return (0);
-  if (!size) {
-    errno = EINVAL;
-    return (-1);
-  }
-  if ((k = malloc(size)) == NULL)
-    return (-1);
-  base = (char *)vbase - size;
-  for (l = nmemb / 2 + 1; --l;)
-    __HS_CREATE(l, nmemb, i, j, t, p, size, cnt, tmp);
-  while (nmemb > 1) {
-    __HS_COPY(k, base + nmemb * size, cnt, size, tmp1, tmp2);
-    __HS_COPY(base + nmemb * size, base + size, cnt, size, tmp1, tmp2);
-    --nmemb;
-    __HS_SELECT(i, j, nmemb, t, p, size, k, cnt, tmp1, tmp2);
-  }
-  free(k);
-  return (0);
-}
-
-
-#define __MS_THRESHOLD 16
-#define __MS_ISIZE sizeof(int)
-#define __MS_PSIZE sizeof(u_char *)
-#define __MS_ICOPY_LIST(src, dst, last) do \
-        *(int*)dst = *(int*)src, src += __MS_ISIZE, dst += __MS_ISIZE; \
-        while(src < last)
-#define __MS_ICOPY_ELT(src, dst, i) do \
-        *(int*) dst = *(int*) src, src += __MS_ISIZE, dst += __MS_ISIZE; \
-        while (i -= __MS_ISIZE)
-#define __MS_CCOPY_LIST(src, dst, last) do *dst++ = *src++; while (src < last)
-#define __MS_CCOPY_ELT(src, dst, i) do *dst++ = *src++; while (i -= 1)
-#define __MS_rounddown2(x, y) ((x) & ~((y) - 1))
-#define __MS_EVAL(p) (u_char **) ((u_char *)0 + \
-        (__MS_rounddown2((u_char *)p + __MS_PSIZE - 1 - (u_char *)0, __MS_PSIZE)))
-
-#define __MS_swap(a, b) { s = b; i = size; do { tmp = *a; \
-        *a++ = *s; *s++ = tmp; } while (--i); a -= size; }
-#define __MS_reverse(bot, top) { s = top; do { i = size; do { tmp = *bot; \
-        *bot++ = *s; *s++ = tmp; } while (--i); s -= size2;} while(bot < s);}
-
-static inline __always_inline void
-__MS_insertionsort(u_char *a, size_t n, size_t size,
-              int (*cmp)(const void *, const void *))
-{
-  u_char *ai, *s, *t, *u, tmp;
-  int i;
-  for (ai = a+size; --n >= 1; ai += size)
-    for (t = ai; t > a; t -= size) {
-      u = t - size;
-      if (cmp(u, t) <= 0)
-        break;
-      __MS_swap(u, t);
-    }
-}
-
-static inline __always_inline void
-__MS_setup(u_char *list1, u_char *list2, size_t n, size_t size,
-      int (*cmp)(const void *, const void *))
-{
-  int i, length, size2, tmp, sense;
-  u_char *f1, *f2, *s, *l2, *last, *p2;
-  size2 = size*2;
-  if (n <= 5) {
-    __MS_insertionsort(list1, n, size, cmp);
-    *__MS_EVAL(list2) = (u_char*) list2 + n*size;
-                return;
-  }
-  i = 4 + (n & 1);
-  __MS_insertionsort(list1 + (n - i) * size, i, size, cmp);
-  last = list1 + size * (n - i);
-  *__MS_EVAL(list2 + (last - list1)) = list2 + n * size;
-  p2 = list2;
-  f1 = list1;
-  sense = (cmp(f1, f1 + size) > 0);
-  for (; f1 < last; sense = !sense) {
-    length = 2;
-    for (f2 = f1 + size2; f2 < last; f2 += size2) {
-      if ((cmp(f2, f2+ size) > 0) != sense)
-        break;
-      length += 2;
-    }
-    if (length < __MS_THRESHOLD) {
-      do {
-        p2 = *__MS_EVAL(p2) = f1 + size2 - list1 + list2;
-        if (sense > 0)
-          __MS_swap (f1, f1 + size);
-      } while ((f1 += size2) < f2);
-    } else {
-      l2 = f2;
-      for (f2 = f1 + size2; f2 < l2; f2 += size2) {
-        if ((cmp(f2-size, f2) > 0) != sense) {
-          p2 = *__MS_EVAL(p2) = f2 - list1 + list2;
-          if (sense > 0)
-            __MS_reverse(f1, f2-size);
-          f1 = f2;
-        }
-      }
-      if (sense > 0)
-        __MS_reverse (f1, f2-size);
-      f1 = f2;
-      if (f2 < last || cmp(f2 - size, f2) > 0)
-        p2 = *__MS_EVAL(p2) = f2 - list1 + list2;
-      else
-        p2 = *__MS_EVAL(p2) = list2 + n*size;
-    }
-  }
-}
-
-
-static inline __always_inline int
-mergesort(void *base, size_t nmemb, size_t size,
-          int (*cmp)(const void *, const void *))
-{
-  size_t i;
-  int sense;
-  int big, __iflag;
-  u_char *f1, *f2, *t, *b, *tp2, *q, *l1, *l2;
-  u_char *list2, *list1, *p2, *p, *last, **p1;
-  if (size < __MS_PSIZE / 2) {
-    errno = EINVAL;
-    return (-1);
-  }
-  if (nmemb == 0)
-    return (0);
-  __iflag = 0;
-  if (!(size % __MS_ISIZE) && !(((char *)base - (char *)0) % __MS_ISIZE))
-    __iflag = 1;
-  if ((list2 = malloc(nmemb * size + __MS_PSIZE)) == NULL)
-    return (-1);
-  list1 = base;
-  __MS_setup(list1, list2, nmemb, size, cmp);
-  last = list2 + nmemb * size;
-  i = big = 0;
-  while (*__MS_EVAL(list2) != last) {
-    l2 = list1;
-    p1 = __MS_EVAL(list1);
-    for (tp2 = p2 = list2; p2 != last; p1 = __MS_EVAL(l2)) {
-      p2 = *__MS_EVAL(p2);
-      f1 = l2;
-      f2 = l1 = list1 + (p2 - list2);
-      if (p2 != last)
-      p2 = *__MS_EVAL(p2);
-      l2 = list1 + (p2 - list2);
-      while (f1 < l1 && f2 < l2) {
-        if ((*cmp)(f1, f2) <= 0) {
-          q = f2;
-          b = f1, t = l1;
-          sense = -1;
-        } else {
-          q = f1;
-          b = f2, t = l2;
-          sense = 0;
-        }
-        if (!big) {
-          while ((b += size) < t && cmp(q, b) >sense)
-            if (++i == 6) {
-              big = 1;
-              goto __MS_EXPONENTIAL;
-            }
-        } else {
-__MS_EXPONENTIAL:
-          for (i = size; ; i <<= 1)
-            if ((p = (b + i)) >= t) {
-              if ((p = t - size) > b && (*cmp)(q, p) <= sense)
-                t = p;
-              else
-                b = p;
-              break;
-            } else if ((*cmp)(q, p) <= sense) {
-              t = p;
-              if (i == size)
-                big = 0;
-              goto __MS_FASTCASE;
-            } else
-              b = p;
-          while (t > b+size) {
-            i = (((t - b) / size) >> 1) * size;
-            if ((*cmp)(q, p = b + i) <= sense)
-              t = p;
-            else
-              b = p;
-          }
-          goto __MS_COPY;
-__MS_FASTCASE:
-          while (i > size)
-            if ((*cmp)(q, p = b + (i >>= 1)) <= sense)
-              t = p;
-            else
-              b = p;
-__MS_COPY:
-          b = t;
-        }
-        i = size;
-        if (q == f1) {
-          if (__iflag) {
-            __MS_ICOPY_LIST(f2, tp2, b);
-            __MS_ICOPY_ELT(f1, tp2, i);
-          } else {
-            __MS_CCOPY_LIST(f2, tp2, b);
-            __MS_CCOPY_ELT(f1, tp2, i);
-          }
-        } else {
-          if (__iflag) {
-            __MS_ICOPY_LIST(f1, tp2, b);
-            __MS_ICOPY_ELT(f2, tp2, i);
-          } else {
-            __MS_CCOPY_LIST(f1, tp2, b);
-            __MS_CCOPY_ELT(f2, tp2, i);
-          }
-        }
-      }
-      if (f2 < l2) {
-        if (__iflag) {
-          __MS_ICOPY_LIST(f2, tp2, l2);
-        } else {
-          __MS_CCOPY_LIST(f2, tp2, l2);
-        }
-      } else if (f1 < l1) {
-        if (__iflag) {
-          __MS_ICOPY_LIST(f1, tp2, l1);
-        } else {
-          __MS_CCOPY_LIST(f1, tp2, l1);
-        }
-      }
-        *p1 = l2;
-    }
-    tp2 = list1;
-    list1 = list2;
-    list2 = tp2;
-    last = list2 + nmemb*size;
-  }
-  if (base == list2) {
-    memmove(list2, list1, nmemb*size);
-    list2 = list1;
-  }
-  free(list2);
-  return (0);
-}
+#include <inlined/stdlib.h> /* arc4random, getprogname, mergesort etc */
 #endif
 #endif
 EOF
@@ -2055,89 +1354,7 @@ cat << 'EOF' > /tmp/dfly/cross/compat/err.h
 #define __compat_err_h__
 #include_next <err.h>
 #ifdef __linux__
-#include <sys/cdefs.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-static FILE *err_file;
-static void (*err_exit)(int);
-
-static inline __always_inline void
-err_set_file(void *fp)
-{
-  if (fp)
-    err_file = fp;
-  else
-    err_file = stderr;
-}
-
-static inline __always_inline void
-err_set_exit(void (*ef)(int))
-{
-  err_exit = ef;
-}
-
-
-static inline __always_inline void
-verrc(int eval, int code, const char *fmt, va_list ap)
-{
-  if (err_file == NULL)
-    err_set_file(NULL);
-  fprintf(err_file, "%s: ", getprogname());
-  if (fmt != NULL) {
-    vfprintf(err_file, fmt, ap);
-    fprintf(err_file, ": ");
-  }
-  fprintf(err_file, "%s\n", strerror(code));
-  if (err_exit)
-    err_exit(eval);
-  exit(eval);
-}
-
-static void
-errc(int eval, int code, const char *fmt, ...)
-{
-  va_list ap;
-  va_start(ap, fmt);
-  verrc(eval, code, fmt, ap);
-  va_end(ap);
-}
-
-static inline __always_inline void
-__dummy_errc(void)
-{
-  errc(1,1,NULL);
-}
-
-static inline __always_inline void
-vwarnc(int code, const char *fmt, va_list ap)
-{
-  if (err_file == NULL)
-    err_set_file(NULL);
-  fprintf(err_file, "%s: ", getprogname());
-  if (fmt != NULL) {
-    vfprintf(err_file, fmt, ap);
-    fprintf(err_file, ": ");
-  }
-  fprintf(err_file, "%s\n", strerror(code));
-}
-
-
-static void
-warnc(int code, const char *fmt, ...)
-{
-  va_list ap;
-  va_start(ap, fmt);
-  vwarnc(code, fmt, ap);
-  va_end(ap);
-}
-
-static inline __always_inline void
-__dummy_warnc(void)
-{
-  warnc(1, NULL);
-}
+#include <inlined/err.h> /* errc verrc etc */
 #endif
 #endif
 EOF
@@ -2165,6 +1382,527 @@ cat << 'EOF' > /tmp/dfly/cross/compat/db.h
 #ifndef __linux__
 #include_next <db.h>
 #endif
+#ifdef __linux__
+#include <inlined/db.h> /* cgetdb opendb etc */
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/grp.h
+#ifndef __compat_grp_h__
+#define __compat_grp_h__
+#ifdef BOOTSTRAPPING
+#define group_from_gid group_from_gid__z
+#define gid_from_group gid_from_group__z
+#endif
+#include_next <grp.h>
+#if defined(BOOTSTRAPPING) || defined(__linux__)
+#include <sys/types.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#ifndef UNMLEN
+#define UNMLEN 32
+#endif
+#undef group_from_gid
+#undef gid_from_group
+static inline __always_inline const char *
+group_from_gid(gid_t gid, int noname)
+{
+  void *ptr;
+  if (noname)
+    return (NULL);
+  ptr = malloc(UNMLEN);
+  snprintf(ptr, UNMLEN, "%lu", (long) gid);
+  return ptr;
+}
+
+static inline __always_inline int
+gid_from_group(const char *name, gid_t *gid)
+{
+  if (name == NULL || gid == NULL)
+    return -1;
+  if (strcmp(name, "wheel") == 0) {
+    *gid = 0;
+    return 0;
+  } else if (strcmp(name, "daemon") == 0) { /* for installworld */
+    *gid = 1;
+    return 0;
+  } else if (strcmp(name, "operator") == 0) {
+    *gid = 5;
+    return 0;
+  } else if (strcmp(name, "mail") == 0) {
+    *gid = 6;
+    return 0;
+  } else if (strcmp(name, "games") == 0) {
+    *gid = 13;
+    return 0;
+  } else if (strcmp(name, "uucp") == 0) {
+    *gid = 66;
+    return 0;
+  } else if (strcmp(name, "dialer") == 0) {
+    *gid = 68;
+    return 0;
+  } else if (strcmp(name, "network") == 0) {
+    *gid = 69;
+    return 0;
+  }
+  return -1;
+}
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/pwd.h
+#ifndef __compat_pwd_h__
+#define __compat_pwd_h__
+/* XXX for pwd_mkdb(1) */
+#ifdef PWD_MKDB_CROSS
+#define _PWF(x)         (1 << x)
+#define _PWF_NAME       _PWF(0)
+#define _PWF_PASSWD     _PWF(1)
+#define _PWF_UID        _PWF(2)
+#define _PWF_GID        _PWF(3)
+#define _PWF_CHANGE     _PWF(4)
+#define _PWF_CLASS      _PWF(5)
+#define _PWF_GECOS      _PWF(6)
+#define _PWF_DIR        _PWF(7)
+#define _PWF_SHELL      _PWF(8)
+#define _PWF_EXPIRE     _PWF(9)
+
+#define passwd dfly_passwd
+
+struct dfly_passwd {
+  char    *pw_name;
+  char    *pw_passwd;
+  uid_t   pw_uid;
+  gid_t   pw_gid;
+  time_t  pw_change;
+  char    *pw_class;
+  char    *pw_gecos;
+  char    *pw_dir;
+  char    *pw_shell;
+  time_t  pw_expire;
+  int     pw_fields;
+};
+
+#define _PW_VERSIONED(x, v)     ((unsigned char)(((x) & 0xCF) | ((v)<<4)))
+#define _PW_KEYBYNAME           '\x31'
+#define _PW_KEYBYNUM            '\x32'
+#define _PW_KEYBYUID            '\x33'
+#define _PW_KEYYPENABLED        '\x34'
+#define _PW_KEYYPBYNUM          '\x35'
+#define _PWD_VERSION_KEY        "\xFF" "VERSION"
+#define _PWD_CURRENT_VERSION    '\x04'
+
+#define _PATH_PWD               "/etc"
+#define _PASSWD                 "passwd"
+#define _MASTERPASSWD           "master.passwd"
+#define _PATH_MP_DB             "/etc/pwd.db"
+#define _MP_DB                  "pwd.db"
+#define _PATH_SMP_DB            "/etc/spwd.db"
+#define _SMP_DB                 "spwd.db"
+#else
+
+#ifdef BOOTSTRAPPING
+#define user_from_uid user_from_uid__z
+#define uid_from_user uid_from_user__z
+#endif
+#include_next <pwd.h>
+#if defined(BOOTSTRAPPING) || defined(__linux__)
+#include <sys/types.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#undef user_from_uid
+#undef uid_from_user 
+#ifndef UNMLEN
+#define UNMLEN 32
+#endif
+static inline __always_inline const char *
+user_from_uid(uid_t uid, int noname)
+{
+  void *ptr;
+  if (noname)
+    return (NULL);
+  ptr = malloc(UNMLEN);
+  snprintf(ptr, UNMLEN, "%lu", (long) uid);
+  return ptr;
+}
+
+static inline __always_inline int
+uid_from_user(const char *name, uid_t *uid)
+{
+  if (name == NULL || uid == NULL)
+    return -1;
+  if (strcmp(name, "root") == 0) {
+    *uid = 0;
+    return 0;
+  } else if (strcmp(name, "daemon") == 0) { /* for installworld */
+    *uid = 1;
+    return 0;
+  } else if (strcmp(name, "operator") == 0) {
+    *uid = 2;
+    return 0;
+  } else if (strcmp(name, "mail") == 0) {
+    *uid = 6;
+    return 0;
+  } else if (strcmp(name, "games") == 0) {
+    *uid = 7;
+    return 0;
+  } else if (strcmp(name, "uucp") == 0) {
+    *uid = 7;
+    return 0;
+  }
+  return -1;
+}
+#endif
+#if !defined(__DragonFly__) && !defined(__FreeBSD__)
+#include <stddef.h>
+struct group;
+static inline __always_inline int
+pwcache_groupdb(int (*a_setg)(int), void (*a_endg)(void),
+    struct group* (*a_g)(const char *), struct group* (*a_gid)(gid_t))
+{
+  if (a_setg == NULL || a_endg == NULL || a_g == NULL || a_gid == NULL || 1)
+    return -1;
+}
+static inline __always_inline int
+pwcache_userdb(int (*a_setp)(int), void (*a_endp)(void),
+    struct passwd* (*a_g)(const char *), struct passwd* (*a_uid)(uid_t))
+{
+  if (a_setp == NULL || a_endp == NULL || a_g == NULL || a_uid == NULL || 1)
+    return -1;
+}
+#endif
+#ifdef __linux__
+#include <sys/cdefs.h>
+#include <limits.h> /* GID_MAX UID_MAX needed for mtree */
+#include <stdint.h>
+
+#ifndef GID_MAX
+#define GID_MAX UINT_MAX
+#endif
+#ifndef UID_MAX
+#define UID_MAX UINT_MAX
+#endif
+
+#endif
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/vis.h
+#ifndef __compat_vis_h__
+#define __compat_vis_h__
+#include <inlined/vis.h>  /* vis unvis replacement */
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/string.h
+#ifndef __compat_string_h__
+#define __compat_string_h__
+#include <sys/cdefs.h>
+#ifdef __linux__  /* fix liberty.h */
+/* no basename() unhook, issue in patch(1) */
+#ifdef __OPTIMIZE__
+#undef __OPTIMIZE__    /* deal with strchr() and rindex() optimizations */
+#define ____OPTIMIZE__
+#endif
+#endif
+#include_next <string.h>
+#ifdef __linux__
+#ifdef ____OPTIMIZE__
+#define __OPTIMIZE__ 1
+#endif
+#endif
+#ifdef __linux__
+#include <inlined/string.h> /* strlcat strlcpy strmode */
+#endif
+#ifdef __OpenBSD__
+static inline __always_inline void *
+mempcpy(void *dest, const void *src, size_t len)
+{
+  return ((char *)memcpy(dest, src, len) + len);
+}
+#define MBUITER_INLINE inline __always_inline
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/simple/string.h
+#ifndef __compat_string_h__
+#define __compat_string_h__
+#include <sys/cdefs.h>
+#ifdef __linux__  /* fix liberty.h */
+#undef basename
+#define basename __basename
+#ifdef __OPTIMIZE__
+#undef __OPTIMIZE__    /* deal with strchr() and rindex() optimizations */
+#define ____OPTIMIZE__
+#endif
+#endif
+#include_next <string.h>
+#ifdef __linux__
+#ifdef ____OPTIMIZE__
+#define __OPTIMIZE__ 1
+#endif
+#undef basename
+#endif
+#ifdef __OpenBSD__
+static inline __always_inline void *
+mempcpy(void *dest, const void *src, size_t len)
+{
+  return ((char *)memcpy(dest, src, len) + len);
+}
+static inline __always_inline int
+ffsll(long long mask)
+{
+ int bit;
+ if (mask == 0)
+   return (0);
+ for (bit = 1; !(mask & 1); bit++)
+   mask = (unsigned long long)mask >> 1;
+ return (bit);
+}
+#define MBUITER_INLINE inline __always_inline
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/simple/libiberty.h
+#ifndef __compat_libiberty_h__
+#define __compat_libiberty_h__
+#include_next "libiberty.h"
+#ifdef __linux__
+#ifdef __cplusplus
+#define setproctitle(...)  /* so as not to bundle setproctitle.c */
+#endif
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/unlocked-io.h
+#ifndef __compat_unlocked_io_h__
+#define __compat_unlocked_io_h__
+#if 0
+#ifdef __linux__  /* fix redef warns in grep(1) config.h, w/ caviet tho */
+#undef HAVE_DECL_FREAD_UNLOCKED
+#undef HAVE_DECL_FWRITE_UNLOCKED
+#define HAVE_DECL_FREAD_UNLOCKED 1
+#define HAVE_DECL_FWRITE_UNLOCKED 1
+#endif
+#include_next "unlocked-io.h"
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/unistd.h
+#ifndef __compat_unistd_h__
+#define __compat_unistd_h__
+#include_next <unistd.h>
+#ifndef OFF_MAX
+#define OFF_MAX LONG_MAX
+#endif
+#ifndef __DragonFly__
+#define varsym_get(x,y,z,v) (-1)
+#endif
+#if defined(__OpenBSD__) || defined(__NetBSD__)
+#define eaccess access
+#endif
+#ifdef __linux__
+#include <inlined/unistd.h> /* bsd_getopt getmode setmode */
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/event.h
+#ifndef __compat_sys_event_h__
+#define __compat_sys_event_h__
+#if defined(__DragonFly__) || defined(__FreeBSD__)
+#include_next <sys/event.h>
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/ucred.h
+#ifndef __compat_sys_ucred_h__
+#define __compat_sys_ucred_h__
+#ifndef __linux__
+#include_next <sys/ucred.h>
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/tree.h
+#ifndef __compat_sys_tree_h__
+#define __compat_sys_tree_h__
+#ifndef __linux__
+#include_next <sys/tree.h>
+#endif
+#ifdef __linux__
+#include <inlined/tree.h> /* RB_ stuff */
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/consio.h
+#ifndef __compat_sys_consio_h__
+#define __compat_sys_consio_h__
+#if 0
+#include_next <sys/consio.h>
+#endif
+#if 1
+struct _scrmap {
+  char            scrmap[256];
+};
+typedef struct _scrmap  scrmap_t; /* XXX share/syscons/mapsmk/ */
+#endif
+#endif
+EOF
+cp /tmp/dfly/cross/compat/sys/consio.h /tmp/dfly/cross/simple/sys/consio.h
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/linker.h
+#ifndef __compat_sys_linker_h__
+#define __compat_sys_linker_h__
+#ifndef __linux__
+#include_next <sys/linker.h>
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/module.h
+#ifndef __compat_sys_module_h__
+#define __compat_sys_module_h__
+#ifndef __linux__
+#include_next <sys/module.h>
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/mount.h
+#ifndef __compat_sys_mount_h__
+#define __compat_sys_mount_h__
+#include_next <sys/mount.h>
+#if !defined(__DragonFly__) && !defined(__FreeBSD__)
+#include <sys/cdefs.h>
+#include <stddef.h>
+#define MAXPHYS (4 * 1024)
+#ifdef __linux__
+#include <sys/statfs.h>
+#define f_iosize f_bsize
+#endif
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/stat.h
+#ifndef __compat_sys_stat_h__
+#define __compat_sys_stat_h__
+#include_next <sys/stat.h>
+#if !defined(__DragonFly__) && !defined(__FreeBSD__)
+#define lchmod chmod
+#endif
+#ifndef S_ISWHT
+#define S_ISWHT(x) 0
+#endif
+#ifdef __linux__
+#define MNT_RDONLY MS_RDONLY
+#define MNT_LOCAL -2 /* dummy for find(1) */
+#ifndef MAXLOGNAME   /* for find(1) */
+#define MAXLOGNAME 33
+#endif
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/time.h
+#ifndef __compat_sys_time_h__
+#define __compat_sys_time_h__
+#include_next <sys/time.h>
+#if !defined(__DragonFly__) && !defined(__FreeBSD__)
+#define lutimes utimes
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/mtio.h
+#ifndef __compat_sys_mtio_h__
+#define __compat_sys_mtio_h__
+#include_next <sys/mtio.h>
+#if defined(__OpenBSD__) || defined(__NetBSD__)
+#include <sys/ioctl.h>
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/sys/queue.h
+#ifndef __compat_sys_queue_h__
+#define __compat_sys_queue_h__
+#include_next <sys/queue.h>
+#if defined(__OpenBSD__)
+#define STAILQ_HEAD(name, type) struct name { \
+  struct type *stqh_first; \
+  struct type **stqh_last; \
+}
+#define STAILQ_HEAD_INITIALIZER(head) { NULL, &(head).stqh_first }
+#define STAILQ_ENTRY(type)  struct { struct type *stqe_next;  }
+#define STAILQ_INIT(head) do { \
+  (head)->stqh_first = NULL; \
+  (head)->stqh_last = &(head)->stqh_first; \
+} while (/*CONSTCOND*/0)
+#define STAILQ_INSERT_HEAD(head, elm, field) do { \
+  if (((elm)->field.stqe_next = (head)->stqh_first) == NULL) \
+    (head)->stqh_last = &(elm)->field.stqe_next; \
+  (head)->stqh_first = (elm); \
+} while (/*CONSTCOND*/0)
+#define STAILQ_INSERT_TAIL(head, elm, field) do { \
+  (elm)->field.stqe_next = NULL; \
+  *(head)->stqh_last = (elm); \
+  (head)->stqh_last = &(elm)->field.stqe_next; \
+} while (/*CONSTCOND*/0)
+#define STAILQ_INSERT_AFTER(head, listelm, elm, field) do {\
+  if (((elm)->field.stqe_next = (listelm)->field.stqe_next) == NULL) \
+    (head)->stqh_last = &(elm)->field.stqe_next; \
+  (listelm)->field.stqe_next = (elm); \
+} while (/*CONSTCOND*/0)
+#define STAILQ_REMOVE_HEAD(head, field) do { \
+  if (((head)->stqh_first = (head)->stqh_first->field.stqe_next) == NULL) \
+    (head)->stqh_last = &(head)->stqh_first;\
+} while (/*CONSTCOND*/0)
+#define STAILQ_REMOVE(head, elm, type, field) do { \
+  if ((head)->stqh_first == (elm)) { \
+      STAILQ_REMOVE_HEAD((head), field); \
+  } else { \
+    struct type *curelm = (head)->stqh_first; \
+    while (curelm->field.stqe_next != (elm)) \
+      curelm = curelm->field.stqe_next; \
+    if ((curelm->field.stqe_next = \
+         curelm->field.stqe_next->field.stqe_next) == NULL) \
+      (head)->stqh_last = &(curelm)->field.stqe_next; \
+  } \
+} while (/*CONSTCOND*/0)
+#define STAILQ_FOREACH(var, head, field) \
+  for ((var) = ((head)->stqh_first); \
+    (var); \
+  (var) = ((var)->field.stqe_next))
+#define STAILQ_CONCAT(head1, head2) do { \
+ if (!STAILQ_EMPTY((head2))) { \
+   *(head1)->stqh_last = (head2)->stqh_first; \
+    (head1)->stqh_last = (head2)->stqh_last; \
+   STAILQ_INIT((head2)); \
+ } \
+} while (/*CONSTCOND*/0)
+#define STAILQ_EMPTY(head)      ((head)->stqh_first == NULL)
+#define STAILQ_FIRST(head)      ((head)->stqh_first)
+#define STAILQ_NEXT(elm, field) ((elm)->field.stqe_next)
+#endif
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/db.h
 #ifdef __linux__
 #include <sys/cdefs.h>
 #include <sys/param.h>
@@ -4772,218 +4510,1868 @@ cgetnext(char **bp, char **db_array)
   /* NOTREACHED */
 }
 #endif
-#endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/grp.h
-#ifndef __compat_grp_h__
-#define __compat_grp_h__
-#ifdef BOOTSTRAPPING
-#define group_from_gid group_from_gid__z
-#define gid_from_group gid_from_group__z
-#endif
-#include_next <grp.h>
-#if defined(BOOTSTRAPPING) || defined(__linux__)
-#include <sys/types.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#ifndef UNMLEN
-#define UNMLEN 32
-#endif
-#undef group_from_gid
-#undef gid_from_group
-static inline __always_inline const char *
-group_from_gid(gid_t gid, int noname)
-{
-  void *ptr;
-  if (noname)
-    return (NULL);
-  ptr = malloc(UNMLEN);
-  snprintf(ptr, UNMLEN, "%lu", (long) gid);
-  return ptr;
-}
-
-static inline __always_inline int
-gid_from_group(const char *name, gid_t *gid)
-{
-  if (name == NULL || gid == NULL)
-    return -1;
-  if (strcmp(name, "wheel") == 0) {
-    *gid = 0;
-    return 0;
-  } else if (strcmp(name, "daemon") == 0) { /* for installworld */
-    *gid = 1;
-    return 0;
-  } else if (strcmp(name, "operator") == 0) {
-    *gid = 5;
-    return 0;
-  } else if (strcmp(name, "mail") == 0) {
-    *gid = 6;
-    return 0;
-  } else if (strcmp(name, "games") == 0) {
-    *gid = 13;
-    return 0;
-  } else if (strcmp(name, "uucp") == 0) {
-    *gid = 66;
-    return 0;
-  } else if (strcmp(name, "dialer") == 0) {
-    *gid = 68;
-    return 0;
-  } else if (strcmp(name, "network") == 0) {
-    *gid = 69;
-    return 0;
-  }
-  return -1;
-}
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/pwd.h
-#ifndef __compat_pwd_h__
-#define __compat_pwd_h__
-/* XXX for pwd_mkdb(1) */
-#ifdef PWD_MKDB_CROSS
-#define _PWF(x)         (1 << x)
-#define _PWF_NAME       _PWF(0)
-#define _PWF_PASSWD     _PWF(1)
-#define _PWF_UID        _PWF(2)
-#define _PWF_GID        _PWF(3)
-#define _PWF_CHANGE     _PWF(4)
-#define _PWF_CLASS      _PWF(5)
-#define _PWF_GECOS      _PWF(6)
-#define _PWF_DIR        _PWF(7)
-#define _PWF_SHELL      _PWF(8)
-#define _PWF_EXPIRE     _PWF(9)
-
-#define passwd dfly_passwd
-
-struct dfly_passwd {
-  char    *pw_name;
-  char    *pw_passwd;
-  uid_t   pw_uid;
-  gid_t   pw_gid;
-  time_t  pw_change;
-  char    *pw_class;
-  char    *pw_gecos;
-  char    *pw_dir;
-  char    *pw_shell;
-  time_t  pw_expire;
-  int     pw_fields;
-};
-
-#define _PW_VERSIONED(x, v)     ((unsigned char)(((x) & 0xCF) | ((v)<<4)))
-#define _PW_KEYBYNAME           '\x31'
-#define _PW_KEYBYNUM            '\x32'
-#define _PW_KEYBYUID            '\x33'
-#define _PW_KEYYPENABLED        '\x34'
-#define _PW_KEYYPBYNUM          '\x35'
-#define _PWD_VERSION_KEY        "\xFF" "VERSION"
-#define _PWD_CURRENT_VERSION    '\x04'
-
-#define _PATH_PWD               "/etc"
-#define _PASSWD                 "passwd"
-#define _MASTERPASSWD           "master.passwd"
-#define _PATH_MP_DB             "/etc/pwd.db"
-#define _MP_DB                  "pwd.db"
-#define _PATH_SMP_DB            "/etc/spwd.db"
-#define _SMP_DB                 "spwd.db"
-#else
-
-#ifdef BOOTSTRAPPING
-#define user_from_uid user_from_uid__z
-#define uid_from_user uid_from_user__z
-#endif
-#include_next <pwd.h>
-#if defined(BOOTSTRAPPING) || defined(__linux__)
-#include <sys/types.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#undef user_from_uid
-#undef uid_from_user 
-#ifndef UNMLEN
-#define UNMLEN 32
-#endif
-static inline __always_inline const char *
-user_from_uid(uid_t uid, int noname)
-{
-  void *ptr;
-  if (noname)
-    return (NULL);
-  ptr = malloc(UNMLEN);
-  snprintf(ptr, UNMLEN, "%lu", (long) uid);
-  return ptr;
-}
-
-static inline __always_inline int
-uid_from_user(const char *name, uid_t *uid)
-{
-  if (name == NULL || uid == NULL)
-    return -1;
-  if (strcmp(name, "root") == 0) {
-    *uid = 0;
-    return 0;
-  } else if (strcmp(name, "daemon") == 0) { /* for installworld */
-    *uid = 1;
-    return 0;
-  } else if (strcmp(name, "operator") == 0) {
-    *uid = 2;
-    return 0;
-  } else if (strcmp(name, "mail") == 0) {
-    *uid = 6;
-    return 0;
-  } else if (strcmp(name, "games") == 0) {
-    *uid = 7;
-    return 0;
-  } else if (strcmp(name, "uucp") == 0) {
-    *uid = 7;
-    return 0;
-  }
-  return -1;
-}
-#endif
-#if !defined(__DragonFly__) && !defined(__FreeBSD__)
-#include <stddef.h>
-struct group;
-static inline __always_inline int
-pwcache_groupdb(int (*a_setg)(int), void (*a_endg)(void),
-    struct group* (*a_g)(const char *), struct group* (*a_gid)(gid_t))
-{
-  if (a_setg == NULL || a_endg == NULL || a_g == NULL || a_gid == NULL || 1)
-    return -1;
-}
-static inline __always_inline int
-pwcache_userdb(int (*a_setp)(int), void (*a_endp)(void),
-    struct passwd* (*a_g)(const char *), struct passwd* (*a_uid)(uid_t))
-{
-  if (a_setp == NULL || a_endp == NULL || a_g == NULL || a_uid == NULL || 1)
-    return -1;
-}
-#endif
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/err.h
 #ifdef __linux__
 #include <sys/cdefs.h>
-#include <limits.h> /* GID_MAX UID_MAX needed for mtree */
-#include <stdint.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#ifndef GID_MAX
-#define GID_MAX UINT_MAX
-#endif
-#ifndef UID_MAX
-#define UID_MAX UINT_MAX
-#endif
+static FILE *err_file;
+static void (*err_exit)(int);
 
-#endif
-#endif
+static inline __always_inline void
+err_set_file(void *fp)
+{
+  if (fp)
+    err_file = fp;
+  else
+    err_file = stderr;
+}
+
+static inline __always_inline void
+err_set_exit(void (*ef)(int))
+{
+  err_exit = ef;
+}
+
+
+static inline __always_inline void
+verrc(int eval, int code, const char *fmt, va_list ap)
+{
+  if (err_file == NULL)
+    err_set_file(NULL);
+  fprintf(err_file, "%s: ", getprogname());
+  if (fmt != NULL) {
+    vfprintf(err_file, fmt, ap);
+    fprintf(err_file, ": ");
+  }
+  fprintf(err_file, "%s\n", strerror(code));
+  if (err_exit)
+    err_exit(eval);
+  exit(eval);
+}
+
+static void
+errc(int eval, int code, const char *fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  verrc(eval, code, fmt, ap);
+  va_end(ap);
+}
+
+static inline __always_inline void
+__dummy_errc(void)
+{
+  errc(1,1,NULL);
+}
+
+static inline __always_inline void
+vwarnc(int code, const char *fmt, va_list ap)
+{
+  if (err_file == NULL)
+    err_set_file(NULL);
+  fprintf(err_file, "%s: ", getprogname());
+  if (fmt != NULL) {
+    vfprintf(err_file, fmt, ap);
+    fprintf(err_file, ": ");
+  }
+  fprintf(err_file, "%s\n", strerror(code));
+}
+
+
+static void
+warnc(int code, const char *fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  vwarnc(code, fmt, ap);
+  va_end(ap);
+}
+
+static inline __always_inline void
+__dummy_warnc(void)
+{
+  warnc(1, NULL);
+}
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/vis.h
-#ifndef __compat_vis_h__
-#define __compat_vis_h__
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/resolv.h
+#ifdef __linux__
+#undef b64_ntop
+#undef b64_pton
+#include <sys/cdefs.h>
+#include <ctype.h>
+#include <stddef.h>
+#include <string.h>
+
+static const char __Base64[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char __Pad64 = '=';
+
+static inline __always_inline int /* needed for uuencode */
+b64_ntop(u_char const *src, size_t srclength, char *target, size_t targsize)
+{
+  size_t datalength = 0;
+  unsigned char input[3];
+  unsigned char output[4];
+  size_t i;
+  while (2 < srclength) {
+    input[0] = *src++;
+    input[1] = *src++;
+    input[2] = *src++;
+    srclength -= 3;
+    output[0] = input[0] >> 2;
+    output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
+    output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
+    output[3] = input[2] & 0x3f;
+    if (datalength + 4 > targsize)
+      return (-1);
+    target[datalength++] = __Base64[output[0]];
+    target[datalength++] = __Base64[output[1]];
+    target[datalength++] = __Base64[output[2]];
+    target[datalength++] = __Base64[output[3]];
+  }
+  if (0 != srclength) {
+    input[0] = input[1] = input[2] = '\0';
+    for (i = 0; i < srclength; i++)
+      input[i] = *src++;
+    output[0] = input[0] >> 2;
+    output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
+    output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
+    if (datalength + 4 > targsize)
+      return (-1);
+    target[datalength++] = __Base64[output[0]];
+    target[datalength++] = __Base64[output[1]];
+    if (srclength == 1)
+      target[datalength++] = __Pad64;
+    else
+      target[datalength++] = __Base64[output[2]];
+    target[datalength++] = __Pad64;
+  }
+  if (datalength >= targsize)
+    return (-1);
+  target[datalength] = '\0';
+  return (datalength);
+}
+
+static inline __always_inline int /* needed for uudecode */
+b64_pton(char const *src, unsigned char *target, size_t targsize)
+{
+  int tarindex, state, ch;
+  char *pos;
+  state = 0;
+  tarindex = 0;
+  while ((ch = *src++) != '\0') {
+    if (isspace((unsigned char)ch))
+      continue;
+    if (ch == __Pad64)
+      break;
+    pos = strchr(__Base64, ch);
+    if (pos == NULL)
+      return (-1);
+    switch (state) {
+    case 0:
+      if (target) {
+        if ((size_t)tarindex >= targsize)
+          return (-1);
+        target[tarindex] = (pos - __Base64) << 2;
+      }
+      state = 1;
+      break;
+    case 1:
+      if (target) {
+        if ((size_t)tarindex + 1 >= targsize)
+          return (-1);
+        target[tarindex]   |=  (pos - __Base64) >> 4;
+        target[tarindex+1]  = ((pos - __Base64) & 0x0f) << 4 ;
+      }
+      tarindex++;
+      state = 2;
+      break;
+    case 2:
+      if (target) {
+        if ((size_t)tarindex + 1 >= targsize)
+          return (-1);
+        target[tarindex]   |=  (pos - __Base64) >> 2;
+        target[tarindex+1]  = ((pos - __Base64) & 0x03) << 6;
+      }
+      tarindex++;
+      state = 3;
+      break;
+    case 3:
+      if (target) {
+        if ((size_t)tarindex >= targsize)
+          return (-1);
+        target[tarindex] |= (pos - __Base64);
+      }
+      tarindex++;
+      state = 0;
+      break;
+    default:
+      abort();
+    }
+  }
+  if (ch == __Pad64) {
+    ch = *src++;
+    switch (state) {
+    case 0:
+    case 1:
+      return (-1);
+    case 2:
+      for ((void)NULL; ch != '\0'; ch = *src++)
+        if (!isspace((unsigned char)ch))
+          break;
+      if (ch != __Pad64)
+        return (-1);
+      ch = *src++;
+      /* FALLTHROUGH */
+    case 3:
+      for ((void)NULL; ch != '\0'; ch = *src++)
+        if (!isspace((unsigned char)ch))
+          return (-1);
+      if (target && target[tarindex] != 0)
+        return (-1);
+    }
+  } else {
+    if (state != 0)
+     return (-1);
+  }
+  return (tarindex);
+}
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/stdio.h
+#ifdef __linux__
+#include <sys/cdefs.h>
+#include <stdlib.h>
+#include <errno.h>
+/* work around for sort(1) and cap_mkdb(1) and citrus/mkscmapper */
+/*#if defined(WITHOUT_NLS) || defined(__compat_db_h__) || defined(USES_CITRUS)*/
+#define FILEBUF_POOL_ITEMS 32
+
+#if defined(WITHOUT_NLS) /* for sort(1) */
+#include <wchar.h>
+#define __MUL_NO_OVERFLOW ((size_t)1 << (sizeof(size_t) * 4))
+static inline __always_inline void *
+__reallocarray(void *ptr, size_t number, size_t size)
+{
+  if ((number >= __MUL_NO_OVERFLOW || size >= __MUL_NO_OVERFLOW) &&
+       number > 0 && SIZE_MAX / number < size) {
+    errno = ENOMEM;
+    return NULL;
+  }
+  return realloc(ptr, size * number);
+}
+struct filewbuf {
+  FILE *fp;
+  wchar_t *wbuf;
+  size_t len;
+};
+
+#define FILEWBUF_INIT_LEN     128
+#define FILEWBUF_POOL_ITEMS   32
+
+static struct filewbuf fbw_pool[FILEWBUF_POOL_ITEMS];
+static int fbw_pool_cur;
+
+static inline __always_inline wchar_t *
+fgetwln(FILE *stream, size_t *lenp)
+{
+  struct filewbuf *fb;
+  wint_t wc;
+  size_t wused = 0;
+  fb = &fbw_pool[fbw_pool_cur];
+  if (fb->fp != stream && fb->fp != NULL) {
+    fbw_pool_cur++;
+    fbw_pool_cur %= FILEWBUF_POOL_ITEMS;
+    fb = &fbw_pool[fbw_pool_cur];
+  }
+  fb->fp = stream;
+  while ((wc = fgetwc(stream)) != WEOF) {
+    if (!fb->len || wused >= fb->len) {
+      wchar_t *wp;
+      if (fb->len)
+        fb->len *= 2;
+      else
+        fb->len = FILEWBUF_INIT_LEN;
+      wp = __reallocarray(fb->wbuf, fb->len, sizeof(wchar_t));
+      if (wp == NULL) {
+        wused = 0;
+        break;
+      }
+      fb->wbuf = wp;
+    }
+    fb->wbuf[wused++] = wc;
+    if (wc == L'\n')
+      break;
+  }
+  *lenp = wused;
+  return wused ? fb->wbuf : NULL;
+}
+#endif
+
+struct filebuf {
+    FILE *fp;
+    char *buf;
+    size_t len;
+};
+
+static struct filebuf fb_pool[FILEBUF_POOL_ITEMS];
+static int fb_pool_cur;
+
+static inline __always_inline char *
+fgetln(FILE *stream, size_t *len)
+{
+  struct filebuf *fb;
+  ssize_t nread;
+  flockfile(stream);
+  fb = &fb_pool[fb_pool_cur];
+  if (fb->fp != stream && fb->fp != NULL) {
+    fb_pool_cur++;
+    fb_pool_cur %= FILEBUF_POOL_ITEMS;
+    fb = &fb_pool[fb_pool_cur];
+  }
+  fb->fp = stream;
+  nread = getline(&fb->buf, &fb->len, stream);
+  funlockfile(stream);
+  if (nread == -1) {
+    *len = 0;
+    return NULL;
+  } else {
+    *len = (size_t)nread;
+    return fb->buf;
+  }
+}
+/*#endif*/
+
+#define fwopen(cookie, fn) funopen(cookie, 0, fn, 0, 0)
+
+struct funopen_cookie {
+  void *orig_cookie;
+  int (*readfn)(void *cookie, char *buf, int size);
+  int (*writefn)(void *cookie, const char *buf, int size);
+  off_t (*seekfn)(void *cookie, off_t offset, int whence);
+  int (*closefn)(void *cookie);
+};
+
+static ssize_t
+funopen_read(void *cookie, char *buf, size_t size)
+{
+  struct funopen_cookie *cookiewrap = cookie;
+  if (cookiewrap->readfn == NULL) {
+    errno = EBADF;
+    return -1;
+  }
+  return cookiewrap->readfn(cookiewrap->orig_cookie, buf, size);
+}
+
+static ssize_t
+funopen_write(void *cookie, const char *buf, size_t size)
+{
+  struct funopen_cookie *cookiewrap = cookie;
+  if (cookiewrap->writefn == NULL)
+    return EOF;
+  return cookiewrap->writefn(cookiewrap->orig_cookie, buf, size);
+}
+
+static int
+funopen_seek(void *cookie, off64_t *offset, int whence)
+{
+  struct funopen_cookie *cookiewrap = cookie;
+  off_t soff = *offset;
+  if (cookiewrap->seekfn == NULL) {
+    errno = ESPIPE;
+    return -1;
+  }
+  soff = cookiewrap->seekfn(cookiewrap->orig_cookie, soff, whence);
+  *offset = soff;
+  return *offset;
+}
+
+static int
+funopen_close(void *cookie)
+{
+  struct funopen_cookie *cookiewrap = cookie;
+  int rc;
+  if (cookiewrap->closefn == NULL)
+    return 0;
+  rc = cookiewrap->closefn(cookiewrap->orig_cookie);
+  free(cookiewrap);
+  return rc;
+}
+
+static inline __always_inline FILE *
+funopen(const void *cookie,
+    int (*readfn)(void *cookie, char *buf, int size),
+    int (*writefn)(void *cookie, const char *buf, int size),
+    off_t (*seekfn)(void *cookie, off_t offset, int whence),
+    int (*closefn)(void *cookie))
+{
+  struct funopen_cookie *cookiewrap;
+  cookie_io_functions_t funcswrap = {
+  .read = funopen_read,
+  .write = funopen_write,
+  .seek = funopen_seek,
+  .close = funopen_close,
+  };
+  const char *mode;
+  if (readfn) {
+    if (writefn == NULL)
+      mode = "r";
+    else
+      mode = "r+";
+  } else if (writefn) {
+    mode = "w";
+  } else {
+    errno = EINVAL;
+    return NULL;
+  }
+  cookiewrap = malloc(sizeof(*cookiewrap));
+  if (cookiewrap == NULL)
+    return NULL;
+  cookiewrap->orig_cookie = ____DECONST(void *, cookie);
+  cookiewrap->readfn = readfn;
+  cookiewrap->writefn = writefn;
+  cookiewrap->seekfn = seekfn;
+  cookiewrap->closefn = closefn;
+  return fopencookie(cookiewrap, mode, funcswrap);
+}
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/stdlib.h
+#ifdef __linux__
+#include <sys/cdefs.h>
+#include <errno.h>
+#include <limits.h>
+#include <stdint.h>
+#include <string.h>
+
+#define srandomdev(...) /* stub for games/phantasia/setup */
+
+static inline __always_inline uint32_t  /* for games/fortune/strfile.nx */
+arc4random_uniform(u_int32_t upper_bound)
+{
+  uint32_t r, min;
+  if (upper_bound < 2)
+    return 0;
+  min = -upper_bound % upper_bound;
+  for (;;) {
+    r = rand();   /* should be good enough */
+    if (r >= min)
+      break;
+  }
+  return (r % upper_bound);
+}
+
+#define __ALIGNBYTES  (sizeof(long) - 1)
+#define __ALIGNPTR(p) (((unsigned long)(p) + __ALIGNBYTES) & ~__ALIGNBYTES)
+#define ALIGN(p) __ALIGNPTR(p)
+
+const char *__progname;
+
+static inline __always_inline const char *
+getprogname(void)
+{
+  if (__progname == NULL)
+    __progname = program_invocation_short_name;
+  return __progname;
+}
+
+static inline __always_inline void
+setprogname(const char *progname)
+{
+  size_t i;
+  for (i = strlen(progname); i > 0; i--) {
+    if (progname[i - 1] == '/') {
+      __progname = progname + i;
+      return;
+    }
+  }
+  __progname = progname;
+}
+
+#define __INVALID         1
+#define __TOOSMALL        2
+#define __TOOLARGE        3
+
+static inline __always_inline long long
+strtonum(const char *numstr, long long minval, long long maxval,
+    const char **errstrp)
+{
+  long long ll = 0;
+  char *ep;
+  int error = 0;
+  struct errval {
+    const char *errstr;
+    int err;
+  } ev[4] = {
+    { NULL,         0 },
+    { "invalid",    EINVAL },
+    { "too small",  ERANGE },
+    { "too large",  ERANGE },
+  };
+  ev[0].err = errno;
+  errno = 0;
+  if (minval > maxval)
+    error = __INVALID;
+  else {
+    ll = strtoll(numstr, &ep, 10);
+    if (numstr == ep || *ep != '\0')
+      error = __INVALID;
+    else if ((ll == LLONG_MIN && errno == ERANGE) || ll < minval)
+      error = __TOOSMALL;
+    else if ((ll == LLONG_MAX && errno == ERANGE) || ll > maxval)
+      error = __TOOLARGE;
+  }
+  if (errstrp != NULL)
+    *errstrp = ev[error].errstr;
+  errno = ev[error].err;
+  if (error)
+    ll = 0;
+  return (ll);
+}
+
+#define __HS_SWAP(a, b, count, size, tmp) { count = size; do { \
+        tmp = *a; *a++ = *b; *b++ = tmp; } while (--count); }
+#define __HS_COPY(a, b, count, size, tmp1, tmp2) { count = size; tmp1 = a; \
+        tmp2 = b; do { *tmp1++ = *tmp2++; } while (--count); }
+
+#define __HS_CREATE(initval, nmemb, par_i, child_i, par, child, size, count, tmp) { \
+        for (par_i = initval; (child_i = par_i * 2) <= nmemb; par_i = child_i) { \
+                child = base + child_i * size; \
+                if (child_i < nmemb && compar(child, child + size) < 0) { \
+                        child += size; \
+                        ++child_i; \
+                } \
+                par = base + par_i * size; \
+                if (compar(child, par) <= 0) \
+                        break; \
+                __HS_SWAP(par, child, count, size, tmp); \
+        } \
+}
+
+#define __HS_SELECT(par_i, child_i, nmemb, par, child, size, k, count, tmp1, tmp2) { \
+        for (par_i = 1; (child_i = par_i * 2) <= nmemb; par_i = child_i) { \
+                child = base + child_i * size; \
+                if (child_i < nmemb && compar(child, child + size) < 0) { \
+                        child += size; \
+                        ++child_i; \
+                } \
+                par = base + par_i * size; \
+                __HS_COPY(par, child, count, size, tmp1, tmp2); \
+        } \
+        for (;;) { \
+                child_i = par_i; \
+                par_i = child_i / 2; \
+                child = base + child_i * size; \
+                par = base + par_i * size; \
+                if (child_i == 1 || compar(k, par) < 0) { \
+                        __HS_COPY(child, k, count, size, tmp1, tmp2); \
+                        break; \
+                } \
+                __HS_COPY(child, par, count, size, tmp1, tmp2); \
+        } \
+}
+
+static inline __always_inline int
+heapsort(void *vbase, size_t nmemb, size_t size,
+         int (*compar)(const void *, const void *))
+{
+  size_t cnt, i, j, l;
+  char tmp, *tmp1, *tmp2;
+  char *base, *k, *p, *t;
+  if (nmemb <= 1)
+    return (0);
+  if (!size) {
+    errno = EINVAL;
+    return (-1);
+  }
+  if ((k = malloc(size)) == NULL)
+    return (-1);
+  base = (char *)vbase - size;
+  for (l = nmemb / 2 + 1; --l;)
+    __HS_CREATE(l, nmemb, i, j, t, p, size, cnt, tmp);
+  while (nmemb > 1) {
+    __HS_COPY(k, base + nmemb * size, cnt, size, tmp1, tmp2);
+    __HS_COPY(base + nmemb * size, base + size, cnt, size, tmp1, tmp2);
+    --nmemb;
+    __HS_SELECT(i, j, nmemb, t, p, size, k, cnt, tmp1, tmp2);
+  }
+  free(k);
+  return (0);
+}
+
+
+#define __MS_THRESHOLD 16
+#define __MS_ISIZE sizeof(int)
+#define __MS_PSIZE sizeof(u_char *)
+#define __MS_ICOPY_LIST(src, dst, last) do \
+        *(int*)dst = *(int*)src, src += __MS_ISIZE, dst += __MS_ISIZE; \
+        while(src < last)
+#define __MS_ICOPY_ELT(src, dst, i) do \
+        *(int*) dst = *(int*) src, src += __MS_ISIZE, dst += __MS_ISIZE; \
+        while (i -= __MS_ISIZE)
+#define __MS_CCOPY_LIST(src, dst, last) do *dst++ = *src++; while (src < last)
+#define __MS_CCOPY_ELT(src, dst, i) do *dst++ = *src++; while (i -= 1)
+#define __MS_rounddown2(x, y) ((x) & ~((y) - 1))
+#define __MS_EVAL(p) (u_char **) ((u_char *)0 + \
+        (__MS_rounddown2((u_char *)p + __MS_PSIZE - 1 - (u_char *)0, __MS_PSIZE)))
+
+#define __MS_swap(a, b) { s = b; i = size; do { tmp = *a; \
+        *a++ = *s; *s++ = tmp; } while (--i); a -= size; }
+#define __MS_reverse(bot, top) { s = top; do { i = size; do { tmp = *bot; \
+        *bot++ = *s; *s++ = tmp; } while (--i); s -= size2;} while(bot < s);}
+
+static inline __always_inline void
+__MS_insertionsort(u_char *a, size_t n, size_t size,
+              int (*cmp)(const void *, const void *))
+{
+  u_char *ai, *s, *t, *u, tmp;
+  int i;
+  for (ai = a+size; --n >= 1; ai += size)
+    for (t = ai; t > a; t -= size) {
+      u = t - size;
+      if (cmp(u, t) <= 0)
+        break;
+      __MS_swap(u, t);
+    }
+}
+
+static inline __always_inline void
+__MS_setup(u_char *list1, u_char *list2, size_t n, size_t size,
+      int (*cmp)(const void *, const void *))
+{
+  int i, length, size2, tmp, sense;
+  u_char *f1, *f2, *s, *l2, *last, *p2;
+  size2 = size*2;
+  if (n <= 5) {
+    __MS_insertionsort(list1, n, size, cmp);
+    *__MS_EVAL(list2) = (u_char*) list2 + n*size;
+                return;
+  }
+  i = 4 + (n & 1);
+  __MS_insertionsort(list1 + (n - i) * size, i, size, cmp);
+  last = list1 + size * (n - i);
+  *__MS_EVAL(list2 + (last - list1)) = list2 + n * size;
+  p2 = list2;
+  f1 = list1;
+  sense = (cmp(f1, f1 + size) > 0);
+  for (; f1 < last; sense = !sense) {
+    length = 2;
+    for (f2 = f1 + size2; f2 < last; f2 += size2) {
+      if ((cmp(f2, f2+ size) > 0) != sense)
+        break;
+      length += 2;
+    }
+    if (length < __MS_THRESHOLD) {
+      do {
+        p2 = *__MS_EVAL(p2) = f1 + size2 - list1 + list2;
+        if (sense > 0)
+          __MS_swap (f1, f1 + size);
+      } while ((f1 += size2) < f2);
+    } else {
+      l2 = f2;
+      for (f2 = f1 + size2; f2 < l2; f2 += size2) {
+        if ((cmp(f2-size, f2) > 0) != sense) {
+          p2 = *__MS_EVAL(p2) = f2 - list1 + list2;
+          if (sense > 0)
+            __MS_reverse(f1, f2-size);
+          f1 = f2;
+        }
+      }
+      if (sense > 0)
+        __MS_reverse (f1, f2-size);
+      f1 = f2;
+      if (f2 < last || cmp(f2 - size, f2) > 0)
+        p2 = *__MS_EVAL(p2) = f2 - list1 + list2;
+      else
+        p2 = *__MS_EVAL(p2) = list2 + n*size;
+    }
+  }
+}
+
+
+static inline __always_inline int
+mergesort(void *base, size_t nmemb, size_t size,
+          int (*cmp)(const void *, const void *))
+{
+  size_t i;
+  int sense;
+  int big, __iflag;
+  u_char *f1, *f2, *t, *b, *tp2, *q, *l1, *l2;
+  u_char *list2, *list1, *p2, *p, *last, **p1;
+  if (size < __MS_PSIZE / 2) {
+    errno = EINVAL;
+    return (-1);
+  }
+  if (nmemb == 0)
+    return (0);
+  __iflag = 0;
+  if (!(size % __MS_ISIZE) && !(((char *)base - (char *)0) % __MS_ISIZE))
+    __iflag = 1;
+  if ((list2 = malloc(nmemb * size + __MS_PSIZE)) == NULL)
+    return (-1);
+  list1 = base;
+  __MS_setup(list1, list2, nmemb, size, cmp);
+  last = list2 + nmemb * size;
+  i = big = 0;
+  while (*__MS_EVAL(list2) != last) {
+    l2 = list1;
+    p1 = __MS_EVAL(list1);
+    for (tp2 = p2 = list2; p2 != last; p1 = __MS_EVAL(l2)) {
+      p2 = *__MS_EVAL(p2);
+      f1 = l2;
+      f2 = l1 = list1 + (p2 - list2);
+      if (p2 != last)
+      p2 = *__MS_EVAL(p2);
+      l2 = list1 + (p2 - list2);
+      while (f1 < l1 && f2 < l2) {
+        if ((*cmp)(f1, f2) <= 0) {
+          q = f2;
+          b = f1, t = l1;
+          sense = -1;
+        } else {
+          q = f1;
+          b = f2, t = l2;
+          sense = 0;
+        }
+        if (!big) {
+          while ((b += size) < t && cmp(q, b) >sense)
+            if (++i == 6) {
+              big = 1;
+              goto __MS_EXPONENTIAL;
+            }
+        } else {
+__MS_EXPONENTIAL:
+          for (i = size; ; i <<= 1)
+            if ((p = (b + i)) >= t) {
+              if ((p = t - size) > b && (*cmp)(q, p) <= sense)
+                t = p;
+              else
+                b = p;
+              break;
+            } else if ((*cmp)(q, p) <= sense) {
+              t = p;
+              if (i == size)
+                big = 0;
+              goto __MS_FASTCASE;
+            } else
+              b = p;
+          while (t > b+size) {
+            i = (((t - b) / size) >> 1) * size;
+            if ((*cmp)(q, p = b + i) <= sense)
+              t = p;
+            else
+              b = p;
+          }
+          goto __MS_COPY;
+__MS_FASTCASE:
+          while (i > size)
+            if ((*cmp)(q, p = b + (i >>= 1)) <= sense)
+              t = p;
+            else
+              b = p;
+__MS_COPY:
+          b = t;
+        }
+        i = size;
+        if (q == f1) {
+          if (__iflag) {
+            __MS_ICOPY_LIST(f2, tp2, b);
+            __MS_ICOPY_ELT(f1, tp2, i);
+          } else {
+            __MS_CCOPY_LIST(f2, tp2, b);
+            __MS_CCOPY_ELT(f1, tp2, i);
+          }
+        } else {
+          if (__iflag) {
+            __MS_ICOPY_LIST(f1, tp2, b);
+            __MS_ICOPY_ELT(f2, tp2, i);
+          } else {
+            __MS_CCOPY_LIST(f1, tp2, b);
+            __MS_CCOPY_ELT(f2, tp2, i);
+          }
+        }
+      }
+      if (f2 < l2) {
+        if (__iflag) {
+          __MS_ICOPY_LIST(f2, tp2, l2);
+        } else {
+          __MS_CCOPY_LIST(f2, tp2, l2);
+        }
+      } else if (f1 < l1) {
+        if (__iflag) {
+          __MS_ICOPY_LIST(f1, tp2, l1);
+        } else {
+          __MS_CCOPY_LIST(f1, tp2, l1);
+        }
+      }
+        *p1 = l2;
+    }
+    tp2 = list1;
+    list1 = list2;
+    list2 = tp2;
+    last = list2 + nmemb*size;
+  }
+  if (base == list2) {
+    memmove(list2, list1, nmemb*size);
+    list2 = list1;
+  }
+  free(list2);
+  return (0);
+}
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/string.h
+#ifdef __linux__
+#define QUAD_MIN   LLONG_MIN    /* for usr.bin/expr/expr.y */
+#define QUAD_MAX   LLONG_MAX    /* for usr.bin/find/function.c */
+
+static __inline __always_inline size_t
+strlcat(char * __restrict dst, const char * __restrict src, size_t siz)
+{
+  char *d = dst;
+  const char *s = src;
+  size_t n = siz;
+  size_t dlen;
+  while (n-- != 0 && *d != '\0')
+    d++;
+  dlen = d - dst;
+  n = siz - dlen;
+  if (n == 0)
+    return(dlen + strlen(s));
+  while (*s != '\0') {
+      if (n != 1) {
+        *d++ = *s;
+        n--;
+      }
+      s++;
+  }
+  *d = '\0';
+  return(dlen + (s - src));
+}
+
+static __inline __always_inline size_t
+strlcpy(char *dst, const char *src, size_t siz){
+  char *d = dst;
+  const char *s = src;
+  size_t n = siz;
+
+  if (!dst || !src)
+    return 0;
+  if (n != 0 && --n != 0) {
+    do {
+      if ((*d++ = *s++) == 0)
+        break;
+    } while (--n != 0);
+  }
+  if (n == 0) {
+    if (siz != 0)
+      *d = '\0';
+    while (*s++) ;
+  }
+  return(s - src - 1);
+}
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
+static __inline __always_inline void
+strmode(mode_t mode, char *p)
+{
+  switch (mode & S_IFMT) {
+  case S_IFDIR:
+    *p++ = 'd';
+    break;
+  case S_IFCHR:
+    *p++ = 'c';
+    break;
+  case S_IFBLK:
+    *p++ = 'b';
+    break;
+  case S_IFREG:
+    *p++ = '-';
+    break;
+  case S_IFLNK:
+    *p++ = 'l';
+    break;
+  case S_IFSOCK:
+    *p++ = 's';
+    break;
+#ifdef S_IFIFO
+  case S_IFIFO:
+    *p++ = 'p';
+    break;
+#endif
+#ifdef S_IFWHT
+  case S_IFWHT:
+    *p++ = 'w';
+    break;
+#endif
+  default:
+   *p++ = '?';
+    break;
+  }
+  if (mode & S_IRUSR)
+    *p++ = 'r';
+  else
+    *p++ = '-';
+  if (mode & S_IWUSR)
+    *p++ = 'w';
+  else
+    *p++ = '-';
+  switch (mode & (S_IXUSR | S_ISUID)) {
+  case 0:
+    *p++ = '-';
+    break;
+  case S_IXUSR:
+    *p++ = 'x';
+    break;
+  case S_ISUID:
+    *p++ = 'S';
+    break;
+  case S_IXUSR | S_ISUID:
+    *p++ = 's';
+    break;
+  }
+  if (mode & S_IRGRP)
+    *p++ = 'r';
+  else
+    *p++ = '-';
+  if (mode & S_IWGRP)
+    *p++ = 'w';
+  else
+   *p++ = '-';
+  switch (mode & (S_IXGRP | S_ISGID)) {
+  case 0:
+    *p++ = '-';
+    break;
+  case S_IXGRP:
+    *p++ = 'x';
+    break;
+  case S_ISGID:
+    *p++ = 'S';
+    break;
+  case S_IXGRP | S_ISGID:
+    *p++ = 's';
+    break;
+  }
+  if (mode & S_IROTH)
+    *p++ = 'r';
+  else
+    *p++ = '-';
+  if (mode & S_IWOTH)
+    *p++ = 'w';
+  else
+    *p++ = '-';
+  switch (mode & (S_IXOTH | S_ISVTX)) {
+  case 0:
+    *p++ = '-';
+    break;
+  case S_IXOTH:
+    *p++ = 'x';
+    break;
+  case S_ISVTX:
+    *p++ = 'T';
+    break;
+  case S_IXOTH | S_ISVTX:
+    *p++ = 't';
+    break;
+  }
+  *p++ = ' ';
+  *p = '\0';
+}
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/tree.h
+#ifdef __linux__
+#include <sys/cdefs.h>
+#include <stddef.h>
+#include <stdint.h>
+struct spinlock {
+  int counta;
+  int countb;
+};
+#define RB_SCAN_INFO(name, type) struct name##_scan_info { \
+    struct name##_scan_info *link; struct type *node; }
+#define RB_HEAD(name, type) struct name { struct type *rbh_root; \
+    struct name##_scan_info *rbh_inprog; struct spinlock rbh_spin; }
+#define RB_ENTRY(type) \
+    struct { struct type *rbe_left; struct type *rbe_right; \
+    struct type *rbe_parent; int rbe_color; }
+#define RB_PROTOTYPE_STATIC(name, type, field, cmp) \
+    _RB_PROTOTYPE(name, type, field, cmp, ____unused static)
+#define RB_GENERATE(name, type, field, cmp) \
+    _RB_GENERATE(name, type, field, cmp,)
+
+#define _RB_PROTOTYPE(name, type, field, cmp, STORQUAL) \
+  STORQUAL void name##_RB_INSERT_COLOR(struct name *, struct type *); \
+  STORQUAL void name##_RB_REMOVE_COLOR(struct name *, struct type *, struct type *);\
+  STORQUAL struct type *name##_RB_REMOVE(struct name *, struct type *); \
+  STORQUAL struct type *name##_RB_INSERT(struct name *, struct type *); \
+  STORQUAL struct type *name##_RB_FIND(struct name *, struct type *); \
+  STORQUAL int name##_RB_SCAN(struct name *, int (*)(struct type *, void *), \
+                              int (*)(struct type *, void *), void *); \
+  STORQUAL int name##_RB_SCAN_NOLK(struct name *, int (*)(struct type *, void *),\
+                                   int (*)(struct type *, void *), void *); \
+  STORQUAL struct type *name##_RB_NEXT(struct type *); \
+  STORQUAL struct type *name##_RB_PREV(struct type *); \
+  STORQUAL struct type *name##_RB_MINMAX(struct name *, int); \
+  RB_SCAN_INFO(name, type)
+#define _RB_GENERATE(name, type, field, cmp, STORQUAL) \
+  STORQUAL void \
+  name##_RB_INSERT_COLOR(struct name *head, struct type *elm) { \
+    struct type *parent, *gparent, *tmp; \
+    while ((parent = RB_PARENT(elm, field)) != NULL && \
+           RB_COLOR(parent, field) == RB_RED) { \
+      gparent = RB_PARENT(parent, field); \
+      if (parent == RB_LEFT(gparent, field)) { \
+        tmp = RB_RIGHT(gparent, field); \
+        if (tmp && RB_COLOR(tmp, field) == RB_RED) { \
+          RB_COLOR(tmp, field) = RB_BLACK; \
+          RB_SET_BLACKRED(parent, gparent, field); \
+          elm = gparent; \
+          continue; \
+        } \
+        if (RB_RIGHT(parent, field) == elm) { \
+          RB_ROTATE_LEFT(head, parent, tmp, field); \
+          tmp = parent; \
+          parent = elm; \
+          elm = tmp; \
+        } \
+        RB_SET_BLACKRED(parent, gparent, field); \
+        RB_ROTATE_RIGHT(head, gparent, tmp, field); \
+      } else { \
+        tmp = RB_LEFT(gparent, field); \
+        if (tmp && RB_COLOR(tmp, field) == RB_RED) { \
+          RB_COLOR(tmp, field) = RB_BLACK; \
+          RB_SET_BLACKRED(parent, gparent, field); \
+          elm = gparent; \
+          continue; \
+        } \
+        if (RB_LEFT(parent, field) == elm) { \
+          RB_ROTATE_RIGHT(head, parent, tmp, field); \
+          tmp = parent; \
+          parent = elm; \
+          elm = tmp; \
+        } \
+        RB_SET_BLACKRED(parent, gparent, field); \
+        RB_ROTATE_LEFT(head, gparent, tmp, field); \
+      } \
+    } \
+    RB_COLOR(head->rbh_root, field) = RB_BLACK; \
+  } \
+  STORQUAL void \
+  name##_RB_REMOVE_COLOR(struct name *head, struct type *parent, \
+                         struct type *elm) \
+  { \
+    struct type *tmp; \
+    while ((elm == NULL || RB_COLOR(elm, field) == RB_BLACK) && \
+            elm != RB_ROOT(head)) { \
+      if (RB_LEFT(parent, field) == elm) { \
+        tmp = RB_RIGHT(parent, field); \
+        if (RB_COLOR(tmp, field) == RB_RED) { \
+          RB_SET_BLACKRED(tmp, parent, field); \
+          RB_ROTATE_LEFT(head, parent, tmp, field); \
+          tmp = RB_RIGHT(parent, field); \
+        } \
+        if ((RB_LEFT(tmp, field) == NULL || \
+             RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) && \
+            (RB_RIGHT(tmp, field) == NULL || \
+             RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK)) { \
+          RB_COLOR(tmp, field) = RB_RED; \
+          elm = parent; \
+          parent = RB_PARENT(elm, field); \
+        } else { \
+          if (RB_RIGHT(tmp, field) == NULL || \
+              RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK) { \
+            struct type *oleft; \
+            if ((oleft = RB_LEFT(tmp, field)) != NULL) \
+              RB_COLOR(oleft, field) = RB_BLACK; \
+            RB_COLOR(tmp, field) = RB_RED; \
+            RB_ROTATE_RIGHT(head, tmp, oleft, field); \
+            tmp = RB_RIGHT(parent, field); \
+          } \
+          RB_COLOR(tmp, field) = RB_COLOR(parent, field); \
+          RB_COLOR(parent, field) = RB_BLACK; \
+          if (RB_RIGHT(tmp, field)) \
+            RB_COLOR(RB_RIGHT(tmp, field), field) = RB_BLACK; \
+          RB_ROTATE_LEFT(head, parent, tmp, field); \
+          elm = RB_ROOT(head); \
+          break; \
+        } \
+      } else { \
+        tmp = RB_LEFT(parent, field); \
+        if (RB_COLOR(tmp, field) == RB_RED) { \
+          RB_SET_BLACKRED(tmp, parent, field); \
+          RB_ROTATE_RIGHT(head, parent, tmp, field); \
+          tmp = RB_LEFT(parent, field); \
+        } \
+        if ((RB_LEFT(tmp, field) == NULL || \
+             RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) &&\
+            (RB_RIGHT(tmp, field) == NULL || \
+             RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK)) { \
+          RB_COLOR(tmp, field) = RB_RED; \
+          elm = parent; \
+          parent = RB_PARENT(elm, field); \
+        } else { \
+          if (RB_LEFT(tmp, field) == NULL || \
+              RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) { \
+            struct type *oright; \
+            if ((oright = RB_RIGHT(tmp, field)) != NULL) \
+              RB_COLOR(oright, field) = RB_BLACK; \
+            RB_COLOR(tmp, field) = RB_RED; \
+            RB_ROTATE_LEFT(head, tmp, oright, field); \
+            tmp = RB_LEFT(parent, field); \
+          } \
+          RB_COLOR(tmp, field) = RB_COLOR(parent, field); \
+          RB_COLOR(parent, field) = RB_BLACK; \
+          if (RB_LEFT(tmp, field)) \
+            RB_COLOR(RB_LEFT(tmp, field), field) = RB_BLACK; \
+          RB_ROTATE_RIGHT(head, parent, tmp, field); \
+          elm = RB_ROOT(head); \
+          break; \
+        } \
+      } \
+    } \
+    if (elm) \
+      RB_COLOR(elm, field) = RB_BLACK; \
+  } \
+  STORQUAL struct type * \
+  name##_RB_REMOVE(struct name *head, struct type *elm) \
+  { \
+    struct type *child, *parent, *old; \
+    struct name##_scan_info *inprog; \
+    int color; \
+    for (inprog = RB_INPROG(head); inprog; inprog = inprog->link) { \
+      if (inprog->node == elm) \
+        inprog->node = RB_NEXT(name, head, elm); \
+    } \
+    old = elm; \
+    if (RB_LEFT(elm, field) == NULL) \
+      child = RB_RIGHT(elm, field); \
+    else if (RB_RIGHT(elm, field) == NULL) \
+      child = RB_LEFT(elm, field); \
+    else { \
+      struct type *left; \
+      elm = RB_RIGHT(elm, field); \
+      while ((left = RB_LEFT(elm, field)) != NULL) \
+        elm = left; \
+      child = RB_RIGHT(elm, field); \
+      parent = RB_PARENT(elm, field); \
+      color = RB_COLOR(elm, field); \
+      if (child) \
+        RB_PARENT(child, field) = parent; \
+      if (parent) { \
+        if (RB_LEFT(parent, field) == elm) \
+          RB_LEFT(parent, field) = child; \
+        else \
+          RB_RIGHT(parent, field) = child; \
+        RB_AUGMENT(parent); \
+      } else \
+        RB_ROOT(head) = child; \
+      if (RB_PARENT(elm, field) == old) \
+        parent = elm; \
+      (elm)->field = (old)->field; \
+      if (RB_PARENT(old, field)) { \
+        if (RB_LEFT(RB_PARENT(old, field), field) == old) \
+          RB_LEFT(RB_PARENT(old, field), field) = elm; \
+        else \
+          RB_RIGHT(RB_PARENT(old, field), field) = elm; \
+        RB_AUGMENT(RB_PARENT(old, field)); \
+      } else \
+        RB_ROOT(head) = elm; \
+      RB_PARENT(RB_LEFT(old, field), field) = elm; \
+      if (RB_RIGHT(old, field)) \
+        RB_PARENT(RB_RIGHT(old, field), field) = elm; \
+      if (parent) { \
+        left = parent; \
+        do { \
+          RB_AUGMENT(left); \
+        } while ((left = RB_PARENT(left, field)) != NULL); \
+      } \
+      goto color; \
+    } \
+    parent = RB_PARENT(elm, field); \
+    color = RB_COLOR(elm, field); \
+    if (child) \
+      RB_PARENT(child, field) = parent; \
+    if (parent) { \
+      if (RB_LEFT(parent, field) == elm) \
+        RB_LEFT(parent, field) = child; \
+      else \
+        RB_RIGHT(parent, field) = child; \
+      RB_AUGMENT(parent); \
+    } else \
+      RB_ROOT(head) = child; \
+color: \
+    if (color == RB_BLACK) \
+      name##_RB_REMOVE_COLOR(head, parent, child); \
+    return (old); \
+  } \
+  STORQUAL struct type * \
+  name##_RB_INSERT(struct name *head, struct type *elm) \
+  { \
+    struct type *tmp; \
+    struct type *parent = NULL; \
+    int comp = 0; \
+    tmp = RB_ROOT(head); \
+    while (tmp) { \
+      parent = tmp; \
+      comp = (cmp)(elm, parent); \
+      if (comp < 0) \
+        tmp = RB_LEFT(tmp, field); \
+      else if (comp > 0) \
+        tmp = RB_RIGHT(tmp, field); \
+      else \
+        return(tmp); \
+    } \
+    RB_SET(elm, parent, field); \
+    if (parent != NULL) { \
+      if (comp < 0) \
+        RB_LEFT(parent, field) = elm; \
+      else \
+        RB_RIGHT(parent, field) = elm; \
+      RB_AUGMENT(parent); \
+    } else \
+      RB_ROOT(head) = elm; \
+    name##_RB_INSERT_COLOR(head, elm); \
+    return (NULL); \
+  } \
+  STORQUAL struct type * \
+  name##_RB_FIND(struct name *head, struct type *elm) \
+  { \
+    struct type *tmp = RB_ROOT(head); \
+    int comp; \
+    while (tmp) { \
+      comp = cmp(elm, tmp); \
+      if (comp < 0) \
+        tmp = RB_LEFT(tmp, field); \
+      else if (comp > 0) \
+        tmp = RB_RIGHT(tmp, field); \
+      else \
+        return (tmp); \
+      } \
+    return (NULL); \
+  } \
+  static int \
+  name##_SCANCMP_ALL(struct type *type ____unused, void *data ____unused) \
+  { \
+    return(0); \
+  } \
+  static inline void \
+  name##_scan_info_link(struct name##_scan_info *scan, struct name *head) \
+  { \
+    RB_SCAN_LOCK(&head->rbh_spin); \
+    scan->link = RB_INPROG(head); \
+    RB_INPROG(head) = scan; \
+    RB_SCAN_UNLOCK(&head->rbh_spin); \
+  } \
+  static inline void \
+  name##_scan_info_done(struct name##_scan_info *scan, struct name *head) \
+  { \
+    struct name##_scan_info **infopp; \
+    RB_SCAN_LOCK(&head->rbh_spin); \
+    infopp = &RB_INPROG(head); \
+    while (*infopp != scan) \
+      infopp = &(*infopp)->link; \
+    *infopp = scan->link; \
+    RB_SCAN_UNLOCK(&head->rbh_spin); \
+  } \
+  static inline int \
+  _##name##_RB_SCAN(struct name *head, int (*scancmp)(struct type *, void *), \
+             int (*callback)(struct type *, void *), void *data, int uselock) \
+  { \
+    struct name##_scan_info info; \
+    struct type *best; \
+    struct type *tmp; \
+    int count; \
+    int comp; \
+    if (scancmp == NULL) \
+      scancmp = name##_SCANCMP_ALL; \
+    tmp = RB_ROOT(head); \
+    best = NULL; \
+    while (tmp) { \
+      comp = scancmp(tmp, data); \
+      if (comp < 0) { \
+        tmp = RB_RIGHT(tmp, field); \
+      } else if (comp > 0) { \
+        tmp = RB_LEFT(tmp, field); \
+      } else { \
+        best = tmp; \
+        if (RB_LEFT(tmp, field) == NULL) \
+          break; \
+        tmp = RB_LEFT(tmp, field); \
+      } \
+    } \
+    count = 0; \
+    if (best) { \
+      info.node = RB_NEXT(name, head, best); \
+      if (uselock) \
+        name##_scan_info_link(&info, head); \
+      while ((comp = callback(best, data)) >= 0) { \
+        count += comp; \
+        best = info.node; \
+        if (best == NULL || scancmp(best, data) != 0) \
+          break; \
+        info.node = RB_NEXT(name, head, best); \
+      } \
+      if (uselock) \
+        name##_scan_info_done(&info, head); \
+      if (comp < 0) \
+        count = comp; \
+    } \
+    return(count); \
+  } \
+  STORQUAL int \
+  name##_RB_SCAN(struct name *head, int (*scancmp)(struct type *, void *), \
+                 int (*callback)(struct type *, void *), void *data) \
+  { \
+    return _##name##_RB_SCAN(head, scancmp, callback, data, 1); \
+  } \
+  STORQUAL int \
+  name##_RB_SCAN_NOLK(struct name *head, int (*scancmp)(struct type *, void *), \
+                      int (*callback)(struct type *, void *), void *data) \
+  { \
+    return _##name##_RB_SCAN(head, scancmp, callback, data, 0); \
+  } \
+  STORQUAL struct type * \
+  name##_RB_NEXT(struct type *elm)\
+  { \
+    if (RB_RIGHT(elm, field)) { \
+      elm = RB_RIGHT(elm, field); \
+      while (RB_LEFT(elm, field)) \
+        elm = RB_LEFT(elm, field); \
+    } else { \
+      if (RB_PARENT(elm, field) && \
+          (elm == RB_LEFT(RB_PARENT(elm, field), field))) \
+        elm = RB_PARENT(elm, field); \
+      else { \
+        while (RB_PARENT(elm, field) && \
+               (elm == RB_RIGHT(RB_PARENT(elm, field), field))) \
+          elm = RB_PARENT(elm, field); \
+          elm = RB_PARENT(elm, field); \
+      } \
+    } \
+    return (elm); \
+  } \
+  STORQUAL struct type * \
+  name##_RB_PREV(struct type *elm) \
+  { \
+    if (RB_LEFT(elm, field)) { \
+      elm = RB_LEFT(elm, field); \
+      while (RB_RIGHT(elm, field)) \
+        elm = RB_RIGHT(elm, field); \
+    } else { \
+      if (RB_PARENT(elm, field) && \
+          (elm == RB_RIGHT(RB_PARENT(elm, field), field))) \
+        elm = RB_PARENT(elm, field); \
+      else { \
+        while (RB_PARENT(elm, field) && \
+               (elm == RB_LEFT(RB_PARENT(elm, field), field)))\
+          elm = RB_PARENT(elm, field); \
+        elm = RB_PARENT(elm, field); \
+      } \
+    } \
+    return (elm); \
+  } \
+  STORQUAL struct type * \
+  name##_RB_MINMAX(struct name *head, int val) \
+  { \
+    struct type *tmp = RB_ROOT(head); \
+    struct type *parent = NULL; \
+    while (tmp) { \
+      parent = tmp; \
+      if (val < 0) \
+        tmp = RB_LEFT(tmp, field); \
+      else \
+        tmp = RB_RIGHT(tmp, field); \
+    } \
+    return (parent); \
+  }
+
+
+#define RB_INIT(root) do { \
+   (root)->rbh_root = NULL; (root)->rbh_inprog = NULL; } while (/*CONSTCOND*/ 0)
+
+#define RB_SCAN_LOCK(spin)
+#define RB_SCAN_UNLOCK(spin)
+
+#define RB_BLACK        0
+#define RB_RED          1
+#define RB_LEFT(elm, field)             (elm)->field.rbe_left
+#define RB_RIGHT(elm, field)            (elm)->field.rbe_right
+#define RB_PARENT(elm, field)           (elm)->field.rbe_parent
+#define RB_COLOR(elm, field)            (elm)->field.rbe_color
+#define RB_ROOT(head)                   (head)->rbh_root
+#define RB_INPROG(head)                 (head)->rbh_inprog
+
+#define RB_SET(elm, parent, field) do { \
+    RB_PARENT(elm, field) = parent; \
+    RB_LEFT(elm, field) = RB_RIGHT(elm, field) = NULL; \
+    RB_COLOR(elm, field) = RB_RED; \
+  } while (/*CONSTCOND*/ 0)
+
+#define RB_SET_BLACKRED(black, red, field) do { \
+    RB_COLOR(black, field) = RB_BLACK; \
+    RB_COLOR(red, field) = RB_RED; \
+  } while (/*CONSTCOND*/ 0)
+
+#ifndef RB_AUGMENT
+#define RB_AUGMENT(x)   do {} while (0)
+#endif
+
+#define RB_ROTATE_LEFT(head, elm, tmp, field) do { \
+  (tmp) = RB_RIGHT(elm, field); \
+  if ((RB_RIGHT(elm, field) = RB_LEFT(tmp, field)) != NULL) { \
+    RB_PARENT(RB_LEFT(tmp, field), field) = (elm); \
+  } \
+  RB_AUGMENT(elm); \
+  if ((RB_PARENT(tmp, field) = RB_PARENT(elm, field)) != NULL) { \
+    if ((elm) == RB_LEFT(RB_PARENT(elm, field), field)) \
+      RB_LEFT(RB_PARENT(elm, field), field) = (tmp); \
+    else \
+      RB_RIGHT(RB_PARENT(elm, field), field) = (tmp); \
+  } else \
+    (head)->rbh_root = (tmp); \
+  RB_LEFT(tmp, field) = (elm); \
+  RB_PARENT(elm, field) = (tmp); \
+  RB_AUGMENT(tmp); \
+  if ((RB_PARENT(tmp, field))) \
+    RB_AUGMENT(RB_PARENT(tmp, field)); \
+} while (/*CONSTCOND*/ 0)
+
+#define RB_ROTATE_RIGHT(head, elm, tmp, field) do { \
+  (tmp) = RB_LEFT(elm, field); \
+  if ((RB_LEFT(elm, field) = RB_RIGHT(tmp, field)) != NULL) { \
+     RB_PARENT(RB_RIGHT(tmp, field), field) = (elm); \
+  } \
+  RB_AUGMENT(elm); \
+  if ((RB_PARENT(tmp, field) = RB_PARENT(elm, field)) != NULL) { \
+    if ((elm) == RB_LEFT(RB_PARENT(elm, field), field)) \
+      RB_LEFT(RB_PARENT(elm, field), field) = (tmp); \
+    else \
+      RB_RIGHT(RB_PARENT(elm, field), field) = (tmp); \
+    } else \
+      (head)->rbh_root = (tmp); \
+    RB_RIGHT(tmp, field) = (elm); \
+    RB_PARENT(elm, field) = (tmp); \
+    RB_AUGMENT(tmp); \
+    if ((RB_PARENT(tmp, field))) \
+       RB_AUGMENT(RB_PARENT(tmp, field)); \
+} while (/*CONSTCOND*/ 0)
+
+#define RB_NEGINF       -1
+
+#define RB_INSERT(name, root, elm)      name##_RB_INSERT(root, elm)
+#define RB_REMOVE(name, root, elm)      name##_RB_REMOVE(root, elm)
+#define RB_FIND(name, root, elm)        name##_RB_FIND(root, elm)
+
+#define RB_NEXT(name, root, elm)        name##_RB_NEXT(elm)
+
+#define RB_MIN(name, root)              name##_RB_MINMAX(root, RB_NEGINF)
+
+#define RB_FOREACH(x, name, head) \
+    for ((x) = RB_MIN(name, head); (x) != NULL; (x) = name##_RB_NEXT(x))
+
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/unistd.h
+#ifdef __linux__
+#include <sys/cdefs.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <ctype.h>
+#include <signal.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#define SET_LEN 6
+#define SET_LEN_INCR 4
+
+#ifndef NELEM
+#define NELEM(ary) (sizeof(ary) / sizeof((ary)[0]))
+#endif
+
+#ifndef SSIZE_MAX  /* bin/dd #include_next <limits.h> issue */
+#define SSIZE_MAX LONG_MAX
+#endif
+
+#if !defined(S_ISTXT) && defined(S_ISVTX)
+#define S_ISTXT S_ISVTX
+#endif
+
+#ifndef MAXBSIZE
+#define MAXBSIZE      65536
+#endif
+
+#ifndef st_atimespec
+#define st_atimespec st_atim
+#define st_mtimespec st_mtim
+#define st_ctimespec st_ctim
+#endif
+
+static inline __always_inline int
+undelete(const char *path)
+{
+  if (path == NULL || 1)
+    return -1;
+}
+
+int optreset;
+
+static __inline __always_inline int
+bsd_getopt(int argc, char * const argv[], const char *shortopts)
+{
+  char *fakeopts = NULL;
+  int ch;
+  if (optreset == 1) {
+    optreset = 0;
+    optind = 0;
+  }
+  setenv("POSIXLY_CORRECT", "yes", 0);  /* fix bsd find, "find foo -type f" */
+  if (strchr(shortopts, '-') == NULL)
+    return getopt(argc, argv, shortopts);
+  /* else try to recover for "-iblah" by converting to "blah-" */
+  if (shortopts[0] == '-') {
+    size_t len;
+    unsigned int i;
+    len = strlen(shortopts);
+    fakeopts = __builtin_alloca(len+1);
+    for (i = 1; i < len; i++)
+      fakeopts[i-1] = shortopts[i];
+    fakeopts[len-1] = '-';
+    fakeopts[len] = '\0';
+    ch = getopt(argc, argv, fakeopts);
+  } else
+    ch = getopt(argc, argv, shortopts);
+  if (ch == -1 && optind < argc && strcmp(argv[optind], "-") == 0) {
+    optind++;
+    return '-';  /* aka fix "env -" */
+  }
+  return ch;
+}
+
+#ifndef _GL_GETOPT_H /* do not use in libgreputils */
+#define getopt(argc, argv, opts) bsd_getopt((argc), (argv), (opts))
+#endif
+
+typedef struct bitcmd {
+  char    cmd;
+  char    cmd2;
+  mode_t  bits;
+} BITCMD;
+
+#define CMD2_CLR        0x01
+#define CMD2_SET        0x02
+#define CMD2_GBITS      0x04
+#define CMD2_OBITS      0x08
+#define CMD2_UBITS      0x10
+
+static inline __always_inline mode_t
+getmode(const void *bbox, mode_t omode)
+{
+  const BITCMD *set;
+  mode_t clrval, newmode, value;
+  set = (const BITCMD *)bbox;
+  newmode = omode;
+  for (value = 0;; set++)
+    switch(set->cmd) {
+    case 'u':
+      value = (newmode & S_IRWXU) >> 6;
+      goto common_getmode;
+    case 'g':
+      value = (newmode & S_IRWXG) >> 3;
+      goto common_getmode;
+    case 'o':
+      value = newmode & S_IRWXO;
+common_getmode:
+      if (set->cmd2 & CMD2_CLR) {
+        clrval = (set->cmd2 & CMD2_SET) ?  S_IRWXO : value;
+        if (set->cmd2 & CMD2_UBITS)
+          newmode &= ~((clrval<<6) & set->bits);
+        if (set->cmd2 & CMD2_GBITS)
+          newmode &= ~((clrval<<3) & set->bits);
+        if (set->cmd2 & CMD2_OBITS)
+          newmode &= ~(clrval & set->bits);
+      }
+      if (set->cmd2 & CMD2_SET) {
+        if (set->cmd2 & CMD2_UBITS)
+          newmode |= (value<<6) & set->bits;
+        if (set->cmd2 & CMD2_GBITS)
+          newmode |= (value<<3) & set->bits;
+        if (set->cmd2 & CMD2_OBITS)
+          newmode |= value & set->bits;
+      }
+      break;
+    case '+':
+      newmode |= set->bits;
+      break;
+    case '-':
+      newmode &= ~set->bits;
+      break;
+    case 'X':
+      if (omode & (S_IFDIR|S_IXUSR|S_IXGRP|S_IXOTH))
+        newmode |= set->bits;
+      break;
+    case '\0':
+    default:
+      return (newmode);
+  }
+}
+
+#define ADDCMD(a, b, c, d) \
+  if (set >= endset) { \
+    BITCMD *newset; \
+    setlen += SET_LEN_INCR; \
+    newset = realloc(saveset, sizeof(BITCMD) * setlen); \
+    if (!newset) { \
+      if (saveset) \
+        free(saveset); \
+      saveset = NULL; \
+      return (NULL); \
+    } \
+    set = newset + (set - saveset); \
+    saveset = newset; \
+    endset = newset + (setlen - 2); \
+  } \
+  set = addcmd(set, (a), (b), (c), (d))
+
+#define STANDARD_BITS   (S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO)
+
+static inline __always_inline BITCMD *
+addcmd(BITCMD *set, int op, int who, int oparg, u_int mask)
+{
+  switch (op) {
+  case '=':
+    set->cmd = '-';
+    set->bits = who ? who : STANDARD_BITS;
+    set++;
+    op = '+';
+    /* FALLTHROUGH */
+  case '+':
+  case '-':
+  case 'X':
+    set->cmd = op;
+    set->bits = (who ? (unsigned)who : mask) & oparg;
+    break;
+  case 'u':
+  case 'g':
+  case 'o':
+    set->cmd = op;
+    if (who) {
+      set->cmd2 = ((who & S_IRUSR) ? CMD2_UBITS : 0) |
+                  ((who & S_IRGRP) ? CMD2_GBITS : 0) |
+                  ((who & S_IROTH) ? CMD2_OBITS : 0);
+      set->bits = (mode_t)~0;
+    } else {
+      set->cmd2 = CMD2_UBITS | CMD2_GBITS | CMD2_OBITS;
+      set->bits = mask;
+    }
+    if (oparg == '+')
+      set->cmd2 |= CMD2_SET;
+    else if (oparg == '-')
+      set->cmd2 |= CMD2_CLR;
+    else if (oparg == '=')
+      set->cmd2 |= CMD2_SET|CMD2_CLR;
+    break;
+  }
+  return (set + 1);
+}
+static void
+compress_mode(BITCMD *set)
+{
+  BITCMD *nset;
+  int setbits, clrbits, Xbits, op;
+  for (nset = set;;) {
+    while ((op = nset->cmd) != '+' && op != '-' && op != 'X') {
+      *set++ = *nset++;
+      if (!op)
+        return;
+    }
+    for (setbits = clrbits = Xbits = 0;; nset++) {
+      if ((op = nset->cmd) == '-') {
+        clrbits |= nset->bits;
+        setbits &= ~nset->bits;
+        Xbits &= ~nset->bits;
+      } else if (op == '+') {
+        setbits |= nset->bits;
+        clrbits &= ~nset->bits;
+        Xbits &= ~nset->bits;
+      } else if (op == 'X')
+        Xbits |= nset->bits & ~setbits;
+      else
+        break;
+    }
+    if (clrbits) {
+      set->cmd = '-';
+      set->cmd2 = 0;
+      set->bits = clrbits;
+      set++;
+    }
+    if (setbits) {
+      set->cmd = '+';
+      set->cmd2 = 0;
+      set->bits = setbits;
+      set++;
+    }
+    if (Xbits) {
+      set->cmd = 'X';
+      set->cmd2 = 0;
+      set->bits = Xbits;
+      set++;
+    }
+  }
+}
+
+static inline __always_inline void *
+setmode(const char *p)
+{
+  int perm, who;
+  char op, *ep;
+  BITCMD *set, *saveset, *endset;
+  sigset_t sigset, sigoset;
+  mode_t mask;
+  int equalopdone=0, permXbits, setlen;
+  long perml;
+  if (!*p)
+    return (NULL);
+  sigfillset(&sigset);
+  sigprocmask(SIG_BLOCK, &sigset, &sigoset);
+  umask(mask = umask(0));
+  mask = ~mask;
+  sigprocmask(SIG_SETMASK, &sigoset, NULL);
+  setlen = SET_LEN + 2;
+  if ((set = malloc((u_int)(sizeof(BITCMD) * setlen))) == NULL)
+    return (NULL);
+  saveset = set;
+  endset = set + (setlen - 2);
+  if (isdigit((unsigned char)*p)) {
+    perml = strtol(p, &ep, 8);
+    if (*ep || perml < 0 || perml & ~(STANDARD_BITS|S_ISTXT)) {
+      free(saveset);
+      return (NULL);
+    }
+    perm = (mode_t)perml;
+    ADDCMD('=', (STANDARD_BITS|S_ISTXT), perm, mask);
+    set->cmd = 0;
+    return (saveset);
+  }
+  for (;;) {
+    for (who = 0;; ++p) {
+      switch (*p) {
+      case 'a':
+        who |= STANDARD_BITS;
+        break;
+      case 'u':
+        who |= S_ISUID|S_IRWXU;
+        break;
+      case 'g':
+        who |= S_ISGID|S_IRWXG;
+        break;
+      case 'o':
+        who |= S_IRWXO;
+        break;
+      default:
+        goto getop;
+      }
+    }
+getop:
+    if ((op = *p++) != '+' && op != '-' && op != '=') {
+      free(saveset);
+      return (NULL);
+    }
+    if (op == '=')
+      equalopdone = 0;
+    who &= ~S_ISTXT;
+    for (perm = 0, permXbits = 0;; ++p) {
+      switch (*p) {
+      case 'r':
+        perm |= S_IRUSR|S_IRGRP|S_IROTH;
+        break;
+      case 's':
+        if (!who || who & ~S_IRWXO)
+          perm |= S_ISUID|S_ISGID;
+        break;
+      case 't':
+        if (!who || who & ~S_IRWXO) {
+          who |= S_ISTXT;
+          perm |= S_ISTXT;
+        }
+        break;
+      case 'w':
+        perm |= S_IWUSR|S_IWGRP|S_IWOTH;
+        break;
+      case 'X':
+        permXbits = S_IXUSR|S_IXGRP|S_IXOTH;
+        break;
+      case 'x':
+        perm |= S_IXUSR|S_IXGRP|S_IXOTH;
+        break;
+      case 'u':
+      case 'g':
+      case 'o':
+        if (perm) {
+          ADDCMD(op, who, perm, mask);
+          perm = 0;
+        }
+        if (op == '=')
+          equalopdone = 1;
+        if (op == '+' && permXbits) {
+          ADDCMD('X', who, permXbits, mask);
+          permXbits = 0;
+        }
+        ADDCMD(*p, who, op, mask);
+        break;
+      default:
+        if (perm || (op == '=' && !equalopdone)) {
+          if (op == '=')
+            equalopdone = 1;
+          ADDCMD(op, who, perm, mask);
+          perm = 0;
+        }
+        if (permXbits) {
+          ADDCMD('X', who, permXbits, mask);
+          permXbits = 0;
+        }
+        goto apply_setmode;
+      }
+    }
+apply_setmode:
+    if (!*p)
+      break;
+    if (*p != ',')
+      goto getop;
+    ++p;
+  }
+  set->cmd = 0;
+  compress_mode(saveset);
+  return (saveset);
+}
+
+#undef ADDCMD
+#undef STANDARD_BITS
+#undef SET_LEN
+#undef SET_LEN_INCR
+#undef CMD2_CLR
+#undef CMD2_SET
+#undef CMD2_GBITS
+#undef CMD2_OBITS
+#undef CMD2_UBITS
+#endif
+EOF
+
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/vis.h
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <ctype.h>
@@ -5752,1329 +7140,6 @@ strsvis(char *mbdst, const char *mbsrc, int flags, const char *mbextra)
 {
   return istrsenvisxl(&mbdst, NULL, mbsrc, flags, mbextra, NULL);
 }
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/string.h
-#ifndef __compat_string_h__
-#define __compat_string_h__
-#include <sys/cdefs.h>
-#ifdef __linux__  /* fix liberty.h */
-/* no basename() unhook, issue in patch(1) */
-#ifdef __OPTIMIZE__
-#undef __OPTIMIZE__    /* deal with strchr() and rindex() optimizations */
-#define ____OPTIMIZE__
-#endif
-#endif
-#include_next <string.h>
-#ifdef __linux__
-#ifdef ____OPTIMIZE__
-#define __OPTIMIZE__ 1
-#endif
-#define QUAD_MIN   LLONG_MIN    /* for usr.bin/expr/expr.y */
-#define QUAD_MAX   LLONG_MAX    /* for usr.bin/find/function.c */
-
-static __inline __always_inline size_t
-strlcat(char * __restrict dst, const char * __restrict src, size_t siz)
-{
-  char *d = dst;
-  const char *s = src;
-  size_t n = siz;
-  size_t dlen;
-  while (n-- != 0 && *d != '\0')
-    d++;
-  dlen = d - dst;
-  n = siz - dlen;
-  if (n == 0)
-    return(dlen + strlen(s));
-  while (*s != '\0') {
-      if (n != 1) {
-        *d++ = *s;
-        n--;
-      }
-      s++;
-  }
-  *d = '\0';
-  return(dlen + (s - src));
-}
-
-static __inline __always_inline size_t
-strlcpy(char *dst, const char *src, size_t siz){
-  char *d = dst;
-  const char *s = src;
-  size_t n = siz;
-
-  if (!dst || !src)
-    return 0;
-  if (n != 0 && --n != 0) {
-    do {
-      if ((*d++ = *s++) == 0)
-        break;
-    } while (--n != 0);
-  }
-  if (n == 0) {
-    if (siz != 0)
-      *d = '\0';
-    while (*s++) ;
-  }
-  return(s - src - 1);
-}
-
-#include <sys/types.h>
-#include <sys/stat.h>
-
-static __inline __always_inline void
-strmode(mode_t mode, char *p)
-{
-  switch (mode & S_IFMT) {
-  case S_IFDIR:
-    *p++ = 'd';
-    break;
-  case S_IFCHR:
-    *p++ = 'c';
-    break;
-  case S_IFBLK:
-    *p++ = 'b';
-    break;
-  case S_IFREG:
-    *p++ = '-';
-    break;
-  case S_IFLNK:
-    *p++ = 'l';
-    break;
-  case S_IFSOCK:
-    *p++ = 's';
-    break;
-#ifdef S_IFIFO
-  case S_IFIFO:
-    *p++ = 'p';
-    break;
-#endif
-#ifdef S_IFWHT
-  case S_IFWHT:
-    *p++ = 'w';
-    break;
-#endif
-  default:
-   *p++ = '?';
-    break;
-  }
-  if (mode & S_IRUSR)
-    *p++ = 'r';
-  else
-    *p++ = '-';
-  if (mode & S_IWUSR)
-    *p++ = 'w';
-  else
-    *p++ = '-';
-  switch (mode & (S_IXUSR | S_ISUID)) {
-  case 0:
-    *p++ = '-';
-    break;
-  case S_IXUSR:
-    *p++ = 'x';
-    break;
-  case S_ISUID:
-    *p++ = 'S';
-    break;
-  case S_IXUSR | S_ISUID:
-    *p++ = 's';
-    break;
-  }
-  if (mode & S_IRGRP)
-    *p++ = 'r';
-  else
-    *p++ = '-';
-  if (mode & S_IWGRP)
-    *p++ = 'w';
-  else
-   *p++ = '-';
-  switch (mode & (S_IXGRP | S_ISGID)) {
-  case 0:
-    *p++ = '-';
-    break;
-  case S_IXGRP:
-    *p++ = 'x';
-    break;
-  case S_ISGID:
-    *p++ = 'S';
-    break;
-  case S_IXGRP | S_ISGID:
-    *p++ = 's';
-    break;
-  }
-  if (mode & S_IROTH)
-    *p++ = 'r';
-  else
-    *p++ = '-';
-  if (mode & S_IWOTH)
-    *p++ = 'w';
-  else
-    *p++ = '-';
-  switch (mode & (S_IXOTH | S_ISVTX)) {
-  case 0:
-    *p++ = '-';
-    break;
-  case S_IXOTH:
-    *p++ = 'x';
-    break;
-  case S_ISVTX:
-    *p++ = 'T';
-    break;
-  case S_IXOTH | S_ISVTX:
-    *p++ = 't';
-    break;
-  }
-  *p++ = ' ';
-  *p = '\0';
-}
-#endif
-#ifdef __OpenBSD__
-static inline __always_inline void *
-mempcpy(void *dest, const void *src, size_t len)
-{
-  return ((char *)memcpy(dest, src, len) + len);
-}
-#define MBUITER_INLINE inline __always_inline
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/simple/string.h
-#ifndef __compat_string_h__
-#define __compat_string_h__
-#include <sys/cdefs.h>
-#ifdef __linux__  /* fix liberty.h */
-#undef basename
-#define basename __basename
-#ifdef __OPTIMIZE__
-#undef __OPTIMIZE__    /* deal with strchr() and rindex() optimizations */
-#define ____OPTIMIZE__
-#endif
-#endif
-#include_next <string.h>
-#ifdef __linux__
-#ifdef ____OPTIMIZE__
-#define __OPTIMIZE__ 1
-#endif
-#undef basename
-#endif
-#ifdef __OpenBSD__
-static inline __always_inline void *
-mempcpy(void *dest, const void *src, size_t len)
-{
-  return ((char *)memcpy(dest, src, len) + len);
-}
-static inline __always_inline int
-ffsll(long long mask)
-{
- int bit;
- if (mask == 0)
-   return (0);
- for (bit = 1; !(mask & 1); bit++)
-   mask = (unsigned long long)mask >> 1;
- return (bit);
-}
-#define MBUITER_INLINE inline __always_inline
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/simple/libiberty.h
-#ifndef __compat_libiberty_h__
-#define __compat_libiberty_h__
-#include_next "libiberty.h"
-#ifdef __linux__
-#ifdef __cplusplus
-#define setproctitle(...)  /* so as not to bundle setproctitle.c */
-#endif
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/unlocked-io.h
-#ifndef __compat_unlocked_io_h__
-#define __compat_unlocked_io_h__
-#if 0
-#ifdef __linux__  /* fix redef warns in grep(1) config.h, w/ caviet tho */
-#undef HAVE_DECL_FREAD_UNLOCKED
-#undef HAVE_DECL_FWRITE_UNLOCKED
-#define HAVE_DECL_FREAD_UNLOCKED 1
-#define HAVE_DECL_FWRITE_UNLOCKED 1
-#endif
-#include_next "unlocked-io.h"
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/unistd.h
-#ifndef __compat_unistd_h__
-#define __compat_unistd_h__
-#include_next <unistd.h>
-#ifndef OFF_MAX
-#define OFF_MAX LONG_MAX
-#endif
-#ifndef __DragonFly__
-#define varsym_get(x,y,z,v) (-1)
-#endif
-#if defined(__OpenBSD__) || defined(__NetBSD__)
-#define eaccess access
-#endif
-#ifdef __linux__
-#include <sys/cdefs.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <ctype.h>
-#include <signal.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#define SET_LEN 6
-#define SET_LEN_INCR 4
-
-#ifndef NELEM
-#define NELEM(ary) (sizeof(ary) / sizeof((ary)[0]))
-#endif
-
-#ifndef SSIZE_MAX  /* bin/dd #include_next <limits.h> issue */
-#define SSIZE_MAX LONG_MAX
-#endif
-
-#if !defined(S_ISTXT) && defined(S_ISVTX)
-#define S_ISTXT S_ISVTX
-#endif
-
-#ifndef MAXBSIZE
-#define MAXBSIZE      65536
-#endif
-
-#ifndef st_atimespec
-#define st_atimespec st_atim
-#define st_mtimespec st_mtim
-#define st_ctimespec st_ctim
-#endif
-
-static inline __always_inline int
-undelete(const char *path)
-{
-  if (path == NULL || 1)
-    return -1;
-}
-
-int optreset;
-
-static __inline __always_inline int
-bsd_getopt(int argc, char * const argv[], const char *shortopts)
-{
-  char *fakeopts = NULL;
-  int ch;
-  if (optreset == 1) {
-    optreset = 0;
-    optind = 0;
-  }
-  setenv("POSIXLY_CORRECT", "yes", 0);  /* fix bsd find, "find foo -type f" */
-  if (strchr(shortopts, '-') == NULL)
-    return getopt(argc, argv, shortopts);
-  /* else try to recover for "-iblah" by converting to "blah-" */
-  if (shortopts[0] == '-') {
-    size_t len;
-    unsigned int i;
-    len = strlen(shortopts);
-    fakeopts = __builtin_alloca(len+1);
-    for (i = 1; i < len; i++)
-      fakeopts[i-1] = shortopts[i];
-    fakeopts[len-1] = '-';
-    fakeopts[len] = '\0';
-    ch = getopt(argc, argv, fakeopts);
-  } else
-    ch = getopt(argc, argv, shortopts);
-  if (ch == -1 && optind < argc && strcmp(argv[optind], "-") == 0) {
-    optind++;
-    return '-';  /* aka fix "env -" */
-  }
-  return ch;
-}
-
-#ifndef _GL_GETOPT_H /* do not use in libgreputils */
-#define getopt(argc, argv, opts) bsd_getopt((argc), (argv), (opts))
-#endif
-
-typedef struct bitcmd {
-  char    cmd;
-  char    cmd2;
-  mode_t  bits;
-} BITCMD;
-
-#define CMD2_CLR        0x01
-#define CMD2_SET        0x02
-#define CMD2_GBITS      0x04
-#define CMD2_OBITS      0x08
-#define CMD2_UBITS      0x10
-
-static inline __always_inline mode_t
-getmode(const void *bbox, mode_t omode)
-{
-  const BITCMD *set;
-  mode_t clrval, newmode, value;
-  set = (const BITCMD *)bbox;
-  newmode = omode;
-  for (value = 0;; set++)
-    switch(set->cmd) {
-    case 'u':
-      value = (newmode & S_IRWXU) >> 6;
-      goto common_getmode;
-    case 'g':
-      value = (newmode & S_IRWXG) >> 3;
-      goto common_getmode;
-    case 'o':
-      value = newmode & S_IRWXO;
-common_getmode:
-      if (set->cmd2 & CMD2_CLR) {
-        clrval = (set->cmd2 & CMD2_SET) ?  S_IRWXO : value;
-        if (set->cmd2 & CMD2_UBITS)
-          newmode &= ~((clrval<<6) & set->bits);
-        if (set->cmd2 & CMD2_GBITS)
-          newmode &= ~((clrval<<3) & set->bits);
-        if (set->cmd2 & CMD2_OBITS)
-          newmode &= ~(clrval & set->bits);
-      }
-      if (set->cmd2 & CMD2_SET) {
-        if (set->cmd2 & CMD2_UBITS)
-          newmode |= (value<<6) & set->bits;
-        if (set->cmd2 & CMD2_GBITS)
-          newmode |= (value<<3) & set->bits;
-        if (set->cmd2 & CMD2_OBITS)
-          newmode |= value & set->bits;
-      }
-      break;
-    case '+':
-      newmode |= set->bits;
-      break;
-    case '-':
-      newmode &= ~set->bits;
-      break;
-    case 'X':
-      if (omode & (S_IFDIR|S_IXUSR|S_IXGRP|S_IXOTH))
-        newmode |= set->bits;
-      break;
-    case '\0':
-    default:
-      return (newmode);
-  }
-}
-
-#define ADDCMD(a, b, c, d) \
-  if (set >= endset) { \
-    BITCMD *newset; \
-    setlen += SET_LEN_INCR; \
-    newset = realloc(saveset, sizeof(BITCMD) * setlen); \
-    if (!newset) { \
-      if (saveset) \
-        free(saveset); \
-      saveset = NULL; \
-      return (NULL); \
-    } \
-    set = newset + (set - saveset); \
-    saveset = newset; \
-    endset = newset + (setlen - 2); \
-  } \
-  set = addcmd(set, (a), (b), (c), (d))
-
-#define STANDARD_BITS   (S_ISUID|S_ISGID|S_IRWXU|S_IRWXG|S_IRWXO)
-
-static inline __always_inline BITCMD *
-addcmd(BITCMD *set, int op, int who, int oparg, u_int mask)
-{
-  switch (op) {
-  case '=':
-    set->cmd = '-';
-    set->bits = who ? who : STANDARD_BITS;
-    set++;
-    op = '+';
-    /* FALLTHROUGH */
-  case '+':
-  case '-':
-  case 'X':
-    set->cmd = op;
-    set->bits = (who ? (unsigned)who : mask) & oparg;
-    break;
-  case 'u':
-  case 'g':
-  case 'o':
-    set->cmd = op;
-    if (who) {
-      set->cmd2 = ((who & S_IRUSR) ? CMD2_UBITS : 0) |
-                  ((who & S_IRGRP) ? CMD2_GBITS : 0) |
-                  ((who & S_IROTH) ? CMD2_OBITS : 0);
-      set->bits = (mode_t)~0;
-    } else {
-      set->cmd2 = CMD2_UBITS | CMD2_GBITS | CMD2_OBITS;
-      set->bits = mask;
-    }
-    if (oparg == '+')
-      set->cmd2 |= CMD2_SET;
-    else if (oparg == '-')
-      set->cmd2 |= CMD2_CLR;
-    else if (oparg == '=')
-      set->cmd2 |= CMD2_SET|CMD2_CLR;
-    break;
-  }
-  return (set + 1);
-}
-static void
-compress_mode(BITCMD *set)
-{
-  BITCMD *nset;
-  int setbits, clrbits, Xbits, op;
-  for (nset = set;;) {
-    while ((op = nset->cmd) != '+' && op != '-' && op != 'X') {
-      *set++ = *nset++;
-      if (!op)
-        return;
-    }
-    for (setbits = clrbits = Xbits = 0;; nset++) {
-      if ((op = nset->cmd) == '-') {
-        clrbits |= nset->bits;
-        setbits &= ~nset->bits;
-        Xbits &= ~nset->bits;
-      } else if (op == '+') {
-        setbits |= nset->bits;
-        clrbits &= ~nset->bits;
-        Xbits &= ~nset->bits;
-      } else if (op == 'X')
-        Xbits |= nset->bits & ~setbits;
-      else
-        break;
-    }
-    if (clrbits) {
-      set->cmd = '-';
-      set->cmd2 = 0;
-      set->bits = clrbits;
-      set++;
-    }
-    if (setbits) {
-      set->cmd = '+';
-      set->cmd2 = 0;
-      set->bits = setbits;
-      set++;
-    }
-    if (Xbits) {
-      set->cmd = 'X';
-      set->cmd2 = 0;
-      set->bits = Xbits;
-      set++;
-    }
-  }
-}
-
-static inline __always_inline void *
-setmode(const char *p)
-{
-  int perm, who;
-  char op, *ep;
-  BITCMD *set, *saveset, *endset;
-  sigset_t sigset, sigoset;
-  mode_t mask;
-  int equalopdone=0, permXbits, setlen;
-  long perml;
-  if (!*p)
-    return (NULL);
-  sigfillset(&sigset);
-  sigprocmask(SIG_BLOCK, &sigset, &sigoset);
-  umask(mask = umask(0));
-  mask = ~mask;
-  sigprocmask(SIG_SETMASK, &sigoset, NULL);
-  setlen = SET_LEN + 2;
-  if ((set = malloc((u_int)(sizeof(BITCMD) * setlen))) == NULL)
-    return (NULL);
-  saveset = set;
-  endset = set + (setlen - 2);
-  if (isdigit((unsigned char)*p)) {
-    perml = strtol(p, &ep, 8);
-    if (*ep || perml < 0 || perml & ~(STANDARD_BITS|S_ISTXT)) {
-      free(saveset);
-      return (NULL);
-    }
-    perm = (mode_t)perml;
-    ADDCMD('=', (STANDARD_BITS|S_ISTXT), perm, mask);
-    set->cmd = 0;
-    return (saveset);
-  }
-  for (;;) {
-    for (who = 0;; ++p) {
-      switch (*p) {
-      case 'a':
-        who |= STANDARD_BITS;
-        break;
-      case 'u':
-        who |= S_ISUID|S_IRWXU;
-        break;
-      case 'g':
-        who |= S_ISGID|S_IRWXG;
-        break;
-      case 'o':
-        who |= S_IRWXO;
-        break;
-      default:
-        goto getop;
-      }
-    }
-getop:
-    if ((op = *p++) != '+' && op != '-' && op != '=') {
-      free(saveset);
-      return (NULL);
-    }
-    if (op == '=')
-      equalopdone = 0;
-    who &= ~S_ISTXT;
-    for (perm = 0, permXbits = 0;; ++p) {
-      switch (*p) {
-      case 'r':
-        perm |= S_IRUSR|S_IRGRP|S_IROTH;
-        break;
-      case 's':
-        if (!who || who & ~S_IRWXO)
-          perm |= S_ISUID|S_ISGID;
-        break;
-      case 't':
-        if (!who || who & ~S_IRWXO) {
-          who |= S_ISTXT;
-          perm |= S_ISTXT;
-        }
-        break;
-      case 'w':
-        perm |= S_IWUSR|S_IWGRP|S_IWOTH;
-        break;
-      case 'X':
-        permXbits = S_IXUSR|S_IXGRP|S_IXOTH;
-        break;
-      case 'x':
-        perm |= S_IXUSR|S_IXGRP|S_IXOTH;
-        break;
-      case 'u':
-      case 'g':
-      case 'o':
-        if (perm) {
-          ADDCMD(op, who, perm, mask);
-          perm = 0;
-        }
-        if (op == '=')
-          equalopdone = 1;
-        if (op == '+' && permXbits) {
-          ADDCMD('X', who, permXbits, mask);
-          permXbits = 0;
-        }
-        ADDCMD(*p, who, op, mask);
-        break;
-      default:
-        if (perm || (op == '=' && !equalopdone)) {
-          if (op == '=')
-            equalopdone = 1;
-          ADDCMD(op, who, perm, mask);
-          perm = 0;
-        }
-        if (permXbits) {
-          ADDCMD('X', who, permXbits, mask);
-          permXbits = 0;
-        }
-        goto apply_setmode;
-      }
-    }
-apply_setmode:
-    if (!*p)
-      break;
-    if (*p != ',')
-      goto getop;
-    ++p;
-  }
-  set->cmd = 0;
-  compress_mode(saveset);
-  return (saveset);
-}
-
-#undef ADDCMD
-#undef STANDARD_BITS
-#undef SET_LEN
-#undef SET_LEN_INCR
-#undef CMD2_CLR
-#undef CMD2_SET
-#undef CMD2_GBITS
-#undef CMD2_OBITS
-#undef CMD2_UBITS
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/event.h
-#ifndef __compat_sys_event_h__
-#define __compat_sys_event_h__
-#if defined(__DragonFly__) || defined(__FreeBSD__)
-#include_next <sys/event.h>
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/ucred.h
-#ifndef __compat_sys_ucred_h__
-#define __compat_sys_ucred_h__
-#ifndef __linux__
-#include_next <sys/ucred.h>
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/tree.h
-#ifndef __compat_sys_tree_h__
-#define __compat_sys_tree_h__
-#ifndef __linux__
-#include_next <sys/tree.h>
-#endif
-#ifdef __linux__
-#include <sys/cdefs.h>
-#include <stddef.h>
-#include <stdint.h>
-struct spinlock {
-  int counta;
-  int countb;
-};
-#define RB_SCAN_INFO(name, type) struct name##_scan_info { \
-    struct name##_scan_info *link; struct type *node; }
-#define RB_HEAD(name, type) struct name { struct type *rbh_root; \
-    struct name##_scan_info *rbh_inprog; struct spinlock rbh_spin; }
-#define RB_ENTRY(type) \
-    struct { struct type *rbe_left; struct type *rbe_right; \
-    struct type *rbe_parent; int rbe_color; }
-#define RB_PROTOTYPE_STATIC(name, type, field, cmp) \
-    _RB_PROTOTYPE(name, type, field, cmp, ____unused static)
-#define RB_GENERATE(name, type, field, cmp) \
-    _RB_GENERATE(name, type, field, cmp,)
-
-#define _RB_PROTOTYPE(name, type, field, cmp, STORQUAL) \
-  STORQUAL void name##_RB_INSERT_COLOR(struct name *, struct type *); \
-  STORQUAL void name##_RB_REMOVE_COLOR(struct name *, struct type *, struct type *);\
-  STORQUAL struct type *name##_RB_REMOVE(struct name *, struct type *); \
-  STORQUAL struct type *name##_RB_INSERT(struct name *, struct type *); \
-  STORQUAL struct type *name##_RB_FIND(struct name *, struct type *); \
-  STORQUAL int name##_RB_SCAN(struct name *, int (*)(struct type *, void *), \
-                              int (*)(struct type *, void *), void *); \
-  STORQUAL int name##_RB_SCAN_NOLK(struct name *, int (*)(struct type *, void *),\
-                                   int (*)(struct type *, void *), void *); \
-  STORQUAL struct type *name##_RB_NEXT(struct type *); \
-  STORQUAL struct type *name##_RB_PREV(struct type *); \
-  STORQUAL struct type *name##_RB_MINMAX(struct name *, int); \
-  RB_SCAN_INFO(name, type)
-#define _RB_GENERATE(name, type, field, cmp, STORQUAL) \
-  STORQUAL void \
-  name##_RB_INSERT_COLOR(struct name *head, struct type *elm) { \
-    struct type *parent, *gparent, *tmp; \
-    while ((parent = RB_PARENT(elm, field)) != NULL && \
-           RB_COLOR(parent, field) == RB_RED) { \
-      gparent = RB_PARENT(parent, field); \
-      if (parent == RB_LEFT(gparent, field)) { \
-        tmp = RB_RIGHT(gparent, field); \
-        if (tmp && RB_COLOR(tmp, field) == RB_RED) { \
-          RB_COLOR(tmp, field) = RB_BLACK; \
-          RB_SET_BLACKRED(parent, gparent, field); \
-          elm = gparent; \
-          continue; \
-        } \
-        if (RB_RIGHT(parent, field) == elm) { \
-          RB_ROTATE_LEFT(head, parent, tmp, field); \
-          tmp = parent; \
-          parent = elm; \
-          elm = tmp; \
-        } \
-        RB_SET_BLACKRED(parent, gparent, field); \
-        RB_ROTATE_RIGHT(head, gparent, tmp, field); \
-      } else { \
-        tmp = RB_LEFT(gparent, field); \
-        if (tmp && RB_COLOR(tmp, field) == RB_RED) { \
-          RB_COLOR(tmp, field) = RB_BLACK; \
-          RB_SET_BLACKRED(parent, gparent, field); \
-          elm = gparent; \
-          continue; \
-        } \
-        if (RB_LEFT(parent, field) == elm) { \
-          RB_ROTATE_RIGHT(head, parent, tmp, field); \
-          tmp = parent; \
-          parent = elm; \
-          elm = tmp; \
-        } \
-        RB_SET_BLACKRED(parent, gparent, field); \
-        RB_ROTATE_LEFT(head, gparent, tmp, field); \
-      } \
-    } \
-    RB_COLOR(head->rbh_root, field) = RB_BLACK; \
-  } \
-  STORQUAL void \
-  name##_RB_REMOVE_COLOR(struct name *head, struct type *parent, \
-                         struct type *elm) \
-  { \
-    struct type *tmp; \
-    while ((elm == NULL || RB_COLOR(elm, field) == RB_BLACK) && \
-            elm != RB_ROOT(head)) { \
-      if (RB_LEFT(parent, field) == elm) { \
-        tmp = RB_RIGHT(parent, field); \
-        if (RB_COLOR(tmp, field) == RB_RED) { \
-          RB_SET_BLACKRED(tmp, parent, field); \
-          RB_ROTATE_LEFT(head, parent, tmp, field); \
-          tmp = RB_RIGHT(parent, field); \
-        } \
-        if ((RB_LEFT(tmp, field) == NULL || \
-             RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) && \
-            (RB_RIGHT(tmp, field) == NULL || \
-             RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK)) { \
-          RB_COLOR(tmp, field) = RB_RED; \
-          elm = parent; \
-          parent = RB_PARENT(elm, field); \
-        } else { \
-          if (RB_RIGHT(tmp, field) == NULL || \
-              RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK) { \
-            struct type *oleft; \
-            if ((oleft = RB_LEFT(tmp, field)) != NULL) \
-              RB_COLOR(oleft, field) = RB_BLACK; \
-            RB_COLOR(tmp, field) = RB_RED; \
-            RB_ROTATE_RIGHT(head, tmp, oleft, field); \
-            tmp = RB_RIGHT(parent, field); \
-          } \
-          RB_COLOR(tmp, field) = RB_COLOR(parent, field); \
-          RB_COLOR(parent, field) = RB_BLACK; \
-          if (RB_RIGHT(tmp, field)) \
-            RB_COLOR(RB_RIGHT(tmp, field), field) = RB_BLACK; \
-          RB_ROTATE_LEFT(head, parent, tmp, field); \
-          elm = RB_ROOT(head); \
-          break; \
-        } \
-      } else { \
-        tmp = RB_LEFT(parent, field); \
-        if (RB_COLOR(tmp, field) == RB_RED) { \
-          RB_SET_BLACKRED(tmp, parent, field); \
-          RB_ROTATE_RIGHT(head, parent, tmp, field); \
-          tmp = RB_LEFT(parent, field); \
-        } \
-        if ((RB_LEFT(tmp, field) == NULL || \
-             RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) &&\
-            (RB_RIGHT(tmp, field) == NULL || \
-             RB_COLOR(RB_RIGHT(tmp, field), field) == RB_BLACK)) { \
-          RB_COLOR(tmp, field) = RB_RED; \
-          elm = parent; \
-          parent = RB_PARENT(elm, field); \
-        } else { \
-          if (RB_LEFT(tmp, field) == NULL || \
-              RB_COLOR(RB_LEFT(tmp, field), field) == RB_BLACK) { \
-            struct type *oright; \
-            if ((oright = RB_RIGHT(tmp, field)) != NULL) \
-              RB_COLOR(oright, field) = RB_BLACK; \
-            RB_COLOR(tmp, field) = RB_RED; \
-            RB_ROTATE_LEFT(head, tmp, oright, field); \
-            tmp = RB_LEFT(parent, field); \
-          } \
-          RB_COLOR(tmp, field) = RB_COLOR(parent, field); \
-          RB_COLOR(parent, field) = RB_BLACK; \
-          if (RB_LEFT(tmp, field)) \
-            RB_COLOR(RB_LEFT(tmp, field), field) = RB_BLACK; \
-          RB_ROTATE_RIGHT(head, parent, tmp, field); \
-          elm = RB_ROOT(head); \
-          break; \
-        } \
-      } \
-    } \
-    if (elm) \
-      RB_COLOR(elm, field) = RB_BLACK; \
-  } \
-  STORQUAL struct type * \
-  name##_RB_REMOVE(struct name *head, struct type *elm) \
-  { \
-    struct type *child, *parent, *old; \
-    struct name##_scan_info *inprog; \
-    int color; \
-    for (inprog = RB_INPROG(head); inprog; inprog = inprog->link) { \
-      if (inprog->node == elm) \
-        inprog->node = RB_NEXT(name, head, elm); \
-    } \
-    old = elm; \
-    if (RB_LEFT(elm, field) == NULL) \
-      child = RB_RIGHT(elm, field); \
-    else if (RB_RIGHT(elm, field) == NULL) \
-      child = RB_LEFT(elm, field); \
-    else { \
-      struct type *left; \
-      elm = RB_RIGHT(elm, field); \
-      while ((left = RB_LEFT(elm, field)) != NULL) \
-        elm = left; \
-      child = RB_RIGHT(elm, field); \
-      parent = RB_PARENT(elm, field); \
-      color = RB_COLOR(elm, field); \
-      if (child) \
-        RB_PARENT(child, field) = parent; \
-      if (parent) { \
-        if (RB_LEFT(parent, field) == elm) \
-          RB_LEFT(parent, field) = child; \
-        else \
-          RB_RIGHT(parent, field) = child; \
-        RB_AUGMENT(parent); \
-      } else \
-        RB_ROOT(head) = child; \
-      if (RB_PARENT(elm, field) == old) \
-        parent = elm; \
-      (elm)->field = (old)->field; \
-      if (RB_PARENT(old, field)) { \
-        if (RB_LEFT(RB_PARENT(old, field), field) == old) \
-          RB_LEFT(RB_PARENT(old, field), field) = elm; \
-        else \
-          RB_RIGHT(RB_PARENT(old, field), field) = elm; \
-        RB_AUGMENT(RB_PARENT(old, field)); \
-      } else \
-        RB_ROOT(head) = elm; \
-      RB_PARENT(RB_LEFT(old, field), field) = elm; \
-      if (RB_RIGHT(old, field)) \
-        RB_PARENT(RB_RIGHT(old, field), field) = elm; \
-      if (parent) { \
-        left = parent; \
-        do { \
-          RB_AUGMENT(left); \
-        } while ((left = RB_PARENT(left, field)) != NULL); \
-      } \
-      goto color; \
-    } \
-    parent = RB_PARENT(elm, field); \
-    color = RB_COLOR(elm, field); \
-    if (child) \
-      RB_PARENT(child, field) = parent; \
-    if (parent) { \
-      if (RB_LEFT(parent, field) == elm) \
-        RB_LEFT(parent, field) = child; \
-      else \
-        RB_RIGHT(parent, field) = child; \
-      RB_AUGMENT(parent); \
-    } else \
-      RB_ROOT(head) = child; \
-color: \
-    if (color == RB_BLACK) \
-      name##_RB_REMOVE_COLOR(head, parent, child); \
-    return (old); \
-  } \
-  STORQUAL struct type * \
-  name##_RB_INSERT(struct name *head, struct type *elm) \
-  { \
-    struct type *tmp; \
-    struct type *parent = NULL; \
-    int comp = 0; \
-    tmp = RB_ROOT(head); \
-    while (tmp) { \
-      parent = tmp; \
-      comp = (cmp)(elm, parent); \
-      if (comp < 0) \
-        tmp = RB_LEFT(tmp, field); \
-      else if (comp > 0) \
-        tmp = RB_RIGHT(tmp, field); \
-      else \
-        return(tmp); \
-    } \
-    RB_SET(elm, parent, field); \
-    if (parent != NULL) { \
-      if (comp < 0) \
-        RB_LEFT(parent, field) = elm; \
-      else \
-        RB_RIGHT(parent, field) = elm; \
-      RB_AUGMENT(parent); \
-    } else \
-      RB_ROOT(head) = elm; \
-    name##_RB_INSERT_COLOR(head, elm); \
-    return (NULL); \
-  } \
-  STORQUAL struct type * \
-  name##_RB_FIND(struct name *head, struct type *elm) \
-  { \
-    struct type *tmp = RB_ROOT(head); \
-    int comp; \
-    while (tmp) { \
-      comp = cmp(elm, tmp); \
-      if (comp < 0) \
-        tmp = RB_LEFT(tmp, field); \
-      else if (comp > 0) \
-        tmp = RB_RIGHT(tmp, field); \
-      else \
-        return (tmp); \
-      } \
-    return (NULL); \
-  } \
-  static int \
-  name##_SCANCMP_ALL(struct type *type ____unused, void *data ____unused) \
-  { \
-    return(0); \
-  } \
-  static inline void \
-  name##_scan_info_link(struct name##_scan_info *scan, struct name *head) \
-  { \
-    RB_SCAN_LOCK(&head->rbh_spin); \
-    scan->link = RB_INPROG(head); \
-    RB_INPROG(head) = scan; \
-    RB_SCAN_UNLOCK(&head->rbh_spin); \
-  } \
-  static inline void \
-  name##_scan_info_done(struct name##_scan_info *scan, struct name *head) \
-  { \
-    struct name##_scan_info **infopp; \
-    RB_SCAN_LOCK(&head->rbh_spin); \
-    infopp = &RB_INPROG(head); \
-    while (*infopp != scan) \
-      infopp = &(*infopp)->link; \
-    *infopp = scan->link; \
-    RB_SCAN_UNLOCK(&head->rbh_spin); \
-  } \
-  static inline int \
-  _##name##_RB_SCAN(struct name *head, int (*scancmp)(struct type *, void *), \
-             int (*callback)(struct type *, void *), void *data, int uselock) \
-  { \
-    struct name##_scan_info info; \
-    struct type *best; \
-    struct type *tmp; \
-    int count; \
-    int comp; \
-    if (scancmp == NULL) \
-      scancmp = name##_SCANCMP_ALL; \
-    tmp = RB_ROOT(head); \
-    best = NULL; \
-    while (tmp) { \
-      comp = scancmp(tmp, data); \
-      if (comp < 0) { \
-        tmp = RB_RIGHT(tmp, field); \
-      } else if (comp > 0) { \
-        tmp = RB_LEFT(tmp, field); \
-      } else { \
-        best = tmp; \
-        if (RB_LEFT(tmp, field) == NULL) \
-          break; \
-        tmp = RB_LEFT(tmp, field); \
-      } \
-    } \
-    count = 0; \
-    if (best) { \
-      info.node = RB_NEXT(name, head, best); \
-      if (uselock) \
-        name##_scan_info_link(&info, head); \
-      while ((comp = callback(best, data)) >= 0) { \
-        count += comp; \
-        best = info.node; \
-        if (best == NULL || scancmp(best, data) != 0) \
-          break; \
-        info.node = RB_NEXT(name, head, best); \
-      } \
-      if (uselock) \
-        name##_scan_info_done(&info, head); \
-      if (comp < 0) \
-        count = comp; \
-    } \
-    return(count); \
-  } \
-  STORQUAL int \
-  name##_RB_SCAN(struct name *head, int (*scancmp)(struct type *, void *), \
-                 int (*callback)(struct type *, void *), void *data) \
-  { \
-    return _##name##_RB_SCAN(head, scancmp, callback, data, 1); \
-  } \
-  STORQUAL int \
-  name##_RB_SCAN_NOLK(struct name *head, int (*scancmp)(struct type *, void *), \
-                      int (*callback)(struct type *, void *), void *data) \
-  { \
-    return _##name##_RB_SCAN(head, scancmp, callback, data, 0); \
-  } \
-  STORQUAL struct type * \
-  name##_RB_NEXT(struct type *elm)\
-  { \
-    if (RB_RIGHT(elm, field)) { \
-      elm = RB_RIGHT(elm, field); \
-      while (RB_LEFT(elm, field)) \
-        elm = RB_LEFT(elm, field); \
-    } else { \
-      if (RB_PARENT(elm, field) && \
-          (elm == RB_LEFT(RB_PARENT(elm, field), field))) \
-        elm = RB_PARENT(elm, field); \
-      else { \
-        while (RB_PARENT(elm, field) && \
-               (elm == RB_RIGHT(RB_PARENT(elm, field), field))) \
-          elm = RB_PARENT(elm, field); \
-          elm = RB_PARENT(elm, field); \
-      } \
-    } \
-    return (elm); \
-  } \
-  STORQUAL struct type * \
-  name##_RB_PREV(struct type *elm) \
-  { \
-    if (RB_LEFT(elm, field)) { \
-      elm = RB_LEFT(elm, field); \
-      while (RB_RIGHT(elm, field)) \
-        elm = RB_RIGHT(elm, field); \
-    } else { \
-      if (RB_PARENT(elm, field) && \
-          (elm == RB_RIGHT(RB_PARENT(elm, field), field))) \
-        elm = RB_PARENT(elm, field); \
-      else { \
-        while (RB_PARENT(elm, field) && \
-               (elm == RB_LEFT(RB_PARENT(elm, field), field)))\
-          elm = RB_PARENT(elm, field); \
-        elm = RB_PARENT(elm, field); \
-      } \
-    } \
-    return (elm); \
-  } \
-  STORQUAL struct type * \
-  name##_RB_MINMAX(struct name *head, int val) \
-  { \
-    struct type *tmp = RB_ROOT(head); \
-    struct type *parent = NULL; \
-    while (tmp) { \
-      parent = tmp; \
-      if (val < 0) \
-        tmp = RB_LEFT(tmp, field); \
-      else \
-        tmp = RB_RIGHT(tmp, field); \
-    } \
-    return (parent); \
-  }
-
-
-#define RB_INIT(root) do { \
-   (root)->rbh_root = NULL; (root)->rbh_inprog = NULL; } while (/*CONSTCOND*/ 0)
-
-#define RB_SCAN_LOCK(spin)
-#define RB_SCAN_UNLOCK(spin)
-
-#define RB_BLACK        0
-#define RB_RED          1
-#define RB_LEFT(elm, field)             (elm)->field.rbe_left
-#define RB_RIGHT(elm, field)            (elm)->field.rbe_right
-#define RB_PARENT(elm, field)           (elm)->field.rbe_parent
-#define RB_COLOR(elm, field)            (elm)->field.rbe_color
-#define RB_ROOT(head)                   (head)->rbh_root
-#define RB_INPROG(head)                 (head)->rbh_inprog
-
-#define RB_SET(elm, parent, field) do { \
-    RB_PARENT(elm, field) = parent; \
-    RB_LEFT(elm, field) = RB_RIGHT(elm, field) = NULL; \
-    RB_COLOR(elm, field) = RB_RED; \
-  } while (/*CONSTCOND*/ 0)
-
-#define RB_SET_BLACKRED(black, red, field) do { \
-    RB_COLOR(black, field) = RB_BLACK; \
-    RB_COLOR(red, field) = RB_RED; \
-  } while (/*CONSTCOND*/ 0)
-
-#ifndef RB_AUGMENT
-#define RB_AUGMENT(x)   do {} while (0)
-#endif
-
-#define RB_ROTATE_LEFT(head, elm, tmp, field) do { \
-  (tmp) = RB_RIGHT(elm, field); \
-  if ((RB_RIGHT(elm, field) = RB_LEFT(tmp, field)) != NULL) { \
-    RB_PARENT(RB_LEFT(tmp, field), field) = (elm); \
-  } \
-  RB_AUGMENT(elm); \
-  if ((RB_PARENT(tmp, field) = RB_PARENT(elm, field)) != NULL) { \
-    if ((elm) == RB_LEFT(RB_PARENT(elm, field), field)) \
-      RB_LEFT(RB_PARENT(elm, field), field) = (tmp); \
-    else \
-      RB_RIGHT(RB_PARENT(elm, field), field) = (tmp); \
-  } else \
-    (head)->rbh_root = (tmp); \
-  RB_LEFT(tmp, field) = (elm); \
-  RB_PARENT(elm, field) = (tmp); \
-  RB_AUGMENT(tmp); \
-  if ((RB_PARENT(tmp, field))) \
-    RB_AUGMENT(RB_PARENT(tmp, field)); \
-} while (/*CONSTCOND*/ 0)
-
-#define RB_ROTATE_RIGHT(head, elm, tmp, field) do { \
-  (tmp) = RB_LEFT(elm, field); \
-  if ((RB_LEFT(elm, field) = RB_RIGHT(tmp, field)) != NULL) { \
-     RB_PARENT(RB_RIGHT(tmp, field), field) = (elm); \
-  } \
-  RB_AUGMENT(elm); \
-  if ((RB_PARENT(tmp, field) = RB_PARENT(elm, field)) != NULL) { \
-    if ((elm) == RB_LEFT(RB_PARENT(elm, field), field)) \
-      RB_LEFT(RB_PARENT(elm, field), field) = (tmp); \
-    else \
-      RB_RIGHT(RB_PARENT(elm, field), field) = (tmp); \
-    } else \
-      (head)->rbh_root = (tmp); \
-    RB_RIGHT(tmp, field) = (elm); \
-    RB_PARENT(elm, field) = (tmp); \
-    RB_AUGMENT(tmp); \
-    if ((RB_PARENT(tmp, field))) \
-       RB_AUGMENT(RB_PARENT(tmp, field)); \
-} while (/*CONSTCOND*/ 0)
-
-#define RB_NEGINF       -1
-
-#define RB_INSERT(name, root, elm)      name##_RB_INSERT(root, elm)
-#define RB_REMOVE(name, root, elm)      name##_RB_REMOVE(root, elm)
-#define RB_FIND(name, root, elm)        name##_RB_FIND(root, elm)
-
-#define RB_NEXT(name, root, elm)        name##_RB_NEXT(elm)
-
-#define RB_MIN(name, root)              name##_RB_MINMAX(root, RB_NEGINF)
-
-#define RB_FOREACH(x, name, head) \
-    for ((x) = RB_MIN(name, head); (x) != NULL; (x) = name##_RB_NEXT(x))
-
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/consio.h
-#ifndef __compat_sys_consio_h__
-#define __compat_sys_consio_h__
-#if 0
-#include_next <sys/consio.h>
-#endif
-#if 1
-struct _scrmap {
-  char            scrmap[256];
-};
-typedef struct _scrmap  scrmap_t; /* XXX share/syscons/mapsmk/ */
-#endif
-#endif
-EOF
-cp /tmp/dfly/cross/compat/sys/consio.h /tmp/dfly/cross/simple/sys/consio.h
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/linker.h
-#ifndef __compat_sys_linker_h__
-#define __compat_sys_linker_h__
-#ifndef __linux__
-#include_next <sys/linker.h>
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/module.h
-#ifndef __compat_sys_module_h__
-#define __compat_sys_module_h__
-#ifndef __linux__
-#include_next <sys/module.h>
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/mount.h
-#ifndef __compat_sys_mount_h__
-#define __compat_sys_mount_h__
-#include_next <sys/mount.h>
-#if !defined(__DragonFly__) && !defined(__FreeBSD__)
-#include <sys/cdefs.h>
-#include <stddef.h>
-#define MAXPHYS (4 * 1024)
-#ifdef __linux__
-#include <sys/statfs.h>
-#define f_iosize f_bsize
-#endif
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/stat.h
-#ifndef __compat_sys_stat_h__
-#define __compat_sys_stat_h__
-#include_next <sys/stat.h>
-#if !defined(__DragonFly__) && !defined(__FreeBSD__)
-#define lchmod chmod
-#endif
-#ifndef S_ISWHT
-#define S_ISWHT(x) 0
-#endif
-#ifdef __linux__
-#define MNT_RDONLY MS_RDONLY
-#define MNT_LOCAL -2 /* dummy for find(1) */
-#ifndef MAXLOGNAME   /* for find(1) */
-#define MAXLOGNAME 33
-#endif
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/time.h
-#ifndef __compat_sys_time_h__
-#define __compat_sys_time_h__
-#include_next <sys/time.h>
-#if !defined(__DragonFly__) && !defined(__FreeBSD__)
-#define lutimes utimes
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/mtio.h
-#ifndef __compat_sys_mtio_h__
-#define __compat_sys_mtio_h__
-#include_next <sys/mtio.h>
-#if defined(__OpenBSD__) || defined(__NetBSD__)
-#include <sys/ioctl.h>
-#endif
-#endif
-EOF
-
-cat << 'EOF' > /tmp/dfly/cross/compat/sys/queue.h
-#ifndef __compat_sys_queue_h__
-#define __compat_sys_queue_h__
-#include_next <sys/queue.h>
-#if defined(__OpenBSD__)
-#define STAILQ_HEAD(name, type) struct name { \
-  struct type *stqh_first; \
-  struct type **stqh_last; \
-}
-#define STAILQ_HEAD_INITIALIZER(head) { NULL, &(head).stqh_first }
-#define STAILQ_ENTRY(type)  struct { struct type *stqe_next;  }
-#define STAILQ_INIT(head) do { \
-  (head)->stqh_first = NULL; \
-  (head)->stqh_last = &(head)->stqh_first; \
-} while (/*CONSTCOND*/0)
-#define STAILQ_INSERT_HEAD(head, elm, field) do { \
-  if (((elm)->field.stqe_next = (head)->stqh_first) == NULL) \
-    (head)->stqh_last = &(elm)->field.stqe_next; \
-  (head)->stqh_first = (elm); \
-} while (/*CONSTCOND*/0)
-#define STAILQ_INSERT_TAIL(head, elm, field) do { \
-  (elm)->field.stqe_next = NULL; \
-  *(head)->stqh_last = (elm); \
-  (head)->stqh_last = &(elm)->field.stqe_next; \
-} while (/*CONSTCOND*/0)
-#define STAILQ_INSERT_AFTER(head, listelm, elm, field) do {\
-  if (((elm)->field.stqe_next = (listelm)->field.stqe_next) == NULL) \
-    (head)->stqh_last = &(elm)->field.stqe_next; \
-  (listelm)->field.stqe_next = (elm); \
-} while (/*CONSTCOND*/0)
-#define STAILQ_REMOVE_HEAD(head, field) do { \
-  if (((head)->stqh_first = (head)->stqh_first->field.stqe_next) == NULL) \
-    (head)->stqh_last = &(head)->stqh_first;\
-} while (/*CONSTCOND*/0)
-#define STAILQ_REMOVE(head, elm, type, field) do { \
-  if ((head)->stqh_first == (elm)) { \
-      STAILQ_REMOVE_HEAD((head), field); \
-  } else { \
-    struct type *curelm = (head)->stqh_first; \
-    while (curelm->field.stqe_next != (elm)) \
-      curelm = curelm->field.stqe_next; \
-    if ((curelm->field.stqe_next = \
-         curelm->field.stqe_next->field.stqe_next) == NULL) \
-      (head)->stqh_last = &(curelm)->field.stqe_next; \
-  } \
-} while (/*CONSTCOND*/0)
-#define STAILQ_FOREACH(var, head, field) \
-  for ((var) = ((head)->stqh_first); \
-    (var); \
-  (var) = ((var)->field.stqe_next))
-#define STAILQ_CONCAT(head1, head2) do { \
- if (!STAILQ_EMPTY((head2))) { \
-   *(head1)->stqh_last = (head2)->stqh_first; \
-    (head1)->stqh_last = (head2)->stqh_last; \
-   STAILQ_INIT((head2)); \
- } \
-} while (/*CONSTCOND*/0)
-#define STAILQ_EMPTY(head)      ((head)->stqh_first == NULL)
-#define STAILQ_FIRST(head)      ((head)->stqh_first)
-#define STAILQ_NEXT(elm, field) ((elm)->field.stqe_next)
-#endif
-#endif
 EOF
 }
 
@@ -7257,6 +7322,32 @@ done
 cc ${BFLAGS} ${BSRCS} -o /tmp/dfly/cross/yacc
 }
 
+bootstrap_lex () {
+echo "Bootstrapping lex"
+BFLAGS="${CROSSCFLAGS}"
+BFLAGS="${BFLAGS} -DHAVE_CONFIG_H -I$P/usr.bin/flex -I$P/contrib/flex"
+b="ccl dfa ecs scanflags gen main misc nfa parse scan sym tblcmp"
+b="$b yylex options scanopt buf tables tables_shared filter regex"
+BSRCS=
+for i in ${b} ; do
+BSRCS="${BSRCS} $P/contrib/flex/src/$i.c"
+done
+BSRCS="${BSRCS} /tmp/dfly/skel.c"
+/tmp/dfly/cross/sed -e 's/m4_/m4postproc_/g' -e 's/m4preproc_/m4_/g' \
+  $P/contrib/flex/src/flex.skl | \
+  sed -e 's/FLEX_MAJOR_VERSION$/2/g' -e 's/FLEX_MINOR_VERSION$/5/g' \
+      -e 's/FLEX_SUBMINOR_VERSION$/37/g' -e 's/m4_changecom//g' \
+      -e "s/M4_GEN_PREFIX(\`\(.*\)')/m4postproc_define(yy[[\1]],\
+          [[M4_YY_PREFIX[[\1]]m4postproc_ifelse(\$#,0,,[[(\$@)]])]])/g" |\
+  sed -e "/m4_include(\`flexint.h/r $P/contrib/flex/src/flexint.h" \
+      -e "/m4_include(\`tables_shared.h/r $P/contrib/flex/src/tables_shared.h" \
+      -e "/m4_include(\`tables_shared.c/r $P/contrib/flex/src/tables_shared.c" \
+      -e '/m4_include(/d' -e '/m4_define(`M4_GEN_PREFIX/,+1d' | \
+  sed -e 's/m4postproc_/m4_/g' > /tmp/dfly/skel.c
+cc ${BFLAGS} ${BSRCS} -lm -o /tmp/dfly/cross/lex
+rm -f /tmp/dfly/skel.c
+}
+
 bootstrap_mktemp () {
 echo "Bootstrapping mktemp"
 BFLAGS="${CROSSCFLAGS}"
@@ -7344,10 +7435,6 @@ cp -f /tmp/dfly/obj/$P/btools_x86_64/usr/lib/liby.a /tmp/dfly/cross/lib/
 cp -f /tmp/dfly/obj/$P/btools_x86_64/usr/lib/libz.a /tmp/dfly/cross/lib/
 cp -f /tmp/dfly/obj/$P/btools_x86_64/usr/include/zconf.h /tmp/dfly/cross/simple/
 cp -f /tmp/dfly/obj/$P/btools_x86_64/usr/include/zlib.h /tmp/dfly/cross/simple/
-chmod -x /tmp/dfly/cross/lib/libl.a
-chmod -x /tmp/dfly/cross/lib/liby.a
-chmod -x /tmp/dfly/cross/simple/zconf.h
-chmod -x /tmp/dfly/cross/simple/zlib.h
 }
 
 fake_libutil () {
@@ -7603,7 +7690,7 @@ build_ctools () {
   ${TIMECMD} /tmp/dfly/cross/make -j${MJ} _cross-tools \
   _HOSTPATH="${PATH}" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
   MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
-  HOST_BINUTILSVER="xxx" CROSS_LIBDL="${CROSS_LIBDL}" \
+  HOST_BINUTILSVER="xxx" CROSS_LIBDL="${CROSS_LIBDL}" CPP="cc -E -P" \
   -DNO_WERROR -DNO_ALTBINUTILS -DNO_ALTCOMPILER -DNO_PROFILE \
   WORLD_CFLAGS="-I/tmp/dfly/cross/simple ${BCFLAGS} -L/tmp/dfly/cross/lib" \
   > /tmp/dfly/ctools.log 2>&1 || (echo "  error: see ctools.log" && exit 3)
@@ -7723,6 +7810,7 @@ bootstrap_mtree
 bootstrap_sed
 bootstrap_tr
 bootstrap_yacc
+#tbd bootstrap_lex
 bootstrap_mktemp
 bootstrap_find
 bootstrap_join
@@ -7737,8 +7825,12 @@ TIMELOG=/tmp/dfly/time.log
 #TIMECMD=time
 TIMECMD="/tmp/dfly/cross/time -o ${TIMELOG}"
 
-export PATH="/tmp/dfly/cross:${PATH}"
+#export PATH="/tmp/dfly/cross:${PATH}"
+export PATH="/tmp/dfly/cross:/bin:/usr/bin"
 BCFLAGS=""
+#
+cp -f $P/lib/libz/zconf.h /tmp/dfly/cross/compat/zconf.h
+cp -f $P/contrib/zlib*/zlib.h /tmp/dfly/cross/compat/zlib.h
 #
 echo "Building btools:"
 build_btools
