@@ -1,7 +1,7 @@
-From 9ce968c7d1208427eaa3139df2b835696375cb72 Mon Sep 17 00:00:00 2001
+From 37252ef3e6f150cb90f27fc772db662a19871359 Mon Sep 17 00:00:00 2001
 From: zrj <rimvydas.jasinskas@gmail.com>
 Date: Thu, 13 Feb 2020 14:07:37 +0200
-Subject: [PATCH 4/4] kernel: Add handling for R_X86_64_PLT32 (type 4) in
+Subject: [PATCH 2/3] kernel: Add handling for R_X86_64_PLT32 (type 4) in
  kernel linker.
 
  Newer binutils can emit R_X86_64_PLT32 for -shared compilations.

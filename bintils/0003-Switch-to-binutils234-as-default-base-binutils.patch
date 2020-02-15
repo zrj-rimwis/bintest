@@ -1,0 +1,141 @@
+From 4b8543556ce53988cdeb447c5b1dbf79ed0213bb Mon Sep 17 00:00:00 2001
+From: zrj <rimvydas.jasinskas@gmail.com>
+Date: Sat, 15 Feb 2020 19:00:51 +0200
+Subject: [PATCH 3/3] Switch to binutils234 as default base binutils.
+
+---
+ Makefile.inc1                 |  2 +-
+ UPDATING                      | 11 +++++++++++
+ gnu/usr.bin/Makefile.buo      |  4 ++--
+ share/man/man5/make.conf.5    |  6 +++---
+ share/man/man7/hier.7         |  6 +++---
+ share/mk/bsd.cpu.mk           |  2 +-
+ usr.bin/objformat/objformat.c |  2 +-
+ 7 files changed, 22 insertions(+), 11 deletions(-)
+
+diff --git a/Makefile.inc1 b/Makefile.inc1
+index 514543c873..ee00f1dd83 100644
+--- a/Makefile.inc1
++++ b/Makefile.inc1
+@@ -107,7 +107,7 @@ DESTDIRBASE:=		${OBJTREE}${.CURDIR}
+ # This section sets the tools used to build the world/kernel
+ WORLD_CCVER?=		gcc80
+ WORLD_LDVER?=		ld.gold
+-WORLD_BINUTILSVER?=	binutils227
++WORLD_BINUTILSVER?=	binutils234
+ 
+ # Set the backup parameters if they are not already defined
+ #
+diff --git a/UPDATING b/UPDATING
+index a08e96c812..004d4d4934 100644
+--- a/UPDATING
++++ b/UPDATING
+@@ -12,6 +12,17 @@
+ +         UPGRADING DRAGONFLY FROM 5.6 TO LATER VERSIONS                +
+ +-----------------------------------------------------------------------+
+ 
++BINUTILS 2.34 REPLACES 2.25, PRIMARY
++------------------------------------
++
++The oldest of the two versions of Binutils, version 2.25, was removed
++and replaced with Binutils 2.34.  It becomes the primary version version
++of binutils and version 2.27 becomes the alternate.
++
++The accepted values of BINUTILSVER are now "binutils234" (default) and
++"binutils227".  The building of Binutils 2.27 can be prevented by setting
++NO_ALTBINUTILS=yes in make.conf
++
+ LIBRADIUS AND LIBTACPLUS REMOVED
+ --------------------------------
+ 
+diff --git a/gnu/usr.bin/Makefile.buo b/gnu/usr.bin/Makefile.buo
+index 953e907d5f..49ff0e1ad4 100644
+--- a/gnu/usr.bin/Makefile.buo
++++ b/gnu/usr.bin/Makefile.buo
+@@ -9,8 +9,8 @@
+ # Ideally in the future the Makefiles are generic and only have to be
+ # copied over in most cases.
+ 
+-BU_PRIMARY=	binutils227
+-BU_BACKUP=	binutils234
++BU_PRIMARY=	binutils234
++BU_BACKUP=	binutils227
+ 
+ .if defined(BUVERSION)
+ .if (${BUVERSION} == ${BU_PRIMARY})
+diff --git a/share/man/man5/make.conf.5 b/share/man/man5/make.conf.5
+index 72608581fe..7c6852f039 100644
+--- a/share/man/man5/make.conf.5
++++ b/share/man/man5/make.conf.5
+@@ -148,15 +148,15 @@ is the default value.
+ .Pq Vt str
+ Controls which binutils to use by default.
+ Currently accepted values are
+-.Dq binutils225
+-and
+ .Dq binutils227
++and
++.Dq binutils234
+ (default).
+ .It Va WORLD_BINUTILSVER
+ .Pq Vt str
+ Controls which version of binutils builds the base system, including
+ the kernel.
+-.Dq binutils227
++.Dq binutils234
+ is the default value.
+ .It Va WORLD_CFLAGS
+ .Pq Vt str
+diff --git a/share/man/man7/hier.7 b/share/man/man7/hier.7
+index 51d8092b6a..1e09a5b250 100644
+--- a/share/man/man7/hier.7
++++ b/share/man/man7/hier.7
+@@ -256,8 +256,8 @@ misc. utility data files
+ .It Pa libexec/
+ system daemons & system utilities (executed by other programs)
+ .Pp
+-.Bl -tag -width ".Pa binutils225/" -compact
+-.It Pa binutils225/
++.Bl -tag -width ".Pa binutils227/" -compact
++.It Pa binutils227/
+ .Pp
+ .Bl -tag -width ".Pa bfd-plugins/" -compact
+ .It Pa bfd-plugins/
+@@ -268,7 +268,7 @@ see
+ .Xr ld 1
+ .El
+ .Pp
+-.It Pa binutils227/
++.It Pa binutils234/
+ .Pp
+ .Bl -tag -width ".Pa bfd-plugins/" -compact
+ .It Pa bfd-plugins/
+diff --git a/share/mk/bsd.cpu.mk b/share/mk/bsd.cpu.mk
+index 8c8fcf4f94..0e866632e2 100644
+--- a/share/mk/bsd.cpu.mk
++++ b/share/mk/bsd.cpu.mk
+@@ -15,7 +15,7 @@
+ # we back off to something it probably does have.
+ 
+ _DEFAULT_CCVER=		gcc80
+-_DEFAULT_BINUTILSVER=	binutils227
++_DEFAULT_BINUTILSVER=	binutils234
+ 
+ CCVER ?= ${_DEFAULT_CCVER}
+ _CCVER := ${CCVER}
+diff --git a/usr.bin/objformat/objformat.c b/usr.bin/objformat/objformat.c
+index ae3f146d67..44e8e227d1 100644
+--- a/usr.bin/objformat/objformat.c
++++ b/usr.bin/objformat/objformat.c
+@@ -41,7 +41,7 @@
+ #endif
+ 
+ #ifndef BINUTILSVER_DEFAULT
+-#define	BINUTILSVER_DEFAULT "binutils227"
++#define	BINUTILSVER_DEFAULT "binutils234"
+ #endif
+ 
+ #define LINKER_BFD     "ld.bfd"
+-- 
+2.25.0
+
