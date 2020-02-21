@@ -1,7 +1,7 @@
 #/bin/sh
 
 #
-# Copyright (c) 2019 The DragonFly Project.  All rights reserved.
+# Copyright (c) 2019-2020 The DragonFly Project.  All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,6 +30,15 @@ set -e
 
 # DragonFly BSD source tree location
 P=/zzz/DragonFlyBSD
+
+# set to non-empty to compile world in two steps (userland+toolchain)
+PSPLITtoolchain=da
+
+# set to non-empty to compile kernel in two steps (kernel+modules)
+PSPLITmodules=da
+
+# aplies only on DragonFly BSD
+PHOSTbinutils="binutils227"
 
 mkdir -p /tmp/dfly/obj
 mkdir -p /tmp/dfly/cross
@@ -1559,7 +1568,7 @@ uid_from_user(const char *name, uid_t *uid)
   return -1;
 }
 #endif
-#if !defined(__DragonFly__) && !defined(__FreeBSD__)
+#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
 #include <stddef.h>
 struct group;
 static inline __always_inline int
@@ -1786,7 +1795,7 @@ cat << 'EOF' > /tmp/dfly/cross/compat/sys/mount.h
 #ifndef __compat_sys_mount_h__
 #define __compat_sys_mount_h__
 #include_next <sys/mount.h>
-#if !defined(__DragonFly__) && !defined(__FreeBSD__)
+#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
 #include <sys/cdefs.h>
 #include <stddef.h>
 #define MAXPHYS (4 * 1024)
@@ -7647,7 +7656,10 @@ cp -f /tmp/dfly/cross/uname /tmp/dfly/obj/$P/btools_x86_64/usr/bin/
 }
 
 fake_mkdep2 () {
+mv /tmp/dfly/obj/$P/btools_x86_64/usr/bin/mkdep \
+   /tmp/dfly/obj/$P/btools_x86_64/usr/bin/mkdep.orig
 cp -f /tmp/dfly/cross/mkdep /tmp/dfly/obj/$P/btools_x86_64/usr/bin/
+cp /tmp/dfly/obj/$P/btools_x86_64/usr/bin/mkdep.orig /tmp/dfly/cross/mkdep.orig
 }
 
 fake_pw3 () {
@@ -7667,11 +7679,13 @@ EOF
 build_btools () {
   BSTRAPDIRS1=`cd $P && /tmp/dfly/cross/make -f Makefile.inc1 \
     MACHINE=x86_64 MACHINE_ARCH=x86_64 MACHINE_PLATFORM=pc64 \
-    HOST_BINUTILSVER=xxx -V BSTRAPDIRS1:N*hostname`
+    HOST_BINUTILSVER="${PHOSTbinutils}" \
+    -V BSTRAPDIRS1:N*hostname`
   BSTRAPDIRS1="lib/liby usr.bin/flex/lib lib/libz usr.bin/printf ${BSTRAPDIRS1}"
   BSTRAPDIRS2=`cd $P && /tmp/dfly/cross/make -f Makefile.inc1 \
     MACHINE=x86_64 MACHINE_ARCH=x86_64 MACHINE_PLATFORM=pc64 \
-    HOST_BINUTILSVER=xxx -V BSTRAPDIRS2:N*uname:N*chflags:N*pwd_mkdb`
+    HOST_BINUTILSVER="${PHOSTbinutils}" \
+    -V BSTRAPDIRS2:N*uname:N*chflags:N*pwd_mkdb`
   echo "B1 is ${BSTRAPDIRS1}"
   echo "B2 is ${BSTRAPDIRS2}"
   cd $P && \
@@ -7679,7 +7693,7 @@ build_btools () {
   BSTRAPDIRS1="${BSTRAPDIRS1}" BSTRAPDIRS2="${BSTRAPDIRS2}" \
   _HOSTPATH="${PATH}" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
   MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
-  HOST_BINUTILSVER="xxx" -DNO_WERROR \
+  HOST_BINUTILSVER="${PHOSTbinutils}" -DNO_WERROR \
   WORLD_CFLAGS="${BCFLAGS} ${CROSSCFLAGS}" \
   > /tmp/dfly/btools.log 2>&1 || (echo "  error: see btools.log" && exit 2)
   [ ! -f ${TIMELOG:-/blah} ] || /tmp/dfly/cross/cat ${TIMELOG}
@@ -7690,7 +7704,7 @@ build_ctools () {
   ${TIMECMD} /tmp/dfly/cross/make -j${MJ} _cross-tools \
   _HOSTPATH="${PATH}" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
   MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
-  HOST_BINUTILSVER="xxx" CROSS_LIBDL="${CROSS_LIBDL}" CPP="cc -E -P" \
+  HOST_BINUTILSVER="${PHOSTbinutils}" CROSS_LIBDL="${CROSS_LIBDL}" \
   -DNO_WERROR -DNO_ALTBINUTILS -DNO_ALTCOMPILER -DNO_PROFILE \
   WORLD_CFLAGS="-I/tmp/dfly/cross/simple ${BCFLAGS} -L/tmp/dfly/cross/lib" \
   > /tmp/dfly/ctools.log 2>&1 || (echo "  error: see ctools.log" && exit 3)
@@ -7703,7 +7717,7 @@ build_world () {
   _HOSTPATH="/tmp/dfly/cross" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
   CROSS_CFLAGS="-I/tmp/dfly/cross/simple ${BCFLAGS} -L/tmp/dfly/cross/lib" \
   MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
-  HOST_BINUTILSVER="xxx" \
+  HOST_BINUTILSVER="${PHOSTbinutils}" \
   -DNO_ALTBINUTILS -DNO_ALTCOMPILER -DNOPROFILE -DWANT_INSTALLER -DNO_INITRD \
   > /tmp/dfly/world.log 2>&1 || (echo "  error: see world.log" && exit 4)
   [ ! -f ${TIMELOG:-/blah} ] || /tmp/dfly/cross/cat ${TIMELOG}
@@ -7713,10 +7727,58 @@ build_kernel () {
   cd $P && \
   ${TIMECMD} /tmp/dfly/cross/make -j${MJ} buildkernel \
   _HOSTPATH="/tmp/dfly/cross" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
-  HOST_BINUTILSVER="xxx" \
+  HOST_BINUTILSVER="${PHOSTbinutils}" \
   MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
   -DNO_ALTBINUTILS -DNO_ALTCOMPILER -DNOPROFILE \
   > /tmp/dfly/kernel.log 2>&1 || (echo "  error: see kernel.log" && exit 5)
+  [ ! -f ${TIMELOG:-/blah} ] || /tmp/dfly/cross/cat ${TIMELOG}
+}
+
+build_world_notc () {
+  cd $P && \
+  ${TIMECMD} /tmp/dfly/cross/make -j${MJ} quickworld \
+  _HOSTPATH="/tmp/dfly/cross" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
+  CROSS_CFLAGS="-I/tmp/dfly/cross/simple ${BCFLAGS} -L/tmp/dfly/cross/lib" \
+  MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
+  HOST_BINUTILSVER="${PHOSTbinutils}" -DNO_TOOLCHAIN \
+  -DNO_ALTBINUTILS -DNO_ALTCOMPILER -DNOPROFILE -DWANT_INSTALLER -DNO_INITRD \
+  > /tmp/dfly/worldo.log 2>&1 || (echo "  error: see worldo.log" && exit 4)
+  [ ! -f ${TIMELOG:-/blah} ] || /tmp/dfly/cross/cat ${TIMELOG}
+}
+
+build_world_tc () {
+  cd $P && \
+  ${TIMECMD} /tmp/dfly/cross/make -j${MJ} quickworld \
+  _HOSTPATH="/tmp/dfly/cross" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
+  CROSS_CFLAGS="-I/tmp/dfly/cross/simple ${BCFLAGS} -L/tmp/dfly/cross/lib" \
+  MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
+  HOST_BINUTILSVER="${PHOSTbinutils}" \
+  -DNO_ALTBINUTILS -DNO_ALTCOMPILER -DNOPROFILE -DWANT_INSTALLER -DNO_INITRD \
+  > /tmp/dfly/worldc.log 2>&1 || (echo "  error: see worldc.log" && exit 4)
+  [ ! -f ${TIMELOG:-/blah} ] || /tmp/dfly/cross/cat ${TIMELOG}
+}
+
+build_kernel_nokmod () {
+  cd $P && \
+  ${TIMECMD} /tmp/dfly/cross/make -j${MJ} buildkernel \
+  _HOSTPATH="/tmp/dfly/cross" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
+  HOST_BINUTILSVER="${PHOSTbinutils}" -DNO_MODULES \
+  MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
+  -DNO_ALTBINUTILS -DNO_ALTCOMPILER -DNOPROFILE \
+  > /tmp/dfly/kernelo.log 2>&1 || (echo "  error: see kernelo.log" && exit 5)
+  [ ! -f ${TIMELOG:-/blah} ] || /tmp/dfly/cross/cat ${TIMELOG}
+}
+
+build_kernel_kmod () {
+  # XXX for now rebuild kernel too, build.sh quickernel bug in:
+  # cc: error: smbus_if.c: No such file or directory
+  cd $P && \
+  ${TIMECMD} /tmp/dfly/cross/make -j${MJ} quickkernel \
+  _HOSTPATH="/tmp/dfly/cross" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
+  HOST_BINUTILSVER="${PHOSTbinutils}" \
+  MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
+  -DNO_ALTBINUTILS -DNO_ALTCOMPILER -DNOPROFILE \
+  > /tmp/dfly/kernelm.log 2>&1 || (echo "  error: see kernelm.log" && exit 5)
   [ ! -f ${TIMELOG:-/blah} ] || /tmp/dfly/cross/cat ${TIMELOG}
 }
 
@@ -7726,7 +7788,7 @@ install_world () {
   _HOSTPATH="/tmp/dfly/cross" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
   CROSS_CFLAGS="-I/tmp/dfly/cross/simple ${BCFLAGS} -L/tmp/dfly/cross/lib" \
   MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
-  HOST_BINUTILSVER="xxx" \
+  HOST_BINUTILSVER="${PHOSTbinutils}" \
   -DNO_ALTBINUTILS -DNO_ALTCOMPILER -DNOPROFILE -DWANT_INSTALLER -DNO_INITRD \
   -DNOFSCHG INSTALL="install -U" TERMINFO_ENTRIES="" ZIC_UG_FLAGS="" \
   > /tmp/dfly/iworld.log 2>&1 || (echo "  error: see iworld.log" && exit 6)
@@ -7741,7 +7803,7 @@ install_kernel () {
   cd $P && \
   ${TIMECMD} /tmp/dfly/cross/make reinstallkernel DESTDIR="/tmp/dfly/dest" \
   _HOSTPATH="/tmp/dfly/cross" MAKEOBJDIRPREFIX="/tmp/dfly/obj" \
-  HOST_BINUTILSVER="xxx" \
+  HOST_BINUTILSVER="${PHOSTbinutils}" \
   MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
   -DNO_ALTBINUTILS -DNO_ALTCOMPILER -DNOPROFILE \
   -DNOFSCHG INSTALL="install -U" \
@@ -7753,7 +7815,7 @@ customize_destdir () {
   cd $P/etc &&
     /tmp/dfly/cross/make distribution DESTDIR="/tmp/dfly/dest" \
   _HOSTPATH="/tmp/dfly/cross" MAKEOBJDIRPREFIX="/tmp/dfly/obj/custom" \
-  HOST_BINUTILSVER="xxx" \
+  HOST_BINUTILSVER="${PHOSTbinutils}" \
   MACHINE="x86_64" MACHINE_ARCH="x86_64" MACHINE_PLATFORM="pc64" \
   -DNOFSCHG INSTALL="install -U" \
   > /tmp/dfly/icustom.log 2>&1 || (echo "  error: see icustom.log" && exit 8)
@@ -7864,11 +7926,27 @@ MJ=$(/tmp/dfly/cross/sysctl -n hw.ncpu)
 #
 echo "Building world:"
 export PATH="/tmp/dfly/cross"
-build_world
+if [ -z "${PSPLITtoolchain}" ] ; then
+ build_world
+else
+ echo " building userland:"
+ build_world_notc
+ echo " building toolchain:"
+ build_world_tc
+fi
 #
 echo "Building kernel:"
 export PATH="/tmp/dfly/cross"
-build_kernel
+if [ -z "${PSPLITmodules}" ] ; then
+ build_kernel
+else
+ echo " building kernel only:"
+ build_kernel_nokmod
+ echo " building kernel with modules:"
+ # XXX smbus_if.o search issue build_kernel_kmod
+ build_kernel
+fi
+#
 echo ""
 echo "Build is done:"
 echo "  build logs are in /tmp/dfly/*.log"
@@ -7894,4 +7972,5 @@ echo ""
 # cp -r /tmp/dfly/dest/root.hdd /tmp/dfly/dest/root
 # cp -f nrelease/root/etc/fstab /tmp/dfly/dest/etc/fstab
 # cp -f nrelease/root/boot/loader.conf /tmp/dfly/dest/boot/loader.conf
-# mkisofs -uid 0 -gid 0 -R -J -b boot/cdboot -no-emul-boot -V DFLY -o /tmp/dfly.iso /tmp/dfly/dest
+# mkisofs -uid 0 -gid 0 -R -J -b boot/cdboot -no-emul-boot -V DFLY \
+#         -o /tmp/dfly.iso /tmp/dfly/dest
