@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 
 #
 # Copyright (c) 2019-2020 The DragonFly Project.  All rights reserved.
@@ -546,7 +546,7 @@ cat << 'EOF' > /tmp/dfly/cross/compat/auto-host.h
 #ifndef __compat_auto_host_h__
 #define __compat_auto_host_h__
 #include_next "auto-host.h"
-#if defined(__OpenBSD__)
+#if defined(__OpenBSD__) || defined(__NetBSD__)
 #undef HAVE_CLEARERR_UNLOCKED
 #undef HAVE_FERROR_UNLOCKED
 #undef HAVE_FEOF_UNLOCKED
@@ -555,6 +555,17 @@ cat << 'EOF' > /tmp/dfly/cross/compat/auto-host.h
 #endif
 EOF
 cp /tmp/dfly/cross/compat/auto-host.h /tmp/dfly/cross/simple/auto-host.h
+
+cat << 'EOF' > /tmp/dfly/cross/compat/fnmatch.h
+#ifndef __compat_fnmatch_h__
+#define __compat_fnmatch_h__
+#include_next <fnmatch.h>
+#if defined(__NetBSD__) /* XXX libiberty */
+#define FNM_FILE_NAME FNM_PATHNAME
+#endif
+#endif
+EOF
+cp /tmp/dfly/cross/compat/fnmatch.h /tmp/dfly/cross/simple/fnmatch.h
 
 cat << 'EOF' > /tmp/dfly/cross/compat/iconv.h
 #ifndef __compat_iconv_h__
@@ -726,7 +737,7 @@ cat << 'EOF' > /tmp/dfly/cross/compat/resolv.h
 #define __compat_resolv_h__
 #include_next <resolv.h>
 #ifdef __linux__
-#include <inlined/resolv.h> /* b64_ntop b64_pton */
+#include <inlined/resolv.hi> /* b64_ntop b64_pton */
 #endif
 #endif
 EOF
@@ -793,6 +804,7 @@ struct _nls_msg_hdr {
 #endif
 #endif
 EOF
+
 cat << 'EOF' > /tmp/dfly/cross/compat/regex.h
 #ifndef __compat_regex_h__
 #define __compat_regex_h__
@@ -821,8 +833,12 @@ EOF
 cat << 'EOF' > /tmp/dfly/cross/compat/xlocale.h
 #ifndef __compat_xlocale_h__
 #define __compat_xlocale_h__
-#if !defined(__linux__) && !defined(__OpenBSD__)
+#if !defined(__linux__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
 #include_next <xlocale.h>
+#endif
+#ifdef __NetBSD__  /* XXX mkmagic.nx */
+#undef HAVE_USELOCALE
+#undef HAVE_NEWLOCALE
 #endif
 #endif
 EOF
@@ -832,6 +848,15 @@ cat << 'EOF' > /tmp/dfly/cross/compat/ctype.h
 #ifndef __compat_ctype_h__
 #define __compat_ctype_h__
 #include_next <ctype.h>
+#ifdef __NetBSD__  /* XXX localedef(1) */
+#define _CTYPE_B     _CTYPE_BL
+#define _CTYPE_SW0      0x20000000L
+#define _CTYPE_SW1      0x40000000L
+#define _CTYPE_SW2      0x80000000L
+#define _CTYPE_SW3      0xc0000000L
+#define _CTYPE_SWM      0xe0000000L
+#define _CTYPE_SWS      30
+#endif
 #if defined(__linux__) || defined(__OpenBSD__)
 #define _CTYPE_A        0x00000100L
 #define _CTYPE_C        0x00000200L
@@ -905,7 +930,6 @@ typedef int32_t bool_t;
 #ifndef TRUE
 #define TRUE     (1)
 #endif
-
 #endif
 #endif
 EOF
@@ -913,6 +937,10 @@ EOF
 cat << 'EOF' > /tmp/dfly/cross/compat/libutil.h
 #ifndef __compat_libutil_h__
 #define __compat_libutil_h__
+#ifdef __NetBSD__
+#define HN_IEC_PREFIXES 0x0 /* XXX dd(1) misc.c */
+#endif
+#ifndef __NetBSD__
 /* #include_next <libutil.h> */
 #include <sys/types.h>
 #include <assert.h>
@@ -1159,6 +1187,7 @@ humanize_number(char *buf, size_t len, int64_t quotient,
 }
 #undef __HM_SCALE2PREFIX
 #endif
+#endif
 EOF
 
 cat << 'EOF' > /tmp/dfly/cross/compat/util.h
@@ -1222,9 +1251,9 @@ cat << 'EOF' > /tmp/dfly/cross/compat/stdio.h
 #pragma GCC diagnostic pop
 #endif
 #ifdef __linux__
-#include <inlined/stdio.h> /* fgetln funopen */
+#include <inlined/stdio.hi> /* fgetln funopen */
 #endif
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__) || defined(__NetBSD__)
 static inline __always_inline ssize_t
 __fpending(const FILE *fp)
 {
@@ -1302,13 +1331,17 @@ arc4random_uniform(u_int32_t upper_bound)
   return (r % upper_bound);
 }
 #endif
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__) || defined(__NetBSD__)
 #undef HAVE_FILENO_UNLOCKED
 #undef HAVE_FEOF_UNLOCKED
 #undef HAVE_FERROR_UNLOCKED
 #undef fileno
 #undef feof
 #undef ferror
+#endif
+#ifdef __NetBSD__
+#define srandomdev(...) /* XXX stub for games/phantasia/setup */
+long long strtonum(const char *, long long, long long, const char **);
 #endif
 #endif
 EOF
@@ -1353,7 +1386,11 @@ rpmatch(const char *response)
 }
 #endif
 #ifdef __linux__
-#include <inlined/stdlib.h> /* arc4random, getprogname, mergesort etc */
+#include <inlined/stdlib.hi> /* arc4random, getprogname, mergesort etc */
+#endif
+#ifdef __NetBSD__  /* XXX only if _OPENBSD_SOURCE */
+void   *reallocarray(void *, size_t, size_t);
+long long strtonum(const char *, long long, long long, const char **);
 #endif
 #endif
 EOF
@@ -1363,7 +1400,7 @@ cat << 'EOF' > /tmp/dfly/cross/compat/err.h
 #define __compat_err_h__
 #include_next <err.h>
 #ifdef __linux__
-#include <inlined/err.h> /* errc verrc etc */
+#include <inlined/err.hi> /* errc verrc etc */
 #endif
 #endif
 EOF
@@ -1392,7 +1429,7 @@ cat << 'EOF' > /tmp/dfly/cross/compat/db.h
 #include_next <db.h>
 #endif
 #ifdef __linux__
-#include <inlined/db.h> /* cgetdb opendb etc */
+#include <inlined/db.hi> /* cgetdb opendb etc */
 #endif
 #endif
 EOF
@@ -1526,7 +1563,7 @@ struct dfly_passwd {
 #include <stdlib.h>
 #include <string.h>
 #undef user_from_uid
-#undef uid_from_user 
+#undef uid_from_user
 #ifndef UNMLEN
 #define UNMLEN 32
 #endif
@@ -1568,24 +1605,6 @@ uid_from_user(const char *name, uid_t *uid)
   return -1;
 }
 #endif
-#if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
-#include <stddef.h>
-struct group;
-static inline __always_inline int
-pwcache_groupdb(int (*a_setg)(int), void (*a_endg)(void),
-    struct group* (*a_g)(const char *), struct group* (*a_gid)(gid_t))
-{
-  if (a_setg == NULL || a_endg == NULL || a_g == NULL || a_gid == NULL || 1)
-    return -1;
-}
-static inline __always_inline int
-pwcache_userdb(int (*a_setp)(int), void (*a_endp)(void),
-    struct passwd* (*a_g)(const char *), struct passwd* (*a_uid)(uid_t))
-{
-  if (a_setp == NULL || a_endp == NULL || a_g == NULL || a_uid == NULL || 1)
-    return -1;
-}
-#endif
 #ifdef __linux__
 #include <sys/cdefs.h>
 #include <limits.h> /* GID_MAX UID_MAX needed for mtree */
@@ -1606,7 +1625,7 @@ EOF
 cat << 'EOF' > /tmp/dfly/cross/compat/vis.h
 #ifndef __compat_vis_h__
 #define __compat_vis_h__
-#include <inlined/vis.h>  /* vis unvis replacement */
+#include <vis_portable.h>  /* vis unvis replacement, yes IBCN */
 #endif
 EOF
 
@@ -1628,9 +1647,9 @@ cat << 'EOF' > /tmp/dfly/cross/compat/string.h
 #endif
 #endif
 #ifdef __linux__
-#include <inlined/string.h> /* strlcat strlcpy strmode */
+#include <inlined/string.hi> /* strlcat strlcpy strmode */
 #endif
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__) || defined(__NetBSD__)
 static inline __always_inline void *
 mempcpy(void *dest, const void *src, size_t len)
 {
@@ -1660,7 +1679,7 @@ cat << 'EOF' > /tmp/dfly/cross/simple/string.h
 #endif
 #undef basename
 #endif
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__) || defined(__NetBSD__)
 static inline __always_inline void *
 mempcpy(void *dest, const void *src, size_t len)
 {
@@ -1693,21 +1712,6 @@ cat << 'EOF' > /tmp/dfly/cross/simple/libiberty.h
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/unlocked-io.h
-#ifndef __compat_unlocked_io_h__
-#define __compat_unlocked_io_h__
-#if 0
-#ifdef __linux__  /* fix redef warns in grep(1) config.h, w/ caviet tho */
-#undef HAVE_DECL_FREAD_UNLOCKED
-#undef HAVE_DECL_FWRITE_UNLOCKED
-#define HAVE_DECL_FREAD_UNLOCKED 1
-#define HAVE_DECL_FWRITE_UNLOCKED 1
-#endif
-#include_next "unlocked-io.h"
-#endif
-#endif
-EOF
-
 cat << 'EOF' > /tmp/dfly/cross/compat/unistd.h
 #ifndef __compat_unistd_h__
 #define __compat_unistd_h__
@@ -1721,8 +1725,11 @@ cat << 'EOF' > /tmp/dfly/cross/compat/unistd.h
 #if defined(__OpenBSD__) || defined(__NetBSD__)
 #define eaccess access
 #endif
+#ifdef __NetBSD__  /* XXX bin/mv/mv.c statfs() */
+#undef MNAMELEN
+#endif
 #ifdef __linux__
-#include <inlined/unistd.h> /* bsd_getopt getmode setmode */
+#include <inlined/unistd.hi> /* bsd_getopt getmode setmode */
 #endif
 #endif
 EOF
@@ -1752,7 +1759,7 @@ cat << 'EOF' > /tmp/dfly/cross/compat/sys/tree.h
 #include_next <sys/tree.h>
 #endif
 #ifdef __linux__
-#include <inlined/tree.h> /* RB_ stuff */
+#include <inlined/tree.hi> /* RB_ stuff */
 #endif
 #endif
 EOF
@@ -1794,6 +1801,9 @@ EOF
 cat << 'EOF' > /tmp/dfly/cross/compat/sys/mount.h
 #ifndef __compat_sys_mount_h__
 #define __compat_sys_mount_h__
+#ifdef __NetBSD__  /* XXX find(1) functions.c */
+#define f_flag f_flags
+#endif
 #include_next <sys/mount.h>
 #if !defined(__DragonFly__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
 #include <sys/cdefs.h>
@@ -1803,6 +1813,12 @@ cat << 'EOF' > /tmp/dfly/cross/compat/sys/mount.h
 #include <sys/statfs.h>
 #define f_iosize f_bsize
 #endif
+#endif
+#ifdef __NetBSD__
+#include <sys/statvfs.h>  /* XXX bin/rm/rm.c fstatfs() */
+#define statfs statvfs
+#define fstatfs fstatvfs
+#undef f_flag  /* XXX find(1) */
 #endif
 #endif
 EOF
@@ -1911,7 +1927,7 @@ cat << 'EOF' > /tmp/dfly/cross/compat/sys/queue.h
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/inlined/db.h
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/db.hi
 #ifdef __linux__
 #include <sys/cdefs.h>
 #include <sys/param.h>
@@ -2047,6 +2063,7 @@ typedef struct htab {
   SEGMENT         *dir;
 } HTAB;
 
+#define DB_NOM_BSIZE            16384
 #define DB_MAX_BSIZE            32768
 #define DB_MIN_BUFFERS          6
 #define DB_MINHDRSIZE           512
@@ -3829,7 +3846,7 @@ init_hash(HTAB *hashp, const char *file, const HASHINFO *info)
   if (file != NULL) {
     if (stat(file, &statbuf))
       return (NULL);
-    hashp->hdr.bsize = statbuf.st_blksize;
+    hashp->hdr.bsize = DB_NOM_BSIZE;
     if (hashp->hdr.bsize > DB_MAX_BSIZE)
       hashp->hdr.bsize = DB_MAX_BSIZE;
     hashp->hdr.sshift = __dblog2(hashp->hdr.bsize);
@@ -4521,7 +4538,7 @@ cgetnext(char **bp, char **db_array)
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/inlined/err.h
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/err.hi
 #ifdef __linux__
 #include <sys/cdefs.h>
 #include <stdarg.h>
@@ -4609,7 +4626,7 @@ __dummy_warnc(void)
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/inlined/resolv.h
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/resolv.hi
 #ifdef __linux__
 #undef b64_ntop
 #undef b64_pton
@@ -4755,7 +4772,7 @@ b64_pton(char const *src, unsigned char *target, size_t targsize)
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/inlined/stdio.h
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/stdio.hi
 #ifdef __linux__
 #include <sys/cdefs.h>
 #include <stdlib.h>
@@ -4954,7 +4971,7 @@ funopen(const void *cookie,
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/inlined/stdlib.h
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/stdlib.hi
 #ifdef __linux__
 #include <sys/cdefs.h>
 #include <errno.h>
@@ -5339,7 +5356,7 @@ __MS_COPY:
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/inlined/string.h
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/string.hi
 #ifdef __linux__
 #define QUAD_MIN   LLONG_MIN    /* for usr.bin/expr/expr.y */
 #define QUAD_MAX   LLONG_MAX    /* for usr.bin/find/function.c */
@@ -5501,7 +5518,7 @@ strmode(mode_t mode, char *p)
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/inlined/tree.h
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/tree.hi
 #ifdef __linux__
 #include <sys/cdefs.h>
 #include <stddef.h>
@@ -5995,7 +6012,7 @@ color: \
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/inlined/unistd.h
+cat << 'EOF' > /tmp/dfly/cross/compat/inlined/unistd.hi
 #ifdef __linux__
 #include <sys/cdefs.h>
 #include <sys/types.h>
@@ -6380,11 +6397,12 @@ apply_setmode:
 #endif
 EOF
 
-cat << 'EOF' > /tmp/dfly/cross/compat/inlined/vis.h
+cat << 'EOF' > /tmp/dfly/cross/compat/vis_portable.h
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>  /* for MB_LEN_MAX */
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
@@ -7467,7 +7485,7 @@ esac
 fake_awk () {
 cat << 'EOF' > /tmp/dfly/cross/awk
 #!/bin/sh
-echo "999999"
+echo "9999999"
 EOF
 chmod +x /tmp/dfly/cross/awk
 }
